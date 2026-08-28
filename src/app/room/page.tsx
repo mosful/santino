@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PageHeader from "@/components/ui/PageHeader";
 import OpsRoomCard from "@/components/room/OpsRoomCard";
 import Modal from "@/components/ui/Modal";
 import { OPS_ROOMS, DEFERRED_ROOM_ITEMS } from "@/lib/mock/opsRoom";
@@ -46,14 +47,16 @@ export default function RoomPage() {
 
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-bold">4. 房間動態（房務版房卡）</h1>
-        <div className="flex gap-2 text-xs">
-          <button className="rounded bg-stone-100 px-3 py-1.5">手機驗證碼</button>
-          <button className="rounded bg-stone-100 px-3 py-1.5">加值服務總表</button>
-          <button className="rounded bg-stone-100 px-3 py-1.5">本月壽星</button>
-        </div>
-      </div>
+      <PageHeader
+        title="4. 房間動態（房務版房卡）"
+        action={
+          <div className="flex gap-2 text-xs">
+            <button className="rounded bg-stone-100 px-3 py-1.5">手機驗證碼</button>
+            <button className="rounded bg-stone-100 px-3 py-1.5">加值服務總表</button>
+            <button className="rounded bg-stone-100 px-3 py-1.5">本月壽星</button>
+          </div>
+        }
+      />
 
       <p className="mb-4 text-xs text-stone-400">
         與2.媽媽照護共用房號，但欄位與快捷鍵為獨立元件（房務 vs 護理）。

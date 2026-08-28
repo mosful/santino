@@ -36,7 +36,12 @@ html {
 }
 
 body {
-  background: linear-gradient(180deg, var(--background-alt) 0px, var(--background) 320px);
+  /* 底圖：暖色漸層＋兩個極淡的裝飾性色塊(玫瑰/鼠尾草綠)，參考2026年醫療儀表板
+     「柔和分層底圖」設計趨勢，取代單一死白背景，但不影響內容可讀性 */
+  background-color: var(--background);
+  background-image: linear-gradient(180deg, var(--background-alt) 0px, var(--background) 360px),
+    radial-gradient(600px circle at 92% 0%, rgba(225, 29, 72, 0.07), transparent 60%),
+    radial-gradient(500px circle at 4% 18%, rgba(78, 143, 121, 0.06), transparent 60%);
   background-attachment: fixed;
   color: var(--foreground);
   font-family: -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei",

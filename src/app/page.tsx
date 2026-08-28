@@ -1,4 +1,5 @@
-import Tabs from "@/components/ui/Tabs";
+import PageHeader from "@/components/ui/PageHeader";
+import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import {
@@ -136,8 +137,8 @@ function ValueAddedTab() {
 export default function HomePage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
-      <h1 className="mb-4 text-lg font-bold">1. 中控中心</h1>
-      <Tabs
+      <PageHeader title="1. 中控中心" />
+      <TabsFromUrl
         tabs={[
           { key: "board", label: "公佈欄", content: <AnnouncementTab /> },
           { key: "mama-cal", label: "媽媽行事曆", content: <MamaCalendarTab /> },

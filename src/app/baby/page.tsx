@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PageHeader from "@/components/ui/PageHeader";
 import BabyRoomCard from "@/components/baby/BabyRoomCard";
 import Modal from "@/components/ui/Modal";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
@@ -57,23 +58,25 @@ export default function BabyPage() {
 
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-bold">3. 寶寶照護（嬰兒室房卡）</h1>
-        <div className="flex flex-wrap gap-1">
-          {STATUS_FILTERS.map((s) => (
-            <button
-              key={s}
-              onClick={() => setFilter(s)}
-              className={
-                "rounded-full px-3 py-1 text-xs " +
-                (filter === s ? "bg-sky-500 text-white" : "bg-stone-100 text-stone-600")
-              }
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
+      <PageHeader
+        title="3. 寶寶照護（嬰兒室房卡）"
+        action={
+          <div className="flex flex-wrap gap-1">
+            {STATUS_FILTERS.map((s) => (
+              <button
+                key={s}
+                onClick={() => setFilter(s)}
+                className={
+                  "rounded-full px-3 py-1 text-xs " +
+                  (filter === s ? "bg-sky-500 text-white" : "bg-stone-100 text-stone-600")
+                }
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       <div className="mb-4 flex flex-wrap gap-3 text-xs text-stone-500">
         <span>圖例：</span>

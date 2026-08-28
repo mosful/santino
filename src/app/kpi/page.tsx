@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Tabs from "@/components/ui/Tabs";
+import PageHeader from "@/components/ui/PageHeader";
+import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Badge from "@/components/ui/Badge";
 
@@ -78,8 +79,8 @@ function SafetyTab() {
 export default function KpiPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
-      <h1 className="mb-4 text-lg font-bold">8. 評鑑指標</h1>
-      <Tabs
+      <PageHeader title="8. 評鑑指標" />
+      <TabsFromUrl
         tabs={[
           { key: "care", label: "照護指標", content: <IndicatorTab indicators={CARE_INDICATORS} /> },
           {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PageHeader from "@/components/ui/PageHeader";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Modal from "@/components/ui/Modal";
 import Tabs from "@/components/ui/Tabs";
@@ -113,14 +114,16 @@ export default function CustomerPage() {
   const [selected, setSelected] = useState<Customer | null>(null);
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-bold">5. 客戶資料</h1>
-        <div className="flex gap-2 text-xs">
-          <button className="rounded bg-stone-100 px-3 py-1.5">空白基本資料</button>
-          <button className="rounded bg-stone-100 px-3 py-1.5">空白預約參觀單</button>
-          <button className="rounded bg-stone-100 px-3 py-1.5">空白契約書</button>
-        </div>
-      </div>
+      <PageHeader
+        title="5. 客戶資料"
+        action={
+          <div className="flex gap-2 text-xs">
+            <button className="rounded bg-stone-100 px-3 py-1.5">空白基本資料</button>
+            <button className="rounded bg-stone-100 px-3 py-1.5">空白預約參觀單</button>
+            <button className="rounded bg-stone-100 px-3 py-1.5">空白契約書</button>
+          </div>
+        }
+      />
       <QueryList columns={columns} rows={CUSTOMERS} onRowClick={setSelected} />
       <Modal
         open={!!selected}

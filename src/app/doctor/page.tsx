@@ -1,6 +1,7 @@
 "use client";
 
-import Tabs from "@/components/ui/Tabs";
+import PageHeader from "@/components/ui/PageHeader";
+import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 
@@ -50,8 +51,8 @@ function DeptTab({ showTcmConsent }: { showTcmConsent?: boolean } = {}) {
 export default function DoctorPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
-      <h1 className="mb-4 text-lg font-bold">6. 醫師巡診</h1>
-      <Tabs
+      <PageHeader title="6. 醫師巡診" />
+      <TabsFromUrl
         tabs={[
           { key: "obgyn", label: "婦產科", content: <DeptTab /> },
           { key: "pediatric", label: "兒科", content: <DeptTab /> },

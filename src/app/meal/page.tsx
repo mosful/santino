@@ -1,6 +1,7 @@
 "use client";
 
-import Tabs from "@/components/ui/Tabs";
+import PageHeader from "@/components/ui/PageHeader";
+import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Badge from "@/components/ui/Badge";
 
@@ -85,8 +86,8 @@ function SimpleStub({ text }: { text: string }) {
 export default function MealPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
-      <h1 className="mb-4 text-lg font-bold">9. 月子餐</h1>
-      <Tabs
+      <PageHeader title="9. 月子餐" />
+      <TabsFromUrl
         tabs={[
           { key: "order", label: "訂餐管理系統", content: <OrderTab /> },
           { key: "daily", label: "每日出餐明細", content: <SimpleStub text="依日期查詢房號/媽媽/編號/餐次出餐狀態" /> },

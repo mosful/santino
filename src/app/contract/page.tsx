@@ -1,4 +1,5 @@
-import Tabs from "@/components/ui/Tabs";
+import PageHeader from "@/components/ui/PageHeader";
+import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import ContractList from "./tabs/ContractList";
 import NewContract from "./tabs/NewContract";
 import ContractTerms from "./tabs/ContractTerms";
@@ -18,8 +19,8 @@ const NOT_NOW = [
 export default function ContractPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
-      <h1 className="mb-4 text-lg font-bold">12. 合約管理</h1>
-      <Tabs
+      <PageHeader title="12. 合約管理" />
+      <TabsFromUrl
         tabs={[
           { key: "list", label: "合約查詢與列表", content: <ContractList /> },
           { key: "new", label: "新增合約", content: <NewContract /> },

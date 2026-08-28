@@ -1,6 +1,7 @@
 "use client";
 
-import Tabs from "@/components/ui/Tabs";
+import PageHeader from "@/components/ui/PageHeader";
+import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import ReportPicker from "@/components/reports/ReportPicker";
@@ -51,8 +52,8 @@ function RoomDataTab() {
 export default function AdminPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
-      <h1 className="mb-4 text-lg font-bold">15. 後台管理</h1>
-      <Tabs
+      <PageHeader title="15. 後台管理" />
+      <TabsFromUrl
         tabs={[
           { key: "visit", label: "預約參觀管理", content: <SimpleListTab rows={VISIT_ROWS} placeholder="項目名稱" /> },
           { key: "contract-data", label: "客戶及簽約資料", content: <SimpleListTab rows={CONTRACT_DATA_ROWS} placeholder="項目名稱" /> },

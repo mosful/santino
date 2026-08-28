@@ -1,6 +1,7 @@
 "use client";
 
-import Tabs from "@/components/ui/Tabs";
+import PageHeader from "@/components/ui/PageHeader";
+import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import { COURSES } from "@/lib/mock/dashboard";
@@ -54,8 +55,8 @@ function CourseRegistrationTab() {
 export default function CoursePage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
-      <h1 className="mb-4 text-lg font-bold">13. 課程管理</h1>
-      <Tabs
+      <PageHeader title="13. 課程管理" />
+      <TabsFromUrl
         tabs={[
           {
             key: "calendar",

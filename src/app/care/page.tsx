@@ -1,6 +1,7 @@
 "use client";
 
-import Tabs from "@/components/ui/Tabs";
+import PageHeader from "@/components/ui/PageHeader";
+import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Badge from "@/components/ui/Badge";
 
@@ -52,8 +53,8 @@ function ContactReminderTab({ note }: { note?: string }) {
 export default function CarePage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
-      <h1 className="mb-4 text-lg font-bold">7. 媽媽關懷</h1>
-      <Tabs
+      <PageHeader title="7. 媽媽關懷" />
+      <TabsFromUrl
         tabs={[
           { key: "visit", label: "參觀提醒", content: <ContactReminderTab /> },
           { key: "prenatal", label: "產前關懷", content: <ContactReminderTab /> },

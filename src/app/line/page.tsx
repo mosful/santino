@@ -1,6 +1,7 @@
 "use client";
 
-import Tabs from "@/components/ui/Tabs";
+import PageHeader from "@/components/ui/PageHeader";
+import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Badge from "@/components/ui/Badge";
 import MemberBinding from "./tabs/MemberBinding";
@@ -40,12 +41,12 @@ function FriendTab() {
 export default function LinePage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
-      <h1 className="mb-4 text-lg font-bold">14. LINE官方帳號管理</h1>
+      <PageHeader title="14. LINE官方帳號管理" />
       <p className="mb-3 text-xs text-amber-600">
         ⚠ LINE App串接與推播通知列為第二階段（本次不做，僅保留架構擴充彈性）；
         Webhook對外HTTPS曝露方式需另行規劃（見規格文件7.6節）。以下畫面為全新規劃示意稿，無舊系統截圖可對照。
       </p>
-      <Tabs
+      <TabsFromUrl
         tabs={[
           { key: "friends", label: "好友管理", content: <FriendTab /> },
           { key: "binding", label: "會員LINE綁定管理", content: <MemberBinding /> },

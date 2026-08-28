@@ -139,6 +139,7 @@ export function BabyIO({ room }: { room: string }) {
   return (
     <div className="space-y-3 text-sm">
       <PrevFillBadge />
+      <div className="text-xs text-slate-400">房號 {room}｜I/O</div>
       <div className="rounded bg-sky-50 p-2 text-xs text-sky-600">
         📷 可掃QR code直接對應case並自動帶入當下時間；keyin完成後自動reflash為實際時間
       </div>

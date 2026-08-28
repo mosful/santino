@@ -39,7 +39,7 @@ function FriendTab() {
 
 export default function LinePage() {
   return (
-    <div className="mx-auto max-w-5xl p-6">
+    <div className="mx-auto max-w-5xl p-4 sm:p-6">
       <h1 className="mb-4 text-lg font-bold">14. LINE官方帳號管理</h1>
       <p className="mb-3 text-xs text-amber-600">
         ⚠ LINE App串接與推播通知列為第二階段（本次不做，僅保留架構擴充彈性）；

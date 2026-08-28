@@ -16,7 +16,7 @@ export default function Badge({
   return (
     <span
       className={
-        "inline-block rounded-full px-2 py-0.5 text-xs font-medium " +
+        "inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium " +
         colorMap[color]
       }
     >

@@ -49,7 +49,7 @@ export default function MamaPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl p-6">
+    <div className="mx-auto max-w-6xl p-4 sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-lg font-bold">2. 媽媽照護（護理版房卡）</h1>
         <div className="flex flex-wrap gap-1">

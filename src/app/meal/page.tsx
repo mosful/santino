@@ -84,7 +84,7 @@ function SimpleStub({ text }: { text: string }) {
 
 export default function MealPage() {
   return (
-    <div className="mx-auto max-w-5xl p-6">
+    <div className="mx-auto max-w-5xl p-4 sm:p-6">
       <h1 className="mb-4 text-lg font-bold">9. 月子餐</h1>
       <Tabs
         tabs={[

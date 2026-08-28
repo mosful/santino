@@ -12,9 +12,9 @@ export default function MamaRoomCard({
   const empty = room.status === "空房" || room.status === "打掃" || room.status === "報修";
 
   return (
-    <div className={`rounded-lg border p-3 ${STATUS_COLOR[room.status]}`}>
+    <div className={`rounded-xl border p-3.5 shadow-sm transition-shadow hover:shadow-md sm:p-4 ${STATUS_COLOR[room.status]}`}>
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-base font-bold">{room.room}</span>
+        <span className="text-lg font-bold">{room.room}</span>
         <Badge
           color={
             room.status === "入住"
@@ -55,16 +55,16 @@ export default function MamaRoomCard({
             )}
           </div>
 
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1.5">
             {MAMA_QUICK_KEYS.map((k) => (
               <button
                 key={k.key}
                 onClick={() => onKeyClick(room.room, k.key)}
                 className={
-                  "rounded px-2 py-1 text-xs " +
+                  "rounded-full px-3 py-1.5 text-xs font-medium transition-colors " +
                   (k.core
-                    ? "bg-rose-500 text-white hover:bg-rose-600"
-                    : "bg-slate-100 text-slate-500 hover:bg-slate-200")
+                    ? "bg-rose-500 text-white hover:bg-rose-600 active:bg-rose-700"
+                    : "bg-slate-100 text-slate-500 hover:bg-slate-200 active:bg-slate-300")
                 }
               >
                 {k.label}

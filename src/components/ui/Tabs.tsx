@@ -20,23 +20,23 @@ export default function Tabs({
 
   return (
     <div>
-      <div className="flex flex-wrap gap-1 border-b border-slate-200">
+      <div className="flex flex-wrap gap-1 border-b border-slate-200 pb-px">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setActive(t.key)}
             className={
-              "rounded-t-md px-4 py-2 text-sm font-medium transition-colors " +
+              "-mb-px rounded-t-lg border-b-2 px-3.5 py-2 text-sm font-medium transition-colors sm:px-4 " +
               (t.key === active
-                ? "border-b-2 border-rose-500 text-rose-600"
-                : "text-slate-500 hover:text-slate-800")
+                ? "border-rose-500 text-rose-600"
+                : "border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800")
             }
           >
             {t.label}
           </button>
         ))}
       </div>
-      <div className="p-4">{current?.content}</div>
+      <div className="pt-4">{current?.content}</div>
     </div>
   );
 }

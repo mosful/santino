@@ -45,7 +45,7 @@ export default function RoomPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl p-6">
+    <div className="mx-auto max-w-6xl p-4 sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-lg font-bold">4. 房間動態（房務版房卡）</h1>
         <div className="flex gap-2 text-xs">

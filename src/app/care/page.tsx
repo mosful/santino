@@ -51,7 +51,7 @@ function ContactReminderTab({ note }: { note?: string }) {
 
 export default function CarePage() {
   return (
-    <div className="mx-auto max-w-5xl p-6">
+    <div className="mx-auto max-w-5xl p-4 sm:p-6">
       <h1 className="mb-4 text-lg font-bold">7. 媽媽關懷</h1>
       <Tabs
         tabs={[

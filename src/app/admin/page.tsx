@@ -49,7 +49,7 @@ function RoomDataTab() {
 
 export default function AdminPage() {
   return (
-    <div className="mx-auto max-w-6xl p-6">
+    <div className="mx-auto max-w-6xl p-4 sm:p-6">
       <h1 className="mb-4 text-lg font-bold">15. 後台管理</h1>
       <Tabs
         tabs={[

@@ -10,9 +10,9 @@ export default function BabyRoomCard({
   onKeyClick: (roomNo: string, keyKey: string) => void;
 }) {
   return (
-    <div className={`rounded-lg border-2 p-3 ${BABY_STATUS_COLOR[room.status]}`}>
+    <div className={`rounded-xl border-2 p-3.5 shadow-sm transition-shadow hover:shadow-md sm:p-4 ${BABY_STATUS_COLOR[room.status]}`}>
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-base font-bold">{room.room}</span>
+        <span className="text-lg font-bold">{room.room}</span>
         <div className="flex gap-1">
           {room.gender && (
             <Badge color={room.gender === "男" ? "blue" : "rose"}>{room.gender}寶寶</Badge>
@@ -34,16 +34,16 @@ export default function BabyRoomCard({
           )}
         </div>
       </div>
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1.5">
         {BABY_QUICK_KEYS.map((k) => (
           <button
             key={k.key}
             onClick={() => onKeyClick(room.room, k.key)}
             className={
-              "rounded px-2 py-1 text-xs " +
+              "rounded-full px-3 py-1.5 text-xs font-medium transition-colors " +
               (k.core
-                ? "bg-sky-500 text-white hover:bg-sky-600"
-                : "bg-slate-100 text-slate-500 hover:bg-slate-200")
+                ? "bg-sky-500 text-white hover:bg-sky-600 active:bg-sky-700"
+                : "bg-slate-100 text-slate-500 hover:bg-slate-200 active:bg-slate-300")
             }
           >
             {k.label}

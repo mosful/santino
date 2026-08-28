@@ -2,22 +2,11 @@
 
 import { useState } from "react";
 import Switch from "@/components/ui/Switch";
-
-type Phrase = { id: number; category: string; text: string };
-
-const INIT_PHRASES: Phrase[] = [
-  { id: 1, category: "照顧重點", text: "傷口照護、觀察惡露量與顏色變化" },
-  { id: 2, category: "關懷片語", text: "媽媽今日精神狀況良好，寶寶哺乳順利" },
-];
+import PhraseManager from "@/components/phrases/PhraseManager";
 
 export default function SystemSettings() {
   const [multiWindowLock, setMultiWindowLock] = useState(false);
-  const [phrases, setPhrases] = useState<Phrase[]>(INIT_PHRASES);
   const [reboundDays, setReboundDays] = useState(3);
-
-  function removePhrase(id: number) {
-    setPhrases((ps) => ps.filter((p) => p.id !== id));
-  }
 
   return (
     <div className="space-y-5 text-sm">
@@ -55,36 +44,11 @@ export default function SystemSettings() {
         </p>
       </div>
 
-      <div className="rounded border border-slate-200 p-3">
+      <div className="rounded-xl border border-slate-200 p-3">
         <div className="mb-2 text-xs font-medium text-slate-600">
           常用語／片語庫設定（系統開發總則第10條，供各護理表單引用）
         </div>
-        <table className="w-full text-left text-xs">
-          <thead className="text-slate-500">
-            <tr>
-              <th className="px-2 py-1">分類</th>
-              <th className="px-2 py-1">內容</th>
-              <th className="px-2 py-1">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {phrases.map((p) => (
-              <tr key={p.id} className="border-t border-slate-100">
-                <td className="px-2 py-1.5">{p.category}</td>
-                <td className="px-2 py-1.5">{p.text}</td>
-                <td className="px-2 py-1.5">
-                  <button onClick={() => removePhrase(p.id)} className="text-rose-500 underline">
-                    刪除
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <button className="mt-2 rounded bg-slate-100 px-3 py-1.5 text-xs">＋ 新增片語</button>
-        <p className="mt-1 text-xs text-slate-400">
-          護理記錄查詢片語時可用下拉選單，也可手動輸入關鍵字查詢，不限固定分類點選。
-        </p>
+        <PhraseManager />
       </div>
     </div>
   );

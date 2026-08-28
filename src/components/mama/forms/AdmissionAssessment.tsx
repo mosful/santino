@@ -1,11 +1,21 @@
+"use client";
+
+import { useState } from "react";
 import Tabs from "@/components/ui/Tabs";
+import PhrasePicker from "@/components/phrases/PhrasePicker";
 
 function TextArea({ label }: { label: string }) {
+  const [text, setText] = useState("");
   return (
     <div>
-      <label className="mb-1 block text-xs text-slate-500">{label}</label>
+      <div className="mb-1 flex items-center justify-between">
+        <label className="block text-xs text-slate-500">{label}</label>
+        <PhrasePicker onInsert={(t) => setText((prev) => (prev ? prev + "\n" + t : t))} />
+      </div>
       <textarea
-        className="h-20 w-full rounded border border-slate-200 p-2 text-sm"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        className="h-20 w-full rounded-lg border border-slate-200 p-2 text-sm"
         placeholder="（暫存草稿內容，示意）"
       />
     </div>
@@ -26,8 +36,8 @@ export default function AdmissionAssessment({ room }: { room: string }) {
         ]}
       />
       <div className="mt-4 flex justify-end gap-2 text-xs">
-        <button className="rounded bg-slate-100 px-3 py-1.5">暫存</button>
-        <button className="rounded bg-rose-500 px-3 py-1.5 text-white">送出</button>
+        <button className="rounded-lg bg-slate-100 px-4 py-2 hover:bg-slate-200">暫存</button>
+        <button className="rounded-lg bg-rose-500 px-4 py-2 text-white hover:bg-rose-600">送出</button>
       </div>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Tabs from "@/components/ui/Tabs";
+import PhrasePicker from "@/components/phrases/PhrasePicker";
 
 function PrevFillBadge() {
   return (
@@ -43,11 +44,19 @@ export function BabyAdmission({ room }: { room: string }) {
 }
 
 export function BabyRecord({ room }: { room: string }) {
+  const [text, setText] = useState("（帶入上一筆）體溫36.8℃／呼吸平順／膚色紅潤");
   return (
     <div className="space-y-2 text-sm">
       <PrevFillBadge />
-      <div className="text-xs text-slate-400">房號 {room}｜寶寶護理紀錄</div>
-      <textarea className="h-24 w-full rounded border border-slate-200 p-2 text-sm" defaultValue={"（帶入上一筆）體溫36.8℃／呼吸平順／膚色紅潤"} />
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-slate-400">房號 {room}｜寶寶護理紀錄</div>
+        <PhrasePicker onInsert={(t) => setText((prev) => (prev ? prev + "\n" + t : t))} />
+      </div>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        className="h-24 w-full rounded-lg border border-slate-200 p-2 text-sm"
+      />
       <div className="flex justify-end gap-2 text-xs">
         <button className="rounded bg-slate-100 px-3 py-1.5">暫存</button>
         <button className="rounded bg-sky-500 px-3 py-1.5 text-white">送出</button>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
+import { useAccess } from "@/lib/roleStore";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Modal from "@/components/ui/Modal";
 import Tabs from "@/components/ui/Tabs";
@@ -26,14 +27,72 @@ const columns: Column<Customer>[] = [
   { key: "family", label: "關聯家屬人" },
 ];
 
-function DetailTabs({ c }: { c: Customer }) {
+function blankCustomer(id: number): Customer {
+  return {
+    id,
+    name: "",
+    level: "一般客戶",
+    parity: "第一胎",
+    phone: "",
+    birthday: "",
+    dueDate: "",
+    referrer: "",
+    mainStaff: "",
+    mainNurse: "－",
+    lineBound: false,
+    family: "－",
+  };
+}
+
+function EditField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-xs text-stone-400">{label}</label>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-lg border border-stone-200 px-2 py-1.5 text-sm"
+      />
+    </div>
+  );
+}
+
+function DetailTabs({
+  c,
+  editing,
+  draft,
+  onDraftChange,
+}: {
+  c: Customer;
+  editing: boolean;
+  draft: Customer;
+  onDraftChange: (patch: Partial<Customer>) => void;
+}) {
   return (
     <Tabs
       tabs={[
         {
           key: "basic",
           label: "基本資料",
-          content: (
+          content: editing ? (
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <EditField label="媽媽姓名" value={draft.name} onChange={(v) => onDraftChange({ name: v })} />
+              <EditField label="等級" value={draft.level} onChange={(v) => onDraftChange({ level: v })} />
+              <EditField label="胎次" value={draft.parity} onChange={(v) => onDraftChange({ parity: v })} />
+              <EditField label="手機" value={draft.phone} onChange={(v) => onDraftChange({ phone: v })} />
+              <EditField label="生日" value={draft.birthday} onChange={(v) => onDraftChange({ birthday: v })} />
+              <EditField label="預產期" value={draft.dueDate} onChange={(v) => onDraftChange({ dueDate: v })} />
+              <EditField label="關聯家屬人" value={draft.family} onChange={(v) => onDraftChange({ family: v })} />
+            </div>
+          ) : (
             <div className="grid grid-cols-2 gap-3 text-sm">
               <Field label="媽媽姓名" value={c.name} />
               <Field label="等級" value={c.level} />
@@ -112,7 +171,73 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 export default function CustomerPage() {
+  const access = useAccess("5");
+  const canEdit = access === "edit";
+
+  const [customers, setCustomers] = useState<Customer[]>(CUSTOMERS);
   const [selected, setSelected] = useState<Customer | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [isNew, setIsNew] = useState(false);
+  const [draft, setDraft] = useState<Customer | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  function openView(c: Customer) {
+    setSelected(c);
+    setEditing(false);
+    setIsNew(false);
+    setDraft(c);
+  }
+
+  function openAdd() {
+    const blank = blankCustomer(Date.now());
+    setSelected(blank);
+    setDraft(blank);
+    setEditing(true);
+    setIsNew(true);
+  }
+
+  function startEdit() {
+    if (!selected) return;
+    setDraft(selected);
+    setEditing(true);
+  }
+
+  function cancelEdit() {
+    if (isNew) {
+      closeModal();
+      return;
+    }
+    setEditing(false);
+    setDraft(selected);
+  }
+
+  function save() {
+    if (!draft) return;
+    if (isNew) {
+      setCustomers((cs) => [...cs, draft]);
+    } else {
+      setCustomers((cs) => cs.map((c) => (c.id === draft.id ? draft : c)));
+    }
+    setSelected(draft);
+    setEditing(false);
+    setIsNew(false);
+  }
+
+  function remove() {
+    if (!selected) return;
+    setCustomers((cs) => cs.filter((c) => c.id !== selected.id));
+    setConfirmDelete(false);
+    closeModal();
+  }
+
+  function closeModal() {
+    setSelected(null);
+    setEditing(false);
+    setIsNew(false);
+    setDraft(null);
+    setConfirmDelete(false);
+  }
+
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
       <RequireAccess moduleNo="5">
@@ -123,17 +248,68 @@ export default function CustomerPage() {
             <button className="rounded bg-stone-100 px-3 py-1.5">空白基本資料</button>
             <button className="rounded bg-stone-100 px-3 py-1.5">空白預約參觀單</button>
             <button className="rounded bg-stone-100 px-3 py-1.5">空白契約書</button>
+            {canEdit && (
+              <button onClick={openAdd} className="rounded bg-rose-500 px-3 py-1.5 font-medium text-white">
+                ＋ 新增客戶
+              </button>
+            )}
           </div>
         }
       />
-      <QueryList columns={columns} rows={CUSTOMERS} onRowClick={setSelected} />
+      <QueryList columns={columns} rows={customers} onRowClick={openView} />
       <Modal
         open={!!selected}
-        title={`客戶基本資料 — ${selected?.name ?? ""}`}
-        onClose={() => setSelected(null)}
+        title={isNew ? "新增客戶" : `客戶基本資料 — ${selected?.name ?? ""}`}
+        onClose={closeModal}
         wide
       >
-        {selected && <DetailTabs c={selected} />}
+        {selected && draft && (
+          <div className="space-y-3">
+            {canEdit && (
+              <div className="flex justify-end gap-2">
+                {editing ? (
+                  <>
+                    <button onClick={cancelEdit} className="rounded-lg bg-stone-100 px-3 py-1.5 text-xs">
+                      取消
+                    </button>
+                    <button onClick={save} className="rounded-lg bg-rose-500 px-3 py-1.5 text-xs text-white">
+                      儲存
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={startEdit} className="rounded-lg bg-stone-100 px-3 py-1.5 text-xs">
+                      編輯
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(true)}
+                      className="rounded-lg bg-stone-100 px-3 py-1.5 text-xs text-stone-500"
+                    >
+                      刪除客戶
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+            <DetailTabs
+              c={selected}
+              editing={editing}
+              draft={draft}
+              onDraftChange={(patch) => setDraft((d) => (d ? { ...d, ...patch } : d))}
+            />
+          </div>
+        )}
+      </Modal>
+      <Modal open={confirmDelete} title="確認刪除" onClose={() => setConfirmDelete(false)}>
+        <p className="text-sm text-stone-600">確定要刪除「{selected?.name}」的客戶資料嗎？此動作無法復原。</p>
+        <div className="mt-4 flex justify-end gap-2">
+          <button onClick={() => setConfirmDelete(false)} className="rounded-lg bg-stone-100 px-4 py-2 text-xs">
+            取消
+          </button>
+          <button onClick={remove} className="rounded-lg bg-rose-600 px-4 py-2 text-xs text-white">
+            確定刪除
+          </button>
+        </div>
       </Modal>
       </RequireAccess>
     </div>

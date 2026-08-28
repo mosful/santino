@@ -4,46 +4,24 @@ import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
-import QueryList, { type Column } from "@/components/ui/QueryList";
-import Badge from "@/components/ui/Badge";
+import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import Switch from "@/components/ui/Switch";
 
-type Staff = {
-  id: number;
-  name: string;
-  dept: string;
-  role: string;
-  status: string;
-};
-
-const STAFF: Staff[] = [
+const STAFF: Row[] = [
   { id: 1, name: "王雅婷", dept: "嬰兒室組", role: "護理師", status: "在職" },
   { id: 2, name: "李婉真", dept: "嬰兒室組", role: "護理長", status: "在職" },
   { id: 3, name: "陳小美", dept: "業務組", role: "櫃臺", status: "在職" },
 ];
 
-const columns: Column<Staff>[] = [
+const staffFields: FieldSchema[] = [
   { key: "name", label: "員工姓名" },
   { key: "dept", label: "部門" },
   { key: "role", label: "角色" },
-  { key: "status", label: "狀態", render: (r) => <Badge color={r.status === "在職" ? "green" : "slate"}>{r.status}</Badge> },
+  { key: "status", label: "狀態", type: "select", options: ["在職", "離職"] },
 ];
 
 function StaffTab() {
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2 text-xs">
-        <select className="rounded border border-stone-200 px-2 py-1.5">
-          <option>-所有部門-</option>
-        </select>
-        <label className="flex items-center gap-1">
-          <input type="checkbox" /> 含離職員工
-        </label>
-        <button className="ml-auto rounded bg-rose-500 px-3 py-1.5 text-white">＋ 新增員工</button>
-      </div>
-      <QueryList columns={columns} rows={STAFF} searchPlaceholder="員工編號/姓名" />
-    </div>
-  );
+  return <EditableList moduleNo="10" fields={staffFields} initialRows={STAFF} searchPlaceholder="員工編號/姓名" />;
 }
 
 const DEPT_ROLES = [

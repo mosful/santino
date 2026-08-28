@@ -4,8 +4,7 @@ import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
-import QueryList, { type Column } from "@/components/ui/QueryList";
-import Badge from "@/components/ui/Badge";
+import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 
 const CARE_INDICATORS = [
   "純母乳哺育率",
@@ -54,22 +53,21 @@ function IndicatorTab({ indicators, buildingNote }: { indicators: string[]; buil
   );
 }
 
-type Incident = { id: number; date: string; type: string; target: string; status: string };
-const INCIDENTS: Incident[] = [
+const INCIDENTS: Row[] = [
   { id: 1, date: "2026-08-20", type: "紅臀", target: "寶寶", status: "已結案" },
   { id: 2, date: "2026-08-25", type: "跌倒", target: "媽媽", status: "處理中" },
 ];
-const columns: Column<Incident>[] = [
+const incidentFields: FieldSchema[] = [
   { key: "date", label: "通報日期" },
   { key: "type", label: "類別" },
-  { key: "target", label: "對象屬別" },
-  { key: "status", label: "通報狀態", render: (r) => <Badge color={r.status === "已結案" ? "green" : "amber"}>{r.status}</Badge> },
+  { key: "target", label: "對象屬別", type: "select", options: ["媽媽", "寶寶"] },
+  { key: "status", label: "通報狀態", type: "select", options: ["處理中", "已結案"] },
 ];
 
 function SafetyTab() {
   return (
     <div className="space-y-3">
-      <QueryList columns={columns} rows={INCIDENTS} searchPlaceholder="通報日期/類別/對象" />
+      <EditableList moduleNo="8" fields={incidentFields} initialRows={INCIDENTS} searchPlaceholder="通報日期/類別/對象" />
       <p className="rounded border border-sky-200 bg-sky-50 p-2 text-xs text-sky-700">
         紅臀統計需依分級（0~C級＋額外「二級」分類）分別統計人數，不只是單純發生/未發生人數（新系統需求，見功能清單v16）。
       </p>

@@ -3,33 +3,19 @@
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
-import QueryList, { type Column } from "@/components/ui/QueryList";
-import Badge from "@/components/ui/Badge";
+import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 
-type Reminder = {
-  id: number;
-  name: string;
-  contactDate: string;
-  phone: string;
-  staff: string;
-  status: string;
-};
-
-const SAMPLE: Reminder[] = [
+const SAMPLE: Row[] = [
   { id: 1, name: "陳o如", contactDate: "2026-09-05", phone: "0912-xxx-xxx", staff: "小美", status: "待聯絡" },
   { id: 2, name: "黃o婷", contactDate: "2026-08-30", phone: "0922-xxx-xxx", staff: "阿凱", status: "已聯絡" },
 ];
 
-const columns: Column<Reminder>[] = [
+const reminderFields: FieldSchema[] = [
   { key: "name", label: "孕媽姓名" },
   { key: "contactDate", label: "預計聯絡日" },
   { key: "phone", label: "聯絡電話" },
   { key: "staff", label: "客服人員" },
-  {
-    key: "status",
-    label: "聯絡狀態",
-    render: (r) => <Badge color={r.status === "已聯絡" ? "green" : "amber"}>{r.status}</Badge>,
-  },
+  { key: "status", label: "聯絡狀態", type: "select", options: ["待聯絡", "已聯絡"] },
 ];
 
 // 各分頁共用「聯絡提醒」核心元件：查詢日期區間＋分類＋孕媽姓名＋聯絡電話＋客服人員＋聯絡狀態
@@ -45,7 +31,7 @@ function ContactReminderTab({ note }: { note?: string }) {
         </select>
         <button className="rounded bg-stone-700 px-3 py-1.5 text-white">查詢</button>
       </div>
-      <QueryList columns={columns} rows={SAMPLE} searchPlaceholder="孕媽姓名" />
+      <EditableList moduleNo="7" fields={reminderFields} initialRows={SAMPLE} searchPlaceholder="孕媽姓名" />
       {note && <p className="text-xs text-stone-400">{note}</p>}
     </div>
   );

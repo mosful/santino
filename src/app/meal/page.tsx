@@ -3,33 +3,19 @@
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
-import QueryList, { type Column } from "@/components/ui/QueryList";
-import Badge from "@/components/ui/Badge";
+import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 
-type MealRow = {
-  id: number;
-  room: string;
-  name: string;
-  deliveryMode: string;
-  stayRange: string;
-  restriction: string;
-};
-
-const MEALS: MealRow[] = [
+const MEALS: Row[] = [
   { id: 1, room: "301", name: "邱o乾", deliveryMode: "自然產", stayRange: "08/12~09/12", restriction: "無" },
   { id: 2, room: "302", name: "林o臻", deliveryMode: "剖腹產", stayRange: "08/20~09/17", restriction: "海鮮過敏" },
 ];
 
-const columns: Column<MealRow>[] = [
+const mealFields: FieldSchema[] = [
   { key: "room", label: "房號" },
   { key: "name", label: "媽媽" },
-  { key: "deliveryMode", label: "生產方式" },
+  { key: "deliveryMode", label: "生產方式", type: "select", options: ["自然產", "剖腹產"] },
   { key: "stayRange", label: "入住期間" },
-  {
-    key: "restriction",
-    label: "飲食禁忌",
-    render: (r) => (r.restriction === "無" ? <Badge color="slate">無</Badge> : <Badge color="amber">{r.restriction}</Badge>),
-  },
+  { key: "restriction", label: "飲食禁忌" },
 ];
 
 function OrderTab() {
@@ -38,7 +24,10 @@ function OrderTab() {
       <label className="flex items-center gap-1 text-xs text-stone-500">
         <input type="checkbox" defaultChecked /> 僅顯示入住中
       </label>
-      <QueryList columns={columns} rows={MEALS} searchPlaceholder="房號/媽媽姓名" />
+      <p className="text-xs text-stone-400">
+        房號/媽媽/生產方式/入住期間讀取自2.媽媽照護入住評估資料，飲食禁忌為本模組可維護欄位。
+      </p>
+      <EditableList moduleNo="9" fields={mealFields} initialRows={MEALS} searchPlaceholder="房號/媽媽姓名" />
       <div className="flex gap-2 text-xs">
         <button className="rounded bg-stone-100 px-3 py-1.5">列印飲食備註</button>
         <button className="rounded bg-stone-100 px-3 py-1.5">列印寶寶奶粉清單</button>

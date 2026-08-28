@@ -3,29 +3,20 @@
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
-import QueryList, { type Column } from "@/components/ui/QueryList";
+import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 
-type DoctorStat = {
-  id: number;
-  doctor: string;
-  visitDays: number;
-  scheduled: number;
-  arrived: number;
-  absent: number;
-};
-
-const SAMPLE: DoctorStat[] = [
+const SAMPLE: Row[] = [
   { id: 1, doctor: "陳O如", visitDays: 20, scheduled: 45, arrived: 42, absent: 3 },
   { id: 2, doctor: "王O明", visitDays: 12, scheduled: 30, arrived: 28, absent: 2 },
 ];
 
-const columns: Column<DoctorStat>[] = [
+const doctorFields: FieldSchema[] = [
   { key: "doctor", label: "醫師姓名" },
-  { key: "visitDays", label: "巡診天數" },
-  { key: "scheduled", label: "排診單數" },
-  { key: "arrived", label: "已到單數" },
-  { key: "absent", label: "未到單數" },
+  { key: "visitDays", label: "巡診天數", type: "number" },
+  { key: "scheduled", label: "排診單數", type: "number" },
+  { key: "arrived", label: "已到單數", type: "number" },
+  { key: "absent", label: "未到單數", type: "number" },
 ];
 
 function DeptTab({ showTcmConsent }: { showTcmConsent?: boolean } = {}) {
@@ -38,7 +29,7 @@ function DeptTab({ showTcmConsent }: { showTcmConsent?: boolean } = {}) {
         <input placeholder="查詢區間迄" className="rounded border border-stone-200 px-2 py-1.5" />
         <button className="rounded bg-stone-700 px-3 py-1.5 text-white">查詢</button>
       </div>
-      <QueryList columns={columns} rows={SAMPLE} searchPlaceholder="醫師姓名" />
+      <EditableList moduleNo="6" fields={doctorFields} initialRows={SAMPLE} searchPlaceholder="醫師姓名" />
       {showTcmConsent && (
         <div className="rounded border border-stone-200 p-3">
           <div className="mb-2 text-xs font-medium text-stone-600">中醫看診同意書（6.3.1，新規劃）</div>

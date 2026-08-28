@@ -3,30 +3,28 @@
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
-import QueryList, { type Column } from "@/components/ui/QueryList";
+import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import { COURSES } from "@/lib/mock/dashboard";
 import RegistrationCheckin from "./tabs/RegistrationCheckin";
 import FeeRefundSettings from "./tabs/FeeRefundSettings";
 import NotificationSettings from "./tabs/NotificationSettings";
 
-type Venue = { id: number; name: string; capacity: number; equip: string };
-const VENUES: Venue[] = [
+const VENUES: Row[] = [
   { id: 1, name: "B1會議室", capacity: 20, equip: "投影機/白板" },
   { id: 2, name: "瑜珈教室", capacity: 15, equip: "瑜珈墊" },
 ];
-const venueCols: Column<Venue>[] = [
+const venueFields: FieldSchema[] = [
   { key: "name", label: "場地名稱" },
-  { key: "capacity", label: "容納人數" },
+  { key: "capacity", label: "容納人數", type: "number" },
   { key: "equip", label: "設備" },
 ];
 
-type Lecturer = { id: number; name: string; specialty: string; contact: string };
-const LECTURERS: Lecturer[] = [
+const LECTURERS: Row[] = [
   { id: 1, name: "李老師", specialty: "產後瑜珈", contact: "0933-xxx-xxx" },
   { id: 2, name: "張老師", specialty: "嬰兒按摩", contact: "0955-xxx-xxx" },
 ];
-const lecturerCols: Column<Lecturer>[] = [
+const lecturerFields: FieldSchema[] = [
   { key: "name", label: "講師姓名" },
   { key: "specialty", label: "專長" },
   { key: "contact", label: "聯絡方式" },
@@ -65,8 +63,8 @@ export default function CoursePage() {
             label: "前台課程月曆",
             content: <PlaceholderNotice text="即1.中控中心＞課程管理，內容不變，請至首頁查看（交叉參照，不重複實作）。" />,
           },
-          { key: "venue", label: "媽媽教室場地管理", content: <QueryList columns={venueCols} rows={VENUES} searchPlaceholder="場地名稱" /> },
-          { key: "lecturer", label: "課程講師資料管理", content: <QueryList columns={lecturerCols} rows={LECTURERS} searchPlaceholder="講師姓名" /> },
+          { key: "venue", label: "媽媽教室場地管理", content: <EditableList moduleNo="13" fields={venueFields} initialRows={VENUES} searchPlaceholder="場地名稱" /> },
+          { key: "lecturer", label: "課程講師資料管理", content: <EditableList moduleNo="13" fields={lecturerFields} initialRows={LECTURERS} searchPlaceholder="講師姓名" /> },
           { key: "registration", label: "課程與報名管理", content: <CourseRegistrationTab /> },
           { key: "activity", label: "課程活動管理", content: <PlaceholderNotice text="活動類型設定、活動時段規劃，與常態課程差異化管理。" /> },
           { key: "checkin", label: "報名名單與簽到", content: <RegistrationCheckin /> },

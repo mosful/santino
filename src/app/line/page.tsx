@@ -3,29 +3,20 @@
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
-import QueryList, { type Column } from "@/components/ui/QueryList";
-import Badge from "@/components/ui/Badge";
+import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import MemberBinding from "./tabs/MemberBinding";
 import BroadcastMessage from "./tabs/BroadcastMessage";
 import CourseNotify from "./tabs/CourseNotify";
 import MessageStats from "./tabs/MessageStats";
 
-type Friend = { id: number; name: string; category: "好友" | "會員" | "員工" | "廠商" | "封鎖" };
-const FRIENDS: Friend[] = [
+const FRIENDS: Row[] = [
   { id: 1, name: "邱o乾", category: "會員" },
   { id: 2, name: "LINE用戶88231", category: "好友" },
   { id: 3, name: "陳小美（客服）", category: "員工" },
 ];
-const colorMap: Record<Friend["category"], "green" | "amber" | "blue" | "purple" | "slate"> = {
-  好友: "green",
-  會員: "amber",
-  員工: "blue",
-  廠商: "purple",
-  封鎖: "slate",
-};
-const columns: Column<Friend>[] = [
+const friendFields: FieldSchema[] = [
   { key: "name", label: "顯示名稱" },
-  { key: "category", label: "分類", render: (r) => <Badge color={colorMap[r.category]}>{r.category}</Badge> },
+  { key: "category", label: "分類", type: "select", options: ["好友", "會員", "員工", "廠商", "封鎖"] },
 ];
 
 function FriendTab() {
@@ -34,7 +25,7 @@ function FriendTab() {
       <div className="flex flex-wrap gap-2 text-xs">
         <span className="text-stone-400">席位數：3/5（LINE多人客服席位授權，非院內床位）</span>
       </div>
-      <QueryList columns={columns} rows={FRIENDS} searchPlaceholder="顯示名稱" />
+      <EditableList moduleNo="14" fields={friendFields} initialRows={FRIENDS} searchPlaceholder="顯示名稱" />
     </div>
   );
 }

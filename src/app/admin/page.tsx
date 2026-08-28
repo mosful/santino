@@ -6,6 +6,7 @@ import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import ReportPicker from "@/components/reports/ReportPicker";
 import { POSTPARTUM_REPORTS, ACCOUNTING_REPORTS } from "@/lib/reports";
 import SystemSettings from "./tabs/SystemSettings";
+import PhraseLibrarySettings from "./tabs/PhraseLibrarySettings";
 
 type SimpleRow = { id: number; name: string; note: string };
 
@@ -67,6 +68,7 @@ export default function AdminPage() {
           },
           { key: "other", label: "產後其他設定", content: <SimpleListTab rows={OTHER_SETTINGS_ROWS} placeholder="設定項目" /> },
           { key: "system", label: "系統參數設定", content: <SystemSettings /> },
+          { key: "phrases", label: "常用語／片語庫設定", content: <PhraseLibrarySettings /> },
         ]}
       />
     </div>

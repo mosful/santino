@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Switch from "@/components/ui/Switch";
-import PhraseManager from "@/components/phrases/PhraseManager";
 
 export default function SystemSettings() {
   const [multiWindowLock, setMultiWindowLock] = useState(false);
@@ -42,13 +41,6 @@ export default function SystemSettings() {
         <p className="mt-1 text-xs text-slate-400">
           修改紀錄需正確歸屬實際登入員工，不可用共用帳號代填。
         </p>
-      </div>
-
-      <div className="rounded-xl border border-slate-200 p-3">
-        <div className="mb-2 text-xs font-medium text-slate-600">
-          常用語／片語庫設定（系統開發總則第10條，供各護理表單引用）
-        </div>
-        <PhraseManager />
       </div>
     </div>
   );

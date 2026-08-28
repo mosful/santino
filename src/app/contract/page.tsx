@@ -1,18 +1,19 @@
 import Tabs from "@/components/ui/Tabs";
-import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import ContractList from "./tabs/ContractList";
 import NewContract from "./tabs/NewContract";
 import ContractTerms from "./tabs/ContractTerms";
+import ContractTemplates from "./tabs/ContractTemplates";
+import RenewalManagement from "./tabs/RenewalManagement";
+import TerminationManagement from "./tabs/TerminationManagement";
+import SignStatusDashboard from "./tabs/SignStatusDashboard";
+import ContractChangeOrder from "./tabs/ContractChangeOrder";
 
-const NEW_PLANNED = [
-  "合約範本管理",
-  "續約管理",
-  "退約／作廢管理",
-  "合約簽署狀態總覽",
-  "合約變更單（收費/房型/天數異動，需選單化＋留log）",
+const NOT_NOW = [
+  "入住指導單",
+  "入住當天繳費通知單",
+  "寶寶脫離合約（托嬰邏輯已確認：另立新合約＋以車號識別）",
+  "簽核流程（明確排除）",
 ];
-
-const NOT_NOW = ["入住指導單", "入住當天繳費通知單", "寶寶脫離合約（托嬰邏輯已確認：另立新合約＋以車號識別）", "簽核流程（明確排除）"];
 
 export default function ContractPage() {
   return (
@@ -23,15 +24,11 @@ export default function ContractPage() {
           { key: "list", label: "合約查詢與列表", content: <ContractList /> },
           { key: "new", label: "新增合約", content: <NewContract /> },
           { key: "terms", label: "合約條款檢視", content: <ContractTerms /> },
-          {
-            key: "planned",
-            label: "新規劃項目",
-            content: (
-              <PlaceholderNotice
-                text={"以下為全新規劃、無截圖可對照，待建置：" + NEW_PLANNED.join("／")}
-              />
-            ),
-          },
+          { key: "templates", label: "合約範本管理", content: <ContractTemplates /> },
+          { key: "renewal", label: "續約管理", content: <RenewalManagement /> },
+          { key: "termination", label: "退約／作廢管理", content: <TerminationManagement /> },
+          { key: "sign-status", label: "合約簽署狀態總覽", content: <SignStatusDashboard /> },
+          { key: "change-order", label: "合約變更單", content: <ContractChangeOrder /> },
         ]}
       />
       <div className="mt-6 rounded border border-dashed border-slate-300 p-3 text-xs text-slate-400">

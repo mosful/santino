@@ -4,6 +4,9 @@ import Tabs from "@/components/ui/Tabs";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import { COURSES } from "@/lib/mock/dashboard";
+import RegistrationCheckin from "./tabs/RegistrationCheckin";
+import FeeRefundSettings from "./tabs/FeeRefundSettings";
+import NotificationSettings from "./tabs/NotificationSettings";
 
 type Venue = { id: number; name: string; capacity: number; equip: string };
 const VENUES: Venue[] = [
@@ -63,11 +66,9 @@ export default function CoursePage() {
           { key: "lecturer", label: "課程講師資料管理", content: <QueryList columns={lecturerCols} rows={LECTURERS} searchPlaceholder="講師姓名" /> },
           { key: "registration", label: "課程與報名管理", content: <CourseRegistrationTab /> },
           { key: "activity", label: "課程活動管理", content: <PlaceholderNotice text="活動類型設定、活動時段規劃，與常態課程差異化管理。" /> },
-          {
-            key: "planned",
-            label: "新規劃項目",
-            content: <PlaceholderNotice text="報名名單與簽到／課程收費與退費設定／課程通知設定：全新規劃，無截圖可對照，待建置。" />,
-          },
+          { key: "checkin", label: "報名名單與簽到", content: <RegistrationCheckin /> },
+          { key: "fee", label: "課程收費與退費設定", content: <FeeRefundSettings /> },
+          { key: "notify", label: "課程通知設定", content: <NotificationSettings /> },
         ]}
       />
     </div>

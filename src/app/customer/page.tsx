@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
+import RequireAccess from "@/components/ui/RequireAccess";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Modal from "@/components/ui/Modal";
 import Tabs from "@/components/ui/Tabs";
@@ -114,6 +115,7 @@ export default function CustomerPage() {
   const [selected, setSelected] = useState<Customer | null>(null);
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+      <RequireAccess moduleNo="5">
       <PageHeader
         title="5. 客戶資料"
         action={
@@ -133,6 +135,7 @@ export default function CustomerPage() {
       >
         {selected && <DetailTabs c={selected} />}
       </Modal>
+      </RequireAccess>
     </div>
   );
 }

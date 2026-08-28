@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
+import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Badge from "@/components/ui/Badge";
@@ -79,6 +80,7 @@ function SafetyTab() {
 export default function KpiPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+      <RequireAccess moduleNo="8">
       <PageHeader title="8. 評鑑指標" />
       <TabsFromUrl
         tabs={[
@@ -105,6 +107,7 @@ export default function KpiPage() {
           { key: "safety", label: "病安指標", content: <SafetyTab /> },
         ]}
       />
+      </RequireAccess>
     </div>
   );
 }

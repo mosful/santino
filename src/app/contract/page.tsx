@@ -1,4 +1,5 @@
 import PageHeader from "@/components/ui/PageHeader";
+import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import ContractList from "./tabs/ContractList";
 import NewContract from "./tabs/NewContract";
@@ -19,6 +20,7 @@ const NOT_NOW = [
 export default function ContractPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+      <RequireAccess moduleNo="12">
       <PageHeader title="12. 合約管理" />
       <TabsFromUrl
         tabs={[
@@ -35,6 +37,7 @@ export default function ContractPage() {
       <div className="mt-6 rounded border border-dashed border-stone-300 p-3 text-xs text-stone-400">
         本階段不做／明確排除：{NOT_NOW.join("、")}
       </div>
+      </RequireAccess>
     </div>
   );
 }

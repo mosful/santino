@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
+import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Badge from "@/components/ui/Badge";
@@ -125,6 +126,7 @@ function PermissionTab() {
 export default function HrPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+      <RequireAccess moduleNo="10">
       <PageHeader title="10. 人事考勤" />
       <TabsFromUrl
         tabs={[
@@ -132,6 +134,7 @@ export default function HrPage() {
           { key: "permission", label: "權限設定", content: <PermissionTab /> },
         ]}
       />
+      </RequireAccess>
     </div>
   );
 }

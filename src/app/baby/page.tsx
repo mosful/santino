@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
+import RequireAccess from "@/components/ui/RequireAccess";
 import BabyRoomCard from "@/components/baby/BabyRoomCard";
 import Modal from "@/components/ui/Modal";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
@@ -58,6 +59,7 @@ export default function BabyPage() {
 
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+      <RequireAccess moduleNo="3">
       <PageHeader
         title="3. 寶寶照護（嬰兒室房卡）"
         action={
@@ -98,6 +100,7 @@ export default function BabyPage() {
       <Modal open={!!open} title={`${open?.room ?? ""}｜${keyLabel}`} onClose={() => setOpen(null)} wide>
         {renderForm()}
       </Modal>
+      </RequireAccess>
     </div>
   );
 }

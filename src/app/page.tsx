@@ -1,4 +1,5 @@
 import PageHeader from "@/components/ui/PageHeader";
+import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
@@ -137,6 +138,7 @@ function ValueAddedTab() {
 export default function HomePage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+      <RequireAccess moduleNo="1">
       <PageHeader title="1. 中控中心" />
       <TabsFromUrl
         tabs={[
@@ -147,6 +149,7 @@ export default function HomePage() {
           { key: "value-added", label: "加值服務", content: <ValueAddedTab /> },
         ]}
       />
+      </RequireAccess>
     </div>
   );
 }

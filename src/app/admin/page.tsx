@@ -1,6 +1,7 @@
 "use client";
 
 import PageHeader from "@/components/ui/PageHeader";
+import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
@@ -52,6 +53,7 @@ function RoomDataTab() {
 export default function AdminPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+      <RequireAccess moduleNo="15">
       <PageHeader title="15. 後台管理" />
       <TabsFromUrl
         tabs={[
@@ -72,6 +74,7 @@ export default function AdminPage() {
           { key: "phrases", label: "常用語／片語庫設定", content: <PhraseLibrarySettings /> },
         ]}
       />
+      </RequireAccess>
     </div>
   );
 }

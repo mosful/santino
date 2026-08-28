@@ -1,6 +1,7 @@
 "use client";
 
 import PageHeader from "@/components/ui/PageHeader";
+import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Badge from "@/components/ui/Badge";
@@ -53,6 +54,7 @@ function ContactReminderTab({ note }: { note?: string }) {
 export default function CarePage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+      <RequireAccess moduleNo="7">
       <PageHeader title="7. 媽媽關懷" />
       <TabsFromUrl
         tabs={[
@@ -68,6 +70,7 @@ export default function CarePage() {
           { key: "pregnancy", label: "孕期關懷", content: <ContactReminderTab /> },
         ]}
       />
+      </RequireAccess>
     </div>
   );
 }

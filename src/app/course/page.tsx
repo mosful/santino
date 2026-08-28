@@ -1,6 +1,7 @@
 "use client";
 
 import PageHeader from "@/components/ui/PageHeader";
+import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
@@ -55,6 +56,7 @@ function CourseRegistrationTab() {
 export default function CoursePage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+      <RequireAccess moduleNo="13">
       <PageHeader title="13. 課程管理" />
       <TabsFromUrl
         tabs={[
@@ -72,6 +74,7 @@ export default function CoursePage() {
           { key: "notify", label: "課程通知設定", content: <NotificationSettings /> },
         ]}
       />
+      </RequireAccess>
     </div>
   );
 }

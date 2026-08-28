@@ -1,6 +1,7 @@
 "use client";
 
 import PageHeader from "@/components/ui/PageHeader";
+import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Badge from "@/components/ui/Badge";
@@ -41,6 +42,7 @@ function FriendTab() {
 export default function LinePage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+      <RequireAccess moduleNo="14">
       <PageHeader title="14. LINE官方帳號管理" />
       <p className="mb-3 text-xs text-amber-600">
         ⚠ LINE App串接與推播通知列為第二階段（本次不做，僅保留架構擴充彈性）；
@@ -55,6 +57,7 @@ export default function LinePage() {
           { key: "stats", label: "訊息發送成效統計", content: <MessageStats /> },
         ]}
       />
+      </RequireAccess>
     </div>
   );
 }

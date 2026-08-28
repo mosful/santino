@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
+import RequireAccess from "@/components/ui/RequireAccess";
 import OpsRoomCard from "@/components/room/OpsRoomCard";
 import Modal from "@/components/ui/Modal";
 import { OPS_ROOMS, DEFERRED_ROOM_ITEMS } from "@/lib/mock/opsRoom";
@@ -47,6 +48,7 @@ export default function RoomPage() {
 
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+      <RequireAccess moduleNo="4">
       <PageHeader
         title="4. 房間動態（房務版房卡）"
         action={
@@ -75,6 +77,7 @@ export default function RoomPage() {
       <Modal open={!!open} title={`${open?.room ?? ""}｜${keyLabel}`} onClose={() => setOpen(null)} wide>
         {renderForm()}
       </Modal>
+      </RequireAccess>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
+import RequireAccess from "@/components/ui/RequireAccess";
 import MamaRoomCard from "@/components/mama/MamaRoomCard";
 import Modal from "@/components/ui/Modal";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
@@ -51,6 +52,7 @@ export default function MamaPage() {
 
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+      <RequireAccess moduleNo="2">
       <PageHeader
         title="2. 媽媽照護（護理版房卡）"
         action={
@@ -101,6 +103,7 @@ export default function MamaPage() {
       >
         {renderForm()}
       </Modal>
+      </RequireAccess>
     </div>
   );
 }

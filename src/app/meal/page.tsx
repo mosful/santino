@@ -1,6 +1,7 @@
 "use client";
 
 import PageHeader from "@/components/ui/PageHeader";
+import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Badge from "@/components/ui/Badge";
@@ -86,6 +87,7 @@ function SimpleStub({ text }: { text: string }) {
 export default function MealPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+      <RequireAccess moduleNo="9">
       <PageHeader title="9. 月子餐" />
       <TabsFromUrl
         tabs={[
@@ -97,6 +99,7 @@ export default function MealPage() {
           { key: "tea-cycle", label: "循環茶飲管理", content: <CycleTeaTab /> },
         ]}
       />
+      </RequireAccess>
     </div>
   );
 }

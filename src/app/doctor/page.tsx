@@ -1,6 +1,7 @@
 "use client";
 
 import PageHeader from "@/components/ui/PageHeader";
+import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
@@ -51,6 +52,7 @@ function DeptTab({ showTcmConsent }: { showTcmConsent?: boolean } = {}) {
 export default function DoctorPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+      <RequireAccess moduleNo="6">
       <PageHeader title="6. 醫師巡診" />
       <TabsFromUrl
         tabs={[
@@ -59,6 +61,7 @@ export default function DoctorPage() {
           { key: "tcm", label: "中醫師", content: <DeptTab showTcmConsent /> },
         ]}
       />
+      </RequireAccess>
     </div>
   );
 }

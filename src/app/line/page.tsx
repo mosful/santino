@@ -3,7 +3,10 @@
 import Tabs from "@/components/ui/Tabs";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Badge from "@/components/ui/Badge";
-import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
+import MemberBinding from "./tabs/MemberBinding";
+import BroadcastMessage from "./tabs/BroadcastMessage";
+import CourseNotify from "./tabs/CourseNotify";
+import MessageStats from "./tabs/MessageStats";
 
 type Friend = { id: number; name: string; category: "好友" | "會員" | "員工" | "廠商" | "封鎖" };
 const FRIENDS: Friend[] = [
@@ -40,31 +43,15 @@ export default function LinePage() {
       <h1 className="mb-4 text-lg font-bold">14. LINE官方帳號管理</h1>
       <p className="mb-3 text-xs text-amber-600">
         ⚠ LINE App串接與推播通知列為第二階段（本次不做，僅保留架構擴充彈性）；
-        Webhook對外HTTPS曝露方式需另行規劃（見規格文件7.6節）。
+        Webhook對外HTTPS曝露方式需另行規劃（見規格文件7.6節）。以下畫面為全新規劃示意稿，無舊系統截圖可對照。
       </p>
       <Tabs
         tabs={[
           { key: "friends", label: "好友管理", content: <FriendTab /> },
-          {
-            key: "binding",
-            label: "會員LINE綁定管理",
-            content: <PlaceholderNotice text="全新規劃：LIFF綁定流程，會員與LINE個人帳號綁定/解除。" />,
-          },
-          {
-            key: "broadcast",
-            label: "群發訊息",
-            content: <PlaceholderNotice text="全新規劃：訊息範本管理／受眾分眾設定／發送排程與記錄。" />,
-          },
-          {
-            key: "course-notify",
-            label: "課程通知",
-            content: <PlaceholderNotice text="全新規劃：報名成功／開課提醒／取消異動通知。" />,
-          },
-          {
-            key: "stats",
-            label: "訊息發送成效統計",
-            content: <PlaceholderNotice text="全新規劃：發送量／送達率／已讀率／連結點擊率統計。" />,
-          },
+          { key: "binding", label: "會員LINE綁定管理", content: <MemberBinding /> },
+          { key: "broadcast", label: "群發訊息", content: <BroadcastMessage /> },
+          { key: "course-notify", label: "課程通知", content: <CourseNotify /> },
+          { key: "stats", label: "訊息發送成效統計", content: <MessageStats /> },
         ]}
       />
     </div>

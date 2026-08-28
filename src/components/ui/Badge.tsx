@@ -6,7 +6,7 @@ export default function Badge({
   color?: "slate" | "rose" | "green" | "amber" | "blue" | "purple";
 }) {
   const colorMap: Record<string, string> = {
-    slate: "bg-slate-100 text-slate-600",
+    slate: "bg-stone-100 text-stone-600",
     rose: "bg-rose-100 text-rose-700",
     green: "bg-emerald-100 text-emerald-700",
     amber: "bg-amber-100 text-amber-700",

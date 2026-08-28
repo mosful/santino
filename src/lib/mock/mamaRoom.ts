@@ -32,7 +32,7 @@ export const MAMA_ROOMS: MamaRoom[] = [
 ];
 
 export const STATUS_COLOR: Record<RoomStatus, string> = {
-  空房: "bg-white border-slate-200",
+  空房: "bg-white border-stone-200",
   入住: "bg-emerald-50 border-emerald-300",
   親子同室: "bg-pink-50 border-pink-300",
   打掃: "bg-amber-50 border-amber-300",

@@ -36,12 +36,12 @@ export default function ContractTemplates() {
 
   return (
     <div className="space-y-3 text-sm">
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-stone-400">
         維護標準21條條款範本，供新增合約套用，支援版本管理；同時間僅一個版本可為「啟用中」，
         新客戶簽署一律套用啟用中版本，不影響已簽署的舊客戶。
       </p>
       <table className="w-full text-left text-sm">
-        <thead className="bg-slate-50 text-xs text-slate-500">
+        <thead className="bg-stone-50 text-xs text-stone-500">
           <tr>
             <th className="px-3 py-2">範本名稱</th>
             <th className="px-3 py-2">版本</th>
@@ -52,7 +52,7 @@ export default function ContractTemplates() {
         </thead>
         <tbody>
           {templates.map((t) => (
-            <tr key={t.id} className="border-t border-slate-100">
+            <tr key={t.id} className="border-t border-stone-100">
               <td className="px-3 py-2">{t.name}</td>
               <td className="px-3 py-2">
                 <Badge color="slate">{t.version}</Badge>
@@ -73,16 +73,16 @@ export default function ContractTemplates() {
       <button className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">＋ 新增範本版本</button>
 
       {editing && (
-        <div className="rounded border border-slate-200 p-3">
+        <div className="rounded border border-stone-200 p-3">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-600">編輯：{editing.name}</span>
-            <button onClick={() => setEditing(null)} className="text-xs text-slate-400">
+            <span className="text-xs font-medium text-stone-600">編輯：{editing.name}</span>
+            <button onClick={() => setEditing(null)} className="text-xs text-stone-400">
               收合
             </button>
           </div>
-          <ul className="space-y-1 text-xs text-slate-600">
+          <ul className="space-y-1 text-xs text-stone-600">
             {CLAUSES.map((c) => (
-              <li key={c} className="rounded border border-slate-100 px-2 py-1.5">
+              <li key={c} className="rounded border border-stone-100 px-2 py-1.5">
                 {c}
               </li>
             ))}

@@ -40,7 +40,7 @@ function RoomDataTab() {
   return (
     <div className="space-y-2 text-xs">
       {["房型設定", "房間資料", "房型價格設定", "房價折扣設定"].map((n) => (
-        <div key={n} className="rounded border border-slate-200 p-2">
+        <div key={n} className="rounded border border-stone-200 p-2">
           {n}
         </div>
       ))}

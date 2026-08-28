@@ -34,18 +34,18 @@ function CourseRegistrationTab() {
   return (
     <div className="space-y-2">
       {COURSES.map((c) => (
-        <div key={c.id} className="flex items-center justify-between rounded border border-slate-200 p-2 text-sm">
+        <div key={c.id} className="flex items-center justify-between rounded border border-stone-200 p-2 text-sm">
           <span>
             {c.name}｜{c.time}
           </span>
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-stone-400">
             已報名 {c.enrolled}/{c.cap}
           </span>
         </div>
       ))}
       <div className="flex gap-2 text-xs">
-        <button className="rounded bg-slate-100 px-3 py-1.5">＋新增團課</button>
-        <button className="rounded bg-slate-100 px-3 py-1.5">自費報名</button>
+        <button className="rounded bg-stone-100 px-3 py-1.5">＋新增團課</button>
+        <button className="rounded bg-stone-100 px-3 py-1.5">自費報名</button>
       </div>
     </div>
   );

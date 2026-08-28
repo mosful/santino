@@ -43,33 +43,33 @@ export default function ContractChangeOrder() {
       <div className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-700">
         ⚠ 開放對象：僅主管／櫃臺Leader層級帳號可直接修改（原舊系統此類修改被廠商鎖權限）。
       </div>
-      <div className="rounded border border-slate-200 p-3">
-        <div className="mb-2 text-xs font-medium text-slate-600">新增變更單</div>
+      <div className="rounded border border-stone-200 p-3">
+        <div className="mb-2 text-xs font-medium text-stone-600">新增變更單</div>
         <div className="grid grid-cols-3 gap-3 text-xs">
           <div>
-            <label className="mb-1 block text-slate-500">變更原因（選單化，非手動輸入）</label>
-            <select value={reason} onChange={(e) => setReason(e.target.value)} className="w-full rounded border border-slate-200 px-2 py-1.5">
+            <label className="mb-1 block text-stone-500">變更原因（選單化，非手動輸入）</label>
+            <select value={reason} onChange={(e) => setReason(e.target.value)} className="w-full rounded border border-stone-200 px-2 py-1.5">
               <option>房型變更</option>
               <option>天數增</option>
               <option>天數減</option>
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-slate-500">改前金額</label>
+            <label className="mb-1 block text-stone-500">改前金額</label>
             <input
               type="number"
               value={before}
               onChange={(e) => setBefore(Number(e.target.value))}
-              className="w-full rounded border border-slate-200 px-2 py-1.5"
+              className="w-full rounded border border-stone-200 px-2 py-1.5"
             />
           </div>
           <div>
-            <label className="mb-1 block text-slate-500">改後金額</label>
+            <label className="mb-1 block text-stone-500">改後金額</label>
             <input
               type="number"
               value={after}
               onChange={(e) => setAfter(Number(e.target.value))}
-              className="w-full rounded border border-slate-200 px-2 py-1.5"
+              className="w-full rounded border border-stone-200 px-2 py-1.5"
             />
           </div>
         </div>
@@ -80,10 +80,10 @@ export default function ContractChangeOrder() {
         </div>
       </div>
 
-      <div className="rounded border border-slate-200 p-3">
-        <div className="mb-2 text-xs font-medium text-slate-600">變更歷程 Log（誰改的／何時／改前改後金額）</div>
+      <div className="rounded border border-stone-200 p-3">
+        <div className="mb-2 text-xs font-medium text-stone-600">變更歷程 Log（誰改的／何時／改前改後金額）</div>
         <table className="w-full text-left text-xs">
-          <thead className="text-slate-500">
+          <thead className="text-stone-500">
             <tr>
               <th className="px-2 py-1">合約編號</th>
               <th className="px-2 py-1">變更原因</th>
@@ -95,7 +95,7 @@ export default function ContractChangeOrder() {
           </thead>
           <tbody>
             {logs.map((l) => (
-              <tr key={l.id} className="border-t border-slate-100">
+              <tr key={l.id} className="border-t border-stone-100">
                 <td className="px-2 py-1.5">{l.contractNo}</td>
                 <td className="px-2 py-1.5">
                   <Badge color="amber">{l.reason}</Badge>
@@ -110,9 +110,9 @@ export default function ContractChangeOrder() {
         </table>
       </div>
 
-      <div className="rounded border border-slate-200 p-3">
-        <div className="mb-2 text-xs font-medium text-slate-600">每日自費加值項目明細</div>
-        <p className="text-xs text-slate-400">
+      <div className="rounded border border-stone-200 p-3">
+        <div className="mb-2 text-xs font-medium text-stone-600">每日自費加值項目明細</div>
+        <p className="text-xs text-stone-400">
           中醫／洗頭／按摩／額外課程等，以每日明細方式記錄加成金額，方便日後對帳。
         </p>
       </div>

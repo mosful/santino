@@ -31,7 +31,7 @@ export default function ContractPage() {
           { key: "change-order", label: "合約變更單", content: <ContractChangeOrder /> },
         ]}
       />
-      <div className="mt-6 rounded border border-dashed border-slate-300 p-3 text-xs text-slate-400">
+      <div className="mt-6 rounded border border-dashed border-stone-300 p-3 text-xs text-stone-400">
         本階段不做／明確排除：{NOT_NOW.join("、")}
       </div>
     </div>

@@ -22,13 +22,13 @@ export default function RegistrationCheckin() {
 
   return (
     <div className="space-y-3 text-sm">
-      <select value={session} onChange={(e) => setSession(e.target.value)} className="rounded border border-slate-200 px-2 py-1.5 text-xs">
+      <select value={session} onChange={(e) => setSession(e.target.value)} className="rounded border border-stone-200 px-2 py-1.5 text-xs">
         {SESSIONS.map((s) => (
           <option key={s}>{s}</option>
         ))}
       </select>
       <table className="w-full text-left text-xs">
-        <thead className="text-slate-500">
+        <thead className="text-stone-500">
           <tr>
             <th className="px-2 py-1">姓名</th>
             <th className="px-2 py-1">電話</th>
@@ -37,7 +37,7 @@ export default function RegistrationCheckin() {
         </thead>
         <tbody>
           {enrollees.map((e) => (
-            <tr key={e.id} className="border-t border-slate-100">
+            <tr key={e.id} className="border-t border-stone-100">
               <td className="px-2 py-1.5">{e.name}</td>
               <td className="px-2 py-1.5">{e.phone}</td>
               <td className="px-2 py-1.5">
@@ -49,7 +49,7 @@ export default function RegistrationCheckin() {
           ))}
         </tbody>
       </table>
-      <p className="text-xs text-slate-400">未簽到者自動歸類為「未到記錄」（目前{noShow}人），供15.4.10媽媽報名記錄等報表統計。</p>
+      <p className="text-xs text-stone-400">未簽到者自動歸類為「未到記錄」（目前{noShow}人），供15.4.10媽媽報名記錄等報表統計。</p>
     </div>
   );
 }

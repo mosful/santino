@@ -14,7 +14,7 @@ function TemplateTab() {
   return (
     <div className="space-y-2 text-sm">
       <table className="w-full text-left text-xs">
-        <thead className="text-slate-500">
+        <thead className="text-stone-500">
           <tr>
             <th className="px-2 py-1">範本名稱</th>
             <th className="px-2 py-1">類型</th>
@@ -23,7 +23,7 @@ function TemplateTab() {
         </thead>
         <tbody>
           {TEMPLATES.map((t) => (
-            <tr key={t.id} className="border-t border-slate-100">
+            <tr key={t.id} className="border-t border-stone-100">
               <td className="px-2 py-1.5">{t.name}</td>
               <td className="px-2 py-1.5">
                 <Badge color="purple">{t.type}</Badge>
@@ -49,7 +49,7 @@ function AudienceTab() {
   });
   return (
     <div className="space-y-3 text-sm">
-      <p className="text-xs text-slate-400">分眾條件轉換為LINE Narrowcast API所需的audience物件。</p>
+      <p className="text-xs text-stone-400">分眾條件轉換為LINE Narrowcast API所需的audience物件。</p>
       <div className="space-y-2 text-xs">
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={conditions.level} onChange={(e) => setConditions((c) => ({ ...c, level: e.target.checked }))} />
@@ -80,8 +80,8 @@ function AudienceTab() {
           課程報名狀態（已報名／未報名特定課程）
         </label>
       </div>
-      <button className="rounded bg-slate-700 px-3 py-1.5 text-xs text-white">建立/更新 audience 群組</button>
-      <p className="text-xs text-slate-400">
+      <button className="rounded bg-stone-700 px-3 py-1.5 text-xs text-white">建立/更新 audience 群組</button>
+      <p className="text-xs text-stone-400">
         建議提前建立好audience群組，不要每次發送才即時計算（Narrowcast為非同步API）。
       </p>
     </div>
@@ -96,23 +96,23 @@ const RECORDS: SendRecord[] = [
 function ScheduleTab() {
   return (
     <div className="space-y-3 text-sm">
-      <div className="rounded border border-slate-200 p-3">
-        <div className="mb-2 text-xs font-medium text-slate-600">新增排程</div>
+      <div className="rounded border border-stone-200 p-3">
+        <div className="mb-2 text-xs font-medium text-stone-600">新增排程</div>
         <div className="grid grid-cols-3 gap-2 text-xs">
-          <select className="rounded border border-slate-200 px-2 py-1.5">
+          <select className="rounded border border-stone-200 px-2 py-1.5">
             {TEMPLATES.map((t) => (
               <option key={t.id}>{t.name}</option>
             ))}
           </select>
-          <input placeholder="受眾群組" className="rounded border border-slate-200 px-2 py-1.5" />
-          <input placeholder="發送時間" className="rounded border border-slate-200 px-2 py-1.5" />
+          <input placeholder="受眾群組" className="rounded border border-stone-200 px-2 py-1.5" />
+          <input placeholder="發送時間" className="rounded border border-stone-200 px-2 py-1.5" />
         </div>
         <div className="mt-2 flex justify-end">
           <button className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">建立排程</button>
         </div>
       </div>
       <table className="w-full text-left text-xs">
-        <thead className="text-slate-500">
+        <thead className="text-stone-500">
           <tr>
             <th className="px-2 py-1">範本</th>
             <th className="px-2 py-1">受眾</th>
@@ -122,7 +122,7 @@ function ScheduleTab() {
         </thead>
         <tbody>
           {RECORDS.map((r) => (
-            <tr key={r.id} className="border-t border-slate-100">
+            <tr key={r.id} className="border-t border-stone-100">
               <td className="px-2 py-1.5">{r.template}</td>
               <td className="px-2 py-1.5">{r.audience}</td>
               <td className="px-2 py-1.5">{r.time}</td>

@@ -33,7 +33,7 @@ export default function MamaRoomCard({
       </div>
 
       {empty ? (
-        <div className="py-4 text-center text-xs text-slate-400">
+        <div className="py-4 text-center text-xs text-stone-400">
           {room.status === "空房" ? "目前空房" : `狀態：${room.status}`}
         </div>
       ) : (
@@ -47,7 +47,7 @@ export default function MamaRoomCard({
                 </span>
               )}
             </div>
-            <div className="text-xs text-slate-500">
+            <div className="text-xs text-stone-500">
               病歷號 {room.chartNo}｜{room.stayRange}（第{room.stayDay}天）｜寶寶 {room.babyCount}
             </div>
             {room.alert && (
@@ -64,7 +64,7 @@ export default function MamaRoomCard({
                   "rounded-full px-3 py-1.5 text-xs font-medium transition-colors " +
                   (k.core
                     ? "bg-rose-500 text-white hover:bg-rose-600 active:bg-rose-700"
-                    : "bg-slate-100 text-slate-500 hover:bg-slate-200 active:bg-slate-300")
+                    : "bg-stone-100 text-stone-500 hover:bg-stone-200 active:bg-stone-300")
                 }
               >
                 {k.label}

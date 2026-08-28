@@ -30,16 +30,16 @@ function DeptTab({ showTcmConsent }: { showTcmConsent?: boolean } = {}) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <input placeholder="醫師姓名篩選" className="rounded border border-slate-200 px-2 py-1.5" />
-        <input placeholder="查詢區間起" className="rounded border border-slate-200 px-2 py-1.5" />
+        <input placeholder="醫師姓名篩選" className="rounded border border-stone-200 px-2 py-1.5" />
+        <input placeholder="查詢區間起" className="rounded border border-stone-200 px-2 py-1.5" />
         <span>～</span>
-        <input placeholder="查詢區間迄" className="rounded border border-slate-200 px-2 py-1.5" />
-        <button className="rounded bg-slate-700 px-3 py-1.5 text-white">查詢</button>
+        <input placeholder="查詢區間迄" className="rounded border border-stone-200 px-2 py-1.5" />
+        <button className="rounded bg-stone-700 px-3 py-1.5 text-white">查詢</button>
       </div>
       <QueryList columns={columns} rows={SAMPLE} searchPlaceholder="醫師姓名" />
       {showTcmConsent && (
-        <div className="rounded border border-slate-200 p-3">
-          <div className="mb-2 text-xs font-medium text-slate-600">中醫看診同意書（6.3.1，新規劃）</div>
+        <div className="rounded border border-stone-200 p-3">
+          <div className="mb-2 text-xs font-medium text-stone-600">中醫看診同意書（6.3.1，新規劃）</div>
           <PlaceholderNotice text="中醫看診除預約掛號外，另需一份獨立的同意書文件；實際欄位內容尚未與客戶確認，先保留版位（見規格文件8.2節待確認事項）。" />
         </div>
       )}

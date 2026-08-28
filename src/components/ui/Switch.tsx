@@ -18,7 +18,7 @@ export default function Switch({
         onClick={() => onChange(!checked)}
         className={
           "relative h-6 w-11 shrink-0 rounded-full transition-colors " +
-          (checked ? "bg-rose-500" : "bg-slate-300")
+          (checked ? "bg-rose-500" : "bg-stone-300")
         }
       >
         <span

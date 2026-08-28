@@ -13,7 +13,7 @@ export default function SignStatusDashboard() {
       {STATS.map((s) => (
         <Card key={s.label}>
           <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
-          <div className="mt-1 text-xs text-slate-500">{s.label}</div>
+          <div className="mt-1 text-xs text-stone-500">{s.label}</div>
         </Card>
       ))}
     </div>

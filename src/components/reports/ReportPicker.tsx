@@ -15,7 +15,7 @@ export default function ReportPicker({ reports }: { reports: ReportDef[] }) {
               onClick={() => setSelected(r)}
               className={
                 "block w-full rounded px-2 py-1.5 text-left " +
-                (r.no === selected.no ? "bg-rose-500 text-white" : "hover:bg-slate-100")
+                (r.no === selected.no ? "bg-rose-500 text-white" : "hover:bg-stone-100")
               }
             >
               {r.no} {r.name}

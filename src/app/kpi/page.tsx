@@ -26,7 +26,7 @@ function IndicatorTab({ indicators, buildingNote }: { indicators: string[]; buil
               onClick={() => setActive(i)}
               className={
                 "w-full rounded px-2 py-1.5 text-left " +
-                (i === active ? "bg-rose-500 text-white" : "hover:bg-slate-100")
+                (i === active ? "bg-rose-500 text-white" : "hover:bg-stone-100")
               }
             >
               {i}
@@ -36,15 +36,15 @@ function IndicatorTab({ indicators, buildingNote }: { indicators: string[]; buil
       </ul>
       <div>
         {buildingNote ? (
-          <div className="flex h-40 items-center justify-center rounded border border-dashed border-slate-300 text-slate-400">
+          <div className="flex h-40 items-center justify-center rounded border border-dashed border-stone-300 text-stone-400">
             {buildingNote}
           </div>
         ) : (
           <>
-            <div className="mb-2 flex h-40 items-center justify-center rounded border border-slate-200 text-xs text-slate-400">
+            <div className="mb-2 flex h-40 items-center justify-center rounded border border-stone-200 text-xs text-stone-400">
               {active}｜逐月數據趨勢折線圖（示意）
             </div>
-            <p className="text-xs text-slate-400">公式獨立設定為可調參數，避免寫死在程式中。</p>
+            <p className="text-xs text-stone-400">公式獨立設定為可調參數，避免寫死在程式中。</p>
           </>
         )}
       </div>

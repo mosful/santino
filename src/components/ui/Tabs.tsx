@@ -20,7 +20,7 @@ export default function Tabs({
 
   return (
     <div>
-      <div className="flex flex-wrap gap-1 border-b border-slate-200 pb-px">
+      <div className="flex flex-wrap gap-1 border-b border-stone-200 pb-px">
         {tabs.map((t) => (
           <button
             key={t.key}
@@ -29,7 +29,7 @@ export default function Tabs({
               "-mb-px rounded-t-lg border-b-2 px-3.5 py-2 text-sm font-medium transition-colors sm:px-4 " +
               (t.key === active
                 ? "border-rose-500 text-rose-600"
-                : "border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800")
+                : "border-transparent text-stone-500 hover:bg-stone-50 hover:text-stone-800")
             }
           >
             {t.label}

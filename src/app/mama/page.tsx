@@ -59,7 +59,7 @@ export default function MamaPage() {
               onClick={() => setFilter(s)}
               className={
                 "rounded-full px-3 py-1 text-xs " +
-                (filter === s ? "bg-rose-500 text-white" : "bg-slate-100 text-slate-600")
+                (filter === s ? "bg-rose-500 text-white" : "bg-stone-100 text-stone-600")
               }
             >
               {s}
@@ -68,7 +68,7 @@ export default function MamaPage() {
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-3 text-xs text-slate-500">
+      <div className="mb-4 flex flex-wrap gap-3 text-xs text-stone-500">
         <span>圖例：</span>
         <Badge color="slate">空房(白)</Badge>
         <Badge color="green">入住(綠)</Badge>

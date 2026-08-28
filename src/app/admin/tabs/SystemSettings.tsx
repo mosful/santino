@@ -23,22 +23,22 @@ export default function SystemSettings() {
         </p>
       </div>
 
-      <div className="rounded border border-slate-200 p-3">
-        <div className="mb-2 text-xs font-medium text-slate-600">退房後護理紀錄補登窗口</div>
+      <div className="rounded border border-stone-200 p-3">
+        <div className="mb-2 text-xs font-medium text-stone-600">退房後護理紀錄補登窗口</div>
         <div className="flex items-center gap-2 text-xs">
           退房後
           <input
             type="number"
             value={reboundDays}
             onChange={(e) => setReboundDays(Number(e.target.value))}
-            className="w-16 rounded border border-slate-200 px-2 py-1"
+            className="w-16 rounded border border-stone-200 px-2 py-1"
           />
           天內開放回補資料
         </div>
         <p className="mt-1 text-xs text-amber-600">
           ⚠ 客戶尚未定案此天數（阿長提議「3天」但本人加了問號），此為可調整參數示意，正式上線前需與客戶再確認。
         </p>
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-stone-400">
           修改紀錄需正確歸屬實際登入員工，不可用共用帳號代填。
         </p>
       </div>

@@ -17,7 +17,7 @@ export default function ContractTerms() {
       <ul className="space-y-1 text-xs">
         {ARTICLES.map((a) => (
           <li key={a}>
-            <a href="#" className="block rounded px-2 py-1 hover:bg-slate-100">
+            <a href="#" className="block rounded px-2 py-1 hover:bg-stone-100">
               {a}
             </a>
           </li>
@@ -32,23 +32,23 @@ export default function ContractTerms() {
               type="number"
               value={days}
               onChange={(e) => setDays(Number(e.target.value))}
-              className="w-16 rounded border border-slate-200 px-2 py-1"
+              className="w-16 rounded border border-stone-200 px-2 py-1"
             />
             天（可調整）
           </div>
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-stone-500">
             若客戶拿走合約審閱後隔天就想簽約（未滿{days}天），系統可將「合約交付日」往前回推以滿足審閱天數，
             <strong>只能往前調整，不能無限延後或超過</strong>。
           </p>
         </div>
 
-        <div className="rounded border border-slate-200 p-3">
-          <div className="mb-2 text-xs font-medium text-slate-600">入住日期（另一個簽約後仍可修改欄位）</div>
+        <div className="rounded border border-stone-200 p-3">
+          <div className="mb-2 text-xs font-medium text-stone-600">入住日期（另一個簽約後仍可修改欄位）</div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="實際入住日" />
             <Field label="住房天數起算" placeholder="以實際入住日起算，非簽約當天" />
           </div>
-          <p className="mt-2 text-xs text-slate-400">
+          <p className="mt-2 text-xs text-stone-400">
             入住日確定變動時，系統需產生「新版」合約（同編號＋新日期戳記，舊版仍保留可查）。
           </p>
         </div>
@@ -57,19 +57,19 @@ export default function ContractTerms() {
           ⚠ 已簽約，調整訂房需重新簽名——房型/天數/金額被修改時，系統須自動退回「待重新簽名」並清空原簽名圖檔。
         </div>
 
-        <div className="rounded border border-slate-200 p-3">
-          <div className="mb-2 text-xs font-medium text-slate-600">簽署區</div>
+        <div className="rounded border border-stone-200 p-3">
+          <div className="mb-2 text-xs font-medium text-stone-600">簽署區</div>
           <div className="grid grid-cols-3 gap-3 text-xs">
             <div>
-              <div className="mb-1 text-slate-500">甲方簽名</div>
-              <div className="flex h-16 items-center justify-center rounded bg-slate-50 text-slate-300">
+              <div className="mb-1 text-stone-500">甲方簽名</div>
+              <div className="flex h-16 items-center justify-center rounded bg-stone-50 text-stone-300">
                 簽名板（可重複帶入其他表單）
               </div>
             </div>
             <Field label="乙方" placeholder="聖帝諾產後護理之家" />
             <Field label="簽約日期" placeholder="西元/民國並列" />
           </div>
-          <p className="mt-2 text-xs text-slate-400">簽署人一般為本人，媽媽身體不便時可由家屬代簽。</p>
+          <p className="mt-2 text-xs text-stone-400">簽署人一般為本人，媽媽身體不便時可由家屬代簽。</p>
         </div>
       </div>
     </div>
@@ -79,8 +79,8 @@ export default function ContractTerms() {
 function Field({ label, placeholder }: { label: string; placeholder?: string }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-slate-500">{label}</label>
-      <input placeholder={placeholder} className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm" />
+      <label className="mb-1 block text-xs text-stone-500">{label}</label>
+      <input placeholder={placeholder} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm" />
     </div>
   );
 }

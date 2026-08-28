@@ -1,10 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  /* 溫暖中性色調：參考產後護理之家/月子中心常見的米杏、暖膚色系，
+     取代原本偏冷的白/藍灰，呼應2026年醫療儀表板「暖色中性底＋沉靜主色」的設計趨勢 */
+  --background: #faf5ee;
+  --background-alt: #f3e9dc;
+  --foreground: #3a2e28;
   --brand: #e11d48;
-  --brand-soft: #fff1f2;
+  --brand-soft: #fdf1ee;
+  --accent-gold: #c9932f;
 }
 
 @theme inline {
@@ -16,8 +20,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b0f19;
-    --foreground: #e5e7eb;
+    --background: #201a15;
+    --background-alt: #2a221b;
+    --foreground: #ece4da;
   }
 }
 
@@ -31,7 +36,8 @@ html {
 }
 
 body {
-  background: var(--background);
+  background: linear-gradient(180deg, var(--background-alt) 0px, var(--background) 320px);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei",
     "Noto Sans TC", system-ui, sans-serif;

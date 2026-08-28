@@ -49,13 +49,13 @@ export default function RoomPage() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-lg font-bold">4. 房間動態（房務版房卡）</h1>
         <div className="flex gap-2 text-xs">
-          <button className="rounded bg-slate-100 px-3 py-1.5">手機驗證碼</button>
-          <button className="rounded bg-slate-100 px-3 py-1.5">加值服務總表</button>
-          <button className="rounded bg-slate-100 px-3 py-1.5">本月壽星</button>
+          <button className="rounded bg-stone-100 px-3 py-1.5">手機驗證碼</button>
+          <button className="rounded bg-stone-100 px-3 py-1.5">加值服務總表</button>
+          <button className="rounded bg-stone-100 px-3 py-1.5">本月壽星</button>
         </div>
       </div>
 
-      <p className="mb-4 text-xs text-slate-400">
+      <p className="mb-4 text-xs text-stone-400">
         與2.媽媽照護共用房號，但欄位與快捷鍵為獨立元件（房務 vs 護理）。
       </p>
 
@@ -65,7 +65,7 @@ export default function RoomPage() {
         ))}
       </div>
 
-      <div className="mt-6 rounded border border-dashed border-slate-300 p-3 text-xs text-slate-400">
+      <div className="mt-6 rounded border border-dashed border-stone-300 p-3 text-xs text-stone-400">
         以下項目本階段不做，僅保留擴充彈性：{DEFERRED_ROOM_ITEMS.join("、")}
       </div>
 

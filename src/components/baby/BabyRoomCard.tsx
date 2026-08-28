@@ -22,10 +22,10 @@ export default function BabyRoomCard({
       </div>
       <div className="mb-2 text-sm">
         <div className="font-medium">{room.babyName}</div>
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-stone-500">
           病歷號 {room.chartNo}｜出生 {room.birthDate}｜{room.weight}
         </div>
-        <div className="mt-1 text-xs text-slate-500">
+        <div className="mt-1 text-xs text-stone-500">
           視訊狀態：
           {room.videoState === "正常視訊" ? (
             <span className="text-emerald-600">{room.videoState}</span>
@@ -43,7 +43,7 @@ export default function BabyRoomCard({
               "rounded-full px-3 py-1.5 text-xs font-medium transition-colors " +
               (k.core
                 ? "bg-sky-500 text-white hover:bg-sky-600 active:bg-sky-700"
-                : "bg-slate-100 text-slate-500 hover:bg-slate-200 active:bg-slate-300")
+                : "bg-stone-100 text-stone-500 hover:bg-stone-200 active:bg-stone-300")
             }
           >
             {k.label}

@@ -20,22 +20,22 @@ export default function RenewalManagement() {
 
   return (
     <div className="space-y-4 text-sm">
-      <div className="rounded border border-slate-200 p-3">
-        <div className="mb-2 text-xs font-medium text-slate-600">參數設定</div>
+      <div className="rounded border border-stone-200 p-3">
+        <div className="mb-2 text-xs font-medium text-stone-600">參數設定</div>
         <label className="flex items-center gap-2 text-xs">
           合約到期前
           <input
             type="number"
             value={thresholdDays}
             onChange={(e) => setThresholdDays(Number(e.target.value))}
-            className="w-16 rounded border border-slate-200 px-2 py-1"
+            className="w-16 rounded border border-stone-200 px-2 py-1"
           />
           天，開始提示續約
         </label>
       </div>
 
       <table className="w-full text-left text-sm">
-        <thead className="bg-slate-50 text-xs text-slate-500">
+        <thead className="bg-stone-50 text-xs text-stone-500">
           <tr>
             <th className="px-3 py-2">合約編號</th>
             <th className="px-3 py-2">媽媽姓名</th>
@@ -46,7 +46,7 @@ export default function RenewalManagement() {
         </thead>
         <tbody>
           {CANDIDATES.filter((c) => c.daysLeft <= thresholdDays).map((c) => (
-            <tr key={c.id} className="border-t border-slate-100">
+            <tr key={c.id} className="border-t border-stone-100">
               <td className="px-3 py-2">{c.contractNo}</td>
               <td className="px-3 py-2">{c.motherName}</td>
               <td className="px-3 py-2">{c.expireDate}</td>
@@ -62,7 +62,7 @@ export default function RenewalManagement() {
           ))}
         </tbody>
       </table>
-      <p className="text-xs text-slate-400">產生續約合約時自動計算續約價格（依當時牌價與優惠規則）。</p>
+      <p className="text-xs text-stone-400">產生續約合約時自動計算續約價格（依當時牌價與優惠規則）。</p>
     </div>
   );
 }

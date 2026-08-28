@@ -30,7 +30,7 @@ function FriendTab() {
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2 text-xs">
-        <span className="text-slate-400">席位數：3/5（LINE多人客服席位授權，非院內床位）</span>
+        <span className="text-stone-400">席位數：3/5（LINE多人客服席位授權，非院內床位）</span>
       </div>
       <QueryList columns={columns} rows={FRIENDS} searchPlaceholder="顯示名稱" />
     </div>

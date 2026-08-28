@@ -25,11 +25,11 @@ export default function MemberBinding() {
 
   return (
     <div className="space-y-3 text-sm">
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-stone-400">
         會員與LINE個人帳號綁定/解除；解除綁定後保留歷史發送記錄但停止後續推播。
       </p>
       <table className="w-full text-left text-xs">
-        <thead className="text-slate-500">
+        <thead className="text-stone-500">
           <tr>
             <th className="px-2 py-1">會員姓名</th>
             <th className="px-2 py-1">LINE userId</th>
@@ -41,9 +41,9 @@ export default function MemberBinding() {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={r.id} className="border-t border-slate-100">
+            <tr key={r.id} className="border-t border-stone-100">
               <td className="px-2 py-1.5">{r.name}</td>
-              <td className="px-2 py-1.5 font-mono text-[11px] text-slate-400">{r.userId}</td>
+              <td className="px-2 py-1.5 font-mono text-[11px] text-stone-400">{r.userId}</td>
               <td className="px-2 py-1.5">
                 <Badge color="blue">{r.method}</Badge>
               </td>

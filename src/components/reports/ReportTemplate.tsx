@@ -10,16 +10,16 @@ export default function ReportTemplate({
   return (
     <div className="space-y-3 text-sm">
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <input placeholder="查詢日期起" className="rounded-lg border border-slate-200 px-2.5 py-2" />
-        <span className="text-slate-400">～</span>
-        <input placeholder="查詢日期迄" className="rounded-lg border border-slate-200 px-2.5 py-2" />
-        <button className="rounded-lg bg-slate-700 px-3.5 py-2 text-white hover:bg-slate-800">送出查詢</button>
-        <button className="ml-auto rounded-lg bg-slate-100 px-3.5 py-2 hover:bg-slate-200">匯出</button>
-        <button className="rounded-lg bg-slate-100 px-3.5 py-2 hover:bg-slate-200">列印</button>
+        <input placeholder="查詢日期起" className="rounded-lg border border-stone-200 px-2.5 py-2" />
+        <span className="text-stone-400">～</span>
+        <input placeholder="查詢日期迄" className="rounded-lg border border-stone-200 px-2.5 py-2" />
+        <button className="rounded-lg bg-stone-700 px-3.5 py-2 text-white hover:bg-stone-800">送出查詢</button>
+        <button className="ml-auto rounded-lg bg-stone-100 px-3.5 py-2 hover:bg-stone-200">匯出</button>
+        <button className="rounded-lg bg-stone-100 px-3.5 py-2 hover:bg-stone-200">列印</button>
       </div>
-      <div className="scroll-fade overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <div className="scroll-fade overflow-x-auto rounded-xl border border-stone-200 bg-white">
         <table className="w-full min-w-max text-left text-xs">
-          <thead className="bg-slate-50 text-slate-500">
+          <thead className="bg-stone-50 text-stone-500">
             <tr>
               {columns.map((c) => (
                 <th key={c} className="whitespace-nowrap px-3 py-2 font-medium">
@@ -30,7 +30,7 @@ export default function ReportTemplate({
           </thead>
           <tbody>
             {(sampleRows ?? []).map((row, i) => (
-              <tr key={i} className="border-t border-slate-100">
+              <tr key={i} className="border-t border-stone-100">
                 {row.map((cell, j) => (
                   <td key={j} className="whitespace-nowrap px-3 py-2">
                     {cell}
@@ -40,7 +40,7 @@ export default function ReportTemplate({
             ))}
             {(!sampleRows || sampleRows.length === 0) && (
               <tr>
-                <td colSpan={columns.length} className="px-3 py-6 text-center text-slate-400">
+                <td colSpan={columns.length} className="px-3 py-6 text-center text-stone-400">
                   查無資料（19個報表共用同一套查詢/匯出/列印元件框架）
                 </td>
               </tr>
@@ -48,7 +48,7 @@ export default function ReportTemplate({
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-slate-400">報表：{title}</p>
+      <p className="text-xs text-stone-400">報表：{title}</p>
     </div>
   );
 }

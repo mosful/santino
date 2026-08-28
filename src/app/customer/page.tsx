@@ -71,8 +71,8 @@ function DetailTabs({ c }: { c: Customer }) {
               <Field label="主要護理師" value={c.mainNurse} />
               <Field label="預約參觀日期" value={c.visitDate ?? "－"} />
               <Field label="來源管道" value={c.referrer} />
-              <div className="col-span-2 rounded border border-slate-200 p-3">
-                <div className="mb-1 text-xs text-slate-400">轉入簽約資料</div>
+              <div className="col-span-2 rounded border border-stone-200 p-3">
+                <div className="mb-1 text-xs text-stone-400">轉入簽約資料</div>
                 {c.contractNo ? (
                   <div className="text-sm">
                     合約編號 <span className="font-medium">{c.contractNo}</span>
@@ -82,7 +82,7 @@ function DetailTabs({ c }: { c: Customer }) {
                     </a>
                   </div>
                 ) : (
-                  <button className="rounded bg-slate-700 px-3 py-1.5 text-xs text-white">
+                  <button className="rounded bg-stone-700 px-3 py-1.5 text-xs text-white">
                     轉入簽約資料 → 12.合約管理
                   </button>
                 )}
@@ -103,7 +103,7 @@ function DetailTabs({ c }: { c: Customer }) {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-xs text-slate-400">{label}</div>
+      <div className="text-xs text-stone-400">{label}</div>
       <div>{value}</div>
     </div>
   );
@@ -116,9 +116,9 @@ export default function CustomerPage() {
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-lg font-bold">5. 客戶資料</h1>
         <div className="flex gap-2 text-xs">
-          <button className="rounded bg-slate-100 px-3 py-1.5">空白基本資料</button>
-          <button className="rounded bg-slate-100 px-3 py-1.5">空白預約參觀單</button>
-          <button className="rounded bg-slate-100 px-3 py-1.5">空白契約書</button>
+          <button className="rounded bg-stone-100 px-3 py-1.5">空白基本資料</button>
+          <button className="rounded bg-stone-100 px-3 py-1.5">空白預約參觀單</button>
+          <button className="rounded bg-stone-100 px-3 py-1.5">空白契約書</button>
         </div>
       </div>
       <QueryList columns={columns} rows={CUSTOMERS} onRowClick={setSelected} />

@@ -12,7 +12,7 @@ export default function OpsRoomCard({
   return (
     <div
       className={`rounded-xl border p-3.5 shadow-sm transition-shadow hover:shadow-md sm:p-4 ${
-        room.vacant ? "border-slate-200 bg-white" : "border-teal-300 bg-teal-50"
+        room.vacant ? "border-stone-200 bg-white" : "border-teal-300 bg-teal-50"
       }`}
     >
       <div className="mb-2 flex items-center justify-between">
@@ -20,10 +20,10 @@ export default function OpsRoomCard({
         <Badge color={room.vacant ? "slate" : "green"}>{room.roomType}</Badge>
       </div>
       {room.vacant ? (
-        <div className="py-4 text-center text-xs text-slate-400">目前空房</div>
+        <div className="py-4 text-center text-xs text-stone-400">目前空房</div>
       ) : (
         <>
-          <div className="mb-3 grid grid-cols-2 gap-x-2 gap-y-1 text-xs text-slate-600">
+          <div className="mb-3 grid grid-cols-2 gap-x-2 gap-y-1 text-xs text-stone-600">
             <span>孕媽：{room.motherName}</span>
             <span>房歷號：{room.chartNo}</span>
             <span>住宿天數：{room.stayDay}天</span>

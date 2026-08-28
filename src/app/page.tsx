@@ -23,7 +23,7 @@ function AnnouncementTab() {
         <Card key={a.id}>
           <div className="flex items-center justify-between">
             <span className="font-medium">{a.title}</span>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-stone-400">
               {a.date}｜{a.author}
             </span>
           </div>
@@ -36,7 +36,7 @@ function AnnouncementTab() {
 function MamaCalendarTab() {
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-2 text-xs text-slate-500">
+      <div className="flex flex-wrap gap-2 text-xs text-stone-500">
         {Object.entries(CATEGORY_COLOR).map(([cat, color]) => (
           <Badge key={cat} color={color}>
             {cat}
@@ -50,14 +50,14 @@ function MamaCalendarTab() {
               {day.items.map((it, i) => (
                 <li key={i} className="flex items-center gap-2">
                   <Badge color={CATEGORY_COLOR[it.category]}>{it.category}</Badge>
-                  <span className="text-slate-600">{it.text}</span>
+                  <span className="text-stone-600">{it.text}</span>
                 </li>
               ))}
             </ul>
           </Card>
         ))}
       </div>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-stone-400">
         每日格另有「列印」連結可開出當日預約參觀報名資料列印視窗（本稿未實作列印）。
       </p>
     </div>
@@ -70,7 +70,7 @@ function InternalCalendarTab() {
       title="內部行事曆"
       action={
         <div className="flex gap-2">
-          <button className="rounded bg-slate-100 px-3 py-1 text-xs">
+          <button className="rounded bg-stone-100 px-3 py-1 text-xs">
             批次新增處理項目
           </button>
           <button className="rounded bg-rose-500 px-3 py-1 text-xs text-white">
@@ -79,9 +79,9 @@ function InternalCalendarTab() {
         </div>
       }
     >
-      <div className="grid grid-cols-7 gap-1 text-center text-xs text-slate-400">
+      <div className="grid grid-cols-7 gap-1 text-center text-xs text-stone-400">
         {Array.from({ length: 28 }).map((_, i) => (
-          <div key={i} className="rounded border border-slate-100 py-3">
+          <div key={i} className="rounded border border-stone-100 py-3">
             {i + 1}
           </div>
         ))}
@@ -98,20 +98,20 @@ function CourseTab() {
           <div className="flex items-center justify-between text-sm">
             <div>
               <span className="font-medium">{c.name}</span>
-              <span className="ml-2 text-slate-400">{c.time}</span>
+              <span className="ml-2 text-stone-400">{c.time}</span>
             </div>
             <div className="flex items-center gap-2">
               <Badge color={c.fee ? "amber" : "green"}>
                 {c.fee ? "收費" : "免費"}
               </Badge>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-stone-500">
                 已報名 {c.enrolled}/{c.cap}
               </span>
             </div>
           </div>
         </Card>
       ))}
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-stone-400">
         「一週Line報名」統計按鈕角標串接14.LINE官方帳號管理之課程通知已讀/報名回覆資料（本稿未實作）。
       </p>
     </div>
@@ -123,12 +123,12 @@ function ValueAddedTab() {
     <Card
       title="加值服務"
       action={
-        <select className="rounded border border-slate-200 px-2 py-1 text-xs">
+        <select className="rounded border border-stone-200 px-2 py-1 text-xs">
           <option>表類別：全部</option>
         </select>
       }
     >
-      <p className="text-sm text-slate-400">當月無資料（依規格文件3.4節，錄影當時亦無資料可顯示）。</p>
+      <p className="text-sm text-stone-400">當月無資料（依規格文件3.4節，錄影當時亦無資料可顯示）。</p>
     </Card>
   );
 }

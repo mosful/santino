@@ -25,7 +25,7 @@ export default function ContractList() {
   const totalDeposit = CONTRACTS.reduce((s, c) => s + c.deposit, 0);
   return (
     <div className="space-y-3">
-      <div className="rounded bg-slate-50 p-2 text-xs text-slate-500">
+      <div className="rounded bg-stone-50 p-2 text-xs text-stone-500">
         2026-08-01~08-28 共{CONTRACTS.length}筆合約；有效合約{CONTRACTS.length}筆；作廢合約0筆；已付訂金{CONTRACTS.length}筆；訂金總額${totalDeposit.toLocaleString()}
       </div>
       <QueryList columns={columns} rows={CONTRACTS} searchPlaceholder="合約編號/姓名/手機/證號" />

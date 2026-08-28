@@ -35,12 +35,12 @@ export default function PhrasePicker({ onInsert }: { onInsert: (text: string) =>
         🏷️ 插入常用片語
       </button>
       {open && (
-        <div className="absolute z-20 mt-1 w-72 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
+        <div className="absolute z-20 mt-1 w-72 rounded-xl border border-stone-200 bg-white p-3 shadow-lg">
           <div className="mb-2 flex gap-1.5">
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className="flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+              className="flex-1 rounded-lg border border-stone-200 px-2 py-1.5 text-xs"
             >
               <option>全部</option>
               {PHRASE_CATEGORIES.map((c) => (
@@ -52,7 +52,7 @@ export default function PhrasePicker({ onInsert }: { onInsert: (text: string) =>
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="輸入關鍵字查詢（內容/標籤）"
-            className="mb-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+            className="mb-2 w-full rounded-lg border border-stone-200 px-2 py-1.5 text-xs"
           />
           <ul className="max-h-48 space-y-1 overflow-y-auto">
             {filtered.map((p) => (
@@ -73,12 +73,12 @@ export default function PhrasePicker({ onInsert }: { onInsert: (text: string) =>
                       </Badge>
                     ))}
                   </div>
-                  <div className="text-slate-700">{p.text}</div>
+                  <div className="text-stone-700">{p.text}</div>
                 </button>
               </li>
             ))}
             {filtered.length === 0 && (
-              <li className="p-2 text-center text-xs text-slate-400">查無片語</li>
+              <li className="p-2 text-center text-xs text-stone-400">查無片語</li>
             )}
           </ul>
         </div>

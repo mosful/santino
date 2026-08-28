@@ -9,13 +9,13 @@ function TextArea({ label }: { label: string }) {
   return (
     <div>
       <div className="mb-1 flex items-center justify-between">
-        <label className="block text-xs text-slate-500">{label}</label>
+        <label className="block text-xs text-stone-500">{label}</label>
         <PhrasePicker onInsert={(t) => setText((prev) => (prev ? prev + "\n" + t : t))} />
       </div>
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className="h-20 w-full rounded-lg border border-slate-200 p-2 text-sm"
+        className="h-20 w-full rounded-lg border border-stone-200 p-2 text-sm"
         placeholder="（暫存草稿內容，示意）"
       />
     </div>
@@ -25,7 +25,7 @@ function TextArea({ label }: { label: string }) {
 export default function AdmissionAssessment({ room }: { room: string }) {
   return (
     <div>
-      <div className="mb-3 text-xs text-slate-400">房號 {room}｜入住評估（5分頁，每頁皆為完整表單）</div>
+      <div className="mb-3 text-xs text-stone-400">房號 {room}｜入住評估（5分頁，每頁皆為完整表單）</div>
       <Tabs
         tabs={[
           { key: "history", label: "病史", content: <TextArea label="既往病史 / 過敏史" /> },
@@ -36,7 +36,7 @@ export default function AdmissionAssessment({ room }: { room: string }) {
         ]}
       />
       <div className="mt-4 flex justify-end gap-2 text-xs">
-        <button className="rounded-lg bg-slate-100 px-4 py-2 hover:bg-slate-200">暫存</button>
+        <button className="rounded-lg bg-stone-100 px-4 py-2 hover:bg-stone-200">暫存</button>
         <button className="rounded-lg bg-rose-500 px-4 py-2 text-white hover:bg-rose-600">送出</button>
       </div>
     </div>

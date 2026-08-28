@@ -19,7 +19,7 @@ function NarrativeTab() {
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className="h-24 w-full rounded-lg border border-slate-200 p-2 text-sm"
+        className="h-24 w-full rounded-lg border border-stone-200 p-2 text-sm"
         placeholder="敘述性護理紀錄（可從上方插入常用片語，或直接手動輸入）"
       />
     </div>
@@ -29,7 +29,7 @@ function NarrativeTab() {
 export default function OngoingCare({ room }: { room: string }) {
   return (
     <div>
-      <div className="mb-3 text-xs text-slate-400">
+      <div className="mb-3 text-xs text-stone-400">
         房號 {room}｜「持續護理」與「媽媽護理紀錄」共用同一頁面（mama_record）
       </div>
       <Tabs
@@ -40,22 +40,22 @@ export default function OngoingCare({ room }: { room: string }) {
             content: (
               <div className="space-y-3 text-sm">
                 <div>
-                  <label className="mb-1 block text-xs text-slate-500">
+                  <label className="mb-1 block text-xs text-stone-500">
                     疼痛評估（可複選，分數可自訂）
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {["傷口疼痛", "乳房脹痛", "子宮收縮痛", "其他"].map((t) => (
-                      <label key={t} className="flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs">
+                      <label key={t} className="flex items-center gap-1 rounded-lg border border-stone-200 px-2 py-1.5 text-xs">
                         <input type="checkbox" /> {t}
                       </label>
                     ))}
                     <input
-                      className="w-20 rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+                      className="w-20 rounded-lg border border-stone-200 px-2 py-1.5 text-xs"
                       placeholder="分數"
                     />
                   </div>
                 </div>
-                <textarea className="h-20 w-full rounded-lg border border-slate-200 p-2 text-sm" placeholder="（暫存草稿）" />
+                <textarea className="h-20 w-full rounded-lg border border-stone-200 p-2 text-sm" placeholder="（暫存草稿）" />
               </div>
             ),
           },
@@ -70,8 +70,8 @@ export default function OngoingCare({ room }: { room: string }) {
             content: (
               <ul className="space-y-2 text-sm">
                 {HISTORY.map((h, i) => (
-                  <li key={i} className="rounded-lg border border-slate-100 p-2">
-                    <div className="text-xs text-slate-400">
+                  <li key={i} className="rounded-lg border border-stone-100 p-2">
+                    <div className="text-xs text-stone-400">
                       {h.date}｜{h.author}
                     </div>
                     <div>{h.note}</div>
@@ -82,7 +82,7 @@ export default function OngoingCare({ room }: { room: string }) {
           },
         ]}
       />
-      <p className="mt-2 text-xs text-slate-400">
+      <p className="mt-2 text-xs text-stone-400">
         可事後增加/修改；資料可暫存。退房後補登：修改紀錄需歸屬實際登入員工，不可用共用帳號代填。
       </p>
     </div>

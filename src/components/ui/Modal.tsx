@@ -26,11 +26,11 @@ export default function Modal({
           (wide ? "sm:max-w-4xl" : "sm:max-w-xl")
         }
       >
-        <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-3.5">
-          <h2 className="truncate pr-2 text-sm font-bold text-slate-800">{title}</h2>
+        <div className="flex shrink-0 items-center justify-between border-b border-stone-100 px-4 py-3.5">
+          <h2 className="truncate pr-2 text-sm font-bold text-stone-800">{title}</h2>
           <button
             onClick={onClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 active:bg-slate-200"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-stone-400 hover:bg-stone-100 active:bg-stone-200"
             aria-label="關閉"
           >
             ✕

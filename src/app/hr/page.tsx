@@ -31,7 +31,7 @@ function StaffTab() {
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <select className="rounded border border-slate-200 px-2 py-1.5">
+        <select className="rounded border border-stone-200 px-2 py-1.5">
           <option>-所有部門-</option>
         </select>
         <label className="flex items-center gap-1">
@@ -54,12 +54,12 @@ function RoleGroupSettings() {
   const [visibleUnits, setVisibleUnits] = useState({ nursery: true, admin: false, meal: false });
 
   return (
-    <div className="rounded border border-slate-200 p-3">
-      <div className="mb-2 text-xs font-medium text-slate-600">角色群組資料修改（如：護理長）</div>
+    <div className="rounded border border-stone-200 p-3">
+      <div className="mb-2 text-xs font-medium text-stone-600">角色群組資料修改（如：護理長）</div>
       <div className="space-y-3 text-xs">
         <Switch checked={autoAuth} onChange={setAutoAuth} label="自動授權開關（開啟後新進該角色人員自動套用群組權限）" />
         <div>
-          <div className="mb-1 text-slate-500">指定班表可看單位（跨單位班表檢視權限）</div>
+          <div className="mb-1 text-stone-500">指定班表可看單位（跨單位班表檢視權限）</div>
           <div className="flex flex-wrap gap-3">
             <label className="flex items-center gap-1">
               <input type="checkbox" checked={visibleUnits.nursery} onChange={(e) => setVisibleUnits((v) => ({ ...v, nursery: e.target.checked }))} />
@@ -76,8 +76,8 @@ function RoleGroupSettings() {
           </div>
         </div>
         <div>
-          <label className="mb-1 block text-slate-500">三級主管歸屬</label>
-          <select className="rounded border border-slate-200 px-2 py-1.5">
+          <label className="mb-1 block text-stone-500">三級主管歸屬</label>
+          <select className="rounded border border-stone-200 px-2 py-1.5">
             <option>部門主管</option>
             <option>單位主管</option>
             <option>跨部門主管</option>
@@ -95,17 +95,17 @@ function RoleGroupSettings() {
 function PermissionTab() {
   return (
     <div className="space-y-3 text-sm">
-      <div className="rounded border border-slate-200 p-3">
-        <div className="mb-2 text-xs font-medium text-slate-600">2.1 各部門權限比較表展開</div>
-        <p className="text-xs text-slate-400">部門/單位/角色權限比較列表（示意）</p>
+      <div className="rounded border border-stone-200 p-3">
+        <div className="mb-2 text-xs font-medium text-stone-600">2.1 各部門權限比較表展開</div>
+        <p className="text-xs text-stone-400">部門/單位/角色權限比較列表（示意）</p>
       </div>
-      <div className="rounded border border-slate-200 p-3">
-        <div className="mb-2 text-xs font-medium text-slate-600">2.2 考勤主管設定</div>
-        <p className="text-xs text-slate-400">設定各部門/單位之考勤主管</p>
+      <div className="rounded border border-stone-200 p-3">
+        <div className="mb-2 text-xs font-medium text-stone-600">2.2 考勤主管設定</div>
+        <p className="text-xs text-stone-400">設定各部門/單位之考勤主管</p>
       </div>
-      <div className="rounded border border-slate-200 p-3">
-        <div className="mb-2 text-xs font-medium text-slate-600">2.3 部門角色列表</div>
-        <ul className="space-y-1 text-xs text-slate-600">
+      <div className="rounded border border-stone-200 p-3">
+        <div className="mb-2 text-xs font-medium text-stone-600">2.3 部門角色列表</div>
+        <ul className="space-y-1 text-xs text-stone-600">
           {DEPT_ROLES.map((d) => (
             <li key={d.dept}>
               <span className="font-medium">{d.dept}</span>：{d.units}
@@ -114,7 +114,7 @@ function PermissionTab() {
         </ul>
       </div>
       <RoleGroupSettings />
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-stone-400">
         權限模版設定完整系統功能樹狀清單需覆蓋15個模組，每節點可設定「權限：全覽/部分/無」（另於15.後台管理章節詳列，本頁僅示意入口）。
       </p>
     </div>

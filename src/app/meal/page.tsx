@@ -33,13 +33,13 @@ const columns: Column<MealRow>[] = [
 function OrderTab() {
   return (
     <div className="space-y-2">
-      <label className="flex items-center gap-1 text-xs text-slate-500">
+      <label className="flex items-center gap-1 text-xs text-stone-500">
         <input type="checkbox" defaultChecked /> 僅顯示入住中
       </label>
       <QueryList columns={columns} rows={MEALS} searchPlaceholder="房號/媽媽姓名" />
       <div className="flex gap-2 text-xs">
-        <button className="rounded bg-slate-100 px-3 py-1.5">列印飲食備註</button>
-        <button className="rounded bg-slate-100 px-3 py-1.5">列印寶寶奶粉清單</button>
+        <button className="rounded bg-stone-100 px-3 py-1.5">列印飲食備註</button>
+        <button className="rounded bg-stone-100 px-3 py-1.5">列印寶寶奶粉清單</button>
       </div>
     </div>
   );
@@ -52,9 +52,9 @@ const CYCLE_TEA = [
 
 function CycleTeaTab() {
   return (
-    <div className="overflow-x-auto rounded border border-slate-200">
+    <div className="overflow-x-auto rounded border border-stone-200">
       <table className="w-full text-left text-sm">
-        <thead className="bg-slate-50 text-xs text-slate-500">
+        <thead className="bg-stone-50 text-xs text-stone-500">
           <tr>
             <th className="px-3 py-2">週次</th>
             <th className="px-3 py-2">週一</th>
@@ -64,7 +64,7 @@ function CycleTeaTab() {
         </thead>
         <tbody>
           {CYCLE_TEA.map((r) => (
-            <tr key={r.week} className="border-t border-slate-100">
+            <tr key={r.week} className="border-t border-stone-100">
               <td className="px-3 py-2 font-medium">{r.week}</td>
               <td className="px-3 py-2">{r.mon}</td>
               <td className="px-3 py-2">{r.tue}</td>
@@ -73,13 +73,13 @@ function CycleTeaTab() {
           ))}
         </tbody>
       </table>
-      <p className="p-2 text-xs text-slate-400">支援「週次套用」機制，同一套茶飲可套用到不同起始週次。</p>
+      <p className="p-2 text-xs text-stone-400">支援「週次套用」機制，同一套茶飲可套用到不同起始週次。</p>
     </div>
   );
 }
 
 function SimpleStub({ text }: { text: string }) {
-  return <div className="rounded border border-dashed border-slate-300 p-6 text-center text-sm text-slate-400">{text}</div>;
+  return <div className="rounded border border-dashed border-stone-300 p-6 text-center text-sm text-stone-400">{text}</div>;
 }
 
 export default function MealPage() {

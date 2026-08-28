@@ -12,12 +12,12 @@ const ITEMS = [
 
 function SignatureBox({ label }: { label: string }) {
   return (
-    <div className="rounded border border-slate-200 p-2">
-      <div className="mb-1 text-xs text-slate-500">{label}</div>
-      <div className="flex h-16 items-center justify-center rounded bg-slate-50 text-xs text-slate-300">
+    <div className="rounded border border-stone-200 p-2">
+      <div className="mb-1 text-xs text-stone-500">{label}</div>
+      <div className="flex h-16 items-center justify-center rounded bg-stone-50 text-xs text-stone-300">
         簽名板（canvas，示意）
       </div>
-      <input className="mt-1 w-full rounded border border-slate-200 px-2 py-1 text-xs" placeholder="日期" />
+      <input className="mt-1 w-full rounded border border-stone-200 px-2 py-1 text-xs" placeholder="日期" />
     </div>
   );
 }
@@ -29,17 +29,17 @@ export default function NursingGuidance({ room }: { room: string }) {
         ⚠ 防呆提示：目前正在簽的是房號 {room} 的個案，請確認無誤後再進行簽名（與QR進房防呆同一套邏輯）。
       </div>
       <div>
-        <div className="mb-1 text-xs text-slate-500">衛教指導內容（至少9項）</div>
+        <div className="mb-1 text-xs text-stone-500">衛教指導內容（至少9項）</div>
         <div className="grid grid-cols-2 gap-1">
           {ITEMS.map((it) => (
-            <label key={it} className="flex items-center gap-2 rounded border border-slate-100 px-2 py-1.5 text-xs">
+            <label key={it} className="flex items-center gap-2 rounded border border-stone-100 px-2 py-1.5 text-xs">
               <input type="checkbox" /> {it}
             </label>
           ))}
         </div>
       </div>
       <div>
-        <div className="mb-1 text-xs text-slate-500">指導方式（可複選）</div>
+        <div className="mb-1 text-xs text-stone-500">指導方式（可複選）</div>
         <div className="flex flex-wrap gap-3 text-xs">
           {["口述", "實際操作", "住院手冊", "其他"].map((m) => (
             <label key={m} className="flex items-center gap-1">
@@ -54,19 +54,19 @@ export default function NursingGuidance({ room }: { room: string }) {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-xs text-slate-500">結果評值</label>
-          <select className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm">
+          <label className="mb-1 block text-xs text-stone-500">結果評值</label>
+          <select className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm">
             <option>完全了解</option>
             <option>部分了解，需複核</option>
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs text-slate-500">複核日期</label>
-          <input className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm" placeholder="待複核" />
+          <label className="mb-1 block text-xs text-stone-500">複核日期</label>
+          <input className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm" placeholder="待複核" />
         </div>
       </div>
       <div className="flex justify-end gap-2 text-xs">
-        <button className="rounded bg-slate-100 px-3 py-1.5">暫存</button>
+        <button className="rounded bg-stone-100 px-3 py-1.5">暫存</button>
         <button className="rounded bg-rose-500 px-3 py-1.5 text-white">送出</button>
       </div>
     </div>

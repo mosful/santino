@@ -135,7 +135,7 @@ function ValueAddedTab() {
 
 export default function HomePage() {
   return (
-    <div className="mx-auto max-w-5xl p-4 sm:p-6">
+    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
       <h1 className="mb-4 text-lg font-bold">1. 中控中心</h1>
       <Tabs
         tabs={[

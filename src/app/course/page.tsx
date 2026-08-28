@@ -53,7 +53,7 @@ function CourseRegistrationTab() {
 
 export default function CoursePage() {
   return (
-    <div className="mx-auto max-w-5xl p-4 sm:p-6">
+    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
       <h1 className="mb-4 text-lg font-bold">13. 課程管理</h1>
       <Tabs
         tabs={[

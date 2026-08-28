@@ -9,7 +9,7 @@ export default function TopNav() {
 
   return (
     <header className="safe-top sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/70">
-      <div className="flex items-center gap-2 px-3 py-2.5 sm:px-5">
+      <div className="flex items-center gap-2 px-4 py-2 sm:px-6">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-500 text-sm font-bold text-white">
           聖
         </div>
@@ -20,7 +20,7 @@ export default function TopNav() {
           </div>
         </div>
       </div>
-      <nav className="scroll-fade flex gap-1.5 overflow-x-auto border-t border-slate-100 px-3 pb-2.5 pt-1.5 sm:px-5">
+      <nav className="scroll-fade flex gap-1.5 overflow-x-auto border-t border-slate-100 px-4 pb-2 pt-1 sm:px-6">
         {MODULES.map((m) => {
           const active = m.href === "/" ? pathname === "/" : pathname.startsWith(m.href);
           return (

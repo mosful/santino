@@ -45,7 +45,7 @@ export default function RoomPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl p-4 sm:p-6">
+    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-lg font-bold">4. 房間動態（房務版房卡）</h1>
         <div className="flex gap-2 text-xs">
@@ -59,7 +59,7 @@ export default function RoomPage() {
         與2.媽媽照護共用房號，但欄位與快捷鍵為獨立元件（房務 vs 護理）。
       </p>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {OPS_ROOMS.map((r) => (
           <OpsRoomCard key={r.room} room={r} onKeyClick={(room, key) => setOpen({ room, key })} />
         ))}

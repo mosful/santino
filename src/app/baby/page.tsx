@@ -56,7 +56,7 @@ export default function BabyPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl p-4 sm:p-6">
+    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-lg font-bold">3. 寶寶照護（嬰兒室房卡）</h1>
         <div className="flex flex-wrap gap-1">
@@ -86,7 +86,7 @@ export default function BabyPage() {
         </span>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {rooms.map((r) => (
           <BabyRoomCard key={r.room} room={r} onKeyClick={(room, key) => setOpen({ room, key })} />
         ))}

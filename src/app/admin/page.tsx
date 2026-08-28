@@ -5,6 +5,7 @@ import QueryList, { type Column } from "@/components/ui/QueryList";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import ReportPicker from "@/components/reports/ReportPicker";
 import { POSTPARTUM_REPORTS, ACCOUNTING_REPORTS } from "@/lib/reports";
+import SystemSettings from "./tabs/SystemSettings";
 
 type SimpleRow = { id: number; name: string; note: string };
 
@@ -65,6 +66,7 @@ export default function AdminPage() {
             content: <PlaceholderNotice text="對應1.中控中心公佈欄之後台編輯設定（新增/修改/刪除公告）。" />,
           },
           { key: "other", label: "產後其他設定", content: <SimpleListTab rows={OTHER_SETTINGS_ROWS} placeholder="設定項目" /> },
+          { key: "system", label: "系統參數設定", content: <SystemSettings /> },
         ]}
       />
     </div>

@@ -37,6 +37,10 @@ export default function MamaPage() {
         return <PaperScoreForm room={open.room} title="心情量表" />;
       case "guidance":
         return <NursingGuidance room={open.room} />;
+      case "health-edu-eval":
+        return (
+          <PlaceholderNotice text="衛教認知評估單：衛教師新增項目，實際欄位內容尚未與客戶確認，先保留版位，待補充後再設計表單（見規格文件8.2節待確認事項）。" />
+        );
       default:
         return (
           <PlaceholderNotice text="次要功能（非媽媽照護6大核心），畫面待後續批次補齊，目前僅可從房卡開啟本提示。" />

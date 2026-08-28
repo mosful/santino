@@ -21,4 +21,5 @@ export const MAMA_QUICK_KEYS: QuickKey[] = [
   { key: "fall-risk", label: "高危險跌倒評估", core: false },
   { key: "consent", label: "同意書", core: false },
   { key: "incident", label: "意外通報", core: false },
+  { key: "health-edu-eval", label: "衛教認知評估單", core: false },
 ];

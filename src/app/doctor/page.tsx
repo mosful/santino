@@ -2,6 +2,7 @@
 
 import Tabs from "@/components/ui/Tabs";
 import QueryList, { type Column } from "@/components/ui/QueryList";
+import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 
 type DoctorStat = {
   id: number;
@@ -25,7 +26,7 @@ const columns: Column<DoctorStat>[] = [
   { key: "absent", label: "未到單數" },
 ];
 
-function DeptTab() {
+function DeptTab({ showTcmConsent }: { showTcmConsent?: boolean } = {}) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -36,6 +37,12 @@ function DeptTab() {
         <button className="rounded bg-slate-700 px-3 py-1.5 text-white">查詢</button>
       </div>
       <QueryList columns={columns} rows={SAMPLE} searchPlaceholder="醫師姓名" />
+      {showTcmConsent && (
+        <div className="rounded border border-slate-200 p-3">
+          <div className="mb-2 text-xs font-medium text-slate-600">中醫看診同意書（6.3.1，新規劃）</div>
+          <PlaceholderNotice text="中醫看診除預約掛號外，另需一份獨立的同意書文件；實際欄位內容尚未與客戶確認，先保留版位（見規格文件8.2節待確認事項）。" />
+        </div>
+      )}
     </div>
   );
 }
@@ -48,7 +55,7 @@ export default function DoctorPage() {
         tabs={[
           { key: "obgyn", label: "婦產科", content: <DeptTab /> },
           { key: "pediatric", label: "兒科", content: <DeptTab /> },
-          { key: "tcm", label: "中醫師", content: <DeptTab /> },
+          { key: "tcm", label: "中醫師", content: <DeptTab showTcmConsent /> },
         ]}
       />
     </div>

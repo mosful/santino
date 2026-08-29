@@ -4,10 +4,21 @@ import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
+import { makeRng, maskedName, phoneNumber, addDays } from "@/lib/mock/genUtil";
 
+const STAFFS = ["小美", "阿凱", "婉真", "淑芬"];
+const rngReminder = makeRng(12001);
 const SAMPLE: Row[] = [
   { id: 1, name: "陳o如", contactDate: "2026-09-05", phone: "0912-xxx-xxx", staff: "小美", status: "待聯絡" },
   { id: 2, name: "黃o婷", contactDate: "2026-08-30", phone: "0922-xxx-xxx", staff: "阿凱", status: "已聯絡" },
+  ...Array.from({ length: 48 }, (_, i) => ({
+    id: i + 3,
+    name: maskedName(rngReminder),
+    contactDate: addDays("2026-08-01", rngReminder.int(0, 59)),
+    phone: phoneNumber(rngReminder),
+    staff: rngReminder.pick(STAFFS),
+    status: rngReminder.bool(0.5) ? "待聯絡" : "已聯絡",
+  })),
 ];
 
 const reminderFields: FieldSchema[] = [

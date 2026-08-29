@@ -7,6 +7,7 @@ import EditableList, { type FieldSchema, type Row } from "@/components/ui/Editab
 import ReportPicker from "@/components/reports/ReportPicker";
 import { POSTPARTUM_REPORTS, ACCOUNTING_REPORTS } from "@/lib/reports";
 import { ANNOUNCEMENTS } from "@/lib/mock/dashboard";
+import { makeRng } from "@/lib/mock/genUtil";
 import SystemSettings from "./tabs/SystemSettings";
 import PhraseLibrarySettings from "./tabs/PhraseLibrarySettings";
 
@@ -30,18 +31,39 @@ const CONTRACT_DATA_ROWS: Row[] = [
   { id: 3, name: "合約轉住房資料", note: "僅見選單，待確認" },
 ];
 const NURSING_DATA_ROWS: Row[] = [{ id: 1, name: "歷史病歷查詢", note: "已於畫面確認" }];
-const SUPPLY_ROWS: Row[] = [{ id: 1, name: "備品名稱設定", note: "已於畫面確認" }];
-const OTHER_SETTINGS_ROWS: Row[] = [
+
+const SUPPLY_CATEGORIES = ["尿布", "濕紙巾", "奶粉", "母乳袋", "產褥墊", "看護墊", "束腹帶", "冰枕", "溢乳墊", "沐浴乳"];
+const SUPPLY_BRANDS = ["幫寶適", "好奇", "妙而舒", "滿意寶寶", "貝親", "桃樂比", "小獅王", "惠氏", "雪印", "森永"];
+const rngSupply = makeRng(15001);
+const SUPPLY_ROWS: Row[] = [
+  { id: 1, name: "備品名稱設定", note: "已於畫面確認" },
+  ...Array.from({ length: 49 }, (_, i) => ({
+    id: i + 2,
+    name: `${rngSupply.pick(SUPPLY_BRANDS)}${rngSupply.pick(SUPPLY_CATEGORIES)}`,
+    note: `庫存下限${rngSupply.int(5, 30)}件`,
+  })),
+];
+
+const OTHER_SETTINGS_BASE = [
   "預約參觀訊息來源", "護理項目填寫設定", "打掃定期工作設定", "寶寶奶粉廠牌設定",
   "媽媽擠乳器廠牌設定", "護理後送醫院設定", "飲食禁忌項目設定", "產後客戶聯絡人分類",
   "醫師資料設定", "護理敘述性文字設定", "關懷片語文字設定", "產科敘述性文字設定", "兒科敘述性文字設定",
-].map((name, i) => ({ id: i + 1, name, note: "" }));
+];
+const OTHER_SETTINGS_ROWS: Row[] = OTHER_SETTINGS_BASE.map((name, i) => ({ id: i + 1, name, note: "" }));
 
+const ROOM_TYPE_NAMES = ["精緻房", "VIP房", "VILLA", "豪華套房"];
+const ROOM_SETTING_KINDS = ["房型設定", "房間資料", "房型價格設定", "房價折扣設定", "淡旺季加價設定", "續住優惠設定"];
+const rngRoomSetting = makeRng(16001);
 const ROOM_DATA_ROWS: Row[] = [
   { id: 1, name: "房型設定", note: "" },
   { id: 2, name: "房間資料", note: "" },
   { id: 3, name: "房型價格設定", note: "" },
   { id: 4, name: "房價折扣設定", note: "" },
+  ...Array.from({ length: 46 }, (_, i) => ({
+    id: i + 5,
+    name: `${rngRoomSetting.pick(ROOM_TYPE_NAMES)}－${rngRoomSetting.pick(ROOM_SETTING_KINDS)}`,
+    note: "",
+  })),
 ];
 
 function RoomDataTab() {

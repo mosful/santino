@@ -88,11 +88,18 @@ html {
 }
 
 body {
-  /* 底圖：暖色漸層＋兩個極淡的裝飾性色塊，隨主題色(brand/accent)自動變色 */
+  /* 底圖：多層mesh gradient（參考2026年SaaS/醫療儀表板趨勢：柔和大色塊疊加、
+     有機暈染感），隨主題色(brand/accent)自動變色，色塊加大加濃避免過白 */
   background-color: var(--background);
-  background-image: linear-gradient(180deg, var(--background-alt) 0px, var(--background) 360px),
-    radial-gradient(600px circle at 92% 0%, color-mix(in srgb, var(--brand-500) 8%, transparent), transparent 60%),
-    radial-gradient(500px circle at 4% 18%, color-mix(in srgb, var(--accent-400) 10%, transparent), transparent 60%);
+  background-image: radial-gradient(
+      900px circle at 100% -8%,
+      color-mix(in srgb, var(--brand-400) 24%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(700px circle at -6% 8%, color-mix(in srgb, var(--accent-400) 22%, transparent), transparent 55%),
+    radial-gradient(650px circle at 88% 55%, color-mix(in srgb, var(--brand-300) 16%, transparent), transparent 60%),
+    radial-gradient(600px circle at 6% 92%, color-mix(in srgb, var(--accent-400) 16%, transparent), transparent 60%),
+    linear-gradient(180deg, var(--background-alt) 0px, var(--background) 520px);
   background-attachment: fixed;
   color: var(--foreground);
   font-family: -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei",

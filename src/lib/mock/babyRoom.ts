@@ -1,3 +1,5 @@
+import { makeRng, maskedName } from "./genUtil";
+
 export type BabyStatus = "入住" | "隔離" | "親子同室" | "視訊";
 export type BabyGender = "男" | "女";
 
@@ -12,7 +14,7 @@ export type BabyRoom = {
   videoState?: string;
 };
 
-export const BABY_ROOMS: BabyRoom[] = [
+const CURATED: BabyRoom[] = [
   {
     room: "301",
     status: "入住",
@@ -44,6 +46,44 @@ export const BABY_ROOMS: BabyRoom[] = [
     videoState: "隔離中",
   },
 ];
+
+const EXTRA_ROOM_NOS = [
+  "306", "307", "308", "309", "310",
+  "401", "402", "403", "404", "405", "406", "407", "408", "409", "410",
+  "501", "502", "503", "504", "505", "506", "507", "508", "509", "510",
+  "601", "602", "603", "604", "605", "606", "607", "608", "609", "610",
+  "701", "702", "703", "704", "705", "706", "707", "708", "709", "710",
+  "711", "712",
+];
+
+const STATUS_WEIGHTED: BabyStatus[] = ["入住", "入住", "入住", "入住", "視訊", "視訊", "親子同室", "隔離"];
+const SURNAME_LABEL = ["小弟", "小妹"];
+
+const rng = makeRng(3003);
+const GENERATED: BabyRoom[] = EXTRA_ROOM_NOS.map((room) => {
+  const gender: BabyGender = rng.bool(0.5) ? "男" : "女";
+  const status = rng.pick(STATUS_WEIGHTED);
+  const month = rng.int(8, 9);
+  const day = rng.int(1, 27);
+  const videoState =
+    status === "入住" || status === "視訊"
+      ? "正常視訊"
+      : status === "親子同室"
+      ? "親子同室中"
+      : "隔離中";
+  return {
+    room,
+    status,
+    gender,
+    babyName: `${maskedName(rng)[0]}${gender === "男" ? SURNAME_LABEL[0] : SURNAME_LABEL[1]}`,
+    chartNo: `B2026${String(month).padStart(2, "0")}${String(day).padStart(2, "0")}`,
+    birthDate: `2026-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+    weight: `${(rng.int(24, 38) / 10).toFixed(1)}kg`,
+    videoState,
+  };
+});
+
+export const BABY_ROOMS: BabyRoom[] = [...CURATED, ...GENERATED];
 
 export const BABY_STATUS_COLOR: Record<BabyStatus, string> = {
   入住: "bg-sky-50 border-sky-300",

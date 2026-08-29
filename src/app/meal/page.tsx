@@ -4,11 +4,23 @@ import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
+import { MAMA_ROOMS } from "@/lib/mock/mamaRoom";
+import { makeRng, maskedName } from "@/lib/mock/genUtil";
 
-const MEALS: Row[] = [
-  { id: 1, room: "301", name: "邱o乾", deliveryMode: "自然產", stayRange: "08/12~09/12", restriction: "無" },
-  { id: 2, room: "302", name: "林o臻", deliveryMode: "剖腹產", stayRange: "08/20~09/17", restriction: "海鮮過敏" },
-];
+const RESTRICTIONS = ["無", "無", "無", "無", "海鮮過敏", "麩質不耐", "乳製品過敏", "堅果過敏", "素食"];
+const OCCUPIED_ROOMS = MAMA_ROOMS.filter((r) => r.motherName);
+const rngMeal = makeRng(11001);
+const MEALS: Row[] = Array.from({ length: 50 }, (_, i) => {
+  const src = OCCUPIED_ROOMS[i % OCCUPIED_ROOMS.length];
+  return {
+    id: i + 1,
+    room: src.room,
+    name: i < OCCUPIED_ROOMS.length ? (src.motherName as string) : maskedName(rngMeal),
+    deliveryMode: rngMeal.bool(0.55) ? "自然產" : "剖腹產",
+    stayRange: src.stayRange ?? "08/01~09/01",
+    restriction: rngMeal.pick(RESTRICTIONS),
+  };
+});
 
 const mealFields: FieldSchema[] = [
   { key: "room", label: "房號" },

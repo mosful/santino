@@ -6,13 +6,23 @@ import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import { COURSES } from "@/lib/mock/dashboard";
+import { makeRng, phoneNumber } from "@/lib/mock/genUtil";
 import RegistrationCheckin from "./tabs/RegistrationCheckin";
 import FeeRefundSettings from "./tabs/FeeRefundSettings";
 import NotificationSettings from "./tabs/NotificationSettings";
 
+const VENUE_NAMES = ["會議室", "瑜珈教室", "多功能教室", "親子活動室", "視聽教室", "戶外庭園", "交誼廳"];
+const VENUE_EQUIP = ["投影機/白板", "瑜珈墊", "音響設備", "嬰兒安撫椅", "投影布幕", "無"];
+const rngVenue = makeRng(8001);
 const VENUES: Row[] = [
   { id: 1, name: "B1會議室", capacity: 20, equip: "投影機/白板" },
   { id: 2, name: "瑜珈教室", capacity: 15, equip: "瑜珈墊" },
+  ...Array.from({ length: 48 }, (_, i) => ({
+    id: i + 3,
+    name: `${rngVenue.pick(["1F", "2F", "3F", "B1"])}${rngVenue.pick(VENUE_NAMES)}${i > 6 ? i : ""}`,
+    capacity: rngVenue.int(6, 30),
+    equip: rngVenue.pick(VENUE_EQUIP),
+  })),
 ];
 const venueFields: FieldSchema[] = [
   { key: "name", label: "場地名稱" },
@@ -20,9 +30,18 @@ const venueFields: FieldSchema[] = [
   { key: "equip", label: "設備" },
 ];
 
+const LECTURER_SURNAMES = ["李", "張", "王", "陳", "林", "黃", "吳", "劉", "楊", "蔡"];
+const SPECIALTIES = ["產後瑜珈", "嬰兒按摩", "副食品製作", "母乳哺育", "產後塑身", "嬰兒手語", "親子共讀", "急救CPR", "產婦營養", "心理調適"];
+const rngLect = makeRng(8002);
 const LECTURERS: Row[] = [
   { id: 1, name: "李老師", specialty: "產後瑜珈", contact: "0933-xxx-xxx" },
   { id: 2, name: "張老師", specialty: "嬰兒按摩", contact: "0955-xxx-xxx" },
+  ...Array.from({ length: 48 }, (_, i) => ({
+    id: i + 3,
+    name: `${rngLect.pick(LECTURER_SURNAMES)}老師`,
+    specialty: rngLect.pick(SPECIALTIES),
+    contact: phoneNumber(rngLect),
+  })),
 ];
 const lecturerFields: FieldSchema[] = [
   { key: "name", label: "講師姓名" },

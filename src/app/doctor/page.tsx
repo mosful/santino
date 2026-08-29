@@ -5,10 +5,25 @@ import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
+import { makeRng } from "@/lib/mock/genUtil";
 
+const SURNAMES_D = ["陳", "王", "林", "張", "李", "黃", "吳", "劉", "蔡", "楊", "許", "鄭", "謝", "洪", "邱"];
+const rngDoc = makeRng(13001);
 const SAMPLE: Row[] = [
   { id: 1, doctor: "陳O如", visitDays: 20, scheduled: 45, arrived: 42, absent: 3 },
   { id: 2, doctor: "王O明", visitDays: 12, scheduled: 30, arrived: 28, absent: 2 },
+  ...Array.from({ length: 48 }, (_, i) => {
+    const scheduled = rngDoc.int(10, 50);
+    const absent = rngDoc.int(0, 4);
+    return {
+      id: i + 3,
+      doctor: `${rngDoc.pick(SURNAMES_D)}O${rngDoc.pick(["如", "明", "華", "芳", "俊", "杰", "娟"])}`,
+      visitDays: rngDoc.int(4, 24),
+      scheduled,
+      arrived: scheduled - absent,
+      absent,
+    };
+  }),
 ];
 
 const doctorFields: FieldSchema[] = [

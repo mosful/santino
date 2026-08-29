@@ -5,6 +5,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
+import { makeRng, addDays } from "@/lib/mock/genUtil";
 
 const CARE_INDICATORS = [
   "純母乳哺育率",
@@ -53,9 +54,18 @@ function IndicatorTab({ indicators, buildingNote }: { indicators: string[]; buil
   );
 }
 
+const INCIDENT_TYPES = ["紅臀", "跌倒", "燙傷", "嗆奶", "皮膚紅疹", "藥物過敏", "感染", "壓瘡"];
+const rngIncident = makeRng(10001);
 const INCIDENTS: Row[] = [
   { id: 1, date: "2026-08-20", type: "紅臀", target: "寶寶", status: "已結案" },
   { id: 2, date: "2026-08-25", type: "跌倒", target: "媽媽", status: "處理中" },
+  ...Array.from({ length: 48 }, (_, i) => ({
+    id: i + 3,
+    date: addDays("2026-06-01", rngIncident.int(0, 89)),
+    type: rngIncident.pick(INCIDENT_TYPES),
+    target: rngIncident.pick(["媽媽", "寶寶"]),
+    status: rngIncident.bool(0.75) ? "已結案" : "處理中",
+  })),
 ];
 const incidentFields: FieldSchema[] = [
   { key: "date", label: "通報日期" },

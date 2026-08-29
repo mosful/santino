@@ -20,7 +20,9 @@ export type OpenWindow = {
 export function useMultiWindowManager() {
   const [windows, setWindows] = useState<OpenWindow[]>([]);
   const [blockedMsg, setBlockedMsg] = useState<string | null>(null);
-  const zCounter = useRef(10);
+  // 起始值高於全站BackToTop按鈕(z-40)，避免拖曳視窗到右下角時被蓋住，
+  // 但仍低於Modal(z-50)與提示訊息(z-[60])。
+  const zCounter = useRef(41);
   const sameRoomLock = useSameRoomLock();
 
   function bringToFront(id: string) {

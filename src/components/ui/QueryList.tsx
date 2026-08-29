@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Inbox } from "lucide-react";
+import { rowMatchesQuery } from "@/lib/fuzzySearch";
+import Pagination from "./Pagination";
 
 export type Column<T> = {
   key: string;
@@ -12,7 +14,7 @@ export type Column<T> = {
 export default function QueryList<T extends { id: string | number }>({
   columns,
   rows,
-  searchPlaceholder = "輸入關鍵字查詢",
+  searchPlaceholder = "輸入關鍵字查詢（支援模糊搜尋）",
   onRowClick,
 }: {
   columns: Column<T>[];
@@ -21,20 +23,23 @@ export default function QueryList<T extends { id: string | number }>({
   onRowClick?: (row: T) => void;
 }) {
   const [q, setQ] = useState("");
-  const filtered = q
-    ? rows.filter((r) =>
-        Object.values(r as Record<string, unknown>).some((v) =>
-          String(v ?? "").toLowerCase().includes(q.toLowerCase())
-        )
-      )
-    : rows;
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const filtered = q ? rows.filter((r) => rowMatchesQuery(r as Record<string, unknown>, q)) : rows;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setPage(1);
+          }}
           placeholder={searchPlaceholder}
           className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm sm:w-64"
         />
@@ -55,7 +60,7 @@ export default function QueryList<T extends { id: string | number }>({
             </tr>
           </thead>
           <tbody>
-            {filtered.map((row) => (
+            {paged.map((row) => (
               <tr
                 key={row.id}
                 onClick={() => onRowClick?.(row)}
@@ -86,6 +91,16 @@ export default function QueryList<T extends { id: string | number }>({
           </tbody>
         </table>
       </div>
+      <Pagination
+        page={safePage}
+        pageSize={pageSize}
+        total={filtered.length}
+        onPageChange={setPage}
+        onPageSizeChange={(n) => {
+          setPageSize(n);
+          setPage(1);
+        }}
+      />
     </div>
   );
 }

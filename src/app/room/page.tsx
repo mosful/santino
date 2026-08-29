@@ -5,6 +5,8 @@ import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import OpsRoomCard from "@/components/room/OpsRoomCard";
 import Modal from "@/components/ui/Modal";
+import Pagination from "@/components/ui/Pagination";
+import { rowMatchesQuery } from "@/lib/fuzzySearch";
 import { OPS_ROOMS, DEFERRED_ROOM_ITEMS } from "@/lib/mock/opsRoom";
 import { OPS_QUICK_KEYS } from "@/lib/opsQuickKeys";
 import {
@@ -20,7 +22,15 @@ import {
 
 export default function RoomPage() {
   const [open, setOpen] = useState<{ room: string; key: string } | null>(null);
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const keyLabel = OPS_QUICK_KEYS.find((k) => k.key === open?.key)?.label ?? "";
+
+  const filteredRooms = q ? OPS_ROOMS.filter((r) => rowMatchesQuery(r, q)) : OPS_ROOMS;
+  const totalPages = Math.max(1, Math.ceil(filteredRooms.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedRooms = filteredRooms.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   function renderForm() {
     if (!open) return null;
@@ -65,10 +75,33 @@ export default function RoomPage() {
         與2.媽媽照護共用房號，但欄位與快捷鍵為獨立元件（房務 vs 護理）。
       </p>
 
+      <input
+        value={q}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setPage(1);
+        }}
+        placeholder="搜尋房號/媽媽姓名/病歷號（支援模糊搜尋）"
+        className="mb-4 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm sm:w-72"
+      />
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-        {OPS_ROOMS.map((r) => (
+        {pagedRooms.map((r) => (
           <OpsRoomCard key={r.room} room={r} onKeyClick={(room, key) => setOpen({ room, key })} />
         ))}
+      </div>
+
+      <div className="mt-4">
+        <Pagination
+          page={safePage}
+          pageSize={pageSize}
+          total={filteredRooms.length}
+          onPageChange={setPage}
+          onPageSizeChange={(n) => {
+            setPageSize(n);
+            setPage(1);
+          }}
+        />
       </div>
 
       <div className="mt-6 rounded border border-dashed border-stone-300 p-3 text-xs text-stone-400">

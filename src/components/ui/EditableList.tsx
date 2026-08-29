@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { Inbox } from "lucide-react";
 import Modal from "./Modal";
+import Pagination from "./Pagination";
 import { useAccess } from "@/lib/roleStore";
+import { rowMatchesQuery } from "@/lib/fuzzySearch";
 
 export type FieldSchema = {
   key: string;
@@ -18,7 +20,7 @@ export default function EditableList({
   moduleNo,
   fields,
   initialRows,
-  searchPlaceholder = "輸入關鍵字查詢",
+  searchPlaceholder = "輸入關鍵字查詢（支援模糊搜尋）",
 }: {
   moduleNo: string;
   fields: FieldSchema[];
@@ -29,13 +31,16 @@ export default function EditableList({
   const canEdit = access === "edit";
   const [rows, setRows] = useState<Row[]>(initialRows);
   const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [editing, setEditing] = useState<Row | null>(null);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
-  const filtered = q
-    ? rows.filter((r) => Object.values(r).some((v) => String(v).toLowerCase().includes(q.toLowerCase())))
-    : rows;
+  const filtered = q ? rows.filter((r) => rowMatchesQuery(r, q)) : rows;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   function openAdd() {
     setEditing({ id: 0 } as Row);
@@ -68,7 +73,10 @@ export default function EditableList({
       <div className="flex flex-wrap items-center gap-2">
         <input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setPage(1);
+          }}
           placeholder={searchPlaceholder}
           className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm sm:w-64"
         />
@@ -100,7 +108,7 @@ export default function EditableList({
             </tr>
           </thead>
           <tbody>
-            {filtered.map((row) => (
+            {paged.map((row) => (
               <tr key={row.id} className="border-t border-stone-100 transition-colors hover:bg-stone-50">
                 {fields.map((f) => (
                   <td key={f.key} className="px-3 py-2.5">
@@ -132,6 +140,17 @@ export default function EditableList({
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        page={safePage}
+        pageSize={pageSize}
+        total={filtered.length}
+        onPageChange={setPage}
+        onPageSizeChange={(n) => {
+          setPageSize(n);
+          setPage(1);
+        }}
+      />
 
       <Modal open={!!editing} title={editing?.id === 0 ? "新增" : "編輯"} onClose={() => setEditing(null)}>
         <div className="space-y-3">

@@ -8,6 +8,8 @@ import Modal from "@/components/ui/Modal";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import Badge from "@/components/ui/Badge";
 import Switch from "@/components/ui/Switch";
+import Pagination from "@/components/ui/Pagination";
+import { rowMatchesQuery } from "@/lib/fuzzySearch";
 import { MAMA_ROOMS } from "@/lib/mock/mamaRoom";
 import { MAMA_QUICK_KEYS } from "@/lib/mamaQuickKeys";
 import AdmissionAssessment from "@/components/mama/forms/AdmissionAssessment";
@@ -21,9 +23,16 @@ export default function MamaPage() {
   const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]>("全部");
   const [open, setOpen] = useState<{ room: string; key: string } | null>(null);
   const [showSecondary, setShowSecondary] = useState(false);
+  const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  const rooms =
+  const byStatus =
     filter === "全部" ? MAMA_ROOMS : MAMA_ROOMS.filter((r) => r.status === filter);
+  const rooms = q ? byStatus.filter((r) => rowMatchesQuery(r, q)) : byStatus;
+  const totalPages = Math.max(1, Math.ceil(rooms.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pagedRooms = rooms.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   const keyLabel = MAMA_QUICK_KEYS.find((k) => k.key === open?.key)?.label ?? "";
 
@@ -63,7 +72,10 @@ export default function MamaPage() {
             {STATUS_FILTERS.map((s) => (
               <button
                 key={s}
-                onClick={() => setFilter(s)}
+                onClick={() => {
+                  setFilter(s);
+                  setPage(1);
+                }}
                 className={
                   "rounded-full px-3 py-1 text-xs " +
                   (filter === s ? "bg-rose-500 text-white" : "bg-stone-100 text-stone-600")
@@ -89,8 +101,18 @@ export default function MamaPage() {
         </span>
       </div>
 
+      <input
+        value={q}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setPage(1);
+        }}
+        placeholder="搜尋房號/媽媽姓名/病歷號（支援模糊搜尋）"
+        className="mb-4 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm sm:w-72"
+      />
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-        {rooms.map((r) => (
+        {pagedRooms.map((r) => (
           <MamaRoomCard
             key={r.room}
             room={r}
@@ -98,6 +120,19 @@ export default function MamaPage() {
             showSecondary={showSecondary}
           />
         ))}
+      </div>
+
+      <div className="mt-4">
+        <Pagination
+          page={safePage}
+          pageSize={pageSize}
+          total={rooms.length}
+          onPageChange={setPage}
+          onPageSizeChange={(n) => {
+            setPageSize(n);
+            setPage(1);
+          }}
+        />
       </div>
 
       <Modal

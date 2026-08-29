@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { BedDouble, Users, GraduationCap, Megaphone } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
@@ -22,18 +23,29 @@ const CATEGORY_COLOR: Record<string, "rose" | "green" | "blue" | "amber" | "purp
   訪客預約: "slate",
 };
 
+const CATEGORY_LINK: Record<string, string> = {
+  預約參觀: "/admin?tab=visit",
+  預約簽約: "/contract?tab=new",
+  預產期: "/customer",
+  入出住: "/mama",
+  館內人數: "/room",
+  訪客預約: "/room",
+};
+
 function AnnouncementTab() {
   return (
     <div className="space-y-2">
       {ANNOUNCEMENTS.map((a) => (
-        <Card key={a.id}>
-          <div className="flex items-center justify-between">
-            <span className="font-medium">{a.title}</span>
-            <span className="text-xs text-stone-400">
-              {a.date}｜{a.author}
-            </span>
-          </div>
-        </Card>
+        <Link key={a.id} href="/admin?tab=board" className="block">
+          <Card>
+            <div className="flex items-center justify-between">
+              <span className="font-medium">{a.title}</span>
+              <span className="text-xs text-stone-400">
+                {a.date}｜{a.author}
+              </span>
+            </div>
+          </Card>
+        </Link>
       ))}
     </div>
   );
@@ -54,9 +66,14 @@ function MamaCalendarTab() {
           <Card key={day.date} title={day.date}>
             <ul className="space-y-1.5 text-sm">
               {day.items.map((it, i) => (
-                <li key={i} className="flex items-center gap-2">
-                  <Badge color={CATEGORY_COLOR[it.category]}>{it.category}</Badge>
-                  <span className="text-stone-600">{it.text}</span>
+                <li key={i}>
+                  <Link
+                    href={CATEGORY_LINK[it.category] ?? "/"}
+                    className="flex items-center gap-2 rounded px-1 py-0.5 -mx-1 transition-colors hover:bg-stone-50"
+                  >
+                    <Badge color={CATEGORY_COLOR[it.category]}>{it.category}</Badge>
+                    <span className="text-stone-600">{it.text}</span>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -100,22 +117,24 @@ function CourseTab() {
   return (
     <div className="space-y-2">
       {COURSES.map((c) => (
-        <Card key={c.id}>
-          <div className="flex items-center justify-between text-sm">
-            <div>
-              <span className="font-medium">{c.name}</span>
-              <span className="ml-2 text-stone-400">{c.time}</span>
+        <Link key={c.id} href="/course?tab=registration" className="block">
+          <Card>
+            <div className="flex items-center justify-between text-sm">
+              <div>
+                <span className="font-medium">{c.name}</span>
+                <span className="ml-2 text-stone-400">{c.time}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge color={c.fee ? "amber" : "green"}>
+                  {c.fee ? "收費" : "免費"}
+                </Badge>
+                <span className="text-xs text-stone-500">
+                  已報名 {c.enrolled}/{c.cap}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge color={c.fee ? "amber" : "green"}>
-                {c.fee ? "收費" : "免費"}
-              </Badge>
-              <span className="text-xs text-stone-500">
-                已報名 {c.enrolled}/{c.cap}
-              </span>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        </Link>
       ))}
       <p className="text-xs text-stone-400">
         「一週Line報名」統計按鈕角標串接14.LINE官方帳號管理之課程通知已讀/報名回覆資料（本稿未實作）。
@@ -147,10 +166,10 @@ export default function HomePage() {
       <RequireAccess moduleNo="1">
       <PageHeader title="1. 中控中心" moduleNo="1" />
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard icon={BedDouble} label="入住中媽媽" value={occupied} gradient="from-rose-500 to-rose-400" />
-        <StatCard icon={Users} label="客戶總數" value={CUSTOMERS.length} gradient="from-sky-500 to-sky-400" />
-        <StatCard icon={GraduationCap} label="本週開課數" value={COURSES.length} gradient="from-amber-500 to-amber-400" />
-        <StatCard icon={Megaphone} label="公告則數" value={ANNOUNCEMENTS.length} gradient="from-emerald-500 to-emerald-400" />
+        <StatCard icon={BedDouble} label="入住中媽媽" value={occupied} gradient="from-brand-500 to-brand-400" href="/mama" />
+        <StatCard icon={Users} label="客戶總數" value={CUSTOMERS.length} gradient="from-sky-500 to-sky-400" href="/customer" />
+        <StatCard icon={GraduationCap} label="本週開課數" value={COURSES.length} gradient="from-amber-500 to-amber-400" href="/course" />
+        <StatCard icon={Megaphone} label="公告則數" value={ANNOUNCEMENTS.length} gradient="from-emerald-500 to-emerald-400" href="/admin?tab=board" />
       </div>
       <TabsFromUrl
         tabs={[

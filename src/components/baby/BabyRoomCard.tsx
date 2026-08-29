@@ -5,10 +5,13 @@ import { BABY_QUICK_KEYS } from "@/lib/babyQuickKeys";
 export default function BabyRoomCard({
   room,
   onKeyClick,
+  showSecondary = false,
 }: {
   room: BabyRoom;
   onKeyClick: (roomNo: string, keyKey: string) => void;
+  showSecondary?: boolean;
 }) {
+  const keys = showSecondary ? BABY_QUICK_KEYS : BABY_QUICK_KEYS.filter((k) => k.core);
   return (
     <div className={`rounded-xl border-2 p-3.5 shadow-sm transition-shadow hover:shadow-md sm:p-4 ${BABY_STATUS_COLOR[room.status]}`}>
       <div className="mb-2 flex items-center justify-between">
@@ -35,7 +38,7 @@ export default function BabyRoomCard({
         </div>
       </div>
       <div className="flex flex-wrap gap-1.5">
-        {BABY_QUICK_KEYS.map((k) => (
+        {keys.map((k) => (
           <button
             key={k.key}
             onClick={() => onKeyClick(room.room, k.key)}

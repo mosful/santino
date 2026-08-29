@@ -52,8 +52,8 @@ export default function SidebarNav({
                   (locked
                     ? "cursor-not-allowed text-stone-300"
                     : active
-                    ? "bg-gradient-to-r from-rose-500 to-rose-400 text-white shadow-sm shadow-rose-200"
-                    : "text-stone-600 hover:bg-amber-50")
+                    ? "bg-gradient-to-r from-brand-500 to-brand-400 text-white shadow-sm shadow-brand-200"
+                    : "text-stone-600 hover:bg-brand-50")
                 }
               >
                 <Icon className="h-[18px] w-[18px] shrink-0" />
@@ -82,13 +82,13 @@ export default function SidebarNav({
             </div>
 
             {!collapsed && m.subItems && isExpanded && !locked && (
-              <div className="ml-6 flex flex-col gap-0.5 border-l border-amber-900/10 py-1 pl-3">
+              <div className="ml-6 flex flex-col gap-0.5 border-l border-brand-900/10 py-1 pl-3">
                 {m.subItems.map((s) => (
                   <Link
                     key={s.key}
                     href={`${m.href}?tab=${s.key}`}
                     onClick={() => onNavigate?.()}
-                    className="truncate rounded-lg px-2 py-1.5 text-xs text-stone-500 hover:bg-amber-50 hover:text-rose-600"
+                    className="truncate rounded-lg px-2 py-1.5 text-xs text-stone-500 hover:bg-brand-50 hover:text-brand-600"
                   >
                     {s.label}
                   </Link>

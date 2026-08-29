@@ -1,29 +1,81 @@
 @import "tailwindcss";
 
-:root {
-  /* 溫暖中性色調：參考產後護理之家/月子中心常見的米杏、暖膚色系，
-     取代原本偏冷的白/藍灰，呼應2026年醫療儀表板「暖色中性底＋沉靜主色」的設計趨勢 */
+/*
+  三種可切換版型配色（ThemeSwitcher，見 lib/themeStore.ts）：
+  - warm（暖色，預設）：米杏暖膚色＋玫瑰紅，原始風格
+  - green（沉靜綠）：參考 Eleken Refera 醫療案例的「沉靜綠＋暖橘點綴」
+  - blue（專業藍）：醫療常見的沉穩藍綠，資訊感較強
+  data-theme 屬性由 ThemeSwitcher 寫在 <html> 上；未設定時預設走 warm。
+*/
+:root,
+:root[data-theme="warm"] {
   --background: #faf5ee;
   --background-alt: #f3e9dc;
   --foreground: #3a2e28;
   --brand: #e11d48;
   --brand-soft: #fdf1ee;
   --accent-gold: #c9932f;
+  --brand-50: #fff1f2;
+  --brand-100: #ffe4e6;
+  --brand-200: #fecdd3;
+  --brand-300: #fda4af;
+  --brand-400: #fb7185;
+  --brand-500: #f43f5e;
+  --brand-600: #e11d48;
+  --brand-900: #4c0519;
+  --accent-400: #fbbf24;
+}
+
+:root[data-theme="green"] {
+  --background: #f4f7f2;
+  --background-alt: #e7efe3;
+  --foreground: #22301f;
+  --brand: #3c6548;
+  --brand-soft: #eef5ef;
+  --accent-gold: #e8823a;
+  --brand-50: #f1f6f1;
+  --brand-100: #dce8de;
+  --brand-200: #c0d6c4;
+  --brand-300: #9ec0a4;
+  --brand-400: #74a17d;
+  --brand-500: #4f7f5c;
+  --brand-600: #3c6548;
+  --brand-900: #16281b;
+  --accent-400: #f0a35f;
+}
+
+:root[data-theme="blue"] {
+  --background: #f1f6f8;
+  --background-alt: #e3eef2;
+  --foreground: #1c2830;
+  --brand: #236276;
+  --brand-soft: #eaf5f7;
+  --accent-gold: #e2983b;
+  --brand-50: #f0f7f9;
+  --brand-100: #dbe9ee;
+  --brand-200: #b9d6df;
+  --brand-300: #8cbcc9;
+  --brand-400: #5a9bad;
+  --brand-500: #2f7d95;
+  --brand-600: #236276;
+  --brand-900: #0f2a33;
+  --accent-400: #f2b155;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-900: var(--brand-900);
+  --color-accent-400: var(--accent-400);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #201a15;
-    --background-alt: #2a221b;
-    --foreground: #ece4da;
-  }
 }
 
 * {
@@ -36,12 +88,11 @@ html {
 }
 
 body {
-  /* 底圖：暖色漸層＋兩個極淡的裝飾性色塊(玫瑰/鼠尾草綠)，參考2026年醫療儀表板
-     「柔和分層底圖」設計趨勢，取代單一死白背景，但不影響內容可讀性 */
+  /* 底圖：暖色漸層＋兩個極淡的裝飾性色塊，隨主題色(brand/accent)自動變色 */
   background-color: var(--background);
   background-image: linear-gradient(180deg, var(--background-alt) 0px, var(--background) 360px),
-    radial-gradient(600px circle at 92% 0%, rgba(225, 29, 72, 0.07), transparent 60%),
-    radial-gradient(500px circle at 4% 18%, rgba(78, 143, 121, 0.06), transparent 60%);
+    radial-gradient(600px circle at 92% 0%, color-mix(in srgb, var(--brand-500) 8%, transparent), transparent 60%),
+    radial-gradient(500px circle at 4% 18%, color-mix(in srgb, var(--accent-400) 10%, transparent), transparent 60%);
   background-attachment: fixed;
   color: var(--foreground);
   font-family: -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei",

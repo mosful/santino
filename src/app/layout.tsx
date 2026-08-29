@@ -25,6 +25,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-stone-50 text-stone-900">
+        <script
+          // 在hydrate前先套用已儲存的主題，避免畫面先閃預設暖色再跳成使用者選的主題
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('santino_theme_v1');if(t==='warm'||t==='green'||t==='blue'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}",
+          }}
+        />
         <AppShell>{children}</AppShell>
       </body>
     </html>

@@ -7,6 +7,7 @@ import BabyRoomCard from "@/components/baby/BabyRoomCard";
 import Modal from "@/components/ui/Modal";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import Badge from "@/components/ui/Badge";
+import Switch from "@/components/ui/Switch";
 import { BABY_ROOMS } from "@/lib/mock/babyRoom";
 import { BABY_QUICK_KEYS } from "@/lib/babyQuickKeys";
 import {
@@ -25,6 +26,7 @@ const STATUS_FILTERS = ["全部", "入住", "隔離", "親子同室", "視訊"] 
 export default function BabyPage() {
   const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]>("全部");
   const [open, setOpen] = useState<{ room: string; key: string } | null>(null);
+  const [showSecondary, setShowSecondary] = useState(false);
 
   const rooms =
     filter === "全部" ? BABY_ROOMS : BABY_ROOMS.filter((r) => r.status === filter);
@@ -87,14 +89,20 @@ export default function BabyPage() {
         <Badge color="rose">女寶寶</Badge>
         <Badge color="purple">親子同室</Badge>
         <Badge color="amber">隔離</Badge>
-        <span className="ml-auto">
-          房卡快捷鍵：<span className="text-sky-600">藍色＝8大核心功能</span>，灰色為次要功能
+        <span className="ml-auto flex items-center gap-2">
+          房卡快捷鍵：<span className="text-sky-600">藍色＝8大核心功能</span>
+          <Switch checked={showSecondary} onChange={setShowSecondary} label="顯示次要功能" />
         </span>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {rooms.map((r) => (
-          <BabyRoomCard key={r.room} room={r} onKeyClick={(room, key) => setOpen({ room, key })} />
+          <BabyRoomCard
+            key={r.room}
+            room={r}
+            onKeyClick={(room, key) => setOpen({ room, key })}
+            showSecondary={showSecondary}
+          />
         ))}
       </div>
 

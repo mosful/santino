@@ -5,10 +5,13 @@ import { MAMA_QUICK_KEYS } from "@/lib/mamaQuickKeys";
 export default function MamaRoomCard({
   room,
   onKeyClick,
+  showSecondary = false,
 }: {
   room: MamaRoom;
   onKeyClick: (roomNo: string, keyKey: string) => void;
+  showSecondary?: boolean;
 }) {
+  const keys = showSecondary ? MAMA_QUICK_KEYS : MAMA_QUICK_KEYS.filter((k) => k.core);
   const empty = room.status === "空房" || room.status === "打掃" || room.status === "報修";
 
   return (
@@ -56,7 +59,7 @@ export default function MamaRoomCard({
           </div>
 
           <div className="flex flex-wrap gap-1.5">
-            {MAMA_QUICK_KEYS.map((k) => (
+            {keys.map((k) => (
               <button
                 key={k.key}
                 onClick={() => onKeyClick(room.room, k.key)}

@@ -28,7 +28,7 @@ export default function Tabs({
             className={
               "shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all sm:px-4 " +
               (t.key === active
-                ? "bg-gradient-to-r from-rose-500 to-rose-400 text-white shadow-sm shadow-rose-200"
+                ? "bg-gradient-to-r from-brand-500 to-brand-400 text-white shadow-sm shadow-brand-200"
                 : "text-stone-500 hover:bg-white hover:text-stone-800")
             }
           >

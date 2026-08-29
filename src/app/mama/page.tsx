@@ -7,6 +7,7 @@ import MamaRoomCard from "@/components/mama/MamaRoomCard";
 import Modal from "@/components/ui/Modal";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import Badge from "@/components/ui/Badge";
+import Switch from "@/components/ui/Switch";
 import { MAMA_ROOMS } from "@/lib/mock/mamaRoom";
 import { MAMA_QUICK_KEYS } from "@/lib/mamaQuickKeys";
 import AdmissionAssessment from "@/components/mama/forms/AdmissionAssessment";
@@ -19,6 +20,7 @@ const STATUS_FILTERS = ["全部", "入住", "空房", "打掃", "報修"] as con
 export default function MamaPage() {
   const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]>("全部");
   const [open, setOpen] = useState<{ room: string; key: string } | null>(null);
+  const [showSecondary, setShowSecondary] = useState(false);
 
   const rooms =
     filter === "全部" ? MAMA_ROOMS : MAMA_ROOMS.filter((r) => r.status === filter);
@@ -81,8 +83,9 @@ export default function MamaPage() {
         <Badge color="rose">親子同室(粉)</Badge>
         <Badge color="amber">打掃(黃)</Badge>
         <Badge color="blue">報修(藍)</Badge>
-        <span className="ml-auto">
-          房卡快捷鍵：<span className="text-rose-600">紅色＝6大核心功能</span>，灰色為次要功能
+        <span className="ml-auto flex items-center gap-2">
+          房卡快捷鍵：<span className="text-rose-600">紅色＝6大核心功能</span>
+          <Switch checked={showSecondary} onChange={setShowSecondary} label="顯示次要功能" />
         </span>
       </div>
 
@@ -92,6 +95,7 @@ export default function MamaPage() {
             key={r.room}
             room={r}
             onKeyClick={(room, key) => setOpen({ room, key })}
+            showSecondary={showSecondary}
           />
         ))}
       </div>

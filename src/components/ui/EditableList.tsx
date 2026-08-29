@@ -76,7 +76,7 @@ export default function EditableList({
         {canEdit ? (
           <button
             onClick={openAdd}
-            className="ml-auto rounded-lg bg-gradient-to-r from-rose-500 to-rose-400 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-rose-200 transition-all hover:shadow-md hover:shadow-rose-300 active:scale-95"
+            className="ml-auto rounded-lg bg-gradient-to-r from-brand-500 to-brand-400 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-brand-200 transition-all hover:shadow-md hover:shadow-brand-300 active:scale-95"
           >
             ＋ 新增
           </button>
@@ -109,7 +109,7 @@ export default function EditableList({
                 ))}
                 {canEdit && (
                   <td className="whitespace-nowrap px-3 py-2.5">
-                    <button onClick={() => openEdit(row)} className="mr-3 text-rose-500 underline">
+                    <button onClick={() => openEdit(row)} className="mr-3 text-brand-500 underline">
                       編輯
                     </button>
                     <button onClick={() => setConfirmDeleteId(row.id)} className="text-stone-400 underline">
@@ -162,7 +162,7 @@ export default function EditableList({
             <button onClick={() => setEditing(null)} className="rounded-lg bg-stone-100 px-4 py-2 text-xs">
               取消
             </button>
-            <button onClick={save} className="rounded-lg bg-rose-500 px-4 py-2 text-xs text-white">
+            <button onClick={save} className="rounded-lg bg-brand-500 px-4 py-2 text-xs text-white">
               儲存
             </button>
           </div>

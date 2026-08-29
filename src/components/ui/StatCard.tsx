@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 
 export default function StatCard({
@@ -5,14 +6,16 @@ export default function StatCard({
   label,
   value,
   gradient,
+  href,
 }: {
   icon: LucideIcon;
   label: string;
   value: string | number;
   gradient: string;
+  href?: string;
 }) {
-  return (
-    <div className="group relative overflow-hidden rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+  const content = (
+    <>
       <div
         className={
           "absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gradient-to-br opacity-10 blur-xl transition-opacity duration-300 group-hover:opacity-20 " +
@@ -28,6 +31,19 @@ export default function StatCard({
           <div className="truncate text-xs text-stone-400">{label}</div>
         </div>
       </div>
-    </div>
+    </>
   );
+
+  const className =
+    "group relative block overflow-hidden rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg" +
+    (href ? " cursor-pointer" : "");
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {content}
+      </Link>
+    );
+  }
+  return <div className={className}>{content}</div>;
 }

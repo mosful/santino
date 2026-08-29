@@ -20,23 +20,25 @@ export default function Tabs({
 
   return (
     <div>
-      <div className="flex flex-wrap gap-1 border-b border-stone-200 pb-px">
+      <div className="scroll-fade flex flex-wrap gap-1 overflow-x-auto rounded-full bg-stone-100/70 p-1">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setActive(t.key)}
             className={
-              "-mb-px rounded-t-lg border-b-2 px-3.5 py-2 text-sm font-medium transition-colors sm:px-4 " +
+              "shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all sm:px-4 " +
               (t.key === active
-                ? "border-rose-500 text-rose-600"
-                : "border-transparent text-stone-500 hover:bg-stone-50 hover:text-stone-800")
+                ? "bg-gradient-to-r from-rose-500 to-rose-400 text-white shadow-sm shadow-rose-200"
+                : "text-stone-500 hover:bg-white hover:text-stone-800")
             }
           >
             {t.label}
           </button>
         ))}
       </div>
-      <div className="pt-4">{current?.content}</div>
+      <div key={current?.key} className="animate-fade-in pt-4">
+        {current?.content}
+      </div>
     </div>
   );
 }

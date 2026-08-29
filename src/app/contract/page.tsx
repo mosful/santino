@@ -21,7 +21,7 @@ export default function ContractPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
       <RequireAccess moduleNo="12">
-      <PageHeader title="12. 合約管理" />
+      <PageHeader title="12. 合約管理" moduleNo="12" />
       <TabsFromUrl
         tabs={[
           { key: "list", label: "合約查詢與列表", content: <ContractList /> },

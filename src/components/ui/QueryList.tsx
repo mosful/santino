@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Inbox } from "lucide-react";
 
 export type Column<T> = {
   key: string;
@@ -59,8 +60,8 @@ export default function QueryList<T extends { id: string | number }>({
                 key={row.id}
                 onClick={() => onRowClick?.(row)}
                 className={
-                  "border-t border-stone-100" +
-                  (onRowClick ? " cursor-pointer hover:bg-rose-50 active:bg-rose-100" : "")
+                  "border-t border-stone-100 transition-colors" +
+                  (onRowClick ? " cursor-pointer hover:bg-rose-50 active:bg-rose-100" : " hover:bg-stone-50")
                 }
               >
                 {columns.map((c) => (
@@ -74,8 +75,11 @@ export default function QueryList<T extends { id: string | number }>({
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={columns.length} className="px-3 py-8 text-center text-stone-400">
-                  查無資料
+                <td colSpan={columns.length} className="px-3 py-10 text-center text-stone-400">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <Inbox className="h-6 w-6 text-stone-300" />
+                    查無資料
+                  </div>
                 </td>
               </tr>
             )}

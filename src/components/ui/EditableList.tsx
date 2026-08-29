@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Inbox } from "lucide-react";
 import Modal from "./Modal";
 import { useAccess } from "@/lib/roleStore";
 
@@ -73,7 +74,10 @@ export default function EditableList({
         />
         <span className="text-xs text-stone-400">共 {filtered.length} 筆</span>
         {canEdit ? (
-          <button onClick={openAdd} className="ml-auto rounded-lg bg-rose-500 px-4 py-2 text-sm font-medium text-white hover:bg-rose-600">
+          <button
+            onClick={openAdd}
+            className="ml-auto rounded-lg bg-gradient-to-r from-rose-500 to-rose-400 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-rose-200 transition-all hover:shadow-md hover:shadow-rose-300 active:scale-95"
+          >
             ＋ 新增
           </button>
         ) : (
@@ -97,7 +101,7 @@ export default function EditableList({
           </thead>
           <tbody>
             {filtered.map((row) => (
-              <tr key={row.id} className="border-t border-stone-100">
+              <tr key={row.id} className="border-t border-stone-100 transition-colors hover:bg-stone-50">
                 {fields.map((f) => (
                   <td key={f.key} className="px-3 py-2.5">
                     {row[f.key]}
@@ -117,8 +121,11 @@ export default function EditableList({
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={fields.length + 1} className="px-3 py-8 text-center text-stone-400">
-                  查無資料
+                <td colSpan={fields.length + 1} className="px-3 py-10 text-center text-stone-400">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <Inbox className="h-6 w-6 text-stone-300" />
+                    查無資料
+                  </div>
                 </td>
               </tr>
             )}

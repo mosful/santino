@@ -55,6 +55,7 @@ export default function MamaPage() {
       <RequireAccess moduleNo="2">
       <PageHeader
         title="2. 媽媽照護（護理版房卡）"
+        moduleNo="2"
         action={
           <div className="flex flex-wrap gap-1">
             {STATUS_FILTERS.map((s) => (

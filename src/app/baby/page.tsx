@@ -62,6 +62,7 @@ export default function BabyPage() {
       <RequireAccess moduleNo="3">
       <PageHeader
         title="3. 寶寶照護（嬰兒室房卡）"
+        moduleNo="3"
         action={
           <div className="flex flex-wrap gap-1">
             {STATUS_FILTERS.map((s) => (

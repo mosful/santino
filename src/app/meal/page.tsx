@@ -77,7 +77,7 @@ export default function MealPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
       <RequireAccess moduleNo="9">
-      <PageHeader title="9. 月子餐" />
+      <PageHeader title="9. 月子餐" moduleNo="9" />
       <TabsFromUrl
         tabs={[
           { key: "order", label: "訂餐管理系統", content: <OrderTab /> },

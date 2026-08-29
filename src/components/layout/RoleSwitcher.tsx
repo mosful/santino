@@ -30,7 +30,7 @@ export default function RoleSwitcher() {
         <ChevronDown className={"h-3 w-3 transition-transform " + (open ? "rotate-180" : "")} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-40 mt-1.5 w-44 overflow-hidden rounded-xl border border-amber-900/10 bg-white py-1.5 shadow-lg">
+        <div className="animate-fade-in-up absolute right-0 top-full z-40 mt-1.5 w-44 overflow-hidden rounded-xl border border-amber-900/10 bg-white py-1.5 shadow-lg">
           {ROLES.map((r) => (
             <button
               key={r}

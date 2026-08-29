@@ -41,7 +41,7 @@ export default function CarePage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
       <RequireAccess moduleNo="7">
-      <PageHeader title="7. 媽媽關懷" />
+      <PageHeader title="7. 媽媽關懷" moduleNo="7" />
       <TabsFromUrl
         tabs={[
           { key: "visit", label: "參觀提醒", content: <ContactReminderTab /> },

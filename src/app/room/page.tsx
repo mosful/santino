@@ -51,6 +51,7 @@ export default function RoomPage() {
       <RequireAccess moduleNo="4">
       <PageHeader
         title="4. 房間動態（房務版房卡）"
+        moduleNo="4"
         action={
           <div className="flex gap-2 text-xs">
             <button className="rounded bg-stone-100 px-3 py-1.5">手機驗證碼</button>

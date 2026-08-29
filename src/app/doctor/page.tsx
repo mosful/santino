@@ -44,7 +44,7 @@ export default function DoctorPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
       <RequireAccess moduleNo="6">
-      <PageHeader title="6. 醫師巡診" />
+      <PageHeader title="6. 醫師巡診" moduleNo="6" />
       <TabsFromUrl
         tabs={[
           { key: "obgyn", label: "婦產科", content: <DeptTab /> },

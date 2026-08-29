@@ -243,6 +243,7 @@ export default function CustomerPage() {
       <RequireAccess moduleNo="5">
       <PageHeader
         title="5. 客戶資料"
+        moduleNo="5"
         action={
           <div className="flex gap-2 text-xs">
             <button className="rounded bg-stone-100 px-3 py-1.5">空白基本資料</button>

@@ -67,7 +67,7 @@ export default function AdminPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
       <RequireAccess moduleNo="15">
-      <PageHeader title="15. 後台管理" />
+      <PageHeader title="15. 後台管理" moduleNo="15" />
       <TabsFromUrl
         tabs={[
           { key: "visit", label: "預約參觀管理", content: <SimpleListTab rows={VISIT_ROWS} placeholder="項目名稱" /> },

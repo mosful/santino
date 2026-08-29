@@ -36,8 +36,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* 平板/手機：抽屜式側邊欄 */}
       {drawerOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-stone-900/40" onClick={() => setDrawerOpen(false)} />
-          <aside className="scroll-fade safe-top absolute inset-y-0 left-0 w-72 overflow-y-auto bg-white shadow-xl">
+          <div className="animate-overlay-in absolute inset-0 bg-stone-900/40" onClick={() => setDrawerOpen(false)} />
+          <aside className="animate-slide-in-left scroll-fade safe-top absolute inset-y-0 left-0 w-72 overflow-y-auto bg-white shadow-xl">
             <div className="flex items-center justify-between pr-2">
               <Brand />
               <button

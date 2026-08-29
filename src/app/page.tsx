@@ -1,13 +1,17 @@
+import { BedDouble, Users, GraduationCap, Megaphone } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
+import StatCard from "@/components/ui/StatCard";
 import {
   ANNOUNCEMENTS,
   MAMA_CALENDAR_SAMPLE,
   COURSES,
 } from "@/lib/mock/dashboard";
+import { MAMA_ROOMS } from "@/lib/mock/mamaRoom";
+import { CUSTOMERS } from "@/lib/mock/customer";
 
 const CATEGORY_COLOR: Record<string, "rose" | "green" | "blue" | "amber" | "purple" | "slate"> = {
   預約參觀: "blue",
@@ -136,10 +140,18 @@ function ValueAddedTab() {
 }
 
 export default function HomePage() {
+  const occupied = MAMA_ROOMS.filter((r) => r.status === "入住" || r.status === "親子同室").length;
+
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
       <RequireAccess moduleNo="1">
-      <PageHeader title="1. 中控中心" />
+      <PageHeader title="1. 中控中心" moduleNo="1" />
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard icon={BedDouble} label="入住中媽媽" value={occupied} gradient="from-rose-500 to-rose-400" />
+        <StatCard icon={Users} label="客戶總數" value={CUSTOMERS.length} gradient="from-sky-500 to-sky-400" />
+        <StatCard icon={GraduationCap} label="本週開課數" value={COURSES.length} gradient="from-amber-500 to-amber-400" />
+        <StatCard icon={Megaphone} label="公告則數" value={ANNOUNCEMENTS.length} gradient="from-emerald-500 to-emerald-400" />
+      </div>
       <TabsFromUrl
         tabs={[
           { key: "board", label: "公佈欄", content: <AnnouncementTab /> },

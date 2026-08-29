@@ -34,7 +34,7 @@ export default function LinePage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
       <RequireAccess moduleNo="14">
-      <PageHeader title="14. LINE官方帳號管理" />
+      <PageHeader title="14. LINE官方帳號管理" moduleNo="14" />
       <p className="mb-3 text-xs text-amber-600">
         ⚠ LINE App串接與推播通知列為第二階段（本次不做，僅保留架構擴充彈性）；
         Webhook對外HTTPS曝露方式需另行規劃（見規格文件7.6節）。以下畫面為全新規劃示意稿，無舊系統截圖可對照。

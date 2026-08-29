@@ -79,7 +79,7 @@ export default function KpiPage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
       <RequireAccess moduleNo="8">
-      <PageHeader title="8. 評鑑指標" />
+      <PageHeader title="8. 評鑑指標" moduleNo="8" />
       <TabsFromUrl
         tabs={[
           { key: "care", label: "照護指標", content: <IndicatorTab indicators={CARE_INDICATORS} /> },

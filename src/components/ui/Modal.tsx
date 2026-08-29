@@ -1,5 +1,7 @@
 "use client";
 
+import { createPortal } from "react-dom";
+
 export default function Modal({
   open,
   title,
@@ -13,8 +15,9 @@ export default function Modal({
   children: React.ReactNode;
   wide?: boolean;
 }) {
-  if (!open) return null;
-  return (
+  if (!open || typeof document === "undefined") return null;
+
+  return createPortal(
     <div
       className="animate-overlay-in fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-start sm:overflow-y-auto sm:p-4 sm:pt-10"
       onClick={onClose}
@@ -38,6 +41,7 @@ export default function Modal({
         </div>
         <div className="scroll-fade overflow-y-auto p-4">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

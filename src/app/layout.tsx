@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/layout/AppShell";
+import Footer from "@/components/layout/Footer";
+import { BASE_PATH } from "@/lib/basePath";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +20,15 @@ export const metadata: Metadata = {
   description: "靜態畫面稿（無真實後端邏輯，僅供畫面與流程確認）",
 };
 
+const authGuardScript = `try{
+  var loggedIn = localStorage.getItem('santino_auth_v1') === '1';
+  var base = ${JSON.stringify(BASE_PATH)};
+  var p = location.pathname;
+  var isAuthRoute = p.indexOf('/login') !== -1 || p.indexOf('/forgot-password') !== -1;
+  if (!loggedIn && !isAuthRoute) { location.replace(base + '/login/'); }
+  else if (loggedIn && isAuthRoute) { location.replace(base + '/'); }
+}catch(e){}`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -32,7 +43,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               "try{var t=localStorage.getItem('santino_theme_v1');if(t==='warm'||t==='green'||t==='blue'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}",
           }}
         />
+        <script
+          // 靜態畫面稿的登入導頁：未登入且非登入/忘記密碼頁時導向/login，
+          // 已登入卻停在/login或/forgot-password時導回首頁。純client端模擬，無真實驗證。
+          dangerouslySetInnerHTML={{ __html: authGuardScript }}
+        />
         <AppShell>{children}</AppShell>
+        <Footer />
       </body>
     </html>
   );

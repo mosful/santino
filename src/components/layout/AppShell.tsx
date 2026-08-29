@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import SidebarNav from "./SidebarNav";
 import RoleSwitcher from "./RoleSwitcher";
 import ThemeSwitcher from "./ThemeSwitcher";
 import SidebarIllustration from "./SidebarIllustration";
+
+const AUTH_ROUTE_PREFIXES = ["/login", "/forgot-password"];
 
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
@@ -26,6 +29,12 @@ function Brand({ compact = false }: { compact?: boolean }) {
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const pathname = usePathname();
+  const isAuthRoute = AUTH_ROUTE_PREFIXES.some((p) => pathname?.startsWith(p));
+
+  if (isAuthRoute) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="flex min-h-full">

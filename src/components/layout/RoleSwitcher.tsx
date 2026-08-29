@@ -1,15 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, UserCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ChevronDown, KeyRound, LogOut, UserCircle2 } from "lucide-react";
 import { ROLES, ROLE_PROFILE } from "@/lib/permissions";
 import { useCurrentRole, setCurrentRole } from "@/lib/roleStore";
+import { logout } from "@/lib/authStore";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 export default function RoleSwitcher() {
   const role = useCurrentRole();
   const profile = ROLE_PROFILE[role];
   const [open, setOpen] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -18,6 +23,12 @@ export default function RoleSwitcher() {
     document.addEventListener("click", onClick);
     return () => document.removeEventListener("click", onClick);
   }, []);
+
+  function handleLogout() {
+    setOpen(false);
+    logout();
+    router.push("/login");
+  }
 
   return (
     <div ref={ref} className="relative">
@@ -36,6 +47,7 @@ export default function RoleSwitcher() {
       </button>
       {open && (
         <div className="animate-fade-in-up absolute right-0 top-full z-40 mt-1.5 w-56 overflow-hidden rounded-xl border border-brand-900/10 bg-white py-1.5 shadow-lg">
+          <div className="px-4 py-1.5 text-[11px] text-stone-400">切換模擬身分（僅供demo測試權限）</div>
           {ROLES.map((r) => {
             const p = ROLE_PROFILE[r];
             return (
@@ -57,8 +69,27 @@ export default function RoleSwitcher() {
               </button>
             );
           })}
+          <div className="my-1.5 border-t border-stone-100" />
+          <button
+            onClick={() => {
+              setOpen(false);
+              setShowPasswordModal(true);
+            }}
+            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-stone-600 hover:bg-stone-50"
+          >
+            <KeyRound className="h-3.5 w-3.5" />
+            修改密碼
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-rose-600 hover:bg-rose-50"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            登出
+          </button>
         </div>
       )}
+      <ChangePasswordModal open={showPasswordModal} onClose={() => setShowPasswordModal(false)} />
     </div>
   );
 }

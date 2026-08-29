@@ -4,6 +4,7 @@ import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import MamaRoomCard from "@/components/mama/MamaRoomCard";
+import MamaRoomListView from "@/components/mama/MamaRoomListView";
 import FloatingWindow from "@/components/ui/FloatingWindow";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import Badge from "@/components/ui/Badge";
@@ -23,6 +24,7 @@ const STATUS_FILTERS = ["全部", "入住", "空房", "打掃", "報修"] as con
 export default function MamaPage() {
   const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]>("全部");
   const [showSecondary, setShowSecondary] = useState(false);
+  const [listView, setListView] = useState(false);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -96,6 +98,7 @@ export default function MamaPage() {
         <span className="ml-auto flex items-center gap-2">
           房卡快捷鍵：<span className="text-rose-600">紅色＝6大核心功能</span>
           <Switch checked={showSecondary} onChange={setShowSecondary} label="顯示次要功能" />
+          <Switch checked={listView} onChange={setListView} label="清單檢視" />
         </span>
       </div>
 
@@ -113,19 +116,30 @@ export default function MamaPage() {
         className="mb-4 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm sm:w-72"
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-        {pagedRooms.map((r) => (
-          <MamaRoomCard
-            key={r.room}
-            room={r}
-            onKeyClick={(room, key) => {
-              const qk = MAMA_QUICK_KEYS.find((k) => k.key === key);
-              openWindow(room, key, !!qk?.hasSignature);
-            }}
-            showSecondary={showSecondary}
-          />
-        ))}
-      </div>
+      {listView ? (
+        <MamaRoomListView
+          rooms={pagedRooms}
+          onKeyClick={(room, key) => {
+            const qk = MAMA_QUICK_KEYS.find((k) => k.key === key);
+            openWindow(room, key, !!qk?.hasSignature);
+          }}
+          showSecondary={showSecondary}
+        />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          {pagedRooms.map((r) => (
+            <MamaRoomCard
+              key={r.room}
+              room={r}
+              onKeyClick={(room, key) => {
+                const qk = MAMA_QUICK_KEYS.find((k) => k.key === key);
+                openWindow(room, key, !!qk?.hasSignature);
+              }}
+              showSecondary={showSecondary}
+            />
+          ))}
+        </div>
+      )}
 
       <div className="mt-4">
         <Pagination

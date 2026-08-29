@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/layout/AppShell";
 import Footer from "@/components/layout/Footer";
+import BackToTop from "@/components/ui/BackToTop";
 import { BASE_PATH } from "@/lib/basePath";
 
 const geistSans = Geist({
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
         <AppShell>{children}</AppShell>
         <Footer />
+        <BackToTop />
       </body>
     </html>
   );

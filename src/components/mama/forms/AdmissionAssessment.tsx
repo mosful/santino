@@ -28,10 +28,10 @@ export default function AdmissionAssessment({ room }: { room: string }) {
       <div className="mb-3 text-xs text-stone-400">房號 {room}｜入住評估（5分頁，每頁皆為完整表單）</div>
       <Tabs
         tabs={[
+          { key: "nursing", label: "護理紀錄", content: <TextArea label="入住當下護理紀錄" /> },
           { key: "history", label: "病史", content: <TextArea label="既往病史 / 過敏史" /> },
           { key: "physical", label: "身體評估", content: <TextArea label="身體評估項目" /> },
           { key: "family", label: "家庭評估", content: <TextArea label="家庭功能與支持系統評估" /> },
-          { key: "nursing", label: "護理紀錄", content: <TextArea label="入住當下護理紀錄" /> },
           { key: "tocc", label: "TOCC", content: <TextArea label="旅遊史/職業/接觸史/群聚史" /> },
         ]}
       />

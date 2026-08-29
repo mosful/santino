@@ -43,6 +43,10 @@ export default function ContractChangeOrder() {
       <div className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-700">
         ⚠ 開放對象：僅主管／櫃臺Leader層級帳號可直接修改（原舊系統此類修改被廠商鎖權限）。
       </div>
+      <div className="rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700">
+        ⚠ 原則：今天之前的帳務已鎖定不可修改；急診等特殊情況需選擇「急診例外」並填寫原因，
+        系統會額外標記此筆為例外修改，供事後稽核追蹤（見訪談整理v2 §3.5）。
+      </div>
       <div className="rounded border border-stone-200 p-3">
         <div className="mb-2 text-xs font-medium text-stone-600">新增變更單</div>
         <div className="grid grid-cols-3 gap-3 text-xs">
@@ -52,6 +56,7 @@ export default function ContractChangeOrder() {
               <option>房型變更</option>
               <option>天數增</option>
               <option>天數減</option>
+              <option>急診例外（今天之前帳務修正）</option>
             </select>
           </div>
           <div>

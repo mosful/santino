@@ -52,9 +52,13 @@ body {
 
 /* 觸控友善：按鈕/表單元件最小尺寸符合行動裝置點擊標準（約44px） */
 @layer base {
-  button {
+  button:not([role="switch"]) {
     cursor: pointer;
     min-height: 2.25rem;
+    touch-action: manipulation;
+  }
+  button[role="switch"] {
+    cursor: pointer;
     touch-action: manipulation;
   }
   button:disabled {

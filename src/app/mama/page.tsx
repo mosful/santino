@@ -24,7 +24,7 @@ const STATUS_FILTERS = ["全部", "入住", "空房", "打掃", "報修"] as con
 export default function MamaPage() {
   const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]>("全部");
   const [showSecondary, setShowSecondary] = useState(false);
-  const [listView, setListView] = useState(false);
+  const [listView, setListView] = useState(true);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);

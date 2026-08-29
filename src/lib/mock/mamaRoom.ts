@@ -71,7 +71,7 @@ const GENERATED: MamaRoom[] = EXTRA_ROOM_NOS.map((room) => {
     chartNo: `M2026${String(month).padStart(2, "0")}${String(startDay).padStart(2, "0")}${room}`,
     stayRange: `0${month}/${String(startDay).padStart(2, "0")}~${month === 8 ? "09" : "10"}/${String(startDay).padStart(2, "0")}`,
     stayDay,
-    babyCount: rng.bool(0.9) ? 1 : 2,
+    babyCount: 1,
     alert: rng.pick(ALERTS),
   };
 });

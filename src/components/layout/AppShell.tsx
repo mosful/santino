@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import SidebarNav from "./SidebarNav";
 import RoleSwitcher from "./RoleSwitcher";
 import ThemeSwitcher from "./ThemeSwitcher";
 import SidebarIllustration from "./SidebarIllustration";
+import { useSidebarCollapsed, setSidebarCollapsed } from "@/lib/sidebarStore";
 
 const AUTH_ROUTE_PREFIXES = ["/login", "/forgot-password"];
 
@@ -29,6 +30,7 @@ function Brand({ compact = false }: { compact?: boolean }) {
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const collapsed = useSidebarCollapsed();
   const pathname = usePathname();
   const isAuthRoute = AUTH_ROUTE_PREFIXES.some((p) => pathname?.startsWith(p));
 
@@ -39,10 +41,41 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-full">
       {/* 桌機固定側邊欄 */}
-      <aside className="scroll-fade sticky top-0 hidden h-screen w-60 shrink-0 overflow-y-auto border-r border-brand-900/10 bg-white/80 backdrop-blur lg:flex lg:flex-col">
-        <Brand />
-        <SidebarNav />
-        <SidebarIllustration />
+      <aside
+        className={
+          "scroll-fade sticky top-0 hidden h-screen shrink-0 overflow-y-auto border-r border-brand-900/10 bg-white/80 backdrop-blur lg:flex lg:flex-col " +
+          (collapsed ? "w-[68px]" : "w-60")
+        }
+      >
+        {collapsed ? (
+          <div className="flex flex-col items-center gap-1 pt-2">
+            <Brand compact />
+            <button
+              onClick={() => setSidebarCollapsed(false)}
+              className="mb-1 flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600"
+              aria-label="展開選單"
+              title="展開選單"
+            >
+              <PanelLeftOpen className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center">
+            <div className="min-w-0 flex-1">
+              <Brand />
+            </div>
+            <button
+              onClick={() => setSidebarCollapsed(true)}
+              className="mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600"
+              aria-label="收合選單"
+              title="收合選單"
+            >
+              <PanelLeftClose className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        <SidebarNav collapsed={collapsed} />
+        {!collapsed && <SidebarIllustration />}
       </aside>
 
       {/* 平板/手機：抽屜式側邊欄 */}

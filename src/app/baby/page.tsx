@@ -30,7 +30,7 @@ const STATUS_FILTERS = ["全部", "入住", "隔離", "親子同室", "視訊"] 
 export default function BabyPage() {
   const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]>("全部");
   const [showSecondary, setShowSecondary] = useState(false);
-  const [listView, setListView] = useState(false);
+  const [listView, setListView] = useState(true);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);

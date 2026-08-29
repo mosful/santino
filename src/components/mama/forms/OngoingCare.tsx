@@ -9,6 +9,39 @@ const HISTORY = [
   { date: "2026-08-26 21:40", author: "護理師-小玲", note: "疼痛評估：傷口＋乳房脹痛（複選）" },
 ];
 
+function ContinuousTab() {
+  const [text, setText] = useState("");
+  return (
+    <div className="space-y-3 text-sm">
+      <div>
+        <label className="mb-1 block text-xs text-stone-500">
+          疼痛評估（可複選，分數可自訂）
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {["傷口疼痛", "乳房脹痛", "子宮收縮痛", "其他"].map((t) => (
+            <label key={t} className="flex items-center gap-1 rounded-lg border border-stone-200 px-2 py-1.5 text-xs">
+              <input type="checkbox" /> {t}
+            </label>
+          ))}
+          <input
+            className="w-20 rounded-lg border border-stone-200 px-2 py-1.5 text-xs"
+            placeholder="分數"
+          />
+        </div>
+      </div>
+      <div className="flex justify-end">
+        <PhrasePicker onInsert={(t) => setText((prev) => (prev ? prev + "\n" + t : t))} />
+      </div>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        className="h-20 w-full rounded-lg border border-stone-200 p-2 text-sm"
+        placeholder="（暫存草稿）"
+      />
+    </div>
+  );
+}
+
 function NarrativeTab() {
   const [text, setText] = useState("");
   return (
@@ -37,27 +70,7 @@ export default function OngoingCare({ room }: { room: string }) {
           {
             key: "continuous",
             label: "持續性護理",
-            content: (
-              <div className="space-y-3 text-sm">
-                <div>
-                  <label className="mb-1 block text-xs text-stone-500">
-                    疼痛評估（可複選，分數可自訂）
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {["傷口疼痛", "乳房脹痛", "子宮收縮痛", "其他"].map((t) => (
-                      <label key={t} className="flex items-center gap-1 rounded-lg border border-stone-200 px-2 py-1.5 text-xs">
-                        <input type="checkbox" /> {t}
-                      </label>
-                    ))}
-                    <input
-                      className="w-20 rounded-lg border border-stone-200 px-2 py-1.5 text-xs"
-                      placeholder="分數"
-                    />
-                  </div>
-                </div>
-                <textarea className="h-20 w-full rounded-lg border border-stone-200 p-2 text-sm" placeholder="（暫存草稿）" />
-              </div>
-            ),
+            content: <ContinuousTab />,
           },
           {
             key: "narrative",

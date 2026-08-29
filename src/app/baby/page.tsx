@@ -4,12 +4,13 @@ import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import BabyRoomCard from "@/components/baby/BabyRoomCard";
-import Modal from "@/components/ui/Modal";
+import FloatingWindow from "@/components/ui/FloatingWindow";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import Badge from "@/components/ui/Badge";
 import Switch from "@/components/ui/Switch";
 import Pagination from "@/components/ui/Pagination";
 import { rowMatchesQuery } from "@/lib/fuzzySearch";
+import { useMultiWindowManager } from "@/lib/useMultiWindowManager";
 import { BABY_ROOMS } from "@/lib/mock/babyRoom";
 import { BABY_QUICK_KEYS } from "@/lib/babyQuickKeys";
 import {
@@ -27,11 +28,11 @@ const STATUS_FILTERS = ["全部", "入住", "隔離", "親子同室", "視訊"] 
 
 export default function BabyPage() {
   const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]>("全部");
-  const [open, setOpen] = useState<{ room: string; key: string } | null>(null);
   const [showSecondary, setShowSecondary] = useState(false);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const { windows, openWindow, closeWindow, bringToFront, blockedMsg } = useMultiWindowManager();
 
   const byStatus =
     filter === "全部" ? BABY_ROOMS : BABY_ROOMS.filter((r) => r.status === filter);
@@ -40,27 +41,24 @@ export default function BabyPage() {
   const safePage = Math.min(page, totalPages);
   const pagedRooms = rooms.slice((safePage - 1) * pageSize, safePage * pageSize);
 
-  const keyLabel = BABY_QUICK_KEYS.find((k) => k.key === open?.key)?.label ?? "";
-
-  function renderForm() {
-    if (!open) return null;
-    switch (open.key) {
+  function renderForm(room: string, key: string) {
+    switch (key) {
       case "admission":
-        return <BabyAdmission room={open.room} />;
+        return <BabyAdmission room={room} />;
       case "record":
-        return <BabyRecord room={open.room} />;
+        return <BabyRecord room={room} />;
       case "daily":
-        return <BabyDaily room={open.room} />;
+        return <BabyDaily room={room} />;
       case "feeding":
-        return <FeedingAssessment room={open.room} />;
+        return <FeedingAssessment room={room} />;
       case "growth":
-        return <GrowthDiary room={open.room} />;
+        return <GrowthDiary room={room} />;
       case "photo":
-        return <BabyPhoto room={open.room} />;
+        return <BabyPhoto room={room} />;
       case "io":
-        return <BabyIO room={open.room} />;
+        return <BabyIO room={room} />;
       case "guidance":
-        return <BabyGuidance room={open.room} />;
+        return <BabyGuidance room={room} />;
       default:
         return (
           <PlaceholderNotice text="次要功能（非寶寶照護8大核心），畫面待後續批次補齊。" />
@@ -107,6 +105,10 @@ export default function BabyPage() {
         </span>
       </div>
 
+      <p className="mb-4 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-600">
+        💡 可同時開啟多個房卡表單視窗（拖曳標題列移動位置），供同時填寫多筆紀錄；含簽名步驟的表單會鎖定僅能操作單一房間。
+      </p>
+
       <input
         value={q}
         onChange={(e) => {
@@ -122,7 +124,10 @@ export default function BabyPage() {
           <BabyRoomCard
             key={r.room}
             room={r}
-            onKeyClick={(room, key) => setOpen({ room, key })}
+            onKeyClick={(room, key) => {
+              const qk = BABY_QUICK_KEYS.find((k) => k.key === key);
+              openWindow(room, key, !!qk?.hasSignature);
+            }}
             showSecondary={showSecondary}
           />
         ))}
@@ -141,9 +146,28 @@ export default function BabyPage() {
         />
       </div>
 
-      <Modal open={!!open} title={`${open?.room ?? ""}｜${keyLabel}`} onClose={() => setOpen(null)} wide>
-        {renderForm()}
-      </Modal>
+      {blockedMsg && (
+        <div className="fixed bottom-4 left-1/2 z-[60] -translate-x-1/2 rounded-lg bg-stone-900 px-4 py-2.5 text-xs text-white shadow-lg">
+          {blockedMsg}
+        </div>
+      )}
+
+      {windows.map((w) => {
+        const keyLabel = BABY_QUICK_KEYS.find((k) => k.key === w.key)?.label ?? "";
+        return (
+          <FloatingWindow
+            key={w.id}
+            title={`${w.room}｜${keyLabel}`}
+            onClose={() => closeWindow(w.id)}
+            onFocus={() => bringToFront(w.id)}
+            zIndex={w.z}
+            initialPos={{ x: w.x, y: w.y }}
+            wide
+          >
+            {renderForm(w.room, w.key)}
+          </FloatingWindow>
+        );
+      })}
       </RequireAccess>
     </div>
   );

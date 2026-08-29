@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Switch from "@/components/ui/Switch";
+import { useSameRoomLock, setSameRoomLock } from "@/lib/windowLockStore";
 
 export default function SystemSettings() {
-  const [multiWindowLock, setMultiWindowLock] = useState(false);
+  const multiWindowLock = useSameRoomLock();
   const [reboundDays, setReboundDays] = useState(3);
 
   return (
@@ -14,7 +15,7 @@ export default function SystemSettings() {
           <div className="text-xs font-medium text-rose-700">
             多視窗鎖房範圍開關（系統開發總則第9條）
           </div>
-          <Switch checked={multiWindowLock} onChange={setMultiWindowLock} />
+          <Switch checked={multiWindowLock} onChange={setSameRoomLock} />
         </div>
         <p className="text-xs text-rose-600">
           {multiWindowLock

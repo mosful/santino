@@ -4,12 +4,13 @@ import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import MamaRoomCard from "@/components/mama/MamaRoomCard";
-import Modal from "@/components/ui/Modal";
+import FloatingWindow from "@/components/ui/FloatingWindow";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import Badge from "@/components/ui/Badge";
 import Switch from "@/components/ui/Switch";
 import Pagination from "@/components/ui/Pagination";
 import { rowMatchesQuery } from "@/lib/fuzzySearch";
+import { useMultiWindowManager } from "@/lib/useMultiWindowManager";
 import { MAMA_ROOMS } from "@/lib/mock/mamaRoom";
 import { MAMA_QUICK_KEYS } from "@/lib/mamaQuickKeys";
 import AdmissionAssessment from "@/components/mama/forms/AdmissionAssessment";
@@ -21,11 +22,11 @@ const STATUS_FILTERS = ["全部", "入住", "空房", "打掃", "報修"] as con
 
 export default function MamaPage() {
   const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]>("全部");
-  const [open, setOpen] = useState<{ room: string; key: string } | null>(null);
   const [showSecondary, setShowSecondary] = useState(false);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const { windows, openWindow, closeWindow, bringToFront, blockedMsg } = useMultiWindowManager();
 
   const byStatus =
     filter === "全部" ? MAMA_ROOMS : MAMA_ROOMS.filter((r) => r.status === filter);
@@ -34,22 +35,19 @@ export default function MamaPage() {
   const safePage = Math.min(page, totalPages);
   const pagedRooms = rooms.slice((safePage - 1) * pageSize, safePage * pageSize);
 
-  const keyLabel = MAMA_QUICK_KEYS.find((k) => k.key === open?.key)?.label ?? "";
-
-  function renderForm() {
-    if (!open) return null;
-    switch (open.key) {
+  function renderForm(room: string, key: string) {
+    switch (key) {
       case "admission":
-        return <AdmissionAssessment room={open.room} />;
+        return <AdmissionAssessment room={room} />;
       case "ongoing":
       case "record":
-        return <OngoingCare room={open.room} />;
+        return <OngoingCare room={room} />;
       case "social":
-        return <PaperScoreForm room={open.room} title="社會支持" />;
+        return <PaperScoreForm room={room} title="社會支持" />;
       case "mood":
-        return <PaperScoreForm room={open.room} title="心情量表" />;
+        return <PaperScoreForm room={room} title="心情量表" />;
       case "guidance":
-        return <NursingGuidance room={open.room} />;
+        return <NursingGuidance room={room} />;
       case "health-edu-eval":
         return (
           <PlaceholderNotice text="衛教認知評估單：衛教師新增項目，實際欄位內容尚未與客戶確認，先保留版位，待補充後再設計表單（見規格文件8.2節待確認事項）。" />
@@ -101,6 +99,10 @@ export default function MamaPage() {
         </span>
       </div>
 
+      <p className="mb-4 rounded-lg bg-brand-50 px-3 py-2 text-xs text-brand-600">
+        💡 可同時開啟多個房卡表單視窗（拖曳標題列移動位置），供同時填寫多筆紀錄；含簽名步驟的表單會鎖定僅能操作單一房間。
+      </p>
+
       <input
         value={q}
         onChange={(e) => {
@@ -116,7 +118,10 @@ export default function MamaPage() {
           <MamaRoomCard
             key={r.room}
             room={r}
-            onKeyClick={(room, key) => setOpen({ room, key })}
+            onKeyClick={(room, key) => {
+              const qk = MAMA_QUICK_KEYS.find((k) => k.key === key);
+              openWindow(room, key, !!qk?.hasSignature);
+            }}
             showSecondary={showSecondary}
           />
         ))}
@@ -135,14 +140,28 @@ export default function MamaPage() {
         />
       </div>
 
-      <Modal
-        open={!!open}
-        title={`${open?.room ?? ""}｜${keyLabel}`}
-        onClose={() => setOpen(null)}
-        wide
-      >
-        {renderForm()}
-      </Modal>
+      {blockedMsg && (
+        <div className="fixed bottom-4 left-1/2 z-[60] -translate-x-1/2 rounded-lg bg-stone-900 px-4 py-2.5 text-xs text-white shadow-lg">
+          {blockedMsg}
+        </div>
+      )}
+
+      {windows.map((w) => {
+        const keyLabel = MAMA_QUICK_KEYS.find((k) => k.key === w.key)?.label ?? "";
+        return (
+          <FloatingWindow
+            key={w.id}
+            title={`${w.room}｜${keyLabel}`}
+            onClose={() => closeWindow(w.id)}
+            onFocus={() => bringToFront(w.id)}
+            zIndex={w.z}
+            initialPos={{ x: w.x, y: w.y }}
+            wide
+          >
+            {renderForm(w.room, w.key)}
+          </FloatingWindow>
+        );
+      })}
       </RequireAccess>
     </div>
   );

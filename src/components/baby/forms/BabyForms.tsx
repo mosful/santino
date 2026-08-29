@@ -3,11 +3,30 @@
 import { useState } from "react";
 import Tabs from "@/components/ui/Tabs";
 import PhrasePicker from "@/components/phrases/PhrasePicker";
+import SignatureBox from "@/components/ui/SignatureBox";
 
 function PrevFillBadge() {
   return (
     <div className="mb-2 inline-block rounded bg-sky-50 px-2 py-1 text-xs text-sky-600">
       ↺ 已帶入上一筆資料（阿長PDF指定套用範圍）
+    </div>
+  );
+}
+
+function PickableTextArea({ label, placeholder }: { label: string; placeholder?: string }) {
+  const [text, setText] = useState("");
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between">
+        <label className="block text-xs text-stone-500">{label}</label>
+        <PhrasePicker onInsert={(t) => setText((prev) => (prev ? prev + "\n" + t : t))} />
+      </div>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        className="h-20 w-full rounded-lg border border-stone-200 p-2 text-sm"
+        placeholder={placeholder}
+      />
     </div>
   );
 }
@@ -21,17 +40,17 @@ export function BabyAdmission({ room }: { room: string }) {
           {
             key: "basic",
             label: "基本資料",
-            content: <textarea className="h-20 w-full rounded border border-stone-200 p-2 text-sm" placeholder="出生資訊、Apgar分數等" />,
+            content: <PickableTextArea label="基本資料" placeholder="出生資訊、Apgar分數等" />,
           },
           {
             key: "physical",
             label: "身體評估",
-            content: <textarea className="h-20 w-full rounded border border-stone-200 p-2 text-sm" placeholder="身體評估項目" />,
+            content: <PickableTextArea label="身體評估" placeholder="身體評估項目" />,
           },
           {
             key: "nursing",
             label: "護理紀錄",
-            content: <textarea className="h-20 w-full rounded border border-stone-200 p-2 text-sm" placeholder="入住當下護理紀錄" />,
+            content: <PickableTextArea label="護理紀錄" placeholder="入住當下護理紀錄" />,
           },
         ]}
       />
@@ -172,7 +191,8 @@ export function BabyGuidance({ room }: { room: string }) {
       <div className="rounded border border-sky-200 bg-sky-50 p-2 text-xs text-sky-700">
         ⚠ 防呆提示：目前正在簽的是房號 {room} 的寶寶個案，請確認無誤。
       </div>
-      <textarea className="h-20 w-full rounded border border-stone-200 p-2 text-sm" placeholder="衛教指導內容" />
+      <PickableTextArea label="衛教指導內容" placeholder="衛教指導內容" />
+      <SignatureBox label="執行者簽名" />
       <div className="flex justify-end gap-2 text-xs">
         <button className="rounded bg-stone-100 px-3 py-1.5">暫存</button>
         <button className="rounded bg-sky-500 px-3 py-1.5 text-white">送出</button>

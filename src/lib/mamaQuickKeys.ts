@@ -2,6 +2,7 @@ export type QuickKey = {
   key: string;
   label: string;
   core: boolean; // 媽媽照護6大核心功能
+  hasSignature?: boolean; // 含簽名步驟：依總則#9，強制鎖定單一房間，不受多視窗設定影響
 };
 
 // 對照系統功能清單v16「開發優先順序」欄：核心=Tier1，其餘=Tier2
@@ -17,9 +18,9 @@ export const MAMA_QUICK_KEYS: QuickKey[] = [
   { key: "diary", label: "媽媽日記", core: false },
   { key: "doctor", label: "醫師巡診", core: false },
   { key: "discharge-eval", label: "退住評估", core: false },
-  { key: "guidance", label: "護理指導單", core: true },
+  { key: "guidance", label: "護理指導單", core: true, hasSignature: true },
   { key: "fall-risk", label: "高危險跌倒評估", core: false },
-  { key: "consent", label: "同意書", core: false },
+  { key: "consent", label: "同意書", core: false, hasSignature: true },
   { key: "incident", label: "意外通報", core: false },
   { key: "health-edu-eval", label: "衛教認知評估單", core: false },
 ];

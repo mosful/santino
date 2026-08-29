@@ -1,3 +1,5 @@
+import SignatureBox from "@/components/ui/SignatureBox";
+
 const ITEMS = [
   "子宮復原說明",
   "按摩式下床指導",
@@ -9,18 +11,6 @@ const ITEMS = [
   "營養飲食指導",
   "回診時間提醒",
 ];
-
-function SignatureBox({ label }: { label: string }) {
-  return (
-    <div className="rounded border border-stone-200 p-2">
-      <div className="mb-1 text-xs text-stone-500">{label}</div>
-      <div className="flex h-16 items-center justify-center rounded bg-stone-50 text-xs text-stone-300">
-        簽名板（canvas，示意）
-      </div>
-      <input className="mt-1 w-full rounded border border-stone-200 px-2 py-1 text-xs" placeholder="日期" />
-    </div>
-  );
-}
 
 export default function NursingGuidance({ room }: { room: string }) {
   return (

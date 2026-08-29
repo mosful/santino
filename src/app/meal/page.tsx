@@ -1,28 +1,26 @@
 "use client";
 
+import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import { MAMA_ROOMS } from "@/lib/mock/mamaRoom";
-import { makeRng, makeUniqueNameGenerator } from "@/lib/mock/genUtil";
+import { makeRng } from "@/lib/mock/genUtil";
 
 const RESTRICTIONS = ["無", "無", "無", "無", "海鮮過敏", "麩質不耐", "乳製品過敏", "堅果過敏", "素食"];
-const ALL_ROOM_NOS = MAMA_ROOMS.map((r) => r.room);
 const rngMeal = makeRng(11001);
-const nextMealName = makeUniqueNameGenerator(
-  rngMeal,
-  MAMA_ROOMS.map((r) => r.motherName).filter((n): n is string => !!n)
-);
-const MEALS: Row[] = ALL_ROOM_NOS.map((room, i) => {
-  const src = MAMA_ROOMS[i];
+// 房號、媽媽姓名、入住期間皆讀取自 MAMA_ROOMS，空房不虛構訂餐資料，
+// 確保與2.媽媽照護、4.房間動態看到的入住狀態一致。
+const MEALS: Row[] = MAMA_ROOMS.map((src, i) => {
+  const occupied = !!src.motherName;
   return {
     id: i + 1,
-    room,
-    name: src.motherName ?? nextMealName(),
-    deliveryMode: rngMeal.bool(0.55) ? "自然產" : "剖腹產",
-    stayRange: src.stayRange ?? "08/01~09/01",
-    restriction: rngMeal.pick(RESTRICTIONS),
+    room: src.room,
+    name: occupied ? src.motherName! : "（空房）",
+    deliveryMode: occupied ? (rngMeal.bool(0.55) ? "自然產" : "剖腹產") : "－",
+    stayRange: occupied ? (src.stayRange ?? "08/01~09/01") : "－",
+    restriction: occupied ? rngMeal.pick(RESTRICTIONS) : "－",
   };
 });
 
@@ -35,15 +33,28 @@ const mealFields: FieldSchema[] = [
 ];
 
 function OrderTab() {
+  const [occupiedOnly, setOccupiedOnly] = useState(true);
+  const rows = occupiedOnly ? MEALS.filter((r) => r.name !== "（空房）") : MEALS;
   return (
     <div className="space-y-2">
       <label className="flex items-center gap-1 text-xs text-stone-500">
-        <input type="checkbox" defaultChecked /> 僅顯示入住中
+        <input
+          type="checkbox"
+          checked={occupiedOnly}
+          onChange={(e) => setOccupiedOnly(e.target.checked)}
+        />{" "}
+        僅顯示入住中
       </label>
       <p className="text-xs text-stone-400">
         房號/媽媽/生產方式/入住期間讀取自2.媽媽照護入住評估資料，飲食禁忌為本模組可維護欄位。
       </p>
-      <EditableList moduleNo="9" fields={mealFields} initialRows={MEALS} searchPlaceholder="房號/媽媽姓名" />
+      <EditableList
+        key={occupiedOnly ? "occupied" : "all"}
+        moduleNo="9"
+        fields={mealFields}
+        initialRows={rows}
+        searchPlaceholder="房號/媽媽姓名"
+      />
       <div className="flex gap-2 text-xs">
         <button className="rounded bg-stone-100 px-3 py-1.5">列印飲食備註</button>
         <button className="rounded bg-stone-100 px-3 py-1.5">列印寶寶奶粉清單</button>

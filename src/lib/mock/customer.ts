@@ -1,4 +1,4 @@
-import { makeRng, maskedName, phoneNumber, addDays, pad2 } from "./genUtil";
+import { makeRng, makeUniqueNameGenerator, phoneNumber, addDays, pad2 } from "./genUtil";
 
 export type Customer = {
   id: number;
@@ -73,12 +73,14 @@ const STAFFS = ["櫃臺-小美", "櫃臺-阿凱", "櫃臺-婉真"];
 const NURSES = ["護理師-雅婷", "護理師-淑芬", "－"];
 
 const rng = makeRng(1001);
+const nextName = makeUniqueNameGenerator(rng, CURATED.map((c) => c.name));
+const nextFamilyName = makeUniqueNameGenerator(rng);
 const GENERATED: Customer[] = Array.from({ length: 47 }, (_, i) => {
   const id = i + 4;
   const signed = rng.bool(0.6);
   return {
     id,
-    name: maskedName(rng),
+    name: nextName(),
     level: rng.pick(LEVELS),
     parity: rng.pick(PARITY),
     phone: phoneNumber(rng),
@@ -90,7 +92,7 @@ const GENERATED: Customer[] = Array.from({ length: 47 }, (_, i) => {
     mainStaff: rng.pick(STAFFS),
     mainNurse: rng.pick(NURSES),
     lineBound: rng.bool(0.6),
-    family: rng.bool(0.7) ? `先生：${maskedName(rng)}` : "－",
+    family: rng.bool(0.7) ? `先生：${nextFamilyName()}` : "－",
   };
 });
 

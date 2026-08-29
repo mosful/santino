@@ -1,4 +1,4 @@
-import { makeRng, maskedName } from "./genUtil";
+import { makeRng, makeUniqueNameGenerator } from "./genUtil";
 
 export type OpsRoom = {
   room: string;
@@ -54,6 +54,10 @@ const MEAL_NOTES = ["無特殊禁忌", "海鮮過敏", "麩質不耐", "無特�
 const FEE_BY_TYPE: Record<OpsRoom["roomType"], number> = { 精緻房: 6800, VIP房: 9800, VILLA: 15800 };
 
 const rng = makeRng(4004);
+const nextName = makeUniqueNameGenerator(
+  rng,
+  CURATED.map((r) => r.motherName).filter((n): n is string => !!n)
+);
 const GENERATED: OpsRoom[] = EXTRA_ROOM_NOS.map((room) => {
   const roomType = rng.pick(ROOM_TYPES);
   const vacant = rng.bool(0.25);
@@ -64,8 +68,8 @@ const GENERATED: OpsRoom[] = EXTRA_ROOM_NOS.map((room) => {
   return {
     room,
     roomType,
-    motherName: maskedName(rng),
-    chartNo: `M2026${String(rng.int(8, 9)).padStart(2, "0")}${String(rng.int(1, 27)).padStart(2, "0")}`,
+    motherName: nextName(),
+    chartNo: `M2026${String(rng.int(8, 9)).padStart(2, "0")}${String(rng.int(1, 27)).padStart(2, "0")}${room}`,
     stayDay,
     fee,
     received,

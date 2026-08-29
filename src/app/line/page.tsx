@@ -8,10 +8,18 @@ import MemberBinding from "./tabs/MemberBinding";
 import BroadcastMessage from "./tabs/BroadcastMessage";
 import CourseNotify from "./tabs/CourseNotify";
 import MessageStats from "./tabs/MessageStats";
-import { makeRng, maskedName } from "@/lib/mock/genUtil";
+import { makeRng, makeUniqueNameGenerator } from "@/lib/mock/genUtil";
 
 const CATEGORIES = ["好友", "好友", "好友", "會員", "會員", "員工", "廠商", "封鎖"];
 const rngFriend = makeRng(14001);
+const usedLineIds = new Set<number>();
+function nextLineId() {
+  let n = rngFriend.int(10000, 99999);
+  while (usedLineIds.has(n)) n = rngFriend.int(10000, 99999);
+  usedLineIds.add(n);
+  return n;
+}
+const nextFriendName = makeUniqueNameGenerator(rngFriend, ["邱o乾"]);
 const FRIENDS: Row[] = [
   { id: 1, name: "邱o乾", category: "會員" },
   { id: 2, name: "LINE用戶88231", category: "好友" },
@@ -20,7 +28,7 @@ const FRIENDS: Row[] = [
     const category = rngFriend.pick(CATEGORIES);
     return {
       id: i + 4,
-      name: category === "好友" ? `LINE用戶${rngFriend.int(10000, 99999)}` : maskedName(rngFriend),
+      name: category === "好友" ? `LINE用戶${nextLineId()}` : nextFriendName(),
       category,
     };
   }),

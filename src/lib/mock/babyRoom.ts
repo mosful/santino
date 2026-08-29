@@ -1,4 +1,4 @@
-import { makeRng, maskedName } from "./genUtil";
+import { makeRng, makeCycler, SURNAMES } from "./genUtil";
 
 export type BabyStatus = "入住" | "隔離" | "親子同室" | "視訊";
 export type BabyGender = "男" | "女";
@@ -57,11 +57,18 @@ const EXTRA_ROOM_NOS = [
 ];
 
 const STATUS_WEIGHTED: BabyStatus[] = ["入住", "入住", "入住", "入住", "視訊", "視訊", "親子同室", "隔離"];
-const SURNAME_LABEL = ["小弟", "小妹"];
+
+// 姓氏×性別組合（最多60種不重複），排除已被CURATED精選範例佔用的組合
+const CURATED_COMBOS = new Set(CURATED.map((c) => `${c.babyName?.[0]}-${c.gender}`));
+const NAME_COMBOS = SURNAMES.flatMap((s) => [
+  { surname: s, gender: "男" as BabyGender },
+  { surname: s, gender: "女" as BabyGender },
+]).filter((c) => !CURATED_COMBOS.has(`${c.surname}-${c.gender}`));
 
 const rng = makeRng(3003);
+const nameCycler = makeCycler(rng, NAME_COMBOS);
 const GENERATED: BabyRoom[] = EXTRA_ROOM_NOS.map((room) => {
-  const gender: BabyGender = rng.bool(0.5) ? "男" : "女";
+  const { value: combo, round } = nameCycler();
   const status = rng.pick(STATUS_WEIGHTED);
   const month = rng.int(8, 9);
   const day = rng.int(1, 27);
@@ -71,12 +78,13 @@ const GENERATED: BabyRoom[] = EXTRA_ROOM_NOS.map((room) => {
       : status === "親子同室"
       ? "親子同室中"
       : "隔離中";
+  const label = combo.gender === "男" ? "小弟" : "小妹";
   return {
     room,
     status,
-    gender,
-    babyName: `${maskedName(rng)[0]}${gender === "男" ? SURNAME_LABEL[0] : SURNAME_LABEL[1]}`,
-    chartNo: `B2026${String(month).padStart(2, "0")}${String(day).padStart(2, "0")}`,
+    gender: combo.gender,
+    babyName: round === 1 ? `${combo.surname}${label}` : `${combo.surname}${label}(${round})`,
+    chartNo: `B2026${String(month).padStart(2, "0")}${String(day).padStart(2, "0")}${room}`,
     birthDate: `2026-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
     weight: `${(rng.int(24, 38) / 10).toFixed(1)}kg`,
     videoState,

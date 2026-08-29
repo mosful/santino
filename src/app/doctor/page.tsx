@@ -7,8 +7,20 @@ import EditableList, { type FieldSchema, type Row } from "@/components/ui/Editab
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import { makeRng } from "@/lib/mock/genUtil";
 
-const SURNAMES_D = ["陳", "王", "林", "張", "李", "黃", "吳", "劉", "蔡", "楊", "許", "鄭", "謝", "洪", "邱"];
+const SURNAMES_D = ["陳", "王", "林", "張", "李", "黃", "吳", "劉", "蔡", "楊", "許", "鄭", "謝", "洪", "邱", "曾", "廖", "賴", "徐", "周"];
+const GIVEN_D = ["如", "明", "華", "芳", "俊", "杰", "娟", "婷", "宏", "文", "美", "玲", "誠", "豪", "君"];
 const rngDoc = makeRng(13001);
+const usedDoctorNames = new Set(["陳O如", "王O明"]);
+function nextDoctorName() {
+  let name = `${rngDoc.pick(SURNAMES_D)}O${rngDoc.pick(GIVEN_D)}`;
+  let guard = 0;
+  while (usedDoctorNames.has(name) && guard < 500) {
+    name = `${rngDoc.pick(SURNAMES_D)}O${rngDoc.pick(GIVEN_D)}`;
+    guard++;
+  }
+  usedDoctorNames.add(name);
+  return name;
+}
 const SAMPLE: Row[] = [
   { id: 1, doctor: "陳O如", visitDays: 20, scheduled: 45, arrived: 42, absent: 3 },
   { id: 2, doctor: "王O明", visitDays: 12, scheduled: 30, arrived: 28, absent: 2 },
@@ -17,7 +29,7 @@ const SAMPLE: Row[] = [
     const absent = rngDoc.int(0, 4);
     return {
       id: i + 3,
-      doctor: `${rngDoc.pick(SURNAMES_D)}O${rngDoc.pick(["如", "明", "華", "芳", "俊", "杰", "娟"])}`,
+      doctor: nextDoctorName(),
       visitDays: rngDoc.int(4, 24),
       scheduled,
       arrived: scheduled - absent,

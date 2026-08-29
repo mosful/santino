@@ -7,6 +7,7 @@ import EditableList, { type FieldSchema, type Row } from "@/components/ui/Editab
 import ReportPicker from "@/components/reports/ReportPicker";
 import { POSTPARTUM_REPORTS, ACCOUNTING_REPORTS } from "@/lib/reports";
 import { ANNOUNCEMENTS } from "@/lib/mock/dashboard";
+import { OPS_ROOMS } from "@/lib/mock/opsRoom";
 import { makeRng } from "@/lib/mock/genUtil";
 import SystemSettings from "./tabs/SystemSettings";
 import PhraseLibrarySettings from "./tabs/PhraseLibrarySettings";
@@ -35,11 +36,22 @@ const NURSING_DATA_ROWS: Row[] = [{ id: 1, name: "歷史病歷查詢", note: "�
 const SUPPLY_CATEGORIES = ["尿布", "濕紙巾", "奶粉", "母乳袋", "產褥墊", "看護墊", "束腹帶", "冰枕", "溢乳墊", "沐浴乳"];
 const SUPPLY_BRANDS = ["幫寶適", "好奇", "妙而舒", "滿意寶寶", "貝親", "桃樂比", "小獅王", "惠氏", "雪印", "森永"];
 const rngSupply = makeRng(15001);
+const usedSupplyNames = new Set<string>();
+function nextSupplyName() {
+  let name = `${rngSupply.pick(SUPPLY_BRANDS)}${rngSupply.pick(SUPPLY_CATEGORIES)}`;
+  let guard = 0;
+  while (usedSupplyNames.has(name) && guard < 300) {
+    name = `${rngSupply.pick(SUPPLY_BRANDS)}${rngSupply.pick(SUPPLY_CATEGORIES)}`;
+    guard++;
+  }
+  usedSupplyNames.add(name);
+  return name;
+}
 const SUPPLY_ROWS: Row[] = [
   { id: 1, name: "備品名稱設定", note: "已於畫面確認" },
   ...Array.from({ length: 49 }, (_, i) => ({
     id: i + 2,
-    name: `${rngSupply.pick(SUPPLY_BRANDS)}${rngSupply.pick(SUPPLY_CATEGORIES)}`,
+    name: nextSupplyName(),
     note: `庫存下限${rngSupply.int(5, 30)}件`,
   })),
 ];
@@ -51,17 +63,17 @@ const OTHER_SETTINGS_BASE = [
 ];
 const OTHER_SETTINGS_ROWS: Row[] = OTHER_SETTINGS_BASE.map((name, i) => ({ id: i + 1, name, note: "" }));
 
-const ROOM_TYPE_NAMES = ["精緻房", "VIP房", "VILLA", "豪華套房"];
-const ROOM_SETTING_KINDS = ["房型設定", "房間資料", "房型價格設定", "房價折扣設定", "淡旺季加價設定", "續住優惠設定"];
+const ROOM_SETTING_KINDS = ["房型價格設定", "房價折扣設定", "淡旺季加價設定", "續住優惠設定"];
 const rngRoomSetting = makeRng(16001);
+// 逐房設定：每個房號各自一列，房號本身即為天生不重複的鍵值，比通用分類標籤更真實
 const ROOM_DATA_ROWS: Row[] = [
   { id: 1, name: "房型設定", note: "" },
   { id: 2, name: "房間資料", note: "" },
   { id: 3, name: "房型價格設定", note: "" },
   { id: 4, name: "房價折扣設定", note: "" },
-  ...Array.from({ length: 46 }, (_, i) => ({
+  ...OPS_ROOMS.slice(0, 46).map((r, i) => ({
     id: i + 5,
-    name: `${rngRoomSetting.pick(ROOM_TYPE_NAMES)}－${rngRoomSetting.pick(ROOM_SETTING_KINDS)}`,
+    name: `${r.room}房（${r.roomType}）－${rngRoomSetting.pick(ROOM_SETTING_KINDS)}`,
     note: "",
   })),
 ];

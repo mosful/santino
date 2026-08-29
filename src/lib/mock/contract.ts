@@ -1,4 +1,4 @@
-import { makeRng, maskedName, addDays, pad2 } from "./genUtil";
+import { makeRng, makeUniqueNameGenerator, addDays, pad2 } from "./genUtil";
 
 export type Contract = {
   id: number;
@@ -48,6 +48,10 @@ const STATUSES: Contract["status"][] = ["已簽約", "已簽約", "已簽約", "
 const DAILY_RATE = [6800, 7800, 9800, 15800];
 
 const rng = makeRng(5005);
+const nextName = makeUniqueNameGenerator(
+  rng,
+  CURATED.map((c) => c.motherName)
+);
 const GENERATED: Contract[] = Array.from({ length: 48 }, (_, i) => {
   const id = i + 3;
   const scheduledDays = rng.pick([15, 21, 24, 30]);
@@ -57,7 +61,7 @@ const GENERATED: Contract[] = Array.from({ length: 48 }, (_, i) => {
   return {
     id,
     contractNo: `A1150${pad2(rng.int(1, 28))}${pad2(id)}`,
-    motherName: maskedName(rng),
+    motherName: nextName(),
     dueDate: addDays(admission, rng.int(-5, 20)),
     scheduledAdmission: admission,
     scheduledDays,

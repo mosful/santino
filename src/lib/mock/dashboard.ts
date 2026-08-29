@@ -1,4 +1,4 @@
-import { makeRng, addDays } from "./genUtil";
+import { makeRng, makeCycler, addDays } from "./genUtil";
 
 const CURATED_ANNOUNCEMENTS = [
   { id: 1, title: "8月份消防安全宣導", date: "2026-08-05", author: "行政部" },
@@ -16,12 +16,16 @@ const ANNOUNCEMENT_TOPICS = [
 const AUTHORS = ["行政部", "院長室", "護理部", "業務組", "餐飲組", "房務組"];
 
 const rng1 = makeRng(6006);
-const GENERATED_ANNOUNCEMENTS = Array.from({ length: 48 }, (_, i) => ({
-  id: i + 3,
-  title: `${rng1.pick(ANNOUNCEMENT_TOPICS)}${i > 19 ? `（第${Math.floor(i / 20) + 1}次）` : ""}`,
-  date: addDays("2026-06-01", rng1.int(0, 89)),
-  author: rng1.pick(AUTHORS),
-}));
+const announcementCycler = makeCycler(rng1, ANNOUNCEMENT_TOPICS);
+const GENERATED_ANNOUNCEMENTS = Array.from({ length: 48 }, (_, i) => {
+  const { value: topic, round } = announcementCycler();
+  return {
+    id: i + 3,
+    title: round === 1 ? topic : `${topic}（第${round}次）`,
+    date: addDays("2026-06-01", rng1.int(0, 89)),
+    author: rng1.pick(AUTHORS),
+  };
+});
 
 export const ANNOUNCEMENTS = [...CURATED_ANNOUNCEMENTS, ...GENERATED_ANNOUNCEMENTS];
 
@@ -81,11 +85,13 @@ const COURSE_NAMES = [
 ];
 
 const rng2 = makeRng(7007);
+const courseCycler = makeCycler(rng2, COURSE_NAMES);
 const GENERATED_COURSES = Array.from({ length: 47 }, (_, i) => {
   const cap = rng2.pick([8, 10, 12, 15]);
+  const { value: name, round } = courseCycler();
   return {
     id: i + 4,
-    name: rng2.pick(COURSE_NAMES),
+    name: round === 1 ? name : `${name}（第${round}梯）`,
     time: `${addDays("2026-09-01", rng2.int(0, 59)).slice(5).replace("-", "/")} ${rng2.pick(["09:30", "10:00", "10:30", "14:00", "14:30"])}`,
     fee: rng2.bool(0.6),
     enrolled: rng2.int(0, cap),

@@ -6,7 +6,7 @@ import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import Switch from "@/components/ui/Switch";
-import { makeRng, maskedName } from "@/lib/mock/genUtil";
+import { makeRng, makeUniqueNameGenerator } from "@/lib/mock/genUtil";
 
 const DEPTS = ["嬰兒室組", "業務組", "房務組", "餐飲組", "院長室"];
 const ROLES_BY_DEPT: Record<string, string[]> = {
@@ -17,6 +17,7 @@ const ROLES_BY_DEPT: Record<string, string[]> = {
   院長室: ["人資", "院長"],
 };
 const rngStaff = makeRng(9001);
+const nextStaffName = makeUniqueNameGenerator(rngStaff, ["王雅婷", "李婉真", "陳小美"]);
 const STAFF: Row[] = [
   { id: 1, name: "王雅婷", dept: "嬰兒室組", role: "護理師", status: "在職" },
   { id: 2, name: "李婉真", dept: "嬰兒室組", role: "護理長", status: "在職" },
@@ -25,7 +26,7 @@ const STAFF: Row[] = [
     const dept = rngStaff.pick(DEPTS);
     return {
       id: i + 4,
-      name: maskedName(rngStaff),
+      name: nextStaffName(),
       dept,
       role: rngStaff.pick(ROLES_BY_DEPT[dept]),
       status: rngStaff.bool(0.9) ? "在職" : "離職",

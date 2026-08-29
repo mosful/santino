@@ -5,17 +5,21 @@ import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import { MAMA_ROOMS } from "@/lib/mock/mamaRoom";
-import { makeRng, maskedName } from "@/lib/mock/genUtil";
+import { makeRng, makeUniqueNameGenerator } from "@/lib/mock/genUtil";
 
 const RESTRICTIONS = ["無", "無", "無", "無", "海鮮過敏", "麩質不耐", "乳製品過敏", "堅果過敏", "素食"];
-const OCCUPIED_ROOMS = MAMA_ROOMS.filter((r) => r.motherName);
+const ALL_ROOM_NOS = MAMA_ROOMS.map((r) => r.room);
 const rngMeal = makeRng(11001);
-const MEALS: Row[] = Array.from({ length: 50 }, (_, i) => {
-  const src = OCCUPIED_ROOMS[i % OCCUPIED_ROOMS.length];
+const nextMealName = makeUniqueNameGenerator(
+  rngMeal,
+  MAMA_ROOMS.map((r) => r.motherName).filter((n): n is string => !!n)
+);
+const MEALS: Row[] = ALL_ROOM_NOS.map((room, i) => {
+  const src = MAMA_ROOMS[i];
   return {
     id: i + 1,
-    room: src.room,
-    name: i < OCCUPIED_ROOMS.length ? (src.motherName as string) : maskedName(rngMeal),
+    room,
+    name: src.motherName ?? nextMealName(),
     deliveryMode: rngMeal.bool(0.55) ? "自然產" : "剖腹產",
     stayRange: src.stayRange ?? "08/01~09/01",
     restriction: rngMeal.pick(RESTRICTIONS),

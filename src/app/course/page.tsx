@@ -6,7 +6,7 @@ import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import { COURSES } from "@/lib/mock/dashboard";
-import { makeRng, phoneNumber } from "@/lib/mock/genUtil";
+import { makeRng, phoneNumber, makeUniqueNameGenerator } from "@/lib/mock/genUtil";
 import RegistrationCheckin from "./tabs/RegistrationCheckin";
 import FeeRefundSettings from "./tabs/FeeRefundSettings";
 import NotificationSettings from "./tabs/NotificationSettings";
@@ -19,7 +19,7 @@ const VENUES: Row[] = [
   { id: 2, name: "瑜珈教室", capacity: 15, equip: "瑜珈墊" },
   ...Array.from({ length: 48 }, (_, i) => ({
     id: i + 3,
-    name: `${rngVenue.pick(["1F", "2F", "3F", "B1"])}${rngVenue.pick(VENUE_NAMES)}${i > 6 ? i : ""}`,
+    name: `${rngVenue.pick(["1F", "2F", "3F", "B1"])}${rngVenue.pick(VENUE_NAMES)}${i + 3}`,
     capacity: rngVenue.int(6, 30),
     equip: rngVenue.pick(VENUE_EQUIP),
   })),
@@ -30,15 +30,15 @@ const venueFields: FieldSchema[] = [
   { key: "equip", label: "設備" },
 ];
 
-const LECTURER_SURNAMES = ["李", "張", "王", "陳", "林", "黃", "吳", "劉", "楊", "蔡"];
 const SPECIALTIES = ["產後瑜珈", "嬰兒按摩", "副食品製作", "母乳哺育", "產後塑身", "嬰兒手語", "親子共讀", "急救CPR", "產婦營養", "心理調適"];
 const rngLect = makeRng(8002);
+const nextLecturerName = makeUniqueNameGenerator(rngLect);
 const LECTURERS: Row[] = [
   { id: 1, name: "李老師", specialty: "產後瑜珈", contact: "0933-xxx-xxx" },
   { id: 2, name: "張老師", specialty: "嬰兒按摩", contact: "0955-xxx-xxx" },
   ...Array.from({ length: 48 }, (_, i) => ({
     id: i + 3,
-    name: `${rngLect.pick(LECTURER_SURNAMES)}老師`,
+    name: `${nextLecturerName()}老師`,
     specialty: rngLect.pick(SPECIALTIES),
     contact: phoneNumber(rngLect),
   })),

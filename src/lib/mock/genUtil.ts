@@ -45,6 +45,54 @@ export function maskedName(rng: ReturnType<typeof makeRng>) {
   return `${rng.pick(SURNAMES)}o${rng.pick(GIVEN)}`;
 }
 
+/** 洗牌（Fisher-Yates），使用同一顆決定性亂數種子 */
+export function shuffle<T>(rng: ReturnType<typeof makeRng>, arr: readonly T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng.next() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/**
+ * 產生「本次呼叫皆不重複」的姓名產生器：候選池夠大（姓氏×名字約810種組合）時
+ * 直接用「已出現過就重抽」保證不重複；exclude可排除已被精選範例佔用的姓名。
+ */
+export function makeUniqueNameGenerator(rng: ReturnType<typeof makeRng>, exclude: readonly string[] = []) {
+  const used = new Set(exclude);
+  return function next(): string {
+    let name = maskedName(rng);
+    let guard = 0;
+    while (used.has(name) && guard < 1000) {
+      name = maskedName(rng);
+      guard++;
+    }
+    used.add(name);
+    return name;
+  };
+}
+
+/**
+ * 候選池較小、需求數量可能超過池大小的情境（如講師/醫師姓名）：
+ * 洗牌後依序取用，池用完會重新洗牌進入「第2輪」，並在名稱後附加輪次避免完全重複字串。
+ */
+export function makeCycler<T>(rng: ReturnType<typeof makeRng>, candidates: readonly T[]) {
+  let shuffled = shuffle(rng, candidates);
+  let i = 0;
+  let round = 1;
+  return function next(): { value: T; round: number } {
+    if (i >= shuffled.length) {
+      i = 0;
+      round++;
+      shuffled = shuffle(rng, candidates);
+    }
+    const value = shuffled[i];
+    i++;
+    return { value, round };
+  };
+}
+
 export function phoneNumber(rng: ReturnType<typeof makeRng>) {
   return `09${rng.int(10, 99)}-${rng.int(100, 999)}-${rng.int(100, 999)}`;
 }

@@ -1,4 +1,4 @@
-import { makeRng, maskedName } from "./genUtil";
+import { makeRng, makeUniqueNameGenerator } from "./genUtil";
 
 export type RoomStatus = "入住" | "空房" | "親子同室" | "打掃" | "報修";
 
@@ -52,6 +52,10 @@ const RISKS = ["脆弱", "高危險跌倒", "妊娠糖尿病", undefined, undefi
 const ALERTS = ["護理指導單未簽", "同意書未簽", undefined, undefined, undefined];
 
 const rng = makeRng(2002);
+const nextName = makeUniqueNameGenerator(
+  rng,
+  CURATED.map((r) => r.motherName).filter((n): n is string => !!n)
+);
 const GENERATED: MamaRoom[] = EXTRA_ROOM_NOS.map((room) => {
   const status = rng.pick(STATUS_WEIGHTED);
   const occupied = status === "入住" || status === "親子同室";
@@ -62,9 +66,9 @@ const GENERATED: MamaRoom[] = EXTRA_ROOM_NOS.map((room) => {
   return {
     room,
     status,
-    motherName: maskedName(rng),
+    motherName: nextName(),
     risk: rng.pick(RISKS),
-    chartNo: `M2026${String(month).padStart(2, "0")}${String(startDay).padStart(2, "0")}`,
+    chartNo: `M2026${String(month).padStart(2, "0")}${String(startDay).padStart(2, "0")}${room}`,
     stayRange: `0${month}/${String(startDay).padStart(2, "0")}~${month === 8 ? "09" : "10"}/${String(startDay).padStart(2, "0")}`,
     stayDay,
     babyCount: rng.bool(0.9) ? 1 : 2,

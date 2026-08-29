@@ -17,7 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "聖帝諾產後護理之家 院務管理系統",
+  // 不在此設定title：改由各頁PageHeader/登入頁以React 19原生<title>渲染，
+  // 確保瀏覽器分頁標題會隨頁面切換，而不是全站共用同一顆固定標題。
   description: "靜態畫面稿（無真實後端邏輯，僅供畫面與流程確認）",
 };
 

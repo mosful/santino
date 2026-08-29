@@ -21,6 +21,19 @@ export const ROLES: Role[] = [
   "系統管理員",
 ];
 
+/** 各角色示意用的登入者姓名／工號（靜態畫面稿模擬登入，非真實帳號資料） */
+export const ROLE_PROFILE: Record<Role, { name: string; empNo: string }> = {
+  系統管理員: { name: "admin", empNo: "SYS001" },
+  護理師: { name: "王雅婷", empNo: "N1023" },
+  護理長: { name: "李婉真", empNo: "N1001" },
+  醫師: { name: "陳O如", empNo: "D2010" },
+  衛教師: { name: "琳雅", empNo: "E3005" },
+  客服人員: { name: "陳小美", empNo: "S4012" },
+  房務人員: { name: "許美玉", empNo: "H5003" },
+  餐飲組人員: { name: "林師傅", empNo: "F6002" },
+  "人資/院長室": { name: "黃主任", empNo: "A7001" },
+};
+
 export type AccessLevel = "edit" | "view" | "none";
 
 // 依系統開發規格文件v7各模組「角色權限」章節簡化彙整。

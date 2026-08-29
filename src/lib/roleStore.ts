@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 import { ROLES, type Role, getAccess, type AccessLevel } from "./permissions";
 
 const STORAGE_KEY = "santino_current_role_v1";
-const DEFAULT_ROLE: Role = "護理師";
+const DEFAULT_ROLE: Role = "系統管理員";
 const listeners = new Set<() => void>();
 let cache: Role | null = null;
 

@@ -4,7 +4,9 @@ import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import OpsRoomCard from "@/components/room/OpsRoomCard";
+import OpsRoomListView from "@/components/room/OpsRoomListView";
 import Modal from "@/components/ui/Modal";
+import Switch from "@/components/ui/Switch";
 import Pagination from "@/components/ui/Pagination";
 import { rowMatchesQuery } from "@/lib/fuzzySearch";
 import { OPS_ROOMS, DEFERRED_ROOM_ITEMS } from "@/lib/mock/opsRoom";
@@ -22,6 +24,7 @@ import {
 
 export default function RoomPage() {
   const [open, setOpen] = useState<{ room: string; key: string } | null>(null);
+  const [listView, setListView] = useState(true);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -71,9 +74,10 @@ export default function RoomPage() {
         }
       />
 
-      <p className="mb-4 text-xs text-stone-400">
-        與2.媽媽照護共用房號，但欄位與快捷鍵為獨立元件（房務 vs 護理）。
-      </p>
+      <div className="mb-4 flex flex-wrap items-center gap-3 text-xs text-stone-400">
+        <p className="flex-1">與2.媽媽照護共用房號，但欄位與快捷鍵為獨立元件（房務 vs 護理）。</p>
+        <Switch checked={listView} onChange={setListView} label="清單檢視" />
+      </div>
 
       <input
         value={q}
@@ -85,11 +89,15 @@ export default function RoomPage() {
         className="mb-4 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm sm:w-72"
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-        {pagedRooms.map((r) => (
-          <OpsRoomCard key={r.room} room={r} onKeyClick={(room, key) => setOpen({ room, key })} />
-        ))}
-      </div>
+      {listView ? (
+        <OpsRoomListView rooms={pagedRooms} onKeyClick={(room, key) => setOpen({ room, key })} />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+          {pagedRooms.map((r) => (
+            <OpsRoomCard key={r.room} room={r} onKeyClick={(room, key) => setOpen({ room, key })} />
+          ))}
+        </div>
+      )}
 
       <div className="mt-4">
         <Pagination

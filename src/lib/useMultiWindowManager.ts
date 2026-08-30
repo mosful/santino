@@ -11,6 +11,7 @@ export type OpenWindow = {
   x: number;
   y: number;
   z: number;
+  minimized: boolean;
 };
 
 /**
@@ -28,7 +29,7 @@ export function useMultiWindowManager() {
   function bringToFront(id: string) {
     zCounter.current += 1;
     const z = zCounter.current;
-    setWindows((ws) => ws.map((w) => (w.id === id ? { ...w, z } : w)));
+    setWindows((ws) => ws.map((w) => (w.id === id ? { ...w, z, minimized: false } : w)));
   }
 
   function openWindow(room: string, key: string, hasSignature: boolean) {
@@ -65,6 +66,7 @@ export function useMultiWindowManager() {
         x: 60 + (idx % 5) * 36,
         y: 70 + (idx % 5) * 36,
         z: zCounter.current,
+        minimized: false,
       },
     ]);
   }
@@ -77,5 +79,27 @@ export function useMultiWindowManager() {
     setWindows([]);
   }
 
-  return { windows, openWindow, closeWindow, closeAll, bringToFront, blockedMsg };
+  function toggleMinimize(id: string) {
+    const target = windows.find((w) => w.id === id);
+    if (target && target.minimized) {
+      bringToFront(id);
+      return;
+    }
+    setWindows((ws) => ws.map((w) => (w.id === id ? { ...w, minimized: true } : w)));
+  }
+
+  function minimizeAll() {
+    setWindows((ws) => ws.map((w) => ({ ...w, minimized: true })));
+  }
+
+  return {
+    windows,
+    openWindow,
+    closeWindow,
+    closeAll,
+    bringToFront,
+    toggleMinimize,
+    minimizeAll,
+    blockedMsg,
+  };
 }

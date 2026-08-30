@@ -6,6 +6,7 @@ import RequireAccess from "@/components/ui/RequireAccess";
 import MamaRoomCard from "@/components/mama/MamaRoomCard";
 import MamaRoomListView from "@/components/mama/MamaRoomListView";
 import FloatingWindow from "@/components/ui/FloatingWindow";
+import WindowTray from "@/components/ui/WindowTray";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import Badge from "@/components/ui/Badge";
 import Switch from "@/components/ui/Switch";
@@ -28,7 +29,16 @@ export default function MamaPage() {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const { windows, openWindow, closeWindow, bringToFront, blockedMsg } = useMultiWindowManager();
+  const {
+    windows,
+    openWindow,
+    closeWindow,
+    closeAll,
+    bringToFront,
+    toggleMinimize,
+    minimizeAll,
+    blockedMsg,
+  } = useMultiWindowManager();
 
   const byStatus =
     filter === "全部" ? MAMA_ROOMS : MAMA_ROOMS.filter((r) => r.status === filter);
@@ -155,27 +165,47 @@ export default function MamaPage() {
       </div>
 
       {blockedMsg && (
-        <div className="fixed bottom-4 left-1/2 z-[60] -translate-x-1/2 rounded-lg bg-stone-900 px-4 py-2.5 text-xs text-white shadow-lg">
+        <div
+          className={
+            "fixed left-1/2 z-[60] -translate-x-1/2 rounded-lg bg-stone-900 px-4 py-2.5 text-xs text-white shadow-lg " +
+            (windows.length > 0 ? "bottom-16" : "bottom-4")
+          }
+        >
           {blockedMsg}
         </div>
       )}
 
-      {windows.map((w) => {
-        const keyLabel = MAMA_QUICK_KEYS.find((k) => k.key === w.key)?.label ?? "";
-        return (
-          <FloatingWindow
-            key={w.id}
-            title={`${w.room}｜${keyLabel}`}
-            onClose={() => closeWindow(w.id)}
-            onFocus={() => bringToFront(w.id)}
-            zIndex={w.z}
-            initialPos={{ x: w.x, y: w.y }}
-            wide
-          >
-            {renderForm(w.room, w.key)}
-          </FloatingWindow>
-        );
-      })}
+      {windows
+        .filter((w) => !w.minimized)
+        .map((w) => {
+          const keyLabel = MAMA_QUICK_KEYS.find((k) => k.key === w.key)?.label ?? "";
+          return (
+            <FloatingWindow
+              key={w.id}
+              title={`${w.room}｜${keyLabel}`}
+              onClose={() => closeWindow(w.id)}
+              onFocus={() => bringToFront(w.id)}
+              onMinimize={() => toggleMinimize(w.id)}
+              zIndex={w.z}
+              initialPos={{ x: w.x, y: w.y }}
+              wide
+            >
+              {renderForm(w.room, w.key)}
+            </FloatingWindow>
+          );
+        })}
+
+      <WindowTray
+        items={windows.map((w) => ({
+          id: w.id,
+          label: `${w.room}｜${MAMA_QUICK_KEYS.find((k) => k.key === w.key)?.label ?? ""}`,
+          minimized: w.minimized,
+        }))}
+        onToggle={toggleMinimize}
+        onClose={closeWindow}
+        onMinimizeAll={minimizeAll}
+        onCloseAll={closeAll}
+      />
       </RequireAccess>
     </div>
   );

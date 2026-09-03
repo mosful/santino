@@ -5,28 +5,20 @@ import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import BabyRoomCard from "@/components/baby/BabyRoomCard";
 import BabyRoomListView from "@/components/baby/BabyRoomListView";
+import BabyCarePanel from "@/components/baby/BabyCarePanel";
 import FloatingWindow from "@/components/ui/FloatingWindow";
 import WindowTray from "@/components/ui/WindowTray";
-import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import Badge from "@/components/ui/Badge";
 import Switch from "@/components/ui/Switch";
 import Pagination from "@/components/ui/Pagination";
 import { rowMatchesQuery } from "@/lib/fuzzySearch";
 import { useMultiWindowManager } from "@/lib/useMultiWindowManager";
 import { BABY_ROOMS } from "@/lib/mock/babyRoom";
-import { BABY_QUICK_KEYS } from "@/lib/babyQuickKeys";
-import {
-  BabyAdmission,
-  BabyRecord,
-  BabyDaily,
-  FeedingAssessment,
-  GrowthDiary,
-  BabyPhoto,
-  BabyIO,
-  BabyGuidance,
-} from "@/components/baby/forms/BabyForms";
 
 const STATUS_FILTERS = ["全部", "入住", "隔離", "親子同室", "視訊"] as const;
+
+// 開啟作業視窗時的預設頁籤（第一個核心功能）
+const DEFAULT_TAB = "admission";
 
 export default function BabyPage() {
   const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]>("全部");
@@ -38,6 +30,7 @@ export default function BabyPage() {
   const {
     windows,
     openWindow,
+    selectTab,
     closeWindow,
     closeAll,
     bringToFront,
@@ -53,29 +46,10 @@ export default function BabyPage() {
   const safePage = Math.min(page, totalPages);
   const pagedRooms = rooms.slice((safePage - 1) * pageSize, safePage * pageSize);
 
-  function renderForm(room: string, key: string) {
-    switch (key) {
-      case "admission":
-        return <BabyAdmission room={room} />;
-      case "record":
-        return <BabyRecord room={room} />;
-      case "daily":
-        return <BabyDaily room={room} />;
-      case "feeding":
-        return <FeedingAssessment room={room} />;
-      case "growth":
-        return <GrowthDiary room={room} />;
-      case "photo":
-        return <BabyPhoto room={room} />;
-      case "io":
-        return <BabyIO room={room} />;
-      case "guidance":
-        return <BabyGuidance room={room} />;
-      default:
-        return (
-          <PlaceholderNotice text="次要功能（非寶寶照護8大核心），畫面待後續批次補齊。" />
-        );
-    }
+  /** 視窗標題與工作列標籤：房號＋寶寶姓名（功能名稱已由頁籤本身表達） */
+  function windowLabel(roomNo: string) {
+    const name = BABY_ROOMS.find((r) => r.room === roomNo)?.babyName;
+    return name ? `${roomNo}｜${name}` : roomNo;
   }
 
   return (
@@ -112,14 +86,14 @@ export default function BabyPage() {
         <Badge color="purple">親子同室</Badge>
         <Badge color="amber">隔離</Badge>
         <span className="ml-auto flex items-center gap-2">
-          房卡快捷鍵：<span className="text-sky-600">藍色＝8大核心功能</span>
+          作業頁籤：<span className="text-sky-600">藍色＝8大核心功能</span>
           <Switch checked={showSecondary} onChange={setShowSecondary} label="顯示次要功能" />
           <Switch checked={listView} onChange={setListView} label="清單檢視" />
         </span>
       </div>
 
       <p className="mb-4 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-600">
-        💡 可同時開啟多個房卡表單視窗（拖曳標題列移動位置），供同時填寫多筆紀錄；含簽名步驟的表單會鎖定僅能操作單一房間。
+        💡 每間房開啟一個作業視窗，視窗內以頁籤切換各項紀錄；可同時開啟多間房比對（拖曳標題列移動、右下角可縮放）。切換到含簽名步驟的頁籤（✍）時，會鎖定僅能操作單一房間。
       </p>
 
       <input
@@ -133,25 +107,14 @@ export default function BabyPage() {
       />
 
       {listView ? (
-        <BabyRoomListView
-          rooms={pagedRooms}
-          onKeyClick={(room, key) => {
-            const qk = BABY_QUICK_KEYS.find((k) => k.key === key);
-            openWindow(room, key, !!qk?.hasSignature);
-          }}
-          showSecondary={showSecondary}
-        />
+        <BabyRoomListView rooms={pagedRooms} onOpen={(room) => openWindow(room, DEFAULT_TAB)} />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {pagedRooms.map((r) => (
             <BabyRoomCard
               key={r.room}
               room={r}
-              onKeyClick={(room, key) => {
-                const qk = BABY_QUICK_KEYS.find((k) => k.key === key);
-                openWindow(room, key, !!qk?.hasSignature);
-              }}
-              showSecondary={showSecondary}
+              onOpen={(room) => openWindow(room, DEFAULT_TAB)}
             />
           ))}
         </div>
@@ -181,30 +144,31 @@ export default function BabyPage() {
         </div>
       )}
 
-      {windows
-        .filter((w) => !w.minimized)
-        .map((w) => {
-          const keyLabel = BABY_QUICK_KEYS.find((k) => k.key === w.key)?.label ?? "";
-          return (
-            <FloatingWindow
-              key={w.id}
-              title={`${w.room}｜${keyLabel}`}
-              onClose={() => closeWindow(w.id)}
-              onFocus={() => bringToFront(w.id)}
-              onMinimize={() => toggleMinimize(w.id)}
-              zIndex={w.z}
-              initialPos={{ x: w.x, y: w.y }}
-              wide
-            >
-              {renderForm(w.room, w.key)}
-            </FloatingWindow>
-          );
-        })}
+      {windows.map((w) => (
+        <FloatingWindow
+          key={w.id}
+          title={windowLabel(w.room)}
+          onClose={() => closeWindow(w.id)}
+          onFocus={() => bringToFront(w.id)}
+          onMinimize={() => toggleMinimize(w.id)}
+          zIndex={w.z}
+          initialPos={{ x: w.x, y: w.y }}
+          hidden={w.minimized}
+          wide
+        >
+          <BabyCarePanel
+            room={w.room}
+            showSecondary={showSecondary}
+            activeKey={w.activeKey}
+            onTabSelect={(t) => selectTab(w.id, t.key, !!t.hasSignature)}
+          />
+        </FloatingWindow>
+      ))}
 
       <WindowTray
         items={windows.map((w) => ({
           id: w.id,
-          label: `${w.room}｜${BABY_QUICK_KEYS.find((k) => k.key === w.key)?.label ?? ""}`,
+          label: windowLabel(w.room),
           minimized: w.minimized,
         }))}
         onToggle={toggleMinimize}

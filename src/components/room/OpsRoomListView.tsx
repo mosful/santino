@@ -1,13 +1,13 @@
+import { ClipboardCheck } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import { type OpsRoom } from "@/lib/mock/opsRoom";
-import { OPS_QUICK_KEYS } from "@/lib/opsQuickKeys";
 
 export default function OpsRoomListView({
   rooms,
-  onKeyClick,
+  onOpen,
 }: {
   rooms: OpsRoom[];
-  onKeyClick: (roomNo: string, keyKey: string) => void;
+  onOpen: (roomNo: string) => void;
 }) {
   return (
     <div className="scroll-fade overflow-x-auto rounded-xl border border-stone-200 bg-white">
@@ -23,7 +23,7 @@ export default function OpsRoomListView({
             <th className="whitespace-nowrap px-3 py-2.5 font-medium">應收</th>
             <th className="whitespace-nowrap px-3 py-2.5 font-medium">預收</th>
             <th className="whitespace-nowrap px-3 py-2.5 font-medium">送餐需求</th>
-            <th className="px-3 py-2.5 font-medium">房卡快捷鍵</th>
+            <th className="px-3 py-2.5 font-medium">操作</th>
           </tr>
         </thead>
         <tbody>
@@ -52,17 +52,13 @@ export default function OpsRoomListView({
                 {r.vacant ? (
                   <span className="rounded-lg border border-stone-200 px-2 py-1 text-xs text-stone-400">目前空房</span>
                 ) : (
-                  <div className="flex flex-wrap gap-1.5">
-                    {OPS_QUICK_KEYS.map((k) => (
-                      <button
-                        key={k.key}
-                        onClick={() => onKeyClick(r.room, k.key)}
-                        className="rounded-full bg-teal-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-teal-700 active:bg-teal-800"
-                      >
-                        {k.label}
-                      </button>
-                    ))}
-                  </div>
+                  <button
+                    onClick={() => onOpen(r.room)}
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-teal-600 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-teal-700 active:bg-teal-800"
+                  >
+                    <ClipboardCheck className="h-3.5 w-3.5" />
+                    房務作業
+                  </button>
                 )}
               </td>
             </tr>

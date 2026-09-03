@@ -5,22 +5,20 @@ import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import MamaRoomCard from "@/components/mama/MamaRoomCard";
 import MamaRoomListView from "@/components/mama/MamaRoomListView";
+import MamaCarePanel from "@/components/mama/MamaCarePanel";
 import FloatingWindow from "@/components/ui/FloatingWindow";
 import WindowTray from "@/components/ui/WindowTray";
-import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import Badge from "@/components/ui/Badge";
 import Switch from "@/components/ui/Switch";
 import Pagination from "@/components/ui/Pagination";
 import { rowMatchesQuery } from "@/lib/fuzzySearch";
 import { useMultiWindowManager } from "@/lib/useMultiWindowManager";
 import { MAMA_ROOMS } from "@/lib/mock/mamaRoom";
-import { MAMA_QUICK_KEYS } from "@/lib/mamaQuickKeys";
-import AdmissionAssessment from "@/components/mama/forms/AdmissionAssessment";
-import OngoingCare from "@/components/mama/forms/OngoingCare";
-import PaperScoreForm from "@/components/mama/forms/PaperScoreForm";
-import NursingGuidance from "@/components/mama/forms/NursingGuidance";
 
 const STATUS_FILTERS = ["全部", "入住", "空房", "打掃", "報修"] as const;
+
+// 開啟作業視窗時的預設頁籤（第一個核心功能）
+const DEFAULT_TAB = "admission";
 
 export default function MamaPage() {
   const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]>("全部");
@@ -32,6 +30,7 @@ export default function MamaPage() {
   const {
     windows,
     openWindow,
+    selectTab,
     closeWindow,
     closeAll,
     bringToFront,
@@ -47,28 +46,10 @@ export default function MamaPage() {
   const safePage = Math.min(page, totalPages);
   const pagedRooms = rooms.slice((safePage - 1) * pageSize, safePage * pageSize);
 
-  function renderForm(room: string, key: string) {
-    switch (key) {
-      case "admission":
-        return <AdmissionAssessment room={room} />;
-      case "ongoing":
-      case "record":
-        return <OngoingCare room={room} />;
-      case "social":
-        return <PaperScoreForm room={room} title="社會支持" />;
-      case "mood":
-        return <PaperScoreForm room={room} title="心情量表" />;
-      case "guidance":
-        return <NursingGuidance room={room} />;
-      case "health-edu-eval":
-        return (
-          <PlaceholderNotice text="衛教認知評估單：衛教師新增項目，實際欄位內容尚未與客戶確認，先保留版位，待補充後再設計表單（見規格文件8.2節待確認事項）。" />
-        );
-      default:
-        return (
-          <PlaceholderNotice text="次要功能（非媽媽照護6大核心），畫面待後續批次補齊，目前僅可從房卡開啟本提示。" />
-        );
-    }
+  /** 視窗標題與工作列標籤：房號＋媽媽姓名（功能名稱已由頁籤本身表達） */
+  function windowLabel(roomNo: string) {
+    const name = MAMA_ROOMS.find((r) => r.room === roomNo)?.motherName;
+    return name ? `${roomNo}｜${name}` : roomNo;
   }
 
   return (
@@ -106,14 +87,14 @@ export default function MamaPage() {
         <Badge color="amber">打掃(黃)</Badge>
         <Badge color="blue">報修(藍)</Badge>
         <span className="ml-auto flex items-center gap-2">
-          房卡快捷鍵：<span className="text-rose-600">紅色＝6大核心功能</span>
+          作業頁籤：<span className="text-rose-600">紅色＝6大核心功能</span>
           <Switch checked={showSecondary} onChange={setShowSecondary} label="顯示次要功能" />
           <Switch checked={listView} onChange={setListView} label="清單檢視" />
         </span>
       </div>
 
       <p className="mb-4 rounded-lg bg-brand-50 px-3 py-2 text-xs text-brand-600">
-        💡 可同時開啟多個房卡表單視窗（拖曳標題列移動位置），供同時填寫多筆紀錄；含簽名步驟的表單會鎖定僅能操作單一房間。
+        💡 每間房開啟一個作業視窗，視窗內以頁籤切換各項紀錄；可同時開啟多間房比對（拖曳標題列移動、右下角可縮放）。切換到含簽名步驟的頁籤（✍）時，會鎖定僅能操作單一房間。
       </p>
 
       <input
@@ -127,25 +108,14 @@ export default function MamaPage() {
       />
 
       {listView ? (
-        <MamaRoomListView
-          rooms={pagedRooms}
-          onKeyClick={(room, key) => {
-            const qk = MAMA_QUICK_KEYS.find((k) => k.key === key);
-            openWindow(room, key, !!qk?.hasSignature);
-          }}
-          showSecondary={showSecondary}
-        />
+        <MamaRoomListView rooms={pagedRooms} onOpen={(room) => openWindow(room, DEFAULT_TAB)} />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {pagedRooms.map((r) => (
             <MamaRoomCard
               key={r.room}
               room={r}
-              onKeyClick={(room, key) => {
-                const qk = MAMA_QUICK_KEYS.find((k) => k.key === key);
-                openWindow(room, key, !!qk?.hasSignature);
-              }}
-              showSecondary={showSecondary}
+              onOpen={(room) => openWindow(room, DEFAULT_TAB)}
             />
           ))}
         </div>
@@ -175,30 +145,31 @@ export default function MamaPage() {
         </div>
       )}
 
-      {windows
-        .filter((w) => !w.minimized)
-        .map((w) => {
-          const keyLabel = MAMA_QUICK_KEYS.find((k) => k.key === w.key)?.label ?? "";
-          return (
-            <FloatingWindow
-              key={w.id}
-              title={`${w.room}｜${keyLabel}`}
-              onClose={() => closeWindow(w.id)}
-              onFocus={() => bringToFront(w.id)}
-              onMinimize={() => toggleMinimize(w.id)}
-              zIndex={w.z}
-              initialPos={{ x: w.x, y: w.y }}
-              wide
-            >
-              {renderForm(w.room, w.key)}
-            </FloatingWindow>
-          );
-        })}
+      {windows.map((w) => (
+        <FloatingWindow
+          key={w.id}
+          title={windowLabel(w.room)}
+          onClose={() => closeWindow(w.id)}
+          onFocus={() => bringToFront(w.id)}
+          onMinimize={() => toggleMinimize(w.id)}
+          zIndex={w.z}
+          initialPos={{ x: w.x, y: w.y }}
+          hidden={w.minimized}
+          wide
+        >
+          <MamaCarePanel
+            room={w.room}
+            showSecondary={showSecondary}
+            activeKey={w.activeKey}
+            onTabSelect={(t) => selectTab(w.id, t.key, !!t.hasSignature)}
+          />
+        </FloatingWindow>
+      ))}
 
       <WindowTray
         items={windows.map((w) => ({
           id: w.id,
-          label: `${w.room}｜${MAMA_QUICK_KEYS.find((k) => k.key === w.key)?.label ?? ""}`,
+          label: windowLabel(w.room),
           minimized: w.minimized,
         }))}
         onToggle={toggleMinimize}

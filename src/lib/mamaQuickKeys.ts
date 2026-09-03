@@ -1,11 +1,6 @@
-export type QuickKey = {
-  key: string;
-  label: string;
-  core: boolean; // 媽媽照護6大核心功能
-  hasSignature?: boolean; // 含簽名步驟：依總則#9，強制鎖定單一房間，不受多視窗設定影響
-};
+import type { QuickKey } from "@/lib/quickKeys";
 
-// 對照系統功能清單v16「開發優先順序」欄：核心=Tier1，其餘=Tier2
+// 對照系統功能清單v17「開發優先順序」欄：核心=Phase 1，其餘=Phase 2
 export const MAMA_QUICK_KEYS: QuickKey[] = [
   { key: "admission", label: "入住評估", core: true },
   { key: "ongoing", label: "持續護理", core: true },

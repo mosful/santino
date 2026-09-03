@@ -1,6 +1,6 @@
+import { ClipboardList } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import { type BabyRoom, type BabyStatus } from "@/lib/mock/babyRoom";
-import { BABY_QUICK_KEYS } from "@/lib/babyQuickKeys";
 
 const STATUS_BADGE_COLOR: Record<BabyStatus, "blue" | "amber" | "purple" | "green" | "slate"> = {
   入住: "blue",
@@ -12,15 +12,11 @@ const STATUS_BADGE_COLOR: Record<BabyStatus, "blue" | "amber" | "purple" | "gree
 
 export default function BabyRoomListView({
   rooms,
-  onKeyClick,
-  showSecondary = false,
+  onOpen,
 }: {
   rooms: BabyRoom[];
-  onKeyClick: (roomNo: string, keyKey: string) => void;
-  showSecondary?: boolean;
+  onOpen: (roomNo: string) => void;
 }) {
-  const keys = showSecondary ? BABY_QUICK_KEYS : BABY_QUICK_KEYS.filter((k) => k.core);
-
   return (
     <div className="scroll-fade overflow-x-auto rounded-xl border border-stone-200 bg-white">
       <table className="w-full min-w-max text-left text-sm">
@@ -34,7 +30,7 @@ export default function BabyRoomListView({
             <th className="whitespace-nowrap px-3 py-2.5 font-medium">出生日期</th>
             <th className="whitespace-nowrap px-3 py-2.5 font-medium">體重</th>
             <th className="whitespace-nowrap px-3 py-2.5 font-medium">視訊狀態</th>
-            <th className="px-3 py-2.5 font-medium">房卡快捷鍵</th>
+            <th className="px-3 py-2.5 font-medium">操作</th>
           </tr>
         </thead>
         <tbody>
@@ -64,22 +60,13 @@ export default function BabyRoomListView({
                   {empty ? (
                     <span className="rounded-lg border border-stone-200 px-2 py-1 text-xs text-stone-400">目前空房</span>
                   ) : (
-                    <div className="flex flex-wrap gap-1.5">
-                      {keys.map((k) => (
-                        <button
-                          key={k.key}
-                          onClick={() => onKeyClick(r.room, k.key)}
-                          className={
-                            "rounded-full px-3 py-1.5 text-xs font-medium transition-colors " +
-                            (k.core
-                              ? "bg-sky-500 text-white hover:bg-sky-600 active:bg-sky-700"
-                              : "bg-stone-100 text-stone-500 hover:bg-stone-200 active:bg-stone-300")
-                          }
-                        >
-                          {k.label}
-                        </button>
-                      ))}
-                    </div>
+                    <button
+                      onClick={() => onOpen(r.room)}
+                      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-sky-500 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-sky-600 active:bg-sky-700"
+                    >
+                      <ClipboardList className="h-3.5 w-3.5" />
+                      照護作業
+                    </button>
                   )}
                 </td>
               </tr>

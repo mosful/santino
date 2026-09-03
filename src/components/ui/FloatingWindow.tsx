@@ -7,6 +7,13 @@ import { GripVertical, Minus, X } from "lucide-react";
 const MIN_WIDTH = 320;
 const MIN_HEIGHT = 240;
 
+/** 初始寬度：作業視窗需容納頁籤列故較寬，但不得超出視埠（iPad／手機直向） */
+function initialWidth(wide: boolean) {
+  const base = wide ? 760 : 440;
+  if (typeof window === "undefined") return base;
+  return Math.min(base, Math.max(MIN_WIDTH, window.innerWidth - 24));
+}
+
 export default function FloatingWindow({
   title,
   onClose,
@@ -15,6 +22,7 @@ export default function FloatingWindow({
   zIndex,
   initialPos,
   wide = false,
+  hidden = false,
   children,
 }: {
   title: string;
@@ -24,12 +32,19 @@ export default function FloatingWindow({
   zIndex: number;
   initialPos: { x: number; y: number };
   wide?: boolean;
+  /** 縮小到底部工作列時以 display:none 隱藏而非卸載，保留位置／尺寸／表單輸入內容 */
+  hidden?: boolean;
   children: React.ReactNode;
 }) {
-  const [pos, setPos] = useState(initialPos);
-  const [size, setSize] = useState<{ width: number; height: number | null }>({
-    width: wide ? 640 : 440,
+  const [size, setSize] = useState<{ width: number; height: number | null }>(() => ({
+    width: initialWidth(wide),
     height: null,
+  }));
+  // 起始座標同樣夾在視埠內，避免窄螢幕開窗時整個視窗被推到畫面外
+  const [pos, setPos] = useState(() => {
+    if (typeof window === "undefined") return initialPos;
+    const maxX = Math.max(8, window.innerWidth - initialWidth(wide) - 12);
+    return { x: Math.min(initialPos.x, maxX), y: initialPos.y };
   });
   const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
   const resizeRef = useRef<{ startX: number; startY: number; origW: number; origH: number } | null>(null);
@@ -97,6 +112,7 @@ export default function FloatingWindow({
         zIndex,
         width: size.width,
         height: size.height ?? undefined,
+        display: hidden ? "none" : undefined,
       }}
       className="animate-modal-pop flex max-h-[85vh] flex-col rounded-2xl border border-stone-200 bg-white shadow-2xl"
     >

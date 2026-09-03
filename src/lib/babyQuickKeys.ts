@@ -1,9 +1,4 @@
-export type QuickKey = {
-  key: string;
-  label: string;
-  core: boolean; // 寶寶照護8大核心功能
-  hasSignature?: boolean; // 含簽名步驟：依總則#9，強制鎖定單一房間，不受多視窗設定影響
-};
+import type { QuickKey } from "@/lib/quickKeys";
 
 export const BABY_QUICK_KEYS: QuickKey[] = [
   { key: "admission", label: "入住評估", core: true },

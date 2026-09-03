@@ -1,13 +1,13 @@
+import { ClipboardCheck } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import { type OpsRoom } from "@/lib/mock/opsRoom";
-import { OPS_QUICK_KEYS } from "@/lib/opsQuickKeys";
 
 export default function OpsRoomCard({
   room,
-  onKeyClick,
+  onOpen,
 }: {
   room: OpsRoom;
-  onKeyClick: (roomNo: string, keyKey: string) => void;
+  onOpen: (roomNo: string) => void;
 }) {
   return (
     <div
@@ -32,17 +32,13 @@ export default function OpsRoomCard({
             <span>預收：${room.prepaid?.toLocaleString()}</span>
             <span className="col-span-2">送餐需求：{room.mealNote}</span>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {OPS_QUICK_KEYS.map((k) => (
-              <button
-                key={k.key}
-                onClick={() => onKeyClick(room.room, k.key)}
-                className="rounded-full bg-teal-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-teal-700 active:bg-teal-800"
-              >
-                {k.label}
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={() => onOpen(room.room)}
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-teal-600 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-teal-700 active:bg-teal-800"
+          >
+            <ClipboardCheck className="h-3.5 w-3.5" />
+            房務作業
+          </button>
         </>
       )}
     </div>

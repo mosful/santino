@@ -1,17 +1,14 @@
+import { ClipboardList } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import { STATUS_COLOR, type MamaRoom } from "@/lib/mock/mamaRoom";
-import { MAMA_QUICK_KEYS } from "@/lib/mamaQuickKeys";
 
 export default function MamaRoomCard({
   room,
-  onKeyClick,
-  showSecondary = false,
+  onOpen,
 }: {
   room: MamaRoom;
-  onKeyClick: (roomNo: string, keyKey: string) => void;
-  showSecondary?: boolean;
+  onOpen: (roomNo: string) => void;
 }) {
-  const keys = showSecondary ? MAMA_QUICK_KEYS : MAMA_QUICK_KEYS.filter((k) => k.core);
   const empty = room.status === "空房" || room.status === "打掃" || room.status === "報修";
 
   return (
@@ -58,22 +55,13 @@ export default function MamaRoomCard({
             )}
           </div>
 
-          <div className="flex flex-wrap gap-1.5">
-            {keys.map((k) => (
-              <button
-                key={k.key}
-                onClick={() => onKeyClick(room.room, k.key)}
-                className={
-                  "rounded-full px-3 py-1.5 text-xs font-medium transition-colors " +
-                  (k.core
-                    ? "bg-rose-500 text-white hover:bg-rose-600 active:bg-rose-700"
-                    : "bg-stone-100 text-stone-500 hover:bg-stone-200 active:bg-stone-300")
-                }
-              >
-                {k.label}
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={() => onOpen(room.room)}
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-rose-500 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-rose-600 active:bg-rose-700"
+          >
+            <ClipboardList className="h-3.5 w-3.5" />
+            照護作業
+          </button>
         </>
       )}
     </div>

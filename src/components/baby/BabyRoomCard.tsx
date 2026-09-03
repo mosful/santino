@@ -1,6 +1,6 @@
+import { ClipboardList } from "lucide-react";
 import Badge from "@/components/ui/Badge";
 import { BABY_STATUS_COLOR, type BabyRoom, type BabyStatus } from "@/lib/mock/babyRoom";
-import { BABY_QUICK_KEYS } from "@/lib/babyQuickKeys";
 
 const STATUS_BADGE_COLOR: Record<BabyStatus, "blue" | "amber" | "purple" | "green" | "slate"> = {
   入住: "blue",
@@ -12,14 +12,11 @@ const STATUS_BADGE_COLOR: Record<BabyStatus, "blue" | "amber" | "purple" | "gree
 
 export default function BabyRoomCard({
   room,
-  onKeyClick,
-  showSecondary = false,
+  onOpen,
 }: {
   room: BabyRoom;
-  onKeyClick: (roomNo: string, keyKey: string) => void;
-  showSecondary?: boolean;
+  onOpen: (roomNo: string) => void;
 }) {
-  const keys = showSecondary ? BABY_QUICK_KEYS : BABY_QUICK_KEYS.filter((k) => k.core);
   const empty = room.status === "空房";
   return (
     <div className={`rounded-xl border-2 p-3.5 shadow-sm transition-shadow hover:shadow-md sm:p-4 ${BABY_STATUS_COLOR[room.status]}`}>
@@ -51,22 +48,13 @@ export default function BabyRoomCard({
               )}
             </div>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {keys.map((k) => (
-              <button
-                key={k.key}
-                onClick={() => onKeyClick(room.room, k.key)}
-                className={
-                  "rounded-full px-3 py-1.5 text-xs font-medium transition-colors " +
-                  (k.core
-                    ? "bg-sky-500 text-white hover:bg-sky-600 active:bg-sky-700"
-                    : "bg-stone-100 text-stone-500 hover:bg-stone-200 active:bg-stone-300")
-                }
-              >
-                {k.label}
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={() => onOpen(room.room)}
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-sky-500 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-sky-600 active:bg-sky-700"
+          >
+            <ClipboardList className="h-3.5 w-3.5" />
+            照護作業
+          </button>
         </>
       )}
     </div>

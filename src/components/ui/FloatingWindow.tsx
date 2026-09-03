@@ -7,11 +7,14 @@ import { GripVertical, Minus, X } from "lucide-react";
 const MIN_WIDTH = 320;
 const MIN_HEIGHT = 240;
 
-/** 初始寬度：作業視窗需容納頁籤列故較寬，但不得超出視埠（iPad／手機直向） */
+/**
+ * 初始寬度：作業視窗要放得下整排作業頁籤與兩欄式表單，故取較寬的值，
+ * 目的是讓內容不必左右／上下捲動；但仍夾在視埠內（iPad／手機直向）。
+ */
 function initialWidth(wide: boolean) {
-  const base = wide ? 760 : 440;
+  const base = wide ? 1280 : 440;
   if (typeof window === "undefined") return base;
-  return Math.min(base, Math.max(MIN_WIDTH, window.innerWidth - 24));
+  return Math.min(base, Math.max(MIN_WIDTH, window.innerWidth - 48));
 }
 
 export default function FloatingWindow({
@@ -112,9 +115,12 @@ export default function FloatingWindow({
         zIndex,
         width: size.width,
         height: size.height ?? undefined,
+        // 可用高度依視窗實際位置計算（而非固定 vh），既保證底部不超出畫面，
+        // 視窗越靠上時也能用到越多高度，減少長表單出現垂直捲軸
+        maxHeight: `calc(100vh - ${pos.y}px - 16px)`,
         display: hidden ? "none" : undefined,
       }}
-      className="animate-modal-pop flex max-h-[85vh] flex-col rounded-2xl border border-stone-200 bg-white shadow-2xl"
+      className="animate-modal-pop flex flex-col rounded-2xl border border-stone-200 bg-white shadow-2xl"
     >
       <div
         onPointerDown={handlePointerDown}

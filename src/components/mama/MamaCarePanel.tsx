@@ -7,7 +7,7 @@ import OngoingCare from "@/components/mama/forms/OngoingCare";
 import PaperScoreForm from "@/components/mama/forms/PaperScoreForm";
 import NursingGuidance from "@/components/mama/forms/NursingGuidance";
 import { MAMA_QUICK_KEYS } from "@/lib/mamaQuickKeys";
-import type { QuickKey } from "@/lib/quickKeys";
+import { orderedTabs, type QuickKey } from "@/lib/quickKeys";
 
 function renderForm(room: string, key: string) {
   switch (key) {
@@ -45,7 +45,7 @@ export default function MamaCarePanel({
   activeKey: string;
   onTabSelect: (tab: QuickKey) => boolean;
 }) {
-  const keys = showSecondary ? MAMA_QUICK_KEYS : MAMA_QUICK_KEYS.filter((k) => k.core);
+  const keys = orderedTabs(MAMA_QUICK_KEYS, showSecondary);
   const tabs: CareTabItem[] = keys.map((k) => ({ ...k, content: renderForm(room, k.key) }));
 
   return <CareTabs tabs={tabs} activeKey={activeKey} onTabSelect={onTabSelect} accent="rose" />;

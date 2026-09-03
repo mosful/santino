@@ -10,7 +10,7 @@ export default function PaperScoreForm({
       <p className="text-xs text-stone-400">
         {title}維持紙本填寫，填完後拍照由系統自動生成記錄（或直接上傳掃描照片），並可自行輸入評分。
       </p>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <Field label="房號" value={room} />
         <Field label="姓名" />
         <Field label="病歷號" />
@@ -45,7 +45,7 @@ function Field({
   area?: boolean;
 }) {
   return (
-    <div className={area ? "col-span-2" : ""}>
+    <div className={area ? "col-span-full" : ""}>
       <label className="mb-1 block text-xs text-stone-500">{label}</label>
       {area ? (
         <textarea className="h-16 w-full rounded border border-stone-200 p-2 text-sm" placeholder={placeholder} />

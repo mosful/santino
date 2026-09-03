@@ -13,7 +13,7 @@ import {
   IdPhoto,
 } from "@/components/room/forms/OpsForms";
 import { OPS_QUICK_KEYS } from "@/lib/opsQuickKeys";
-import type { QuickKey } from "@/lib/quickKeys";
+import { orderedTabs, type QuickKey } from "@/lib/quickKeys";
 
 function renderForm(room: string, key: string) {
   switch (key) {
@@ -48,7 +48,11 @@ export default function OpsCarePanel({
   activeKey: string;
   onTabSelect: (tab: QuickKey) => boolean;
 }) {
-  const tabs: CareTabItem[] = OPS_QUICK_KEYS.map((k) => ({ ...k, content: renderForm(room, k.key) }));
+  // 房務版 8 項皆為核心，orderedTabs 等於原順序全列
+  const tabs: CareTabItem[] = orderedTabs(OPS_QUICK_KEYS, true).map((k) => ({
+    ...k,
+    content: renderForm(room, k.key),
+  }));
 
   return <CareTabs tabs={tabs} activeKey={activeKey} onTabSelect={onTabSelect} accent="teal" />;
 }

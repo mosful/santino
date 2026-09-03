@@ -23,6 +23,13 @@ const ACCENT_BAR: Record<CareAccent, string> = {
   teal: "bg-teal-100",
 };
 
+// 核心／次要之間的分隔線
+const ACCENT_DIVIDER: Record<CareAccent, string> = {
+  rose: "border-rose-300",
+  sky: "border-sky-300",
+  teal: "border-teal-300",
+};
+
 /**
  * 房卡作業面板頁籤（受控元件）。
  *
@@ -58,28 +65,41 @@ export default function CareTabs({
   // 這一輪要渲染的頁籤：已掛載過的，加上目前作用中的（涵蓋退回第一個頁籤的情況）
   const visibleKeys = currentKey && !mounted.includes(currentKey) ? [...mounted, currentKey] : mounted;
 
+  const coreTabs = tabs.filter((t) => t.core);
+  const secondaryTabs = tabs.filter((t) => !t.core);
+
+  function tabButton(t: CareTabItem) {
+    return (
+      <button
+        key={t.key}
+        onClick={() => handleSelect(t)}
+        title={t.hasSignature ? "含簽名步驟，切換後將鎖定僅能操作本房間" : undefined}
+        className={
+          "flex shrink-0 items-center gap-1 rounded-full px-3.5 py-1.5 text-sm transition-all sm:px-4 " +
+          (t.key === currentKey
+            ? "font-bold " + ACCENT_ACTIVE[accent]
+            : t.core
+            ? "font-semibold text-stone-700 hover:bg-white hover:text-stone-900"
+            : "font-normal text-stone-400 hover:bg-white hover:text-stone-700")
+        }
+      >
+        {t.hasSignature && <PenLine className="h-3.5 w-3.5 shrink-0 opacity-80" />}
+        {t.label}
+      </button>
+    );
+  }
+
   return (
     <div>
       <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-3 border-b border-stone-100 bg-white px-4 pb-2.5 pt-4">
-        <div className={"scroll-fade flex gap-1 overflow-x-auto rounded-full p-1 " + ACCENT_BAR[accent]}>
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => handleSelect(t)}
-              title={t.hasSignature ? "含簽名步驟，切換後將鎖定僅能操作本房間" : undefined}
-              className={
-                "flex shrink-0 items-center gap-1 rounded-full px-3.5 py-1.5 text-sm transition-all sm:px-4 " +
-                (t.key === currentKey
-                  ? "font-bold " + ACCENT_ACTIVE[accent]
-                  : t.core
-                  ? "font-medium text-stone-600 hover:bg-white hover:text-stone-900"
-                  : "font-normal text-stone-500/80 hover:bg-white hover:text-stone-700")
-              }
-            >
-              {t.hasSignature && <PenLine className="h-3.5 w-3.5 shrink-0 opacity-80" />}
-              {t.label}
-            </button>
-          ))}
+        {/* 核心功能排左邊、次要功能排右邊並以分隔線圈成一組，不穿插 */}
+        <div className={"flex flex-wrap gap-1 rounded-2xl p-1 " + ACCENT_BAR[accent]}>
+          {coreTabs.map(tabButton)}
+          {secondaryTabs.length > 0 && (
+            <div className={"ml-1 flex flex-wrap gap-1 border-l pl-2.5 " + ACCENT_DIVIDER[accent]}>
+              {secondaryTabs.map(tabButton)}
+            </div>
+          )}
         </div>
       </div>
 

@@ -20,7 +20,7 @@ export default function NursingGuidance({ room }: { room: string }) {
       </div>
       <div>
         <div className="mb-1 text-xs text-stone-500">衛教指導內容（至少9項）</div>
-        <div className="grid grid-cols-2 gap-1">
+        <div className="grid grid-cols-2 gap-1 lg:grid-cols-3">
           {ITEMS.map((it) => (
             <label key={it} className="flex items-center gap-2 rounded border border-stone-100 px-2 py-1.5 text-xs">
               <input type="checkbox" /> {it}

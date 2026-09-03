@@ -13,7 +13,7 @@ import {
   BabyGuidance,
 } from "@/components/baby/forms/BabyForms";
 import { BABY_QUICK_KEYS } from "@/lib/babyQuickKeys";
-import type { QuickKey } from "@/lib/quickKeys";
+import { orderedTabs, type QuickKey } from "@/lib/quickKeys";
 
 function renderForm(room: string, key: string) {
   switch (key) {
@@ -50,7 +50,7 @@ export default function BabyCarePanel({
   activeKey: string;
   onTabSelect: (tab: QuickKey) => boolean;
 }) {
-  const keys = showSecondary ? BABY_QUICK_KEYS : BABY_QUICK_KEYS.filter((k) => k.core);
+  const keys = orderedTabs(BABY_QUICK_KEYS, showSecondary);
   const tabs: CareTabItem[] = keys.map((k) => ({ ...k, content: renderForm(room, k.key) }));
 
   return <CareTabs tabs={tabs} activeKey={activeKey} onTabSelect={onTabSelect} accent="sky" />;

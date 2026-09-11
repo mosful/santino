@@ -1,3 +1,5 @@
+import PrototypeFormActions from "@/components/ui/PrototypeFormActions";
+
 function Field({ label, placeholder }: { label: string; placeholder?: string }) {
   return (
     <div>
@@ -8,12 +10,7 @@ function Field({ label, placeholder }: { label: string; placeholder?: string }) 
 }
 
 function SubmitBar() {
-  return (
-    <div className="flex justify-end gap-2 text-xs">
-      <button className="rounded bg-stone-100 px-3 py-1.5">暫存</button>
-      <button className="rounded bg-teal-600 px-3 py-1.5 text-white">確定</button>
-    </div>
-  );
+  return <PrototypeFormActions accent="teal" submitLabel="確定" />;
 }
 
 export function Prep({ room }: { room: string }) {
@@ -135,6 +132,7 @@ export function IdPhoto({ room }: { room: string }) {
       <div className="flex h-24 w-40 items-center justify-center rounded border border-dashed border-stone-300 text-xs text-stone-400">
         上傳/檢視證件照片
       </div>
+      <SubmitBar />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useSameRoomLock } from "./windowLockStore";
 
 export type OpenWindow = {
   id: string;
+  caseId: string;
   room: string;
   activeKey: string; // 目前作用中的作業頁籤（存在此處，縮小還原後頁籤位置不會跑掉）
   signatureActive: boolean; // 目前作用中的頁籤是否含簽名步驟
@@ -58,15 +59,15 @@ export function useMultiWindowManager() {
     });
   }
 
-  function openWindow(room: string, defaultKey: string) {
-    const existing = windows.find((w) => w.room === room);
+  function openWindow(room: string, defaultKey: string, caseId = room) {
+    const existing = windows.find((w) => w.caseId === caseId);
     if (existing) {
       bringToFront(existing.id);
       return;
     }
 
     // 防繞道：已有其他房間停在含簽名頁籤時，不得再開新房間
-    const signatureWindow = windows.find((w) => w.signatureActive && w.room !== room);
+    const signatureWindow = windows.find((w) => w.signatureActive && w.caseId !== caseId);
     if (signatureWindow) {
       block(`⚠ 簽名步驟需鎖定單一房間操作，請先關閉房號${signatureWindow.room}的視窗`);
       return;
@@ -79,11 +80,12 @@ export function useMultiWindowManager() {
 
     zCounter.current = Math.min(zCounter.current + 1, Z_MAX);
     const idx = windows.length;
-    const id = `${room}-${Date.now()}`;
+    const id = `${caseId}-${Date.now()}`;
     setWindows((ws) => [
       ...ws,
       {
         id,
+        caseId,
         room,
         activeKey: defaultKey,
         signatureActive: false,
@@ -104,7 +106,7 @@ export function useMultiWindowManager() {
     if (!target) return false;
 
     if (hasSignature) {
-      const otherRoomWindow = windows.find((w) => w.room !== target.room);
+      const otherRoomWindow = windows.find((w) => w.caseId !== target.caseId);
       if (otherRoomWindow) {
         block(`⚠ 簽名步驟需鎖定單一房間操作，請先關閉房號${otherRoomWindow.room}的視窗`);
         return false;

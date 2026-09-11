@@ -1,4 +1,5 @@
 import SignatureBox from "@/components/ui/SignatureBox";
+import PrototypeFormActions from "@/components/ui/PrototypeFormActions";
 
 const ITEMS = [
   "子宮復原說明",
@@ -12,7 +13,7 @@ const ITEMS = [
   "回診時間提醒",
 ];
 
-export default function NursingGuidance({ room }: { room: string }) {
+export default function NursingGuidance({ room, caseLabel }: { room: string; caseLabel?: string }) {
   return (
     <div className="space-y-3 text-sm">
       <div className="rounded border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700">
@@ -39,8 +40,8 @@ export default function NursingGuidance({ room }: { room: string }) {
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <SignatureBox label="執行者簽名" />
-        <SignatureBox label="評估者簽名（可待評估完成後補簽）" />
+        <SignatureBox label="執行者簽名" caseLabel={caseLabel ?? `房號 ${room}｜媽媽個案`} />
+        <SignatureBox label="評估者簽名（可待評估完成後補簽）" caseLabel={caseLabel ?? `房號 ${room}｜媽媽個案`} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -55,10 +56,7 @@ export default function NursingGuidance({ room }: { room: string }) {
           <input className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm" placeholder="待複核" />
         </div>
       </div>
-      <div className="flex justify-end gap-2 text-xs">
-        <button className="rounded bg-stone-100 px-3 py-1.5">暫存</button>
-        <button className="rounded bg-rose-500 px-3 py-1.5 text-white">送出</button>
-      </div>
+      <PrototypeFormActions accent="rose" />
     </div>
   );
 }

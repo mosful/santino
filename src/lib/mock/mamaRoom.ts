@@ -1,8 +1,9 @@
 import { makeRng, makeUniqueNameGenerator } from "./genUtil";
 
-export type RoomStatus = "入住" | "空房" | "親子同室" | "打掃" | "報修";
+export type RoomStatus = "入住" | "空房" | "親子同室" | "打掃" | "報修" | "已退房";
 
 export type MamaRoom = {
+  caseId?: string;
   room: string;
   status: RoomStatus;
   motherName?: string;
@@ -12,6 +13,8 @@ export type MamaRoom = {
   stayDay?: number;
   babyCount?: number;
   alert?: string;
+  dischargedAt?: string;
+  historical?: boolean;
 };
 
 const CURATED: MamaRoom[] = [
@@ -78,10 +81,41 @@ const GENERATED: MamaRoom[] = EXTRA_ROOM_NOS.map((room) => {
 
 export const MAMA_ROOMS: MamaRoom[] = [...CURATED, ...GENERATED];
 
+/** 當日上午退房、但護理紀錄尚未完成的原型個案。房號可已由下午新住客使用。 */
+export const DISCHARGED_MAMA_RECORDS: MamaRoom[] = [
+  {
+    caseId: "discharged-M20260901301",
+    room: "301",
+    status: "已退房",
+    motherName: "陳o臻",
+    chartNo: "M20260901",
+    stayRange: "09/01~09/11",
+    stayDay: 11,
+    babyCount: 1,
+    alert: "媽媽護理紀錄待回補",
+    dischargedAt: "2026-09-11 09:15",
+    historical: true,
+  },
+  {
+    caseId: "discharged-M20260820405",
+    room: "405",
+    status: "已退房",
+    motherName: "郭o涵",
+    chartNo: "M20260820",
+    stayRange: "08/20~09/11",
+    stayDay: 23,
+    babyCount: 1,
+    alert: "持續護理紀錄待確認",
+    dischargedAt: "2026-09-11 10:05",
+    historical: true,
+  },
+];
+
 export const STATUS_COLOR: Record<RoomStatus, string> = {
   空房: "bg-white border-stone-200",
   入住: "bg-emerald-50 border-emerald-300",
   親子同室: "bg-pink-50 border-pink-300",
   打掃: "bg-amber-50 border-amber-300",
   報修: "bg-sky-50 border-sky-300",
+  已退房: "bg-stone-100 border-stone-400",
 };

@@ -19,7 +19,7 @@ export default function Modal({
 
   return createPortal(
     <div
-      className="animate-overlay-in fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-start sm:overflow-y-auto sm:p-4 sm:pt-10"
+      className="animate-overlay-in fixed inset-0 z-[70] flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-start sm:overflow-y-auto sm:p-4 sm:pt-10"
       onClick={onClose}
     >
       <div

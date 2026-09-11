@@ -8,6 +8,7 @@ const STATUS_BADGE_COLOR: Record<MamaRoom["status"], "green" | "rose" | "amber" 
   打掃: "amber",
   報修: "blue",
   空房: "slate",
+  已退房: "slate",
 };
 
 export default function MamaRoomListView({
@@ -15,7 +16,7 @@ export default function MamaRoomListView({
   onOpen,
 }: {
   rooms: MamaRoom[];
-  onOpen: (roomNo: string) => void;
+  onOpen: (room: MamaRoom) => void;
 }) {
   return (
     <div className="scroll-fade overflow-x-auto rounded-xl border border-stone-200 bg-white">
@@ -36,7 +37,7 @@ export default function MamaRoomListView({
           {rooms.map((r) => {
             const empty = r.status === "空房" || r.status === "打掃" || r.status === "報修";
             return (
-              <tr key={r.room} className="border-t border-stone-100 transition-colors hover:bg-stone-50">
+              <tr key={r.caseId ?? r.room} className="border-t border-stone-100 transition-colors hover:bg-stone-50">
                 <td className="whitespace-nowrap px-3 py-2.5 font-bold">{r.room}</td>
                 <td className="whitespace-nowrap px-3 py-2.5">
                   <Badge color={STATUS_BADGE_COLOR[r.status]}>{r.status}</Badge>
@@ -55,7 +56,7 @@ export default function MamaRoomListView({
                 </td>
                 <td className="whitespace-nowrap px-3 py-2.5 text-stone-500">{empty ? "－" : r.chartNo}</td>
                 <td className="whitespace-nowrap px-3 py-2.5 text-stone-500">
-                  {empty ? "－" : `第${r.stayDay}天`}
+                  {empty ? "－" : r.historical ? `退房 ${r.dischargedAt}` : `第${r.stayDay}天`}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2.5 text-stone-500">{empty ? "－" : r.babyCount}</td>
                 <td className="whitespace-nowrap px-3 py-2.5">
@@ -68,11 +69,11 @@ export default function MamaRoomListView({
                     </span>
                   ) : (
                     <button
-                      onClick={() => onOpen(r.room)}
+                      onClick={() => onOpen(r)}
                       className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-rose-500 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-rose-600 active:bg-rose-700"
                     >
                       <ClipboardList className="h-3.5 w-3.5" />
-                      照護作業
+                      {r.historical ? "回補護理紀錄" : "照護作業"}
                     </button>
                   )}
                 </td>

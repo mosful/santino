@@ -9,7 +9,7 @@ import NursingGuidance from "@/components/mama/forms/NursingGuidance";
 import { MAMA_QUICK_KEYS } from "@/lib/mamaQuickKeys";
 import { orderedTabs, type QuickKey } from "@/lib/quickKeys";
 
-function renderForm(room: string, key: string) {
+function renderForm(room: string, key: string, caseLabel?: string) {
   switch (key) {
     case "admission":
       return <AdmissionAssessment room={room} />;
@@ -21,7 +21,7 @@ function renderForm(room: string, key: string) {
     case "mood":
       return <PaperScoreForm room={room} title="心情量表" />;
     case "guidance":
-      return <NursingGuidance room={room} />;
+      return <NursingGuidance room={room} caseLabel={caseLabel} />;
     case "health-edu-eval":
       return (
         <PlaceholderNotice text="衛教認知評估單：衛教師新增項目，實際欄位內容尚未與客戶確認，先保留版位，待補充後再設計表單（見規格文件8.2節待確認事項）。" />
@@ -36,17 +36,30 @@ function renderForm(room: string, key: string) {
 /** 媽媽照護作業面板：一間房一個視窗，內含各項護理紀錄頁籤 */
 export default function MamaCarePanel({
   room,
+  caseLabel,
+  historical = false,
   showSecondary,
   activeKey,
   onTabSelect,
 }: {
   room: string;
+  caseLabel?: string;
+  historical?: boolean;
   showSecondary: boolean;
   activeKey: string;
   onTabSelect: (tab: QuickKey) => boolean;
 }) {
   const keys = orderedTabs(MAMA_QUICK_KEYS, showSecondary);
-  const tabs: CareTabItem[] = keys.map((k) => ({ ...k, content: renderForm(room, k.key) }));
+  const tabs: CareTabItem[] = keys.map((k) => ({ ...k, content: renderForm(room, k.key, caseLabel) }));
 
-  return <CareTabs tabs={tabs} activeKey={activeKey} onTabSelect={onTabSelect} accent="rose" />;
+  return (
+    <div>
+      {historical && (
+        <div className="mb-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          退房個案回補模式：資料會歸屬目前登入員工，且保留原退房時間與回補時間供客戶確認流程。
+        </div>
+      )}
+      <CareTabs tabs={tabs} activeKey={activeKey} onTabSelect={onTabSelect} accent="rose" />
+    </div>
+  );
 }

@@ -7,7 +7,7 @@ export default function MamaRoomCard({
   onOpen,
 }: {
   room: MamaRoom;
-  onOpen: (roomNo: string) => void;
+  onOpen: (room: MamaRoom) => void;
 }) {
   const empty = room.status === "空房" || room.status === "打掃" || room.status === "報修";
 
@@ -25,6 +25,8 @@ export default function MamaRoomCard({
               ? "amber"
               : room.status === "報修"
               ? "blue"
+              : room.status === "已退房"
+              ? "slate"
               : "slate"
           }
         >
@@ -53,14 +55,15 @@ export default function MamaRoomCard({
             {room.alert && (
               <div className="mt-1 text-xs font-medium text-rose-600">⚠ {room.alert}</div>
             )}
+            {room.dischargedAt && <div className="mt-1 text-xs font-medium text-stone-600">退房時間：{room.dischargedAt}</div>}
           </div>
 
           <button
-            onClick={() => onOpen(room.room)}
+            onClick={() => onOpen(room)}
             className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-rose-500 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-rose-600 active:bg-rose-700"
           >
             <ClipboardList className="h-3.5 w-3.5" />
-            照護作業
+            {room.historical ? "回補護理紀錄" : "照護作業"}
           </button>
         </>
       )}

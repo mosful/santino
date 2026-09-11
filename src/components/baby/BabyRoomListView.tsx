@@ -7,6 +7,7 @@ const STATUS_BADGE_COLOR: Record<BabyStatus, "blue" | "amber" | "purple" | "gree
   隔離: "amber",
   親子同室: "purple",
   視訊: "green",
+  托嬰: "purple",
   空房: "slate",
 };
 
@@ -15,14 +16,14 @@ export default function BabyRoomListView({
   onOpen,
 }: {
   rooms: BabyRoom[];
-  onOpen: (roomNo: string) => void;
+  onOpen: (room: BabyRoom) => void;
 }) {
   return (
     <div className="scroll-fade overflow-x-auto rounded-xl border border-stone-200 bg-white">
       <table className="w-full min-w-max text-left text-sm">
         <thead className="bg-stone-50 text-xs text-stone-500">
           <tr>
-            <th className="whitespace-nowrap px-3 py-2.5 font-medium">房號</th>
+            <th className="whitespace-nowrap px-3 py-2.5 font-medium">房號／車號</th>
             <th className="whitespace-nowrap px-3 py-2.5 font-medium">性別</th>
             <th className="whitespace-nowrap px-3 py-2.5 font-medium">狀態</th>
             <th className="whitespace-nowrap px-3 py-2.5 font-medium">寶寶姓名</th>
@@ -37,8 +38,8 @@ export default function BabyRoomListView({
           {rooms.map((r) => {
             const empty = r.status === "空房";
             return (
-              <tr key={r.room} className="border-t border-stone-100 transition-colors hover:bg-stone-50">
-                <td className="whitespace-nowrap px-3 py-2.5 font-bold">{r.room}</td>
+              <tr key={r.caseId ?? r.room} className="border-t border-stone-100 transition-colors hover:bg-stone-50">
+                <td className="whitespace-nowrap px-3 py-2.5 font-bold">{r.boarding ? `車號 ${r.carNo}` : r.room}</td>
                 <td className="whitespace-nowrap px-3 py-2.5">{r.gender ?? "－"}</td>
                 <td className="whitespace-nowrap px-3 py-2.5">
                   <Badge color={STATUS_BADGE_COLOR[r.status]}>{r.status}</Badge>
@@ -61,11 +62,11 @@ export default function BabyRoomListView({
                     <span className="rounded-lg border border-stone-200 px-2 py-1 text-xs text-stone-400">目前空房</span>
                   ) : (
                     <button
-                      onClick={() => onOpen(r.room)}
+                      onClick={() => onOpen(r)}
                       className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-sky-500 px-4 py-1.5 text-xs font-medium text-white transition-colors hover:bg-sky-600 active:bg-sky-700"
                     >
                       <ClipboardList className="h-3.5 w-3.5" />
-                      照護作業
+                      {r.boarding ? "托嬰照護作業" : "照護作業"}
                     </button>
                   )}
                 </td>

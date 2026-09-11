@@ -1,11 +1,14 @@
 import { makeRng, makeCycler, SURNAMES } from "./genUtil";
 import { MAMA_ROOMS } from "./mamaRoom";
 
-export type BabyStatus = "入住" | "隔離" | "親子同室" | "視訊" | "空房";
+export type BabyStatus = "入住" | "隔離" | "親子同室" | "視訊" | "托嬰" | "空房";
 export type BabyGender = "男" | "女";
 
 export type BabyRoom = {
+  caseId?: string;
   room: string;
+  carNo?: string;
+  boarding?: boolean;
   status: BabyStatus;
   gender?: BabyGender;
   babyName?: string;
@@ -61,7 +64,7 @@ const NAME_COMBOS = SURNAMES.flatMap((s) => [
 const rng = makeRng(3003);
 const nameCycler = makeCycler(rng, NAME_COMBOS);
 
-export const BABY_ROOMS: BabyRoom[] = MAMA_ROOMS.map((mr): BabyRoom => {
+const RESIDENT_BABY_ROOMS: BabyRoom[] = MAMA_ROOMS.map((mr): BabyRoom => {
   const occupied = mr.status === "入住" || mr.status === "親子同室";
   if (!occupied) return { room: mr.room, status: "空房" };
 
@@ -91,10 +94,42 @@ export const BABY_ROOMS: BabyRoom[] = MAMA_ROOMS.map((mr): BabyRoom => {
   };
 });
 
+export const BOARDING_BABIES: BabyRoom[] = [
+  {
+    caseId: "boarding-B20260818001",
+    room: "",
+    carNo: "07",
+    boarding: true,
+    status: "托嬰",
+    gender: "男",
+    babyName: "周小弟",
+    chartNo: "B20260818001",
+    birthDate: "2026-08-18",
+    weight: "3.4kg",
+    videoState: "托嬰照護中",
+  },
+  {
+    caseId: "boarding-B20260822002",
+    room: "",
+    carNo: "12",
+    boarding: true,
+    status: "托嬰",
+    gender: "女",
+    babyName: "許小妹",
+    chartNo: "B20260822002",
+    birthDate: "2026-08-22",
+    weight: "3.1kg",
+    videoState: "托嬰照護中",
+  },
+];
+
+export const BABY_ROOMS: BabyRoom[] = [...BOARDING_BABIES, ...RESIDENT_BABY_ROOMS];
+
 export const BABY_STATUS_COLOR: Record<BabyStatus, string> = {
   入住: "bg-sky-50 border-sky-300",
   隔離: "bg-amber-50 border-amber-300",
   親子同室: "bg-purple-50 border-purple-300",
   視訊: "bg-emerald-50 border-emerald-300",
+  托嬰: "bg-violet-50 border-violet-300",
   空房: "bg-white border-stone-200",
 };

@@ -14,9 +14,9 @@ import Pagination from "@/components/ui/Pagination";
 import CareSearch from "@/components/ui/CareSearch";
 import { rowMatchesQuery } from "@/lib/fuzzySearch";
 import { useMultiWindowManager } from "@/lib/useMultiWindowManager";
-import { BABY_ROOMS } from "@/lib/mock/babyRoom";
+import { BABY_ROOMS, BOARDING_BABIES, type BabyRoom } from "@/lib/mock/babyRoom";
 
-const STATUS_FILTERS = ["全部", "入住", "隔離", "親子同室", "視訊"] as const;
+const STATUS_FILTERS = ["全部", "入住", "托嬰", "隔離", "親子同室", "視訊"] as const;
 
 // 開啟作業視窗時的預設頁籤（第一個核心功能）
 const DEFAULT_TAB = "admission";
@@ -48,9 +48,21 @@ export default function BabyPage() {
   const pagedRooms = rooms.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   /** 視窗標題與工作列標籤：房號＋寶寶姓名（功能名稱已由頁籤本身表達） */
-  function windowLabel(roomNo: string) {
-    const name = BABY_ROOMS.find((r) => r.room === roomNo)?.babyName;
-    return name ? `${roomNo}｜${name}` : roomNo;
+  function findRecord(caseId: string) {
+    return BABY_ROOMS.find((record) => (record.caseId ?? record.room) === caseId);
+  }
+
+  function recordIdentifier(record: BabyRoom) {
+    return record.boarding ? `車號 ${record.carNo}` : `房號 ${record.room}`;
+  }
+
+  function windowLabel(caseId: string) {
+    const record = findRecord(caseId);
+    return record ? `${recordIdentifier(record)}｜${record.babyName ?? "空房"}` : caseId;
+  }
+
+  function openBabyRecord(record: BabyRoom) {
+    openWindow(recordIdentifier(record), DEFAULT_TAB, record.caseId ?? record.room);
   }
 
   return (
@@ -107,19 +119,26 @@ export default function BabyPage() {
           setQ(value);
           setPage(1);
         }}
-        placeholder="搜尋房號/寶寶姓名/病歷號（支援模糊搜尋）"
+        placeholder="搜尋房號/車號/寶寶姓名/病歷號（支援模糊搜尋）"
         resultCount={rooms.length}
         accent="sky"
       />
 
+      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-xs text-violet-800">
+        <span className="font-medium">托嬰個案不顯示房號，改以專屬車號識別。</span>
+        <button type="button" onClick={() => { setFilter("托嬰"); setPage(1); }} className="rounded-full bg-violet-600 px-3 py-1.5 text-white">
+          查看 {BOARDING_BABIES.length} 位托嬰寶寶
+        </button>
+      </div>
+
       {listView ? (
         <>
           <div className="care-list-table md:hidden lg:block">
-            <BabyRoomListView rooms={pagedRooms} onOpen={(room) => openWindow(room, DEFAULT_TAB)} />
+            <BabyRoomListView rooms={pagedRooms} onOpen={openBabyRecord} />
           </div>
           <div className="care-list-cards hidden grid-cols-2 gap-4 md:grid lg:hidden">
             {pagedRooms.map((r) => (
-              <BabyRoomCard key={r.room} room={r} onOpen={(room) => openWindow(room, DEFAULT_TAB)} />
+              <BabyRoomCard key={r.caseId ?? r.room} room={r} onOpen={openBabyRecord} />
             ))}
           </div>
         </>
@@ -127,9 +146,9 @@ export default function BabyPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {pagedRooms.map((r) => (
             <BabyRoomCard
-              key={r.room}
+              key={r.caseId ?? r.room}
               room={r}
-              onOpen={(room) => openWindow(room, DEFAULT_TAB)}
+              onOpen={openBabyRecord}
             />
           ))}
         </div>
@@ -162,7 +181,7 @@ export default function BabyPage() {
       {windows.map((w) => (
         <FloatingWindow
           key={w.id}
-          title={windowLabel(w.room)}
+          title={windowLabel(w.caseId)}
           onClose={() => closeWindow(w.id)}
           onFocus={() => bringToFront(w.id)}
           onMinimize={() => toggleMinimize(w.id)}
@@ -173,6 +192,10 @@ export default function BabyPage() {
         >
           <BabyCarePanel
             room={w.room}
+            caseLabel={(() => {
+              const record = findRecord(w.caseId);
+              return record ? `${recordIdentifier(record)}｜${record.babyName}｜病歷號 ${record.chartNo}` : undefined;
+            })()}
             showSecondary={showSecondary}
             activeKey={w.activeKey}
             onTabSelect={(t) => selectTab(w.id, t.key, !!t.hasSignature)}
@@ -183,7 +206,7 @@ export default function BabyPage() {
       <WindowTray
         items={windows.map((w) => ({
           id: w.id,
-          label: windowLabel(w.room),
+          label: windowLabel(w.caseId),
           minimized: w.minimized,
         }))}
         onToggle={toggleMinimize}

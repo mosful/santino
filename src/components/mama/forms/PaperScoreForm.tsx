@@ -1,3 +1,5 @@
+import PrototypeFormActions from "@/components/ui/PrototypeFormActions";
+
 export default function PaperScoreForm({
   room,
   title,
@@ -25,10 +27,7 @@ export default function PaperScoreForm({
         </div>
       </div>
       <Field label="後續處理內容" area />
-      <div className="flex justify-end gap-2 text-xs">
-        <button className="rounded bg-stone-100 px-3 py-1.5">暫存</button>
-        <button className="rounded bg-rose-500 px-3 py-1.5 text-white">送出</button>
-      </div>
+      <PrototypeFormActions accent="rose" />
     </div>
   );
 }

@@ -154,6 +154,8 @@ export const MODULES: ModuleInfo[] = [
       { key: "room-data", label: "房間資料管理" },
       { key: "board", label: "公佈欄設定" },
       { key: "other", label: "產後其他設定" },
+      { key: "assessment", label: "入住評估項目設定" },
+      { key: "kpi-rules", label: "評鑑統計規則設定" },
       { key: "system", label: "系統參數設定" },
       { key: "phrases", label: "常用語／片語庫設定" },
     ],

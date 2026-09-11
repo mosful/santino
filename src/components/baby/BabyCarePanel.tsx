@@ -15,7 +15,7 @@ import {
 import { BABY_QUICK_KEYS } from "@/lib/babyQuickKeys";
 import { orderedTabs, type QuickKey } from "@/lib/quickKeys";
 
-function renderForm(room: string, key: string) {
+function renderForm(room: string, key: string, caseLabel?: string) {
   switch (key) {
     case "admission":
       return <BabyAdmission room={room} />;
@@ -32,7 +32,7 @@ function renderForm(room: string, key: string) {
     case "io":
       return <BabyIO room={room} />;
     case "guidance":
-      return <BabyGuidance room={room} />;
+      return <BabyGuidance room={room} caseLabel={caseLabel} />;
     default:
       return <PlaceholderNotice text="次要功能（非寶寶照護8大核心），畫面待後續批次補齊。" />;
   }
@@ -41,17 +41,19 @@ function renderForm(room: string, key: string) {
 /** 寶寶照護作業面板：一間房一個視窗，內含各項嬰兒室紀錄頁籤 */
 export default function BabyCarePanel({
   room,
+  caseLabel,
   showSecondary,
   activeKey,
   onTabSelect,
 }: {
   room: string;
+  caseLabel?: string;
   showSecondary: boolean;
   activeKey: string;
   onTabSelect: (tab: QuickKey) => boolean;
 }) {
   const keys = orderedTabs(BABY_QUICK_KEYS, showSecondary);
-  const tabs: CareTabItem[] = keys.map((k) => ({ ...k, content: renderForm(room, k.key) }));
+  const tabs: CareTabItem[] = keys.map((k) => ({ ...k, content: renderForm(room, k.key, caseLabel) }));
 
   return <CareTabs tabs={tabs} activeKey={activeKey} onTabSelect={onTabSelect} accent="sky" />;
 }

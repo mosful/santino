@@ -11,6 +11,8 @@ import { OPS_ROOMS } from "@/lib/mock/opsRoom";
 import { makeRng } from "@/lib/mock/genUtil";
 import SystemSettings from "./tabs/SystemSettings";
 import PhraseLibrarySettings from "./tabs/PhraseLibrarySettings";
+import AssessmentFormSettings from "./tabs/AssessmentFormSettings";
+import KpiRuleSettings from "./tabs/KpiRuleSettings";
 
 const simpleFields: FieldSchema[] = [
   { key: "name", label: "名稱" },
@@ -57,7 +59,7 @@ const SUPPLY_ROWS: Row[] = [
 ];
 
 const OTHER_SETTINGS_BASE = [
-  "預約參觀訊息來源", "護理項目填寫設定", "打掃定期工作設定", "寶寶奶粉廠牌設定",
+  "預約參觀訊息來源", "打掃定期工作設定", "寶寶奶粉廠牌設定",
   "媽媽擠乳器廠牌設定", "護理後送醫院設定", "飲食禁忌項目設定", "產後客戶聯絡人分類",
   "醫師資料設定", "護理敘述性文字設定", "關懷片語文字設定", "產科敘述性文字設定", "兒科敘述性文字設定",
 ];
@@ -113,6 +115,8 @@ export default function AdminPage() {
           { key: "room-data", label: "房間資料管理", content: <RoomDataTab /> },
           { key: "board", label: "公佈欄設定", content: <BoardSettingsTab /> },
           { key: "other", label: "產後其他設定", content: <SimpleListTab rows={OTHER_SETTINGS_ROWS} placeholder="設定項目" /> },
+          { key: "assessment", label: "入住評估項目設定", content: <AssessmentFormSettings /> },
+          { key: "kpi-rules", label: "評鑑統計規則設定", content: <KpiRuleSettings /> },
           { key: "system", label: "系統參數設定", content: <SystemSettings /> },
           { key: "phrases", label: "常用語／片語庫設定", content: <PhraseLibrarySettings /> },
         ]}

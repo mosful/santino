@@ -7,6 +7,7 @@ const STATUS_BADGE_COLOR: Record<BabyStatus, "blue" | "amber" | "purple" | "gree
   隔離: "amber",
   親子同室: "purple",
   視訊: "green",
+  托嬰: "purple",
   空房: "slate",
 };
 
@@ -15,13 +16,14 @@ export default function BabyRoomCard({
   onOpen,
 }: {
   room: BabyRoom;
-  onOpen: (roomNo: string) => void;
+  onOpen: (room: BabyRoom) => void;
 }) {
   const empty = room.status === "空房";
+  const identifier = room.boarding ? `車號 ${room.carNo}` : `房號 ${room.room}`;
   return (
     <div className={`rounded-xl border-2 p-3.5 shadow-sm transition-shadow hover:shadow-md sm:p-4 ${BABY_STATUS_COLOR[room.status]}`}>
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-lg font-bold">{room.room}</span>
+        <span className="text-lg font-bold">{identifier}</span>
         <div className="flex gap-1">
           {room.gender && (
             <Badge color={room.gender === "男" ? "blue" : "rose"}>{room.gender}寶寶</Badge>
@@ -49,11 +51,11 @@ export default function BabyRoomCard({
             </div>
           </div>
           <button
-            onClick={() => onOpen(room.room)}
+            onClick={() => onOpen(room)}
             className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-sky-500 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-sky-600 active:bg-sky-700"
           >
             <ClipboardList className="h-3.5 w-3.5" />
-            照護作業
+            {room.boarding ? "托嬰照護作業" : "照護作業"}
           </button>
         </>
       )}

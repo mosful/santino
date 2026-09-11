@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Tabs from "@/components/ui/Tabs";
 import PhrasePicker from "@/components/phrases/PhrasePicker";
+import PrototypeFormActions from "@/components/ui/PrototypeFormActions";
 
 const HISTORY = [
   { date: "2026-08-27 09:10", author: "護理師-雅婷", note: "生命徵象穩定，惡露量正常" },
@@ -98,6 +99,7 @@ export default function OngoingCare({ room }: { room: string }) {
       <p className="mt-2 text-xs text-stone-400">
         可事後增加/修改；資料可暫存。退房後補登：修改紀錄需歸屬實際登入員工，不可用共用帳號代填。
       </p>
+      <div className="mt-3"><PrototypeFormActions accent="rose" /></div>
     </div>
   );
 }

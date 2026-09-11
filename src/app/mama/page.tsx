@@ -96,7 +96,10 @@ export default function MamaPage() {
       </div>
 
       <p className="mb-4 rounded-lg bg-brand-50 px-3 py-2 text-xs text-brand-600">
-        💡 每間房開啟一個作業視窗，視窗內以頁籤切換各項紀錄；可同時開啟多間房比對（拖曳標題列移動、右下角可縮放）。切換到含簽名步驟的頁籤（✍）時，會鎖定僅能操作單一房間。
+        💡 每間房開啟一個作業視窗，視窗內以頁籤切換各項紀錄；
+        <span className="non-tablet-copy">可同時開啟多間房比對（拖曳標題列移動、右下角可縮放）。</span>
+        <span className="tablet-only-copy">平板會以大型固定工作區開啟，可由下方工作列快速切換房間。</span>
+        切換到含簽名步驟的頁籤（✍）時，會鎖定僅能操作單一房間。
       </p>
 
       <CareSearch
@@ -111,7 +114,16 @@ export default function MamaPage() {
       />
 
       {listView ? (
-        <MamaRoomListView rooms={pagedRooms} onOpen={(room) => openWindow(room, DEFAULT_TAB)} />
+        <>
+          <div className="care-list-table md:hidden lg:block">
+            <MamaRoomListView rooms={pagedRooms} onOpen={(room) => openWindow(room, DEFAULT_TAB)} />
+          </div>
+          <div className="care-list-cards hidden grid-cols-2 gap-4 md:grid lg:hidden">
+            {pagedRooms.map((r) => (
+              <MamaRoomCard key={r.room} room={r} onOpen={(room) => openWindow(room, DEFAULT_TAB)} />
+            ))}
+          </div>
+        </>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {pagedRooms.map((r) => (

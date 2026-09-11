@@ -93,10 +93,10 @@ export default function CareTabs({
     <div>
       <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-3 border-b border-stone-100 bg-white px-4 pb-2.5 pt-4">
         {/* 核心功能排左邊、次要功能排右邊並以分隔線圈成一組，不穿插 */}
-        <div className={"flex flex-wrap gap-1 rounded-2xl p-1 " + ACCENT_BAR[accent]}>
+        <div className={"tablet-care-tabs scroll-fade flex flex-wrap gap-1 overflow-x-auto rounded-2xl p-1 md:max-lg:flex-nowrap md:max-lg:pb-2 " + ACCENT_BAR[accent]}>
           {coreTabs.map(tabButton)}
           {secondaryTabs.length > 0 && (
-            <div className={"ml-1 flex flex-wrap gap-1 border-l pl-2.5 " + ACCENT_DIVIDER[accent]}>
+            <div className={"tablet-care-secondary ml-1 flex flex-wrap gap-1 border-l pl-2.5 md:max-lg:flex-nowrap " + ACCENT_DIVIDER[accent]}>
               {secondaryTabs.map(tabButton)}
             </div>
           )}

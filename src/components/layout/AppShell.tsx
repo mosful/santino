@@ -41,10 +41,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-full">
+      {/* 平板固定快捷列：保留內容寬度，同時避免每次換頁都開關抽屜 */}
+      <aside className="tablet-sidebar scroll-fade sticky top-0 hidden h-screen w-[72px] shrink-0 flex-col overflow-y-auto border-r border-brand-900/10 bg-white/85 backdrop-blur md:flex lg:hidden">
+        <div className="flex justify-center pt-1">
+          <Brand compact />
+        </div>
+        <SidebarNav collapsed />
+      </aside>
+
       {/* 桌機固定側邊欄 */}
       <aside
         className={
-          "scroll-fade sticky top-0 hidden h-screen shrink-0 overflow-y-auto border-r border-brand-900/10 bg-white/80 backdrop-blur lg:flex lg:flex-col " +
+          "desktop-sidebar scroll-fade sticky top-0 hidden h-screen shrink-0 overflow-y-auto border-r border-brand-900/10 bg-white/80 backdrop-blur lg:flex lg:flex-col " +
           (collapsed ? "w-[68px]" : "w-60")
         }
       >
@@ -79,9 +87,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {!collapsed && <SidebarIllustration />}
       </aside>
 
-      {/* 平板/手機：抽屜式側邊欄 */}
+      {/* 手機：抽屜式側邊欄 */}
       {drawerOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 md:hidden">
           <div className="animate-overlay-in absolute inset-0 bg-stone-900/40" onClick={() => setDrawerOpen(false)} />
           <aside className="animate-slide-in-left scroll-fade safe-top absolute inset-y-0 left-0 w-72 overflow-y-auto bg-white shadow-xl">
             <div className="flex items-center justify-between pr-2">
@@ -99,16 +107,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <div className="flex min-h-screen flex-1 flex-col">
-        <header className="safe-top sticky top-0 z-30 flex items-center gap-3 border-b border-brand-900/10 bg-white/85 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-white/70 sm:px-6">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+        <header className="safe-top sticky top-0 z-30 flex items-center gap-3 border-b border-brand-900/10 bg-white/85 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-white/70 sm:px-6 md:max-lg:gap-2 md:max-lg:px-4">
           <button
             onClick={() => setDrawerOpen(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 lg:hidden"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 md:hidden"
             aria-label="開啟選單"
           >
             <Menu className="h-5 w-5" />
           </button>
-          <div className="lg:hidden">
+          <div className="md:hidden">
             <Brand compact />
           </div>
           <div className="flex-1" />
@@ -116,7 +124,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <ThemeSwitcher />
           <RoleSwitcher />
         </header>
-        <main className="flex-1">{children}</main>
+        <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

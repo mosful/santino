@@ -17,6 +17,13 @@ function initialWidth(wide: boolean) {
   return Math.min(base, Math.max(MIN_WIDTH, window.innerWidth - 48));
 }
 
+function isTabletViewport() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia(
+    "(min-width: 768px) and (max-width: 1023px), (min-width: 768px) and (max-width: 1366px) and (hover: none) and (pointer: coarse)",
+  ).matches;
+}
+
 export default function FloatingWindow({
   title,
   onClose,
@@ -55,6 +62,7 @@ export default function FloatingWindow({
 
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     onFocus();
+    if (isTabletViewport()) return;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     dragRef.current = { startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y };
   }
@@ -78,6 +86,7 @@ export default function FloatingWindow({
   function handleResizePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     e.stopPropagation();
     onFocus();
+    if (isTabletViewport()) return;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     resizeRef.current = {
       startX: e.clientX,
@@ -120,14 +129,14 @@ export default function FloatingWindow({
         maxHeight: `calc(100vh - ${pos.y}px - 16px)`,
         display: hidden ? "none" : undefined,
       }}
-      className="animate-modal-pop flex flex-col rounded-2xl border border-stone-200 bg-white shadow-2xl"
+      className="care-floating-window animate-modal-pop flex flex-col rounded-2xl border border-stone-200 bg-white shadow-2xl"
     >
       <div
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerUp}
-        className="flex shrink-0 cursor-move touch-none items-center justify-between rounded-t-2xl bg-gradient-to-r from-brand-500 to-brand-400 px-4 py-2.5 text-white"
+        className="care-floating-window__title flex shrink-0 cursor-move touch-none items-center justify-between rounded-t-2xl bg-gradient-to-r from-brand-500 to-brand-400 px-4 py-2.5 text-white"
       >
         <span className="flex min-w-0 items-center gap-1.5 truncate text-sm font-bold">
           <GripVertical className="h-4 w-4 shrink-0 opacity-70" />
@@ -158,7 +167,7 @@ export default function FloatingWindow({
         onPointerMove={handleResizePointerMove}
         onPointerUp={handleResizePointerUp}
         onPointerLeave={handleResizePointerUp}
-        className="absolute bottom-0 right-0 flex h-5 w-5 touch-none items-end justify-end rounded-tl bg-transparent"
+        className="care-floating-window__resize absolute bottom-0 right-0 flex h-5 w-5 touch-none items-end justify-end rounded-tl bg-transparent"
         style={{ cursor: "nwse-resize" }}
         aria-hidden="true"
       >

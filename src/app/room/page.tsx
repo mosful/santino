@@ -67,7 +67,9 @@ export default function RoomPage() {
       </div>
 
       <p className="mb-4 rounded-lg bg-teal-50 px-3 py-2 text-xs text-teal-700">
-        💡 每間房開啟一個房務作業視窗，視窗內以頁籤切換 8 項房務作業；可同時開啟多間房比對（拖曳標題列移動、右下角可縮放）。
+        💡 每間房開啟一個房務作業視窗，視窗內以頁籤切換 8 項房務作業；
+        <span className="non-tablet-copy">可同時開啟多間房比對（拖曳標題列移動、右下角可縮放）。</span>
+        <span className="tablet-only-copy">平板會以大型固定工作區開啟，可由下方工作列快速切換房間。</span>
       </p>
 
       <CareSearch
@@ -82,7 +84,16 @@ export default function RoomPage() {
       />
 
       {listView ? (
-        <OpsRoomListView rooms={pagedRooms} onOpen={(room) => openWindow(room, DEFAULT_TAB)} />
+        <>
+          <div className="care-list-table md:hidden lg:block">
+            <OpsRoomListView rooms={pagedRooms} onOpen={(room) => openWindow(room, DEFAULT_TAB)} />
+          </div>
+          <div className="care-list-cards hidden grid-cols-2 gap-4 md:grid lg:hidden">
+            {pagedRooms.map((r) => (
+              <OpsRoomCard key={r.room} room={r} onOpen={(room) => openWindow(room, DEFAULT_TAB)} />
+            ))}
+          </div>
+        </>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {pagedRooms.map((r) => (

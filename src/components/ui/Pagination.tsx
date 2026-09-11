@@ -27,7 +27,7 @@ export default function Pagination({
         <select
           value={pageSize}
           onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          className="rounded-lg border border-stone-200 px-2 py-1 text-xs"
+          className="rounded-lg border border-stone-200 px-2 py-1 text-xs md:max-lg:min-h-11 md:max-lg:px-3"
         >
           {PAGE_SIZE_OPTIONS.map((n) => (
             <option key={n} value={n}>
@@ -45,7 +45,7 @@ export default function Pagination({
           onClick={() => onPageChange(Math.max(1, safePage - 1))}
           disabled={safePage <= 1}
           aria-label="上一頁"
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-stone-200 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-7 w-7 items-center justify-center rounded-lg border border-stone-200 disabled:cursor-not-allowed disabled:opacity-40 md:max-lg:h-11 md:max-lg:w-11"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
         </button>
@@ -53,7 +53,7 @@ export default function Pagination({
           onClick={() => onPageChange(Math.min(totalPages, safePage + 1))}
           disabled={safePage >= totalPages}
           aria-label="下一頁"
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-stone-200 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-7 w-7 items-center justify-center rounded-lg border border-stone-200 disabled:cursor-not-allowed disabled:opacity-40 md:max-lg:h-11 md:max-lg:w-11"
         >
           <ChevronRight className="h-3.5 w-3.5" />
         </button>

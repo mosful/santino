@@ -40,7 +40,7 @@ export default function RoleSwitcher() {
         <UserCircle2 className="h-4 w-4 text-brand-500" />
         <span>
           {role}
-          <span className="text-stone-400">（{profile.empNo}）</span>
+          <span className="role-employee-number text-stone-400 md:max-lg:hidden">（{profile.empNo}）</span>
         </span>
         <ChevronDown className={"h-3 w-3 transition-transform " + (open ? "rotate-180" : "")} />
       </button>

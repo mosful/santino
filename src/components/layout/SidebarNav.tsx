@@ -46,7 +46,7 @@ export default function SidebarNav({
                 }}
                 title={collapsed ? `${m.label}（Phase ${m.phase}）` : undefined}
                 className={
-                  "group flex flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors " +
+                  "group flex flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors md:max-lg:min-h-12 md:max-lg:justify-center md:max-lg:px-2 " +
                   (active
                     ? "bg-gradient-to-r from-brand-500 to-brand-400 text-white shadow-sm shadow-brand-200"
                     : "text-stone-600 hover:bg-brand-50")

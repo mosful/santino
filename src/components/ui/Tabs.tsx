@@ -20,7 +20,7 @@ export default function Tabs({
 
   return (
     <div>
-      <div className="scroll-fade flex flex-wrap gap-1 overflow-x-auto rounded-full bg-stone-100/70 p-1">
+      <div className="tablet-tabs scroll-fade flex flex-wrap gap-1 overflow-x-auto rounded-full bg-stone-100/70 p-1 md:max-lg:flex-nowrap md:max-lg:rounded-xl md:max-lg:pb-2">
         {tabs.map((t) => (
           <button
             key={t.key}

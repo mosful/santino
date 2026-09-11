@@ -248,3 +248,94 @@ body {
     animation: none;
   }
 }
+
+/* iPad／平板專用操作層：窄螢幕，或橫向 iPad 的粗指標觸控環境；滑鼠桌機不受影響。 */
+.tablet-only-copy {
+  display: none;
+}
+
+@media (min-width: 768px) and (max-width: 1023px),
+  (min-width: 768px) and (max-width: 1366px) and (hover: none) and (pointer: coarse) {
+  button:not([role="switch"]) {
+    min-height: 2.75rem;
+  }
+
+  input,
+  select {
+    min-height: 2.75rem;
+  }
+
+  .tablet-sidebar {
+    display: flex !important;
+  }
+
+  .desktop-sidebar {
+    display: none !important;
+  }
+
+  .tablet-sidebar nav a {
+    min-height: 3rem;
+    justify-content: center;
+    padding-inline: 0.5rem;
+  }
+
+  .role-employee-number,
+  .non-tablet-copy {
+    display: none;
+  }
+
+  .tablet-only-copy {
+    display: inline;
+  }
+
+  .tablet-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tablet-page-header-action {
+    display: block !important;
+    width: 100%;
+  }
+
+  .tablet-tabs,
+  .tablet-care-tabs,
+  .tablet-care-secondary {
+    flex-wrap: nowrap;
+  }
+
+  .tablet-tabs,
+  .tablet-care-tabs {
+    padding-bottom: 0.5rem;
+    border-radius: 0.75rem;
+  }
+
+  .care-list-table {
+    display: none !important;
+  }
+
+  .care-list-cards {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tablet-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .care-floating-window {
+    inset: 4.75rem 0.75rem 0.75rem 5.25rem !important;
+    width: auto !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  .care-floating-window__title {
+    cursor: default;
+    touch-action: auto;
+  }
+
+  .care-floating-window__resize {
+    display: none;
+  }
+}

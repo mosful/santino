@@ -1,12 +1,14 @@
 export type SubItem = {
   key: string;
   label: string;
+  phase?: 1 | 2 | 3;
 };
 
 export type ModuleInfo = {
   no: string;
   label: string;
   href: string;
+  phase: 1 | 2;
   subItems?: SubItem[];
 };
 
@@ -18,6 +20,7 @@ export const MODULES: ModuleInfo[] = [
     no: "1",
     label: "中控中心",
     href: "/",
+    phase: 1,
     subItems: [
       { key: "board", label: "公佈欄" },
       { key: "mama-cal", label: "媽媽行事曆" },
@@ -26,14 +29,15 @@ export const MODULES: ModuleInfo[] = [
       { key: "value-added", label: "加值服務" },
     ],
   },
-  { no: "2", label: "媽媽照護", href: "/mama" },
-  { no: "3", label: "寶寶照護", href: "/baby" },
-  { no: "4", label: "房間動態", href: "/room" },
-  { no: "5", label: "客戶資料", href: "/customer" },
+  { no: "2", label: "媽媽照護", href: "/mama", phase: 1 },
+  { no: "3", label: "寶寶照護", href: "/baby", phase: 1 },
+  { no: "4", label: "房間動態", href: "/room", phase: 1 },
+  { no: "5", label: "客戶資料", href: "/customer", phase: 1 },
   {
     no: "6",
     label: "醫師巡診",
     href: "/doctor",
+    phase: 2,
     subItems: [
       { key: "obgyn", label: "婦產科" },
       { key: "pediatric", label: "兒科" },
@@ -44,6 +48,7 @@ export const MODULES: ModuleInfo[] = [
     no: "7",
     label: "媽媽關懷",
     href: "/care",
+    phase: 2,
     subItems: [
       { key: "visit", label: "參觀提醒" },
       { key: "prenatal", label: "產前關懷" },
@@ -57,6 +62,7 @@ export const MODULES: ModuleInfo[] = [
     no: "8",
     label: "評鑑指標",
     href: "/kpi",
+    phase: 2,
     subItems: [
       { key: "care", label: "照護指標" },
       { key: "infection", label: "感染指標" },
@@ -68,6 +74,7 @@ export const MODULES: ModuleInfo[] = [
     no: "9",
     label: "月子餐",
     href: "/meal",
+    phase: 2,
     subItems: [
       { key: "order", label: "訂餐管理系統" },
       { key: "daily", label: "每日出餐明細" },
@@ -81,6 +88,7 @@ export const MODULES: ModuleInfo[] = [
     no: "10",
     label: "人事考勤",
     href: "/hr",
+    phase: 2,
     subItems: [
       { key: "staff", label: "員工資料" },
       { key: "permission", label: "權限設定" },
@@ -90,48 +98,52 @@ export const MODULES: ModuleInfo[] = [
     no: "12",
     label: "合約管理",
     href: "/contract",
+    phase: 2,
     subItems: [
       { key: "list", label: "合約查詢與列表" },
       { key: "new", label: "新增合約" },
       { key: "terms", label: "合約條款檢視" },
-      { key: "templates", label: "合約範本管理" },
-      { key: "renewal", label: "續約管理" },
-      { key: "termination", label: "退約／作廢管理" },
-      { key: "sign-status", label: "合約簽署狀態總覽" },
-      { key: "change-order", label: "合約變更單" },
+      { key: "templates", label: "合約範本管理", phase: 3 },
+      { key: "renewal", label: "續約管理", phase: 3 },
+      { key: "termination", label: "退約／作廢管理", phase: 3 },
+      { key: "sign-status", label: "合約簽署狀態總覽", phase: 3 },
+      { key: "change-order", label: "合約變更單", phase: 3 },
     ],
   },
   {
     no: "13",
     label: "課程管理",
     href: "/course",
+    phase: 2,
     subItems: [
       { key: "calendar", label: "前台課程月曆" },
       { key: "venue", label: "媽媽教室場地管理" },
       { key: "lecturer", label: "課程講師資料管理" },
       { key: "registration", label: "課程與報名管理" },
       { key: "activity", label: "課程活動管理" },
-      { key: "checkin", label: "報名名單與簽到" },
-      { key: "fee", label: "課程收費與退費設定" },
-      { key: "notify", label: "課程通知設定" },
+      { key: "checkin", label: "報名名單與簽到", phase: 3 },
+      { key: "fee", label: "課程收費與退費設定", phase: 3 },
+      { key: "notify", label: "課程通知設定", phase: 3 },
     ],
   },
   {
     no: "14",
     label: "LINE官方帳號管理",
     href: "/line",
+    phase: 2,
     subItems: [
       { key: "friends", label: "好友管理" },
-      { key: "binding", label: "會員LINE綁定管理" },
-      { key: "broadcast", label: "群發訊息" },
-      { key: "course-notify", label: "課程通知" },
-      { key: "stats", label: "訊息發送成效統計" },
+      { key: "binding", label: "會員LINE綁定管理", phase: 3 },
+      { key: "broadcast", label: "群發訊息", phase: 3 },
+      { key: "course-notify", label: "課程通知", phase: 3 },
+      { key: "stats", label: "訊息發送成效統計", phase: 3 },
     ],
   },
   {
     no: "15",
     label: "後台管理",
     href: "/admin",
+    phase: 2,
     subItems: [
       { key: "visit", label: "預約參觀管理" },
       { key: "contract-data", label: "客戶及簽約資料" },

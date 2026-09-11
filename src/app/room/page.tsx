@@ -10,6 +10,7 @@ import FloatingWindow from "@/components/ui/FloatingWindow";
 import WindowTray from "@/components/ui/WindowTray";
 import Switch from "@/components/ui/Switch";
 import Pagination from "@/components/ui/Pagination";
+import CareSearch from "@/components/ui/CareSearch";
 import { rowMatchesQuery } from "@/lib/fuzzySearch";
 import { useMultiWindowManager } from "@/lib/useMultiWindowManager";
 import { OPS_ROOMS, DEFERRED_ROOM_ITEMS } from "@/lib/mock/opsRoom";
@@ -53,9 +54,9 @@ export default function RoomPage() {
         moduleNo="4"
         action={
           <div className="flex gap-2 text-xs">
-            <button className="rounded bg-stone-100 px-3 py-1.5">手機驗證碼</button>
-            <button className="rounded bg-stone-100 px-3 py-1.5">加值服務總表</button>
-            <button className="rounded bg-stone-100 px-3 py-1.5">本月壽星</button>
+            <button title="查詢或管理住客手機驗證碼" className="rounded bg-stone-100 px-3 py-1.5">手機驗證碼</button>
+            <button title="開啟住客加值服務彙整資料" className="rounded bg-stone-100 px-3 py-1.5">加值服務總表</button>
+            <button title="查看本月份壽星名單" className="rounded bg-stone-100 px-3 py-1.5">本月壽星</button>
           </div>
         }
       />
@@ -69,14 +70,15 @@ export default function RoomPage() {
         💡 每間房開啟一個房務作業視窗，視窗內以頁籤切換 8 項房務作業；可同時開啟多間房比對（拖曳標題列移動、右下角可縮放）。
       </p>
 
-      <input
+      <CareSearch
         value={q}
-        onChange={(e) => {
-          setQ(e.target.value);
+        onChange={(value) => {
+          setQ(value);
           setPage(1);
         }}
         placeholder="搜尋房號/媽媽姓名/病歷號（支援模糊搜尋）"
-        className="mb-4 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm sm:w-72"
+        resultCount={filteredRooms.length}
+        accent="teal"
       />
 
       {listView ? (

@@ -15,6 +15,8 @@ export default function Switch({
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={label}
+        title={label ? `${checked ? "關閉" : "開啟"}「${label}」` : undefined}
         onClick={() => onChange(!checked)}
         className={
           "relative h-6 w-11 shrink-0 rounded-full transition-colors " +

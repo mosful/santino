@@ -7,6 +7,7 @@ import { Menu, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import SidebarNav from "./SidebarNav";
 import RoleSwitcher from "./RoleSwitcher";
 import ThemeSwitcher from "./ThemeSwitcher";
+import PhaseSwitcher from "./PhaseSwitcher";
 import SidebarIllustration from "./SidebarIllustration";
 import { useSidebarCollapsed, setSidebarCollapsed } from "@/lib/sidebarStore";
 
@@ -111,6 +112,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Brand compact />
           </div>
           <div className="flex-1" />
+          <PhaseSwitcher />
           <ThemeSwitcher />
           <RoleSwitcher />
         </header>

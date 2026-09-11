@@ -11,6 +11,7 @@ import WindowTray from "@/components/ui/WindowTray";
 import Badge from "@/components/ui/Badge";
 import Switch from "@/components/ui/Switch";
 import Pagination from "@/components/ui/Pagination";
+import CareSearch from "@/components/ui/CareSearch";
 import { rowMatchesQuery } from "@/lib/fuzzySearch";
 import { useMultiWindowManager } from "@/lib/useMultiWindowManager";
 import { MAMA_ROOMS } from "@/lib/mock/mamaRoom";
@@ -63,6 +64,7 @@ export default function MamaPage() {
             {STATUS_FILTERS.map((s) => (
               <button
                 key={s}
+                title={`只顯示狀態為「${s}」的房間`}
                 onClick={() => {
                   setFilter(s);
                   setPage(1);
@@ -97,14 +99,15 @@ export default function MamaPage() {
         💡 每間房開啟一個作業視窗，視窗內以頁籤切換各項紀錄；可同時開啟多間房比對（拖曳標題列移動、右下角可縮放）。切換到含簽名步驟的頁籤（✍）時，會鎖定僅能操作單一房間。
       </p>
 
-      <input
+      <CareSearch
         value={q}
-        onChange={(e) => {
-          setQ(e.target.value);
+        onChange={(value) => {
+          setQ(value);
           setPage(1);
         }}
         placeholder="搜尋房號/媽媽姓名/病歷號（支援模糊搜尋）"
-        className="mb-4 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm sm:w-72"
+        resultCount={rooms.length}
+        accent="rose"
       />
 
       {listView ? (

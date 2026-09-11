@@ -34,14 +34,13 @@ export default function RoleSwitcher() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
+        title="切換模擬角色，選單會依該角色權限立即隱藏或顯示"
         className="flex items-center gap-1.5 rounded-full border border-brand-900/10 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 shadow-sm hover:bg-brand-50"
       >
         <UserCircle2 className="h-4 w-4 text-brand-500" />
         <span>
-          {profile.name}
-          <span className="text-stone-400">（{profile.empNo}）</span>
-          <span className="text-stone-300"> / </span>
           {role}
+          <span className="text-stone-400">（{profile.empNo}）</span>
         </span>
         <ChevronDown className={"h-3 w-3 transition-transform " + (open ? "rotate-180" : "")} />
       </button>
@@ -63,9 +62,7 @@ export default function RoleSwitcher() {
                 }
               >
                 <span>{r}</span>
-                <span className="text-xs text-stone-400">
-                  {p.name}（{p.empNo}）
-                </span>
+                <span className="text-xs text-stone-400">{p.empNo}</span>
               </button>
             );
           })}

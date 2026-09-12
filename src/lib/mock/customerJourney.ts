@@ -23,6 +23,7 @@ export type JourneyStage = {
   description: string;
   icon: LucideIcon;
   color: "sky" | "violet" | "amber" | "emerald" | "orange" | "rose" | "slate" | "teal";
+  checklist: string[];
   links: { label: string; href: string; hint: string }[];
 };
 
@@ -49,6 +50,7 @@ export const JOURNEY_STAGES: JourneyStage[] = [
     description: "從初次詢問、預約參觀到參觀後意願追蹤",
     icon: MessagesSquare,
     color: "sky",
+    checklist: ["已建立客戶基本資料", "已記錄預產期與需求", "已完成參觀或後續追蹤"],
     links: [
       { label: "建立客戶資料", href: "/customer", hint: "基本資料與需求紀錄" },
       { label: "參觀排程", href: "/admin?tab=visit", hint: "新增與調整預約" },
@@ -63,6 +65,7 @@ export const JOURNEY_STAGES: JourneyStage[] = [
     description: "確認房型天數、訂金、審閱與簽署狀態",
     icon: FileSignature,
     color: "emerald",
+    checklist: ["房型與入住天數已確認", "訂金狀態已確認", "合約與必要附件已完成簽署"],
     links: [
       { label: "新增合約", href: "/contract?tab=new", hint: "建立合約與電子簽名" },
       { label: "簽署總覽", href: "/contract?tab=sign-status", hint: "缺簽與文件完整度" },
@@ -76,6 +79,7 @@ export const JOURNEY_STAGES: JourneyStage[] = [
     description: "確認生產消息、床位、餐食與入住文件",
     icon: ClipboardCheck,
     color: "orange",
+    checklist: ["已確認生產與報到時間", "房間及嬰兒室已通知", "餐飲與入住文件已備妥"],
     links: [
       { label: "入住前關懷", href: "/care?tab=pre-admission", hint: "生產與報到時間確認" },
       { label: "房間動態", href: "/room", hint: "排房、清潔與床位準備" },
@@ -89,6 +93,7 @@ export const JOURNEY_STAGES: JourneyStage[] = [
     description: "掌握母嬰照護、房況、餐食與加購異動",
     icon: BedDouble,
     color: "rose",
+    checklist: ["母嬰基本評估已完成", "每日照護與餐食狀態正常", "合約異動與自費項目已登錄"],
     links: [
       { label: "媽媽照護", href: "/mama", hint: "媽媽評估與護理紀錄" },
       { label: "寶寶照護", href: "/baby", hint: "寶寶動態與照護紀錄" },
@@ -103,6 +108,7 @@ export const JOURNEY_STAGES: JourneyStage[] = [
     description: "退宿提醒、帳務結清、衛教與房間交接",
     icon: House,
     color: "slate",
+    checklist: ["尾款與自費項目已結清", "返家衛教與文件已完成", "房卡、物品及房務已交接"],
     links: [
       { label: "合約到期", href: "/contract?tab=renewal", hint: "到期、續住或提前退宿" },
       { label: "退宿交接", href: "/room", hint: "退房、清潔與物品點交" },
@@ -116,6 +122,7 @@ export const JOURNEY_STAGES: JourneyStage[] = [
     description: "分流返家、寶寶留房與後續關懷",
     icon: Baby,
     color: "teal",
+    checklist: ["已建立返家關懷排程", "寶寶留房時已另立托嬰案件", "後續異常與轉介均已記錄"],
     links: [
       { label: "寶寶留房", href: "/baby", hint: "留房原因、授權與接回安排" },
       { label: "返家關懷", href: "/care?tab=home-return", hint: "電話關懷與異常轉介" },

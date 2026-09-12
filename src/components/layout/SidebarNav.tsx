@@ -9,6 +9,7 @@ import { MODULE_ICONS } from "./icons";
 import { useCurrentRole } from "@/lib/roleStore";
 import { getAccess } from "@/lib/permissions";
 import { useEnabledPhase } from "@/lib/phaseStore";
+import { useDashboardLayout } from "@/lib/dashboardLayoutStore";
 
 export default function SidebarNav({
   collapsed = false,
@@ -20,6 +21,7 @@ export default function SidebarNav({
   const pathname = usePathname();
   const role = useCurrentRole();
   const enabledPhase = useEnabledPhase();
+  const dashboardLayout = useDashboardLayout();
   const [expanded, setExpanded] = useState<string | null>(null);
 
   return (
@@ -29,7 +31,9 @@ export default function SidebarNav({
         const active = m.href === "/" ? pathname === "/" : pathname.startsWith(m.href);
         const access = getAccess(role, m.no);
         const isExpanded = expanded === m.no;
-        const visibleSubItems = m.subItems?.filter((item) => (item.phase ?? m.phase) <= enabledPhase);
+        const visibleSubItems = m.no === "1" && dashboardLayout === "journey"
+          ? []
+          : m.subItems?.filter((item) => (item.phase ?? m.phase) <= enabledPhase);
 
         return (
           <div key={m.no}>

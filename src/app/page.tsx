@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { BedDouble, Users, GraduationCap, Megaphone } from "lucide-react";
-import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import StatCard from "@/components/ui/StatCard";
+import DashboardWorkspace from "@/components/dashboard/DashboardWorkspace";
 import {
   ANNOUNCEMENTS,
   MAMA_CALENDAR_SAMPLE,
@@ -164,22 +164,27 @@ export default function HomePage() {
   return (
     <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
       <RequireAccess moduleNo="1">
-      <PageHeader title="1. 中控中心" moduleNo="1" />
-      <div className="tablet-stat-grid mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard icon={BedDouble} label="入住中媽媽" value={occupied} gradient="from-brand-500 to-brand-400" href="/mama" />
-        <StatCard icon={Users} label="客戶總數" value={CUSTOMERS.length} gradient="from-sky-500 to-sky-400" href="/customer" />
-        <StatCard icon={GraduationCap} label="本週開課數" value={COURSES.length} gradient="from-amber-500 to-amber-400" href="/course" />
-        <StatCard icon={Megaphone} label="公告則數" value={ANNOUNCEMENTS.length} gradient="from-emerald-500 to-emerald-400" href="/admin?tab=board" />
-      </div>
-      <TabsFromUrl
-        tabs={[
-          { key: "board", label: "公佈欄", content: <AnnouncementTab /> },
-          { key: "mama-cal", label: "媽媽行事曆", content: <MamaCalendarTab /> },
-          { key: "internal-cal", label: "內部行事曆", content: <InternalCalendarTab /> },
-          { key: "course", label: "課程管理", content: <CourseTab /> },
-          { key: "value-added", label: "加值服務", content: <ValueAddedTab /> },
-        ]}
-      />
+        <DashboardWorkspace
+          classicContent={
+            <>
+              <div className="tablet-stat-grid mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <StatCard icon={BedDouble} label="入住中媽媽" value={occupied} gradient="from-brand-500 to-brand-400" href="/mama" />
+                <StatCard icon={Users} label="客戶總數" value={CUSTOMERS.length} gradient="from-sky-500 to-sky-400" href="/customer" />
+                <StatCard icon={GraduationCap} label="本週開課數" value={COURSES.length} gradient="from-amber-500 to-amber-400" href="/course" />
+                <StatCard icon={Megaphone} label="公告則數" value={ANNOUNCEMENTS.length} gradient="from-emerald-500 to-emerald-400" href="/admin?tab=board" />
+              </div>
+              <TabsFromUrl
+                tabs={[
+                  { key: "board", label: "公佈欄", content: <AnnouncementTab /> },
+                  { key: "mama-cal", label: "媽媽行事曆", content: <MamaCalendarTab /> },
+                  { key: "internal-cal", label: "內部行事曆", content: <InternalCalendarTab /> },
+                  { key: "course", label: "課程管理", content: <CourseTab /> },
+                  { key: "value-added", label: "加值服務", content: <ValueAddedTab /> },
+                ]}
+              />
+            </>
+          }
+        />
       </RequireAccess>
     </div>
   );

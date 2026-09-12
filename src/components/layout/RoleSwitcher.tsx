@@ -38,11 +38,11 @@ export default function RoleSwitcher() {
         className="flex items-center gap-1.5 rounded-full border border-brand-900/10 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 shadow-sm hover:bg-brand-50"
       >
         <UserCircle2 className="h-4 w-4 text-brand-500" />
-        <span>
+        <span className="hidden sm:inline">
           {role}
           <span className="role-employee-number text-stone-400 md:max-lg:hidden">（{profile.empNo}）</span>
         </span>
-        <ChevronDown className={"h-3 w-3 transition-transform " + (open ? "rotate-180" : "")} />
+        <ChevronDown className={"hidden h-3 w-3 transition-transform sm:block " + (open ? "rotate-180" : "")} />
       </button>
       {open && (
         <div className="animate-fade-in-up absolute right-0 top-full z-40 mt-1.5 w-56 overflow-hidden rounded-xl border border-brand-900/10 bg-white py-1.5 shadow-lg">

@@ -34,7 +34,7 @@ const MATRIX: Record<string, Partial<Record<Role, AccessLevel>>> = {
   "8": { 櫃台: "none", "阿長 婉真": "edit", "衛教師 琳雅": "none" },
   "9": { 櫃台: "edit", "阿長 婉真": "view", "衛教師 琳雅": "none" },
   "10": { 櫃台: "none", "阿長 婉真": "view", "衛教師 琳雅": "none" },
-  "12": { 櫃台: "edit", "阿長 婉真": "none", "衛教師 琳雅": "none" },
+  "12": { 櫃台: "edit", "阿長 婉真": "view", "衛教師 琳雅": "view" },
   "13": { 櫃台: "edit", "阿長 婉真": "none", "衛教師 琳雅": "view" },
   "14": { 櫃台: "edit", "阿長 婉真": "none", "衛教師 琳雅": "none" },
   "15": { 櫃台: "view", "阿長 婉真": "view", "衛教師 琳雅": "none" },

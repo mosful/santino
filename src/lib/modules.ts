@@ -98,7 +98,7 @@ export const MODULES: ModuleInfo[] = [
     no: "12",
     label: "合約管理",
     href: "/contract",
-    phase: 2,
+    phase: 1,
     subItems: [
       { key: "list", label: "合約查詢與列表" },
       { key: "new", label: "新增合約" },

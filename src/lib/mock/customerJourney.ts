@@ -124,7 +124,8 @@ export const JOURNEY_STAGES: JourneyStage[] = [
     color: "teal",
     checklist: ["已建立返家關懷排程", "寶寶留房時已另立托嬰案件", "後續異常與轉介均已記錄"],
     links: [
-      { label: "寶寶留房", href: "/baby", hint: "留房原因、授權與接回安排" },
+      { label: "托嬰合約", href: "/contract?tab=childcare", hint: "另立合約、車號與接回安排" },
+      { label: "寶寶留房", href: "/baby", hint: "留房期間照護與健康紀錄" },
       { label: "返家關懷", href: "/care?tab=home-return", hint: "電話關懷與異常轉介" },
       { label: "客戶歷程", href: "/customer", hint: "封存本次入住完整歷程" },
     ],

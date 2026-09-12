@@ -6,6 +6,7 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import StatCard from "@/components/ui/StatCard";
 import DashboardWorkspace from "@/components/dashboard/DashboardWorkspace";
+import DemoActionButton from "@/components/ui/DemoActionButton";
 import {
   ANNOUNCEMENTS,
   MAMA_CALENDAR_SAMPLE,
@@ -80,9 +81,9 @@ function MamaCalendarTab() {
           </Card>
         ))}
       </div>
-      <p className="text-xs text-stone-400">
-        每日格另有「列印」連結可開出當日預約參觀報名資料列印視窗（本稿未實作列印）。
-      </p>
+      <div className="flex justify-end">
+        <DemoActionButton feedback="媽媽行事曆列印預覽已開啟" action="print" className="rounded bg-stone-100 px-3 py-1.5 text-xs">列印媽媽行事曆</DemoActionButton>
+      </div>
     </div>
   );
 }
@@ -93,12 +94,12 @@ function InternalCalendarTab() {
       title="內部行事曆"
       action={
         <div className="flex gap-2">
-          <button className="rounded bg-stone-100 px-3 py-1 text-xs">
+          <DemoActionButton feedback="已開啟批次新增處理項目（Demo 模式）" className="rounded bg-stone-100 px-3 py-1 text-xs">
             批次新增處理項目
-          </button>
-          <button className="rounded bg-rose-500 px-3 py-1 text-xs text-white">
+          </DemoActionButton>
+          <DemoActionButton feedback="已建立一筆新的行事曆項目草稿" className="rounded bg-rose-500 px-3 py-1 text-xs text-white">
             ＋ 新增項目
-          </button>
+          </DemoActionButton>
         </div>
       }
     >
@@ -136,9 +137,7 @@ function CourseTab() {
           </Card>
         </Link>
       ))}
-      <p className="text-xs text-stone-400">
-        「一週Line報名」統計按鈕角標串接14.LINE官方帳號管理之課程通知已讀/報名回覆資料（本稿未實作）。
-      </p>
+      <p className="text-xs text-stone-400">課程通知、已讀與報名回覆成效可至「14. LINE官方帳號管理」查看。</p>
     </div>
   );
 }

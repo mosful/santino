@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Inbox } from "lucide-react";
 import { rowMatchesQuery } from "@/lib/fuzzySearch";
 import Pagination from "./Pagination";
+import DemoActionButton from "./DemoActionButton";
 
 export type Column<T> = {
   key: string;
@@ -43,9 +44,13 @@ export default function QueryList<T extends { id: string | number }>({
           placeholder={searchPlaceholder}
           className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm sm:w-64"
         />
-        <button className="rounded-lg bg-stone-700 px-4 py-2 text-sm text-white hover:bg-stone-800">
+        <DemoActionButton
+          feedback={`查詢完成，共找到 ${filtered.length} 筆資料`}
+          onClick={() => setPage(1)}
+          className="rounded-lg bg-stone-700 px-4 py-2 text-sm text-white hover:bg-stone-800"
+        >
           送出查詢
-        </button>
+        </DemoActionButton>
         <span className="ml-auto text-xs text-stone-400">共 {filtered.length} 筆</span>
       </div>
       <div className="scroll-fade overflow-x-auto rounded-xl border border-stone-200 bg-white">

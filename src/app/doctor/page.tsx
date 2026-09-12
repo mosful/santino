@@ -6,6 +6,7 @@ import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import { makeRng } from "@/lib/mock/genUtil";
+import DemoActionButton from "@/components/ui/DemoActionButton";
 
 const SURNAMES_D = ["陳", "王", "林", "張", "李", "黃", "吳", "劉", "蔡", "楊", "許", "鄭", "謝", "洪", "邱", "曾", "廖", "賴", "徐", "周"];
 const GIVEN_D = ["如", "明", "華", "芳", "俊", "杰", "娟", "婷", "宏", "文", "美", "玲", "誠", "豪", "君"];
@@ -54,7 +55,7 @@ function DeptTab({ showTcmConsent }: { showTcmConsent?: boolean } = {}) {
         <input placeholder="查詢區間起" className="rounded border border-stone-200 px-2 py-1.5" />
         <span>～</span>
         <input placeholder="查詢區間迄" className="rounded border border-stone-200 px-2 py-1.5" />
-        <button className="rounded bg-stone-700 px-3 py-1.5 text-white">查詢</button>
+        <DemoActionButton feedback={`查詢完成，共 ${SAMPLE.length} 筆巡診統計`} className="rounded bg-stone-700 px-3 py-1.5 text-white">查詢</DemoActionButton>
       </div>
       <EditableList moduleNo="6" fields={doctorFields} initialRows={SAMPLE} searchPlaceholder="醫師姓名" />
       {showTcmConsent && (

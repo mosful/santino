@@ -108,6 +108,7 @@ export const MODULES: ModuleInfo[] = [
       { key: "termination", label: "退約／作廢管理", phase: 3 },
       { key: "sign-status", label: "合約簽署狀態總覽", phase: 3 },
       { key: "change-order", label: "合約變更單", phase: 3 },
+      { key: "childcare", label: "寶寶留房／托嬰合約" },
     ],
   },
   {

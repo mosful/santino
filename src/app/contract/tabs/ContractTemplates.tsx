@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Switch from "@/components/ui/Switch";
 import Badge from "@/components/ui/Badge";
+import DemoActionButton from "@/components/ui/DemoActionButton";
 
 type Template = {
   id: number;
@@ -30,8 +31,21 @@ export default function ContractTemplates() {
 
   function toggleActive(id: number) {
     setTemplates((ts) =>
-      ts.map((t) => (t.id === id ? { ...t, active: !t.active } : t))
+      ts.map((t) => ({ ...t, active: t.id === id }))
     );
+  }
+
+  function addTemplate() {
+    const nextVersion = `v${templates.length + 1}`;
+    const template: Template = {
+      id: Date.now(),
+      name: `標準21條範本 ${nextVersion}（草稿）`,
+      version: nextVersion,
+      active: false,
+      createdDate: new Date().toISOString().slice(0, 10),
+    };
+    setTemplates((items) => [...items, template]);
+    setEditing(template);
   }
 
   return (
@@ -70,7 +84,7 @@ export default function ContractTemplates() {
           ))}
         </tbody>
       </table>
-      <button className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">＋ 新增範本版本</button>
+      <DemoActionButton feedback="已新增合約範本草稿並開啟編輯區" onClick={addTemplate} className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">＋ 新增範本版本</DemoActionButton>
 
       {editing && (
         <div className="rounded border border-stone-200 p-3">

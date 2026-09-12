@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PrototypeFormActions from "@/components/ui/PrototypeFormActions";
 
 function Field({ label, placeholder }: { label: string; placeholder?: string }) {
   return (
@@ -103,10 +104,7 @@ export default function NewContract() {
         ✗ 已拿掉「合約檔案上傳」功能（客戶明確表示用不到）
       </p>
 
-      <div className="flex justify-end gap-2">
-        <button className="rounded bg-stone-100 px-3 py-1.5 text-xs">暫存</button>
-        <button className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">建立合約</button>
-      </div>
+      <PrototypeFormActions accent="rose" submitLabel="建立合約" />
     </div>
   );
 }

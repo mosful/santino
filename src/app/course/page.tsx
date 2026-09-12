@@ -4,12 +4,12 @@ import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
-import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import { COURSES } from "@/lib/mock/dashboard";
 import { makeRng, phoneNumber, makeUniqueNameGenerator } from "@/lib/mock/genUtil";
 import RegistrationCheckin from "./tabs/RegistrationCheckin";
 import FeeRefundSettings from "./tabs/FeeRefundSettings";
 import NotificationSettings from "./tabs/NotificationSettings";
+import DemoActionButton from "@/components/ui/DemoActionButton";
 
 const VENUE_NAMES = ["會議室", "瑜珈教室", "多功能教室", "親子活動室", "視聽教室", "戶外庭園", "交誼廳"];
 const VENUE_EQUIP = ["投影機/白板", "瑜珈墊", "音響設備", "嬰兒安撫椅", "投影布幕", "無"];
@@ -63,9 +63,36 @@ function CourseRegistrationTab() {
         </div>
       ))}
       <div className="flex gap-2 text-xs">
-        <button className="rounded bg-stone-100 px-3 py-1.5">＋新增團課</button>
-        <button className="rounded bg-stone-100 px-3 py-1.5">自費報名</button>
+        <DemoActionButton feedback="已建立團體課程草稿" className="rounded bg-stone-100 px-3 py-1.5">＋新增團課</DemoActionButton>
+        <DemoActionButton feedback="已開啟自費課程報名流程（Demo 模式）" className="rounded bg-stone-100 px-3 py-1.5">自費報名</DemoActionButton>
       </div>
+    </div>
+  );
+}
+
+function CourseCalendarTab() {
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      {COURSES.map((course) => (
+        <div key={course.id} className="rounded-xl border border-stone-200 bg-white p-4">
+          <div className="font-medium text-stone-700">{course.name}</div>
+          <div className="mt-1 text-xs text-stone-400">{course.time}・已報名 {course.enrolled}/{course.cap}</div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-stone-100"><div className="h-full rounded-full bg-amber-400" style={{ width: `${Math.min(100, (course.enrolled / course.cap) * 100)}%` }} /></div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CourseActivityTab() {
+  return (
+    <div className="space-y-3 text-sm">
+      {["新生兒沐浴實作", "爸爸育兒體驗日"].map((name, index) => (
+        <div key={name} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 p-3">
+          <div><div className="font-medium text-stone-700">{name}</div><div className="text-xs text-stone-400">{index === 0 ? "09/18 14:00・親子活動室" : "09/21 10:00・多功能教室"}</div></div>
+          <DemoActionButton feedback={`已開啟「${name}」活動名單`} className="rounded bg-stone-100 px-3 py-1.5 text-xs">查看名單</DemoActionButton>
+        </div>
+      ))}
     </div>
   );
 }
@@ -80,12 +107,12 @@ export default function CoursePage() {
           {
             key: "calendar",
             label: "前台課程月曆",
-            content: <PlaceholderNotice text="即1.中控中心＞課程管理，內容不變，請至首頁查看（交叉參照，不重複實作）。" />,
+            content: <CourseCalendarTab />,
           },
           { key: "venue", label: "媽媽教室場地管理", content: <EditableList moduleNo="13" fields={venueFields} initialRows={VENUES} searchPlaceholder="場地名稱" /> },
           { key: "lecturer", label: "課程講師資料管理", content: <EditableList moduleNo="13" fields={lecturerFields} initialRows={LECTURERS} searchPlaceholder="講師姓名" /> },
           { key: "registration", label: "課程與報名管理", content: <CourseRegistrationTab /> },
-          { key: "activity", label: "課程活動管理", content: <PlaceholderNotice text="活動類型設定、活動時段規劃，與常態課程差異化管理。" /> },
+          { key: "activity", label: "課程活動管理", content: <CourseActivityTab /> },
           { key: "checkin", label: "報名名單與簽到", content: <RegistrationCheckin /> },
           { key: "fee", label: "課程收費與退費設定", content: <FeeRefundSettings /> },
           { key: "notify", label: "課程通知設定", content: <NotificationSettings /> },

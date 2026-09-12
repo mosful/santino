@@ -14,6 +14,7 @@ import CareSearch from "@/components/ui/CareSearch";
 import { rowMatchesQuery } from "@/lib/fuzzySearch";
 import { useMultiWindowManager } from "@/lib/useMultiWindowManager";
 import { OPS_ROOMS, DEFERRED_ROOM_ITEMS } from "@/lib/mock/opsRoom";
+import DemoActionButton from "@/components/ui/DemoActionButton";
 
 // 開啟作業視窗時的預設頁籤
 const DEFAULT_TAB = "prep";
@@ -54,9 +55,9 @@ export default function RoomPage() {
         moduleNo="4"
         action={
           <div className="flex gap-2 text-xs">
-            <button title="查詢或管理住客手機驗證碼" className="rounded bg-stone-100 px-3 py-1.5">手機驗證碼</button>
-            <button title="開啟住客加值服務彙整資料" className="rounded bg-stone-100 px-3 py-1.5">加值服務總表</button>
-            <button title="查看本月份壽星名單" className="rounded bg-stone-100 px-3 py-1.5">本月壽星</button>
+            <DemoActionButton feedback="已載入住住客的手機驗證碼管理清單" title="查詢或管理住客手機驗證碼" className="rounded bg-stone-100 px-3 py-1.5">手機驗證碼</DemoActionButton>
+            <DemoActionButton feedback="已彙整目前入住住客的加值服務資料" title="開啟住客加值服務彙整資料" className="rounded bg-stone-100 px-3 py-1.5">加值服務總表</DemoActionButton>
+            <DemoActionButton feedback="已載入本月份壽星名單" title="查看本月份壽星名單" className="rounded bg-stone-100 px-3 py-1.5">本月壽星</DemoActionButton>
           </div>
         }
       />

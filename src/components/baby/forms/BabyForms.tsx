@@ -148,7 +148,19 @@ export function BabyPhoto({ room }: { room: string }) {
           </div>
         ))}
       </div>
-      <button className="rounded bg-stone-100 px-3 py-1.5 text-xs">＋ 上傳照片</button>
+      <label className="inline-flex cursor-pointer rounded bg-stone-100 px-3 py-1.5 text-xs hover:bg-stone-200">
+        ＋ 上傳照片
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          className="sr-only"
+          onChange={(event) => {
+            const count = event.target.files?.length ?? 0;
+            if (count > 0) window.alert(`已選取 ${count} 張照片（Demo 模式不會上傳外部服務）`);
+          }}
+        />
+      </label>
       <PrototypeFormActions accent="sky" />
     </div>
   );

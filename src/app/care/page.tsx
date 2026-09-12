@@ -5,6 +5,7 @@ import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import { makeRng, makeUniqueNameGenerator, phoneNumber, addDays } from "@/lib/mock/genUtil";
+import DemoActionButton from "@/components/ui/DemoActionButton";
 
 const STAFFS = ["小美", "阿凱", "婉真", "淑芬"];
 const rngReminder = makeRng(12001);
@@ -41,7 +42,7 @@ function ContactReminderTab({ note }: { note?: string }) {
         <select className="rounded border border-stone-200 px-2 py-1.5">
           <option>分類：全部</option>
         </select>
-        <button className="rounded bg-stone-700 px-3 py-1.5 text-white">查詢</button>
+        <DemoActionButton feedback={`查詢完成，共 ${SAMPLE.length} 筆關懷紀錄`} className="rounded bg-stone-700 px-3 py-1.5 text-white">查詢</DemoActionButton>
       </div>
       <EditableList moduleNo="7" fields={reminderFields} initialRows={SAMPLE} searchPlaceholder="孕媽姓名" />
       {note && <p className="text-xs text-stone-400">{note}</p>}

@@ -1,3 +1,7 @@
+"use client";
+
+import DemoActionButton from "@/components/ui/DemoActionButton";
+
 export default function ReportTemplate({
   title,
   columns,
@@ -13,9 +17,9 @@ export default function ReportTemplate({
         <input placeholder="查詢日期起" className="rounded-lg border border-stone-200 px-2.5 py-2" />
         <span className="text-stone-400">～</span>
         <input placeholder="查詢日期迄" className="rounded-lg border border-stone-200 px-2.5 py-2" />
-        <button className="rounded-lg bg-stone-700 px-3.5 py-2 text-white hover:bg-stone-800">送出查詢</button>
-        <button className="ml-auto rounded-lg bg-stone-100 px-3.5 py-2 hover:bg-stone-200">匯出</button>
-        <button className="rounded-lg bg-stone-100 px-3.5 py-2 hover:bg-stone-200">列印</button>
+        <DemoActionButton feedback={`「${title}」查詢完成`} className="rounded-lg bg-stone-700 px-3.5 py-2 text-white hover:bg-stone-800">送出查詢</DemoActionButton>
+        <DemoActionButton feedback={`已匯出「${title}」Demo 資料`} onClick={() => exportCsv(title, columns, sampleRows ?? [])} className="ml-auto rounded-lg bg-stone-100 px-3.5 py-2 hover:bg-stone-200">匯出</DemoActionButton>
+        <DemoActionButton feedback={`已開啟「${title}」列印預覽`} onClick={() => window.print()} className="rounded-lg bg-stone-100 px-3.5 py-2 hover:bg-stone-200">列印</DemoActionButton>
       </div>
       <div className="scroll-fade overflow-x-auto rounded-xl border border-stone-200 bg-white">
         <table className="w-full min-w-max text-left text-xs">
@@ -51,4 +55,16 @@ export default function ReportTemplate({
       <p className="text-xs text-stone-400">報表：{title}</p>
     </div>
   );
+}
+
+function exportCsv(title: string, columns: string[], rows: string[][]) {
+  const escapeCell = (value: string) => `"${value.replaceAll('"', '""')}"`;
+  const csv = [columns, ...rows].map((row) => row.map(escapeCell).join(",")).join("\r\n");
+  const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${title}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
 }

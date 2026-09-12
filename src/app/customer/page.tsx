@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import { useAccess } from "@/lib/roleStore";
@@ -9,6 +10,7 @@ import Modal from "@/components/ui/Modal";
 import Tabs from "@/components/ui/Tabs";
 import Badge from "@/components/ui/Badge";
 import { CUSTOMERS, type Customer } from "@/lib/mock/customer";
+import DemoActionButton from "@/components/ui/DemoActionButton";
 
 const columns: Column<Customer>[] = [
   { key: "name", label: "媽媽姓名" },
@@ -103,9 +105,9 @@ function DetailTabs({
               <Field label="通訊地址" value="（欄位範例，未填）" />
               <Field label="LINE ID" value="（供14.會員綁定比對）" />
               <div className="col-span-2">
-                <button className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">
+                <DemoActionButton feedback="WebApp 綁定邀請已建立（Demo 模式，未發送真實訊息）" className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">
                   綁定WebApp登入帳號
-                </button>
+                </DemoActionButton>
               </div>
             </div>
           ),
@@ -138,14 +140,14 @@ function DetailTabs({
                   <div className="text-sm">
                     合約編號 <span className="font-medium">{c.contractNo}</span>
                     （簽約日期 {c.signDate}）
-                    <a href="/contract" className="ml-2 text-rose-500 underline">
+                    <Link href="/contract" className="ml-2 text-rose-500 underline">
                       查看合約
-                    </a>
+                    </Link>
                   </div>
                 ) : (
-                  <button className="rounded bg-stone-700 px-3 py-1.5 text-xs text-white">
+                  <DemoActionButton feedback="已建立待簽約資料，請至「12. 合約管理」接續處理" className="rounded bg-stone-700 px-3 py-1.5 text-xs text-white">
                     轉入簽約資料 → 12.合約管理
-                  </button>
+                  </DemoActionButton>
                 )}
               </div>
             </div>
@@ -246,9 +248,9 @@ export default function CustomerPage() {
         moduleNo="5"
         action={
           <div className="flex gap-2 text-xs">
-            <button className="rounded bg-stone-100 px-3 py-1.5">空白基本資料</button>
-            <button className="rounded bg-stone-100 px-3 py-1.5">空白預約參觀單</button>
-            <button className="rounded bg-stone-100 px-3 py-1.5">空白契約書</button>
+            <DemoActionButton feedback="空白基本資料列印預覽已開啟" onClick={() => window.print()} className="rounded bg-stone-100 px-3 py-1.5">空白基本資料</DemoActionButton>
+            <DemoActionButton feedback="空白預約參觀單列印預覽已開啟" onClick={() => window.print()} className="rounded bg-stone-100 px-3 py-1.5">空白預約參觀單</DemoActionButton>
+            <DemoActionButton feedback="空白契約書列印預覽已開啟" onClick={() => window.print()} className="rounded bg-stone-100 px-3 py-1.5">空白契約書</DemoActionButton>
             {canEdit && (
               <button onClick={openAdd} className="rounded bg-rose-500 px-3 py-1.5 font-medium text-white">
                 ＋ 新增客戶

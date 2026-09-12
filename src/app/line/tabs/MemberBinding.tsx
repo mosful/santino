@@ -23,6 +23,10 @@ export default function MemberBinding() {
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, consent: !r.consent } : r)));
   }
 
+  function unbind(id: number) {
+    setRows((items) => items.filter((item) => item.id !== id));
+  }
+
   return (
     <div className="space-y-3 text-sm">
       <p className="text-xs text-stone-400">
@@ -52,7 +56,7 @@ export default function MemberBinding() {
                 <Switch checked={r.consent} onChange={() => toggleConsent(r.id)} />
               </td>
               <td className="px-2 py-1.5">
-                <button className="text-rose-500 underline">解除綁定</button>
+                <button type="button" onClick={() => unbind(r.id)} className="text-rose-500 underline">解除綁定</button>
               </td>
             </tr>
           ))}

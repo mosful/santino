@@ -7,6 +7,7 @@ import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import { MAMA_ROOMS } from "@/lib/mock/mamaRoom";
 import { makeRng } from "@/lib/mock/genUtil";
+import DemoActionButton from "@/components/ui/DemoActionButton";
 
 const RESTRICTIONS = ["無", "無", "無", "無", "海鮮過敏", "麩質不耐", "乳製品過敏", "堅果過敏", "素食"];
 const rngMeal = makeRng(11001);
@@ -56,8 +57,8 @@ function OrderTab() {
         searchPlaceholder="房號/媽媽姓名"
       />
       <div className="flex gap-2 text-xs">
-        <button className="rounded bg-stone-100 px-3 py-1.5">列印飲食備註</button>
-        <button className="rounded bg-stone-100 px-3 py-1.5">列印寶寶奶粉清單</button>
+        <DemoActionButton feedback="飲食備註列印預覽已開啟（Demo 模式）" onClick={() => window.print()} className="rounded bg-stone-100 px-3 py-1.5">列印飲食備註</DemoActionButton>
+        <DemoActionButton feedback="寶寶奶粉清單列印預覽已開啟（Demo 模式）" onClick={() => window.print()} className="rounded bg-stone-100 px-3 py-1.5">列印寶寶奶粉清單</DemoActionButton>
       </div>
     </div>
   );
@@ -96,8 +97,46 @@ function CycleTeaTab() {
   );
 }
 
-function SimpleStub({ text }: { text: string }) {
-  return <div className="rounded border border-dashed border-stone-300 p-6 text-center text-sm text-stone-400">{text}</div>;
+function DailyMealTab() {
+  const rows = MEALS.filter((row) => row.name !== "（空房）").slice(0, 6);
+  return (
+    <div className="overflow-x-auto rounded border border-stone-200">
+      <table className="w-full min-w-max text-left text-sm">
+        <thead className="bg-stone-50 text-xs text-stone-500"><tr><th className="px-3 py-2">房號</th><th className="px-3 py-2">媽媽</th><th className="px-3 py-2">早餐</th><th className="px-3 py-2">午餐</th><th className="px-3 py-2">晚餐</th><th className="px-3 py-2">備註</th></tr></thead>
+        <tbody>{rows.map((row) => <tr key={row.id} className="border-t border-stone-100"><td className="px-3 py-2">{String(row.room)}</td><td className="px-3 py-2">{String(row.name)}</td><td className="px-3 py-2 text-emerald-600">已出餐</td><td className="px-3 py-2 text-amber-600">備餐中</td><td className="px-3 py-2 text-stone-400">待備餐</td><td className="px-3 py-2">{String(row.restriction)}</td></tr>)}</tbody>
+      </table>
+    </div>
+  );
+}
+
+function RestrictionStatsTab() {
+  const counts = MEALS.filter((row) => row.name !== "（空房）").reduce<Record<string, number>>((result, row) => {
+    const key = String(row.restriction);
+    result[key] = (result[key] ?? 0) + 1;
+    return result;
+  }, {});
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {Object.entries(counts).map(([label, count]) => <div key={label} className="rounded-xl border border-stone-200 bg-white p-4"><div className="text-xs text-stone-400">飲食備註</div><div className="mt-1 flex items-end justify-between"><strong className="text-stone-700">{label}</strong><span className="text-xl font-bold text-rose-500">{count}</span></div></div>)}
+    </div>
+  );
+}
+
+function MenuPublishTab() {
+  return (
+    <div className="space-y-3 text-sm">
+      {["09/14～09/20 秋季調養菜單", "09/21～09/27 產後修復菜單"].map((name, index) => <div key={name} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 p-3"><div><div className="font-medium text-stone-700">{name}</div><div className="text-xs text-stone-400">{index === 0 ? "已發佈至住客 WebApp" : "草稿・待營養師確認"}</div></div><DemoActionButton feedback={index === 0 ? "已開啟菜單預覽" : "菜單草稿已送交確認"} className="rounded bg-stone-100 px-3 py-1.5 text-xs">{index === 0 ? "預覽" : "送交確認"}</DemoActionButton></div>)}
+    </div>
+  );
+}
+
+function MenuCycleTab() {
+  return (
+    <div className="overflow-x-auto rounded border border-stone-200">
+      <table className="w-full min-w-max text-left text-sm"><thead className="bg-stone-50 text-xs text-stone-500"><tr><th className="px-3 py-2">週次</th><th className="px-3 py-2">早餐主食</th><th className="px-3 py-2">午餐主菜</th><th className="px-3 py-2">晚餐主菜</th></tr></thead><tbody><tr className="border-t border-stone-100"><td className="px-3 py-2">第1週</td><td className="px-3 py-2">麻油雞粥</td><td className="px-3 py-2">杜仲腰花</td><td className="px-3 py-2">清蒸鱸魚</td></tr><tr className="border-t border-stone-100"><td className="px-3 py-2">第2週</td><td className="px-3 py-2">山藥排骨粥</td><td className="px-3 py-2">紅棗燉雞</td><td className="px-3 py-2">枸杞鮮魚</td></tr></tbody></table>
+      <p className="p-2 text-xs text-stone-400">循環菜單依入住週次自動套用，飲食禁忌會另外標示。</p>
+    </div>
+  );
 }
 
 export default function MealPage() {
@@ -108,10 +147,10 @@ export default function MealPage() {
       <TabsFromUrl
         tabs={[
           { key: "order", label: "訂餐管理系統", content: <OrderTab /> },
-          { key: "daily", label: "每日出餐明細", content: <SimpleStub text="依日期查詢房號/媽媽/編號/餐次出餐狀態" /> },
-          { key: "restriction", label: "飲食禁忌統計", content: <SimpleStub text="讀取自2.媽媽照護入住評估病史分頁，不另維護一份禁忌清單" /> },
-          { key: "menu-publish", label: "菜單發佈管理", content: <SimpleStub text="菜單製作與發佈" /> },
-          { key: "menu-cycle", label: "循環菜單管理", content: <SimpleStub text="支援週次套用機制" /> },
+          { key: "daily", label: "每日出餐明細", content: <DailyMealTab /> },
+          { key: "restriction", label: "飲食禁忌統計", content: <RestrictionStatsTab /> },
+          { key: "menu-publish", label: "菜單發佈管理", content: <MenuPublishTab /> },
+          { key: "menu-cycle", label: "循環菜單管理", content: <MenuCycleTab /> },
           { key: "tea-cycle", label: "循環茶飲管理", content: <CycleTeaTab /> },
         ]}
       />

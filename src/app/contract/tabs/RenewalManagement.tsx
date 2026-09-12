@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Badge from "@/components/ui/Badge";
+import DemoActionButton from "@/components/ui/DemoActionButton";
 
 type RenewalCandidate = {
   id: number;
@@ -54,9 +55,9 @@ export default function RenewalManagement() {
                 <Badge color={c.daysLeft <= 7 ? "rose" : "amber"}>{c.daysLeft}天</Badge>
               </td>
               <td className="px-3 py-2">
-                <button className="rounded bg-rose-500 px-2 py-1 text-xs text-white">
+                <DemoActionButton feedback={`已為 ${c.motherName} 建立續約合約草稿`} className="rounded bg-rose-500 px-2 py-1 text-xs text-white">
                   產生續約合約
-                </button>
+                </DemoActionButton>
               </td>
             </tr>
           ))}

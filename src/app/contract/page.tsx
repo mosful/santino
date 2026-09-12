@@ -9,11 +9,11 @@ import RenewalManagement from "./tabs/RenewalManagement";
 import TerminationManagement from "./tabs/TerminationManagement";
 import SignStatusDashboard from "./tabs/SignStatusDashboard";
 import ContractChangeOrder from "./tabs/ContractChangeOrder";
+import ChildcareContract from "./tabs/ChildcareContract";
 
 const NOT_NOW = [
   "入住指導單",
   "入住當天繳費通知單",
-  "寶寶脫離合約（托嬰邏輯已確認：另立新合約＋以車號識別）",
   "簽核流程（明確排除）",
 ];
 
@@ -32,6 +32,7 @@ export default function ContractPage() {
           { key: "termination", label: "退約／作廢管理", content: <TerminationManagement /> },
           { key: "sign-status", label: "合約簽署狀態總覽", content: <SignStatusDashboard /> },
           { key: "change-order", label: "合約變更單", content: <ContractChangeOrder /> },
+          { key: "childcare", label: "寶寶留房／托嬰合約", content: <ChildcareContract /> },
         ]}
       />
       <div className="mt-6 rounded border border-dashed border-stone-300 p-3 text-xs text-stone-400">

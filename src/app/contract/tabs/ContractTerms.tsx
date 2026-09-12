@@ -12,18 +12,26 @@ const ARTICLES = [
 
 export default function ContractTerms() {
   const [days, setDays] = useState(5);
+  const [selectedArticle, setSelectedArticle] = useState(ARTICLES[0]);
   return (
     <div className="grid gap-4 md:grid-cols-[160px_1fr]">
       <ul className="space-y-1 text-xs">
         {ARTICLES.map((a) => (
           <li key={a}>
-            <a href="#" className="block rounded px-2 py-1 hover:bg-stone-100">
+            <button
+              type="button"
+              onClick={() => setSelectedArticle(a)}
+              className={`block w-full rounded px-2 py-1 text-left hover:bg-stone-100 ${selectedArticle === a ? "bg-rose-50 text-rose-600" : ""}`}
+            >
               {a}
-            </a>
+            </button>
           </li>
         ))}
       </ul>
       <div className="space-y-4 text-sm">
+        <div className="rounded border border-stone-200 bg-stone-50 p-3 text-xs text-stone-600">
+          目前檢視：<strong>{selectedArticle}</strong>
+        </div>
         <div className="rounded border border-rose-200 bg-rose-50 p-3">
           <div className="mb-2 text-xs font-medium text-rose-700">猶豫期（審閱期）回推規則</div>
           <div className="flex items-center gap-2 text-xs">

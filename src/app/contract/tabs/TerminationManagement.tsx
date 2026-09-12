@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PrototypeFormActions from "@/components/ui/PrototypeFormActions";
 
 export default function TerminationManagement() {
   const [mode, setMode] = useState<"ratio" | "fixed">("ratio");
@@ -55,9 +56,8 @@ export default function TerminationManagement() {
           </div>
         </div>
         <p className="mt-2 text-xs text-stone-400">作廢需填寫原因並保留歷程，供稽核查詢。</p>
-        <div className="mt-2 flex justify-end gap-2">
-          <button className="rounded bg-stone-100 px-3 py-1.5 text-xs">暫存</button>
-          <button className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">送出申請</button>
+        <div className="mt-3">
+          <PrototypeFormActions accent="rose" submitLabel="送出申請" />
         </div>
       </div>
     </div>

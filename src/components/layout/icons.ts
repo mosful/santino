@@ -13,6 +13,7 @@ import {
   GraduationCap,
   MessageCircle,
   Settings,
+  Cctv,
   type LucideIcon,
 } from "lucide-react";
 
@@ -31,4 +32,5 @@ export const MODULE_ICONS: Record<string, LucideIcon> = {
   "13": GraduationCap,
   "14": MessageCircle,
   "15": Settings,
+  "17": Cctv,
 };

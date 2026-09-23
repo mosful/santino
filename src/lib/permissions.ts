@@ -38,6 +38,8 @@ const MATRIX: Record<string, Partial<Record<Role, AccessLevel>>> = {
   "13": { 櫃台: "edit", "阿長 婉真": "none", "衛教師 琳雅": "view" },
   "14": { 櫃台: "edit", "阿長 婉真": "none", "衛教師 琳雅": "none" },
   "15": { 櫃台: "view", "阿長 婉真": "view", "衛教師 琳雅": "none" },
+  // 17 寶寶視訊：櫃台負責設定與發卡，阿長可查看狀態，衛教師不涉及
+  "17": { 櫃台: "edit", "阿長 婉真": "view", "衛教師 琳雅": "none" },
 };
 
 export function getAccess(role: Role, moduleNo: string): AccessLevel {

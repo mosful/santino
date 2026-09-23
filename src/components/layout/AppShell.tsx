@@ -12,6 +12,8 @@ import SidebarIllustration from "./SidebarIllustration";
 import { useSidebarCollapsed, setSidebarCollapsed } from "@/lib/sidebarStore";
 
 const AUTH_ROUTE_PREFIXES = ["/login", "/forgot-password"];
+// 對外觀看頁（寶寶視訊的媽媽端／親友端）給手機開，不套院務側邊欄與角色切換
+const STANDALONE_ROUTE_PREFIXES = ["/view"];
 
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
@@ -33,9 +35,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const collapsed = useSidebarCollapsed();
   const pathname = usePathname();
-  const isAuthRoute = AUTH_ROUTE_PREFIXES.some((p) => pathname?.startsWith(p));
+  const isBareRoute = [...AUTH_ROUTE_PREFIXES, ...STANDALONE_ROUTE_PREFIXES].some((p) =>
+    pathname?.startsWith(p)
+  );
 
-  if (isAuthRoute) {
+  if (isBareRoute) {
     return <>{children}</>;
   }
 

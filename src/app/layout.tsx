@@ -27,8 +27,13 @@ const authGuardScript = `try{
   var base = ${JSON.stringify(BASE_PATH)};
   var p = location.pathname;
   var isAuthRoute = p.indexOf('/login') !== -1 || p.indexOf('/forgot-password') !== -1;
-  if (!loggedIn && !isAuthRoute) { location.replace(base + '/login/'); }
-  else if (loggedIn && isAuthRoute) { location.replace(base + '/'); }
+  // 寶寶視訊的對外觀看頁（媽媽端／親友端）是給院外的人開的，不需要院務系統登入，
+  // 也不可在院內人員已登入時被導回首頁，因此完全略過本導頁邏輯。
+  var isPublicViewRoute = p.indexOf('/view/') !== -1;
+  if (!isPublicViewRoute) {
+    if (!loggedIn && !isAuthRoute) { location.replace(base + '/login/'); }
+    else if (loggedIn && isAuthRoute) { location.replace(base + '/'); }
+  }
 }catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

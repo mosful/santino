@@ -8,7 +8,8 @@ export type ModuleInfo = {
   no: string;
   label: string;
   href: string;
-  phase: 1 | 2;
+  /** phase 3＝永遠不顯示在選單（PhaseSwitcher 最多只能切到 2），頁面仍可用網址直達 */
+  phase: 1 | 2 | 3;
   subItems?: SubItem[];
 };
 
@@ -159,6 +160,25 @@ export const MODULES: ModuleInfo[] = [
       { key: "kpi-rules", label: "評鑑統計規則設定" },
       { key: "system", label: "系統參數設定" },
       { key: "phrases", label: "常用語／片語庫設定" },
+    ],
+  },
+  // 寶寶視訊（WebCam）：客戶指定優先開發的獨立範圍，不屬於 Phase 1／Phase 2。
+  // 開發／驗收期間設 phase: 2 方便從選單進入；對客戶展示前改為 phase: 3 隱藏選單，
+  // 頁面仍可用 /babycam 網址直達。媽媽端與親友端在 /view/mama、/view/family，
+  // 屬對外頁面不列入院務選單。
+  {
+    no: "17",
+    label: "寶寶視訊",
+    href: "/babycam",
+    // 已隱藏：phase 3 永遠大於 PhaseSwitcher 能切到的最大值（2），因此任何角色都看不到此項。
+    // 要重新顯示在選單，把這裡改成 2 即可，不需要動其他檔案。
+    phase: 3,
+    subItems: [
+      { key: "master", label: "後台設定檔" },
+      { key: "binding", label: "監視器與房號綁定" },
+      { key: "schedule", label: "開放時段與狀態" },
+      { key: "qrcode", label: "QRCode 資訊卡" },
+      { key: "monitor", label: "監控面板" },
     ],
   },
 ];

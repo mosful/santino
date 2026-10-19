@@ -41,6 +41,11 @@ npm run preview
 
 此時網址為 `http://localhost:4310/santino/`。回到根路徑請在未設定 `DEPLOY_TARGET` 時重新建置。
 
+> ℹ️ 2026-10-19 起線上正式站改掛自訂網域 **https://santino.mzoo.cc/** （見 `public/CNAME`），
+> 架在網站**根目錄**而非 `/santino/` 子路徑，部署 workflow 已設 `NEXT_PUBLIC_BASE_PATH=""`。
+> 上面的子路徑建置僅供本機驗證保留；要模擬線上產物請直接 `npm run build`（不設環境變數）。
+> 另有凍結站 https://mosful.github.io/santinov1/ （repo `mosful/santinov1`，2026-09-23 快照，不再更新）。
+
 ## 驗證
 
 本輪驗證環境為 Node.js 24.19.0。Playwright 已納入 Santino 開發相依，無須 BabyCam 專案或其服務。

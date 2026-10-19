@@ -28,6 +28,10 @@ jobs:
       - run: npm run build
         env:
           DEPLOY_TARGET: gh-pages
+          # 自訂網域 santino.mzoo.cc（public/CNAME）是架在網站根目錄，
+          # 不是 mosful.github.io/santino/ 子路徑，故覆寫為空字串。
+          # 要退回 /santino/ 子路徑只需刪掉下面這一行。
+          NEXT_PUBLIC_BASE_PATH: ""
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

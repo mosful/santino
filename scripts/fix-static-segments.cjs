@@ -22,6 +22,8 @@ async function collect(directory) {
     try { const existing = await fs.readFile(alias); if (!existing.equals(content)) throw new Error("靜態 segment 別名與既有檔案衝突。"); }
     catch (error) { if (error.code !== "ENOENT") throw error; await fs.writeFile(alias, content); count++; }
   }
-  await fs.writeFile(path.join(root, "static-site.json"), JSON.stringify({ basePath: process.env.DEPLOY_TARGET === "gh-pages" ? "/santino" : "", nextVersion: require("next/package.json").version, generatedAt: new Date().toISOString() }, null, 2));
+  // basePath 判斷邏輯須與 src/lib/basePath.ts 一致（此處為 .cjs 無法直接引用 TS 常數）。
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? (process.env.DEPLOY_TARGET === "gh-pages" ? "/santino" : "");
+  await fs.writeFile(path.join(root, "static-site.json"), JSON.stringify({ basePath, nextVersion: require("next/package.json").version, generatedAt: new Date().toISOString() }, null, 2));
   console.log(`靜態匯出整理完成，補齊 ${count} 個路由預載檔案。`);
 })().catch((error) => { console.error(error.message); process.exitCode = 1; });

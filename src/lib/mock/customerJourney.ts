@@ -82,7 +82,7 @@ export const JOURNEY_STAGES: JourneyStage[] = [
     checklist: ["已確認生產與報到時間", "房間及嬰兒室已通知", "餐飲與入住文件已備妥"],
     links: [
       { label: "入住前關懷", href: "/care?tab=pre-admission", hint: "生產與報到時間確認" },
-      { label: "房間動態", href: "/room", hint: "排房、清潔與床位準備" },
+      { label: "房況總覽", href: "/#room-status-title", hint: "排房、清潔與床位準備" },
       { label: "月子餐設定", href: "/meal?tab=order", hint: "禁忌與首日餐點" },
     ],
   },
@@ -111,7 +111,7 @@ export const JOURNEY_STAGES: JourneyStage[] = [
     checklist: ["尾款與自費項目已結清", "返家衛教與文件已完成", "房卡、物品及房務已交接"],
     links: [
       { label: "合約到期", href: "/contract?tab=renewal", hint: "到期、續住或提前退宿" },
-      { label: "退宿交接", href: "/room", hint: "退房、清潔與物品點交" },
+      { label: "退宿交接", href: "/#room-status-title", hint: "退房、清潔與物品點交" },
       { label: "返家關懷", href: "/care?tab=home-return", hint: "建立返家追蹤排程" },
     ],
   },

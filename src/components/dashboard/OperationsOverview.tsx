@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Baby, BedDouble, BellRing, Building2, CalendarClock, ClipboardList, FileEdit, FileText, LayoutDashboard, PhoneCall, Search, UserRoundSearch, Video } from "lucide-react";
+import { BedDouble, BellRing, CalendarClock, ClipboardList, FileEdit, FileText, LayoutDashboard, PhoneCall, Search, UserRoundSearch, Video } from "lucide-react";
 import { useCareStore } from "@/lib/care/store";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { roleTaskCategories, taskEvents } from "@/lib/domain/tasks";
 import { ANNOUNCEMENTS } from "@/lib/mock/dashboard";
 import { useCurrentRole } from "@/lib/roleStore";
+import RoomStatusOverview from "./RoomStatusOverview";
 import { getAccess } from "@/lib/permissions";
 
 export default function OperationsOverview() {
@@ -19,15 +20,6 @@ export default function OperationsOverview() {
   );
   const urgent = pending.filter((event) => event.date <= today).slice(0, 5);
   const drafts = domain.cases.filter((record) => record.draftAt && !record.closed);
-  const activeMothers = domain.subjects.filter(
-    (subject) => subject.kind === "mama" && !subject.historical
-  );
-  const enabledRooms = domain.rooms.filter((room) => room.enabled);
-  const occupiedRooms = new Set(activeMothers.map((subject) => subject.room));
-  const floors = [...new Set(enabledRooms.map((room) => room.room.slice(0, 1)))].sort();
-  const childcare = domain.cases.filter(
-    (record) => record.childcare && !record.childcareEnded
-  );
   const announcements = [...ANNOUNCEMENTS]
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 3);
@@ -43,7 +35,7 @@ export default function OperationsOverview() {
     { href: "/#today-workspace", icon: LayoutDashboard, label: "今日工作台", value: "到期事項與營運摘要", visible: true },
     { href: "/cases/", icon: ClipboardList, label: "案件七階段", value: "從預約到返家後", visible: true },
     { href: "/customer/", icon: UserRoundSearch, label: "客戶資料", value: "查詢客戶與聯繫紀錄", visible: getAccess(role, "5") !== "none" },
-    { href: "/room/", icon: BedDouble, label: "房況與排房", value: "查看住房與安排房位", visible: getAccess(role, "4") !== "none" },
+    { href: "/#room-status-title", icon: BedDouble, label: "房況總覽", value: "依樓層查看房況與托嬰", visible: true },
     { href: "/contract/", icon: FileText, label: "合約與付款", value: "簽約、變更與收款", visible: getAccess(role, "12") !== "none" },
     { href: "/care/", icon: PhoneCall, label: "媽媽關懷", value: "跨階段關懷與追蹤", visible: getAccess(role, "7") !== "none" },
     { href: "/cases/calendar/", icon: CalendarClock, label: "待辦行事曆", value: "月、週、日工作排程", visible: true },
@@ -97,26 +89,6 @@ export default function OperationsOverview() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
         <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2 font-bold text-stone-800"><Building2 className="h-4 w-4 text-brand-500" />住房概況</div>
-            <Link href="/room/" className="text-xs font-semibold text-brand-600">查看房況</Link>
-          </div>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <RoomStat label="已入住" value={occupiedRooms.size} />
-            <RoomStat label="可使用" value={Math.max(0, enabledRooms.length - occupiedRooms.size)} />
-            <RoomStat label="托嬰" value={childcare.length} accent />
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {floors.map((floor) => {
-              const rooms = enabledRooms.filter((room) => room.room.startsWith(floor));
-              const used = rooms.filter((room) => occupiedRooms.has(room.room)).length;
-              return <span key={floor} className="rounded-lg bg-stone-100 px-2.5 py-1 text-xs text-stone-600">{floor}F　{used}/{rooms.length}</span>;
-            })}
-            <Link href="/baby/" className="inline-flex items-center gap-1 rounded-lg bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700"><Baby className="h-3.5 w-3.5" />寶寶照護</Link>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
           <div className="mb-2 flex items-center justify-between">
             <div className="font-bold text-stone-800">最新公告</div>
             <Link href="/admin/?tab=board" className="text-xs font-semibold text-brand-600">公告管理</Link>
@@ -132,6 +104,9 @@ export default function OperationsOverview() {
         </div>
       </div>
     </section>
+
+    {/* v24 §3 的首頁順序：需立即處理事項 → 房況總覽 → 公佈欄 */}
+    <RoomStatusOverview />
     </div>
   );
 }
@@ -156,6 +131,3 @@ function OverviewLink({ href, icon: Icon, label, value, tone = "brand" }: { href
   return <Link href={href} className="flex min-w-0 items-center gap-2 rounded-2xl border border-stone-100 p-3 hover:border-brand-200"><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${styles[tone]}`}><Icon className="h-4 w-4" /></span><span className="min-w-0"><span className="block text-xs font-bold text-stone-700">{label}</span><span className="block truncate text-[11px] text-stone-500">{value}</span></span></Link>;
 }
 
-function RoomStat({ label, value, accent = false }: { label: string; value: number; accent?: boolean }) {
-  return <div className={`rounded-2xl px-2 py-3 ${accent ? "bg-violet-50" : "bg-stone-50"}`}><div className={`text-xl font-bold ${accent ? "text-violet-700" : "text-stone-800"}`}>{value}</div><div className="mt-1 text-[11px] text-stone-500">{label}</div></div>;
-}

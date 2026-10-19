@@ -89,8 +89,8 @@ export default function BabycamWorkspace({ initialSection = "registration", init
   if (!active) return <p className="p-4">目前角色沒有 BabyCam 作業權限。</p>;
   const activeAccess = getBabycamSectionAccess(data, active.access);
 
-  return <div className="space-y-5 p-4 sm:p-6">
-    <header className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-xl font-semibold">櫃台服務・寶寶視訊管理</h1><div className="flex flex-wrap gap-2"><Link href="/" className={button}>返回櫃台服務</Link><Link href="/cases" className={button}>案件流程</Link></div></header>
+  // 標題與操作列由頁面的 PageHeader 提供，這裡只渲染工作區本身
+  return <div className="space-y-5">
     <p className="text-sm text-stone-600">純靜態展示，影像、抓圖與繼電器均為模擬，不會連線院內設備。</p>
     <p className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900">{roleGuidance[role]}</p>
     <nav aria-label="BabyCam 功能" className="flex flex-wrap gap-2">{visible.map((item) => <button type="button" key={item.key} aria-pressed={active.key === item.key} className={`${button} ${active.key === item.key ? "bg-brand-600 text-white" : ""}`} onClick={() => { setSection(item.key); setMessage(""); setLabelImages([]); }}>{item.label}</button>)}</nav>

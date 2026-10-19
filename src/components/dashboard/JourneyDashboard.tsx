@@ -56,7 +56,7 @@ const QUICK_VIEW_INFO: Record<QuickView, { label: string; description: string; i
 const QUICK_LINKS = [
   { label: "客戶資料", href: "/customer", hint: "查詢完整客戶與聯繫紀錄" },
   { label: "媽媽關懷", href: "/care", hint: "查看跨階段關懷與追蹤" },
-  { label: "房間動態", href: "/room", hint: "確認目前床位與入退宿安排" },
+  { label: "房況總覽", href: "/#room-status-title", hint: "依樓層查看房況與托嬰" },
 ];
 
 export default function JourneyDashboard() {

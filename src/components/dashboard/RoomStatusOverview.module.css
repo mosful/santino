@@ -1,0 +1,19 @@
+/* 房卡狀態色（v24 §3）：入住綠、親子同室粉、打掃黃、報修藍、托嬰紫虛線、空房白。
+   與媽媽照護房卡沿用同一組色值，兩處的色彩語意一致。 */
+.roomCard,
+.swatch {
+  border-color: var(--border-subtle);
+  background: var(--surface-raised);
+}
+.roomCard[data-status="入住"],
+.swatch[data-status="入住"] { border-color: #bdd8c6; background: #f0f8f3; }
+.roomCard[data-status="親子同室"],
+.swatch[data-status="親子同室"] { border-color: #edc6d2; background: #fff2f5; }
+.roomCard[data-status="打掃中"],
+.swatch[data-status="打掃中"] { border-color: #e7cf9d; background: #fff8eb; }
+.roomCard[data-status="報修中"],
+.swatch[data-status="報修中"] { border-color: #a9c7e0; background: #eef5fb; }
+.roomCard[data-status="隔離"],
+.swatch[data-status="隔離"] { border-color: #e7cf9d; background: #fff8eb; }
+.roomCard[data-status="托嬰"],
+.swatch[data-status="托嬰"] { border-style: dashed; border-color: #b9a3d8; background: #f7f2fc; }

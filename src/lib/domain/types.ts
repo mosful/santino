@@ -2,6 +2,9 @@ import type { CareSubject } from "../care/types";
 import type { PrintSettings } from "../babycam/wristband-print";
 import type { DemoScenario } from "../babycam/demo-scenario";
 
+/** 空房房卡可切換的房況（v24 §3）；入住中的房況由住客狀態推導，不存在這裡。 */
+export type RoomServiceStatus = "空房" | "打掃中" | "報修中";
+
 export const CASE_STAGES = ["預約", "參觀", "下訂", "合約", "入住前", "入住中", "退房"] as const;
 export type CaseStage = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type ReservationInput = {
@@ -62,7 +65,7 @@ export type DemoDomain = {
   staff: { id: string; name: string; role: string; enabled: boolean }[];
   sectionPermissions: Record<string, string[]>;
   printSettings: PrintSettings;
-  rooms: { room: string; roomType: "精緻" | "VIP" | "VILLA"; enabled: boolean; typeId?: string }[];
+  rooms: { room: string; roomType: "精緻" | "VIP" | "VILLA"; enabled: boolean; typeId?: string; serviceStatus?: RoomServiceStatus }[];
   roomTypes: { id: string; name: string; priceCategory: "精緻" | "VIP" | "VILLA" }[];
   lightLabels: Record<string, string>;
   viewingHistory: { id: string; bindingId: string; deviceId: string; audience: "internal" | "family"; start: string; lastSeen: string; end: string | null; reason: string }[];

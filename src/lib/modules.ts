@@ -35,7 +35,8 @@ export const MODULES: ModuleInfo[] = [
   { no: "2", label: "媽媽照護", href: "/mama", phase: 1 },
   { no: "3", label: "寶寶照護", href: "/baby", phase: 1 },
   // 房況、客戶、關懷與合約屬 Phase 1，但已整併到「櫃台服務」首頁，不再顯示獨立側邊欄入口。
-  { no: "4", label: "房況與排房", href: "/room", phase: 1, showInSidebar: false },
+  // 房況依 v24 §3 收回「櫃台服務」首頁的房況總覽，不再有獨立路由；權限代號保留給房況操作判斷。
+  { no: "4", label: "房況總覽", href: "/#room-status-title", phase: 1, showInSidebar: false },
   { no: "5", label: "客戶資料", href: "/customer", phase: 1, showInSidebar: false },
   {
     no: "6",

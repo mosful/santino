@@ -108,7 +108,7 @@ export default function CamSchedule() {
                   className={
                     "rounded-full px-3 py-1.5 text-xs font-medium transition " +
                     (s.key === statusKey
-                      ? "bg-gradient-to-r from-brand-500 to-brand-400 text-white shadow-sm"
+                      ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm"
                       : "bg-stone-100 text-stone-600 hover:bg-stone-200")
                   }
                 >

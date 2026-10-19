@@ -17,7 +17,7 @@ export default function ReportTemplate({
         <input placeholder="查詢日期起" className="rounded-lg border border-stone-200 px-2.5 py-2" />
         <span className="text-stone-400">～</span>
         <input placeholder="查詢日期迄" className="rounded-lg border border-stone-200 px-2.5 py-2" />
-        <DemoActionButton feedback={`「${title}」查詢完成`} className="rounded-lg bg-stone-700 px-3.5 py-2 text-white hover:bg-stone-800">送出查詢</DemoActionButton>
+        <DemoActionButton feedback={`「${title}」查詢完成`} className="rounded-lg bg-brand-600 px-3.5 py-2 text-white hover:bg-brand-700">送出查詢</DemoActionButton>
         <DemoActionButton feedback={`已匯出「${title}」Demo 資料`} onClick={() => exportCsv(title, columns, sampleRows ?? [])} className="ml-auto rounded-lg bg-stone-100 px-3.5 py-2 hover:bg-stone-200">匯出</DemoActionButton>
         <DemoActionButton feedback={`已開啟「${title}」列印預覽`} onClick={() => window.print()} className="rounded-lg bg-stone-100 px-3.5 py-2 hover:bg-stone-200">列印</DemoActionButton>
       </div>

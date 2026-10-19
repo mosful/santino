@@ -81,7 +81,7 @@ function AudienceTab() {
           課程報名狀態（已報名／未報名特定課程）
         </label>
       </div>
-      <DemoActionButton feedback="Audience 群組條件已更新（Demo 模式不呼叫 LINE API）" className="rounded bg-stone-700 px-3 py-1.5 text-xs text-white">建立/更新 audience 群組</DemoActionButton>
+      <DemoActionButton feedback="Audience 群組條件已更新（Demo 模式不呼叫 LINE API）" className="rounded bg-brand-600 px-3 py-1.5 text-xs text-white">建立/更新 audience 群組</DemoActionButton>
       <p className="text-xs text-stone-400">
         建議提前建立好audience群組，不要每次發送才即時計算（Narrowcast為非同步API）。
       </p>

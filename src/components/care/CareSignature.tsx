@@ -32,7 +32,7 @@ export default function CareSignature({ identity, onConfirm, onCancel }: { ident
     <div className="flex flex-wrap gap-2">
       <button type="button" onClick={() => { canvas.current!.getContext("2d")!.clearRect(0, 0, 800, 240); setInk(false); }} className="min-h-12 rounded-lg border border-stone-300 px-4">清除</button>
       <button type="button" onClick={onCancel} className="min-h-12 rounded-lg border border-stone-300 px-4">取消簽名</button>
-      <button type="button" disabled={!ink} onClick={() => onConfirm(canvas.current!.toDataURL("image/png"))} className="min-h-12 rounded-lg bg-stone-800 px-4 text-white disabled:opacity-40">確認本筆簽名</button>
+      <button type="button" disabled={!ink} onClick={() => onConfirm(canvas.current!.toDataURL("image/png"))} className="min-h-12 rounded-lg bg-brand-600 px-4 text-white disabled:opacity-40">確認本筆簽名</button>
     </div>
   </section>;
 }

@@ -53,11 +53,11 @@ export default function SidebarNav({
                     onNavigate?.();
                   }
                 }}
-                title={collapsed ? `${m.label}（Phase ${m.phase}）` : undefined}
+                title={collapsed ? m.label : undefined}
                 className={
                   "group flex flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors md:max-lg:min-h-12 md:max-lg:justify-center md:max-lg:px-2 " +
                   (active
-                    ? "bg-gradient-to-r from-brand-500 to-brand-400 text-white shadow-sm shadow-brand-200"
+                    ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm shadow-brand-200"
                     : "text-stone-600 hover:bg-brand-50")
                 }
               >
@@ -65,14 +65,6 @@ export default function SidebarNav({
                 {!collapsed && (
                   <>
                     <span className="flex-1 truncate">{m.label}</span>
-                    <span
-                      className={
-                        "shrink-0 rounded-full px-1.5 py-0.5 text-[10px] " +
-                        (active ? "bg-white/20 text-white" : "bg-brand-50 text-brand-500")
-                      }
-                    >
-                      P{m.phase}
-                    </span>
                     {access === "view" && (
                       <span
                         className={

@@ -52,26 +52,23 @@ export default function OperationsOverview() {
 
   return (
     <div className="space-y-4">
-      <section aria-labelledby="counter-services-title" className="rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
-        <div className="mb-4">
-          <div className="text-xs font-semibold text-brand-600">櫃台服務</div>
-          <h2 id="counter-services-title" className="mt-1 text-lg font-bold text-stone-800">常用功能</h2>
+      <section aria-labelledby="counter-services-title" className="space-y-3">
+        <div>
+          <h2 id="counter-services-title" className="text-lg font-bold text-stone-800">櫃台常用功能</h2>
           <p className="mt-1 text-sm text-stone-500">房況、客戶、合約、關懷、案件與寶寶視訊統一由這裡進入。</p>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {serviceLinks.map((item) => <ServiceLink key={item.label} {...item} />)}
         </div>
       </section>
 
     <section id="today-workspace" className="grid scroll-mt-20 gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)]">
-      <div className="rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-rose-600">
-              <BellRing className="h-4 w-4" /> 今日工作台
-            </div>
-            <h2 className="mt-1 text-lg font-bold text-stone-800">先處理到期事項，再接續案件流程</h2>
-          </div>
+          <h2 className="flex items-center gap-2 text-lg font-bold text-stone-800">
+            <BellRing className="h-[18px] w-[18px] shrink-0 text-rose-500" aria-hidden="true" />
+            今日工作台：先處理到期事項
+          </h2>
           <Link href="/cases/calendar/" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-stone-200 px-3 text-sm font-semibold text-stone-600 hover:border-brand-200 hover:bg-brand-50">
             <CalendarClock className="h-4 w-4" /> 開啟行事曆
           </Link>
@@ -87,7 +84,7 @@ export default function OperationsOverview() {
               </span>
             </Link>
           ))}
-          {!urgent.length && <p className="col-span-full rounded-2xl border border-dashed border-stone-200 p-6 text-center text-sm text-stone-400">今天沒有逾期或到期待辦。</p>}
+          {!urgent.length && <p className="col-span-full rounded-2xl border border-dashed border-stone-200 p-6 text-center text-sm text-stone-500">今天沒有逾期或到期待辦。</p>}
         </div>
 
         <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
@@ -99,7 +96,7 @@ export default function OperationsOverview() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-        <div className="rounded-3xl border border-stone-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2 font-bold text-stone-800"><Building2 className="h-4 w-4 text-brand-500" />住房概況</div>
             <Link href="/room/" className="text-xs font-semibold text-brand-600">查看房況</Link>
@@ -119,7 +116,7 @@ export default function OperationsOverview() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-stone-200 bg-white p-4 shadow-sm">
+        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
           <div className="mb-2 flex items-center justify-between">
             <div className="font-bold text-stone-800">最新公告</div>
             <Link href="/admin/?tab=board" className="text-xs font-semibold text-brand-600">公告管理</Link>
@@ -140,12 +137,23 @@ export default function OperationsOverview() {
 }
 
 function ServiceLink({ href, icon: Icon, label, value }: { href: string; icon: typeof Search; label: string; value: string }) {
-  return <Link href={href} className="group flex min-h-24 flex-col justify-between rounded-2xl border border-stone-100 bg-stone-50/60 p-3 transition hover:border-brand-200 hover:bg-brand-50"><Icon className="h-5 w-5 text-brand-500" /><span><span className="block text-sm font-bold text-stone-700 group-hover:text-brand-700">{label}</span><span className="mt-1 block text-[11px] leading-4 text-stone-400">{value}</span></span></Link>;
+  return (
+    <Link
+      href={href}
+      className="group flex min-h-24 flex-col justify-between rounded-2xl border border-border-subtle bg-surface-raised p-3.5 shadow-xs transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md"
+    >
+      <Icon className="h-5 w-5 text-brand-500" aria-hidden="true" />
+      <span>
+        <span className="block text-sm font-bold text-stone-700 group-hover:text-brand-700">{label}</span>
+        <span className="mt-1 block text-[11px] leading-4 text-stone-500">{value}</span>
+      </span>
+    </Link>
+  );
 }
 
 function OverviewLink({ href, icon: Icon, label, value, tone = "brand" }: { href: string; icon: typeof Search; label: string; value: string; tone?: "brand" | "amber" | "green" | "violet" }) {
   const styles = { brand: "bg-brand-50 text-brand-600", amber: "bg-amber-50 text-amber-700", green: "bg-emerald-50 text-emerald-700", violet: "bg-violet-50 text-violet-700" };
-  return <Link href={href} className="flex min-w-0 items-center gap-2 rounded-2xl border border-stone-100 p-3 hover:border-brand-200"><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${styles[tone]}`}><Icon className="h-4 w-4" /></span><span className="min-w-0"><span className="block text-xs font-bold text-stone-700">{label}</span><span className="block truncate text-[11px] text-stone-400">{value}</span></span></Link>;
+  return <Link href={href} className="flex min-w-0 items-center gap-2 rounded-2xl border border-stone-100 p-3 hover:border-brand-200"><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${styles[tone]}`}><Icon className="h-4 w-4" /></span><span className="min-w-0"><span className="block text-xs font-bold text-stone-700">{label}</span><span className="block truncate text-[11px] text-stone-500">{value}</span></span></Link>;
 }
 
 function RoomStat({ label, value, accent = false }: { label: string; value: number; accent?: boolean }) {

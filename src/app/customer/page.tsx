@@ -147,7 +147,7 @@ function DetailTabs({
                     </Link>
                   </div>
                 ) : (
-                  <DemoActionButton feedback="已建立待簽約資料，請至「12. 合約管理」接續處理" className="rounded bg-stone-700 px-3 py-1.5 text-xs text-white">
+                  <DemoActionButton feedback="已建立待簽約資料，請至「12. 合約管理」接續處理" className="rounded bg-brand-600 px-3 py-1.5 text-xs text-white">
                     轉入簽約資料 → 12.合約管理
                   </DemoActionButton>
                 )}

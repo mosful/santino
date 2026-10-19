@@ -43,7 +43,7 @@ export default function SegmentedControl<T extends string | number>({
             className={
               "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-[color,background-color,box-shadow] " +
               (active
-                ? "bg-brand-500 text-white shadow-sm"
+                ? "bg-brand-600 text-white shadow-sm"
                 : "text-stone-500 hover:bg-brand-50 hover:text-brand-600")
             }
           >

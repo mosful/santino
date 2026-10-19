@@ -141,14 +141,13 @@ export default function JourneyDashboard() {
   return (
     <div className="space-y-4 animate-fade-in-up">
       <OperationsOverview />
-      <section className="overflow-hidden rounded-3xl border border-brand-900/10 bg-white/90 shadow-sm">
-        <div className="flex flex-col gap-4 border-b border-stone-100 bg-gradient-to-r from-brand-50 via-white to-amber-50/70 px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+      <section className="overflow-hidden rounded-2xl border border-brand-900/10 bg-white/90 shadow-sm">
+        <div className="flex flex-col gap-4 border-b border-stone-100 bg-gradient-to-r from-brand-50 via-surface-raised to-surface-muted px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-brand-600">
-              <Sparkles className="h-4 w-4" />
-              以媽媽目前狀態安排櫃台工作
-            </div>
-            <h2 className="text-lg font-bold text-stone-800">從第一次詢問，到母嬰安心返家</h2>
+            <h2 className="flex items-center gap-2 text-lg font-bold text-stone-800">
+              <Sparkles className="h-[18px] w-[18px] shrink-0 text-brand-500" aria-hidden="true" />
+              從第一次詢問，到母嬰安心返家
+            </h2>
             <p className="mt-1 text-sm text-stone-500">上方數字可看跨階段待辦，下方流程可聚焦單一階段。</p>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[480px]">
@@ -191,7 +190,7 @@ export default function JourneyDashboard() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.7fr)]">
-        <div className="rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex items-center gap-2">
               <span className={`flex h-9 w-9 items-center justify-center rounded-xl ring-1 ${quickInfo ? "bg-brand-50 text-brand-600 ring-brand-200" : STAGE_STYLE[selected.color]}`}>
@@ -218,7 +217,7 @@ export default function JourneyDashboard() {
               const urgency = URGENCY[mother.urgency];
               const motherStage = JOURNEY_STAGES.find((stage) => stage.key === mother.stage);
               return (
-                <article key={mother.id} className={`group rounded-2xl border border-stone-200 ${urgency.border} bg-white p-3 transition-[border-color,box-shadow] hover:border-brand-200 hover:shadow-md sm:p-4`}>
+                <article key={mother.id} className={`group rounded-xl border border-stone-200 ${urgency.border} bg-white p-3 transition-[border-color,box-shadow] hover:border-brand-300 hover:shadow-md sm:p-4`}>
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                     <div className="flex min-w-0 flex-1 items-start gap-3">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-600">{mother.name.slice(0, 1)}</span>
@@ -251,7 +250,7 @@ export default function JourneyDashboard() {
                 </article>
               );
             })}
-            {stageMothers.length === 0 && <div className="rounded-2xl border border-dashed border-stone-200 py-10 text-center text-sm text-stone-400">找不到符合條件的媽媽</div>}
+            {stageMothers.length === 0 && <div className="rounded-2xl border border-dashed border-stone-200 py-10 text-center text-sm text-stone-500">找不到符合條件的媽媽</div>}
             {!keyword && stageMothers.length > visibleStageMothers.length && (
               <Link href="/cases/" className="flex min-h-11 items-center justify-center rounded-2xl border border-dashed border-stone-200 text-sm font-semibold text-stone-500 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600">
                 查看其餘 {stageMothers.length - visibleStageMothers.length} 件案件
@@ -261,23 +260,20 @@ export default function JourneyDashboard() {
         </div>
 
         <aside className="space-y-4">
-          <div className="rounded-3xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="mb-3 flex items-center justify-between">
-              <div>
-                <div className="text-xs font-medium text-stone-400">{quickInfo ? "跨階段工具" : "階段工作台"}</div>
-                <h2 className="font-bold text-stone-800">{quickInfo ? "快速處理功能" : `${selected.label}相關功能`}</h2>
-              </div>
+              <h2 className="font-bold text-stone-800">{quickInfo ? "跨階段快速處理" : `${selected.label}相關功能`}</h2>
               <span className={`flex h-9 w-9 items-center justify-center rounded-xl ring-1 ${quickInfo ? "bg-brand-50 text-brand-600 ring-brand-200" : STAGE_STYLE[selected.color]}`}>
                 <ContextIcon className="h-[18px] w-[18px]" />
               </span>
             </div>
             <div className="space-y-2">
               {(quickInfo ? QUICK_LINKS : selected.links).map((link) => (
-                <Link key={link.label} href={link.href} className="group flex items-center gap-3 rounded-2xl border border-stone-100 bg-stone-50/70 p-3 transition hover:border-brand-200 hover:bg-brand-50">
+                <Link key={link.label} href={link.href} className="group flex items-center gap-3 rounded-xl border border-stone-200 bg-stone-50 p-3 transition-[border-color,background-color] hover:border-brand-300 hover:bg-brand-50">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-brand-500 shadow-sm"><ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></span>
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold text-stone-700 group-hover:text-brand-600">{link.label}</span>
-                    <span className="block truncate text-[11px] text-stone-400">{link.hint}</span>
+                    <span className="block truncate text-[11px] text-stone-500">{link.hint}</span>
                   </span>
                 </Link>
               ))}
@@ -285,7 +281,7 @@ export default function JourneyDashboard() {
           </div>
 
           {!quickInfo && (
-            <div className="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm sm:p-5">
+            <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm sm:p-5">
               <div className="mb-2 flex items-center gap-2 text-sm font-bold text-amber-800"><CircleCheckBig className="h-4 w-4" />階段完成條件</div>
               <ul className="space-y-1.5 text-xs leading-5 text-stone-600">
                 {selected.checklist.map((item) => <li key={item} className="flex gap-2"><Check className="mt-1 h-3 w-3 shrink-0 text-amber-600" />{item}</li>)}
@@ -324,7 +320,7 @@ export default function JourneyDashboard() {
                 <div className="space-y-2">
                   {(notes[detailMother.id] ?? []).map((note, index) => <div key={`${note}-${index}`} className="rounded-xl bg-brand-50 px-3 py-2 text-sm text-stone-600">剛剛・{note}</div>)}
                   <textarea value={noteDraft} onChange={(event) => setNoteDraft(event.target.value)} placeholder="輸入本次聯繫、異常或交接內容…" className="w-full rounded-xl border border-stone-200 p-3 text-sm focus:border-brand-300" />
-                  <button type="button" onClick={addNote} disabled={!noteDraft.trim()} className="w-full rounded-xl bg-stone-700 px-3 py-2 text-sm font-medium text-white">新增追蹤紀錄</button>
+                  <button type="button" onClick={addNote} disabled={!noteDraft.trim()} className="w-full rounded-xl bg-brand-600 px-3 py-2 text-sm font-medium text-white">新增追蹤紀錄</button>
                 </div>
               </div>
             </div>
@@ -333,7 +329,7 @@ export default function JourneyDashboard() {
               <Link href={`/cases/detail/?id=${encodeURIComponent(domain.cases.find((item) => item.legacyId === detailMother.id)?.id ?? "")}`} className="flex items-center justify-center rounded-xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600">前往完整案件流程</Link>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <button type="button" onClick={completeTask} className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">完成本次待辦</button>
-                {JOURNEY_STAGES.findIndex((stage) => stage.key === detailMother.stage) < JOURNEY_STAGES.length - 1 && <button type="button" onClick={advanceStage} className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white">移至下一階段</button>}
+                {JOURNEY_STAGES.findIndex((stage) => stage.key === detailMother.stage) < JOURNEY_STAGES.length - 1 && <button type="button" onClick={advanceStage} className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-medium text-white">移至下一階段</button>}
               </div>
             </div>
           </div>
@@ -351,7 +347,7 @@ function matchesQuickView(mother: JourneyMother, view: QuickView) {
 }
 
 function CaseField({ label, value }: { label: string; value: string }) {
-  return <div><div className="text-[11px] font-medium text-stone-400">{label}</div><div className="mt-1 text-sm font-semibold text-stone-700">{value}</div></div>;
+  return <div><div className="text-[11px] font-medium text-stone-500">{label}</div><div className="mt-1 text-sm font-semibold text-stone-700">{value}</div></div>;
 }
 
 function Summary({ label, value, tone, icon: Icon, active, onClick }: {

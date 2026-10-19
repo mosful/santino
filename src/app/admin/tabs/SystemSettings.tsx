@@ -34,42 +34,38 @@ export default function SystemSettings() {
   const dashboardLayout = useDashboardLayout();
 
   return (
-    <div className="space-y-5 text-sm">
-      <div className="rounded border border-stone-200 p-3">
-        <div className="mb-3 text-xs font-medium text-stone-600">介面顯示設定</div>
+    <div className="max-w-3xl space-y-4 text-sm">
+      <section className="rounded-xl border border-border-subtle bg-surface-raised p-4 shadow-xs">
+        <h3 className="text-sm font-semibold text-stone-700">介面顯示設定</h3>
+        <p className="mt-1 text-xs text-stone-500">僅影響本機瀏覽器的顯示方式，不會變更任何院務資料。</p>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 pb-3">
-          <div className="min-w-0">
-            <div className="text-xs font-medium text-stone-700">功能分期顯示</div>
-            <p className="mt-0.5 text-xs text-stone-400">
-              控制側邊選單顯示到哪一個開發階段；Phase 1＋2 會同時包含第一階段功能。
-            </p>
-          </div>
-          <SegmentedControl
-            ariaLabel="功能分期顯示"
-            value={enabledPhase}
-            onChange={setEnabledPhase}
-            options={PHASE_OPTIONS}
-          />
-        </div>
+        <dl className="mt-4 divide-y divide-stone-200">
+          <SettingRow
+            term="功能分期顯示"
+            description="控制側邊選單顯示到哪一個開發階段；Phase 1＋2 會同時包含第一階段功能。"
+          >
+            <SegmentedControl
+              ariaLabel="功能分期顯示"
+              value={enabledPhase}
+              onChange={setEnabledPhase}
+              options={PHASE_OPTIONS}
+            />
+          </SettingRow>
+          <SettingRow
+            term="櫃台服務中控版型"
+            description="設定「1. 櫃台服務」首頁採流程中控或原中控配置。"
+          >
+            <SegmentedControl
+              ariaLabel="櫃台服務中控版型"
+              value={dashboardLayout}
+              onChange={setDashboardLayout}
+              options={LAYOUT_OPTIONS}
+            />
+          </SettingRow>
+        </dl>
+      </section>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-3">
-          <div className="min-w-0">
-            <div className="text-xs font-medium text-stone-700">櫃台服務中控版型</div>
-            <p className="mt-0.5 text-xs text-stone-400">
-              設定「1. 櫃台服務」首頁採流程中控或原中控配置。
-            </p>
-          </div>
-          <SegmentedControl
-            ariaLabel="櫃台服務中控版型"
-            value={dashboardLayout}
-            onChange={setDashboardLayout}
-            options={LAYOUT_OPTIONS}
-          />
-        </div>
-      </div>
-
-      <div className="rounded border border-rose-200 bg-rose-50 p-3">
+      <section className="rounded-xl border border-rose-200 bg-rose-50 p-4">
         <div className="mb-2 flex items-center justify-between">
           <div className="text-xs font-medium text-rose-700">
             多視窗鎖房範圍開關（系統開發總則第9條）
@@ -82,18 +78,18 @@ export default function SystemSettings() {
             : "已關閉（預設）：多視窗不限房間，可同時開啟不同房間的表單／分頁，僅「簽名」步驟強制鎖定單一房間。"}
         </p>
         {!canEditSystem && <p className="mt-2 text-xs font-medium text-rose-700">此為系統層級設定，僅系統管理員可修改。</p>}
-      </div>
+      </section>
 
-      <div className="rounded border border-stone-200 p-3">
-        <div className="mb-2 text-xs font-medium text-stone-600">退房後護理紀錄補登窗口</div>
-        <div className="flex items-center gap-2 text-xs">
+      <section className="rounded-xl border border-border-subtle bg-surface-raised p-4 shadow-xs">
+        <h3 className="text-sm font-semibold text-stone-700">退房後護理紀錄補登窗口</h3>
+        <div className="mt-3 flex items-center gap-2 text-xs text-stone-600">
           退房後
           <input
             type="number"
             value={care.backfillDays}
             onChange={(e) => careActions.backfillDays(Number(e.target.value))}
             disabled={!canEditOperations}
-            className="w-16 rounded border border-stone-200 px-2 py-1 disabled:bg-stone-100"
+            className="w-16 rounded-lg border border-border-subtle px-2 py-1 text-center disabled:bg-stone-100"
           />
           天內開放回補資料
         </div>
@@ -101,10 +97,30 @@ export default function SystemSettings() {
           ⚠ 客戶尚未定案此天數（阿長提議「3天」但本人加了問號），此為可調整參數示意，正式上線前需與客戶再確認。
         </p>
         {!canEditOperations && <p className="mt-1 text-xs font-medium text-stone-500">僅護理長及系統管理員可調整補登窗口。</p>}
-        <p className="mt-1 text-xs text-stone-400">
+        <p className="mt-1 text-xs text-stone-500">
           修改紀錄需正確歸屬實際登入員工，不可用共用帳號代填。
         </p>
+      </section>
+    </div>
+  );
+}
+
+function SettingRow({
+  term,
+  description,
+  children,
+}: {
+  term: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-3 first:pt-0 last:pb-0">
+      <div className="min-w-0 max-w-sm">
+        <dt className="text-xs font-semibold text-stone-700">{term}</dt>
+        <dd className="mt-0.5 text-xs leading-5 text-stone-500">{description}</dd>
       </div>
+      {children}
     </div>
   );
 }

@@ -46,7 +46,7 @@ export default function PhrasePicker({ onInsert }: { onInsert: (text: string) =>
                 onClick={() => setCategory(c)}
                 className={
                   "shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors " +
-                  (category === c ? "bg-brand-500 text-white" : "bg-stone-100 text-stone-500 hover:bg-stone-200")
+                  (category === c ? "bg-brand-600 text-white" : "bg-stone-100 text-stone-500 hover:bg-stone-200")
                 }
               >
                 {c}

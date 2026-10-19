@@ -21,6 +21,7 @@
   --brand-400: #fb7185;
   --brand-500: #f43f5e;
   --brand-600: #e11d48;
+  --brand-700: #be123c;
   --brand-900: #4c0519;
   --accent-400: #fbbf24;
   --surface: #fffdfb;
@@ -30,6 +31,18 @@
   --text-muted: #6f625c;
   --focus-ring: #be123c;
   --shadow-color: 35 24 18;
+  /* 主題化中性色階：取代 Tailwind 原生 stone，讓邊框／次要文字隨主題帶同一支色相。
+     400 以上皆通過白底 4.5:1 對比（原 stone-400 僅 2.6:1）。 */
+  --neutral-50: #fbf8f6;
+  --neutral-100: #f7f1eb;
+  --neutral-200: #ece2da;
+  --neutral-300: #d9cbbf;
+  --neutral-400: #807163;
+  --neutral-500: #6e5f53;
+  --neutral-600: #5b4f43;
+  --neutral-700: #483e34;
+  --neutral-800: #352d26;
+  --neutral-900: #241d18;
 }
 
 :root[data-theme="green"] {
@@ -46,6 +59,7 @@
   --brand-400: #74a17d;
   --brand-500: #4f7f5c;
   --brand-600: #3c6548;
+  --brand-700: #2d4c36;
   --brand-900: #16281b;
   --accent-400: #f0a35f;
   --surface: #fbfdf9;
@@ -55,6 +69,18 @@
   --text-muted: #596756;
   --focus-ring: #2f5a3b;
   --shadow-color: 22 40 27;
+  /* 主題化中性色階：取代 Tailwind 原生 stone，讓邊框／次要文字隨主題帶同一支色相。
+     400 以上皆通過白底 4.5:1 對比（原 stone-400 僅 2.6:1）。 */
+  --neutral-50: #f6fbf7;
+  --neutral-100: #ebf7ef;
+  --neutral-200: #daecdf;
+  --neutral-300: #bfd9c7;
+  --neutral-400: #5e7b67;
+  --neutral-500: #4f6856;
+  --neutral-600: #3f5646;
+  --neutral-700: #314336;
+  --neutral-800: #233227;
+  --neutral-900: #17221a;
 }
 
 :root,
@@ -72,6 +98,7 @@
   --brand-400: #5a9bad;
   --brand-500: #2f7d95;
   --brand-600: #236276;
+  --brand-700: #1a4b5b;
   --brand-900: #0f2a33;
   --accent-400: #f2b155;
   --surface: #f9fcfd;
@@ -81,6 +108,18 @@
   --text-muted: #53666d;
   --focus-ring: #17566b;
   --shadow-color: 15 42 51;
+  /* 主題化中性色階：取代 Tailwind 原生 stone，讓邊框／次要文字隨主題帶同一支色相。
+     400 以上皆通過白底 4.5:1 對比（原 stone-400 僅 2.6:1）。 */
+  --neutral-50: #f6fafb;
+  --neutral-100: #ebf3f7;
+  --neutral-200: #dae7ec;
+  --neutral-300: #bfd1d9;
+  --neutral-400: #627780;
+  --neutral-500: #53656d;
+  --neutral-600: #43535a;
+  --neutral-700: #344247;
+  --neutral-800: #253035;
+  --neutral-900: #182124;
 }
 
 @theme inline {
@@ -93,6 +132,7 @@
   --color-brand-400: var(--brand-400);
   --color-brand-500: var(--brand-500);
   --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
   --color-brand-900: var(--brand-900);
   --color-accent-400: var(--accent-400);
   --color-surface: var(--surface);
@@ -100,6 +140,27 @@
   --color-surface-raised: var(--surface-raised);
   --color-border-subtle: var(--border-subtle);
   --color-text-muted: var(--text-muted);
+  --color-stone-50: var(--neutral-50);
+  --color-stone-100: var(--neutral-100);
+  --color-stone-200: var(--neutral-200);
+  --color-stone-300: var(--neutral-300);
+  --color-stone-400: var(--neutral-400);
+  --color-stone-500: var(--neutral-500);
+  --color-stone-600: var(--neutral-600);
+  --color-stone-700: var(--neutral-700);
+  --color-stone-800: var(--neutral-800);
+  --color-stone-900: var(--neutral-900);
+  /* 陰影統一走主題色相，且每層都有位移＋柔邊，不用零位移的彩色光暈 */
+  --shadow-2xs: 0 1px 2px rgba(var(--shadow-color), 0.05);
+  --shadow-xs: 0 1px 3px rgba(var(--shadow-color), 0.07);
+  --shadow-sm: 0 1px 2px rgba(var(--shadow-color), 0.05), 0 2px 6px rgba(var(--shadow-color), 0.06);
+  --shadow-md: 0 2px 4px rgba(var(--shadow-color), 0.05), 0 6px 14px rgba(var(--shadow-color), 0.08);
+  --shadow-lg: 0 4px 8px rgba(var(--shadow-color), 0.05), 0 12px 28px rgba(var(--shadow-color), 0.1);
+  --shadow-xl: 0 8px 16px rgba(var(--shadow-color), 0.06), 0 20px 44px rgba(var(--shadow-color), 0.12);
+  --shadow: 0 1px 2px rgba(var(--shadow-color), 0.05), 0 2px 6px rgba(var(--shadow-color), 0.06);
+  /* 內層面板原本用 0.25rem，與外層的 0.75／1rem 不成比例；統一抬到 0.5rem，
+     形成 0.5 → 0.75 → 1rem 的單一圓角家族。 */
+  --radius: 0.5rem;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -227,6 +288,14 @@ main#main-content > :where(div) {
     border-color: var(--border-subtle);
     background-color: var(--surface-raised);
     color: var(--foreground);
+    caret-color: var(--brand);
+  }
+
+  /* 數字欄位一律等寬，表格與金額才不會跳動 */
+  input[type="number"],
+  input[type="date"],
+  input[type="time"] {
+    font-variant-numeric: tabular-nums;
   }
 
   input::placeholder,
@@ -249,14 +318,18 @@ main#main-content > :where(div) {
 /* 細滾動條，橫向捲動（導覽列/表格）更好看 */
 .scroll-fade {
   scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--neutral-400) 45%, transparent) transparent;
 }
 .scroll-fade::-webkit-scrollbar {
   height: 6px;
   width: 6px;
 }
 .scroll-fade::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.5);
+  background: color-mix(in srgb, var(--neutral-400) 45%, transparent);
   border-radius: 99px;
+}
+.scroll-fade::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--neutral-500) 65%, transparent);
 }
 .scroll-fade::-webkit-scrollbar-track {
   background: transparent;

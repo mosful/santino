@@ -12,7 +12,7 @@ export function enterViewer(audience: "internal" | "family", phone: string, pass
     const day = taipeiDate(new Date(data.demoAt));
     if (binding.ended || binding.viewingRevoked || day < binding.validFrom || day > binding.validTo || (audience === "family" && !binding.familyEnabled)) throw new Error("觀看授權尚未開放或已結束。");
     const active = binding.sessions.filter((session) => Date.parse(data.demoAt) - Date.parse(session.lastSeen) <= 30 * 60_000 && session.id !== deviceId);
-    if (audience === "family" && data.concurrencyEnforced && data.familyLimit > 0 && active.filter((session) => session.audience === "family").length >= data.familyLimit) throw new Error("目前觀看人數已滿，請先在舊裝置登出或由櫃檯釋出名額。");
+    if (audience === "family" && data.concurrencyEnforced && data.familyLimit > 0 && active.filter((session) => session.audience === "family").length >= data.familyLimit) throw new Error("目前觀看人數已滿，請先在舊裝置登出或由櫃台釋出名額。");
     binding.sessions = [...active, { id: deviceId, audience, lastSeen: data.demoAt }]; bindingId = binding.id;
     closeViewingHistory(data, binding.id, "重新登入", deviceId);
     data.viewingHistory.push({ id: crypto.randomUUID(), bindingId, deviceId, audience, start: data.demoAt, lastSeen: data.demoAt, end: null, reason: "觀看中" });

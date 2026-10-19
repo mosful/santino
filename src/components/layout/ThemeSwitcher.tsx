@@ -20,7 +20,7 @@ export default function ThemeSwitcher() {
           title={t.label}
           aria-label={`切換為${t.label}主題`}
           aria-pressed={current === t.value}
-          className="theme-swatch !h-4 !min-h-0 !w-4 relative flex shrink-0 items-center justify-center rounded-full transition-transform hover:scale-110"
+          className="!h-4 !min-h-0 !w-4 relative flex shrink-0 items-center justify-center rounded-full transition-transform hover:scale-110"
           style={{ backgroundColor: t.swatch }}
         >
           {current === t.value && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3.5} aria-hidden="true" />}

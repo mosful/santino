@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, X, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Clock3, Menu, PanelLeftClose, PanelLeftOpen, QrCode, X } from "lucide-react";
 import SidebarNav from "./SidebarNav";
 import RoleSwitcher from "./RoleSwitcher";
 import ThemeSwitcher from "./ThemeSwitcher";
@@ -31,6 +31,26 @@ function Brand({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function HeaderStatus() {
+  const [clock, setClock] = useState("--:--:--");
+
+  useEffect(() => {
+    const update = () => setClock(new Intl.DateTimeFormat("zh-TW", {
+      timeZone: "Asia/Taipei", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
+    }).format(new Date()));
+    update();
+    const timer = window.setInterval(update, 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="hidden items-center gap-2 lg:flex">
+      <span suppressHydrationWarning className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 text-xs font-semibold tabular-nums text-stone-500" aria-label={`台灣時間 ${clock}`}><Clock3 className="h-3.5 w-3.5 text-brand-500" />{clock}</span>
+      <Link href="/babycam/scan/" className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-600 hover:border-brand-200 hover:bg-brand-50"><QrCode className="h-3.5 w-3.5 text-brand-500" />QR 掃描</Link>
+    </div>
+  );
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const collapsed = useSidebarCollapsed();
@@ -45,6 +65,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-full">
+      <a className="skip-link" href="#main-content">跳至主要內容</a>
       {/* 平板固定快捷列：保留內容寬度，同時避免每次換頁都開關抽屜 */}
       <aside className="tablet-sidebar scroll-fade sticky top-0 hidden h-screen w-[72px] shrink-0 flex-col overflow-y-auto border-r border-brand-900/10 bg-white/85 backdrop-blur md:flex lg:hidden">
         <div className="flex justify-center pt-1">
@@ -94,8 +115,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* 手機：抽屜式側邊欄 */}
       {drawerOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <div className="animate-overlay-in absolute inset-0 bg-stone-900/40" onClick={() => setDrawerOpen(false)} />
-          <aside className="animate-slide-in-left scroll-fade safe-top absolute inset-y-0 left-0 w-72 overflow-y-auto bg-white shadow-xl">
+          <button className="animate-overlay-in absolute inset-0 min-h-0 w-full bg-stone-900/40" onClick={() => setDrawerOpen(false)} aria-label="關閉選單遮罩" />
+          <aside aria-label="行動版主選單" className="animate-slide-in-left scroll-fade safe-top absolute inset-y-0 left-0 w-72 overflow-y-auto bg-surface-raised shadow-xl">
             <div className="flex items-center justify-between pr-2">
               <Brand />
               <button
@@ -124,11 +145,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Brand compact />
           </div>
           <div className="flex-1" />
+          <HeaderStatus />
           <PhaseSwitcher />
           <ThemeSwitcher />
           <RoleSwitcher />
         </header>
-        <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
+        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
       </div>
     </div>
   );

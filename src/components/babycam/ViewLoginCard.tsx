@@ -50,11 +50,14 @@ export default function ViewLoginCard({
           </label>
           <input
             id="bc-phone"
+            name="phone"
+            type="tel"
+            autoComplete="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             inputMode="tel"
-            placeholder="09xx-xxx-xxx"
-            className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-brand-400 focus:outline-none"
+            placeholder="例如 0912-345-678"
+            className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-brand-400"
           />
         </div>
         <div>
@@ -63,16 +66,19 @@ export default function ViewLoginCard({
           </label>
           <input
             id="bc-code"
+            name="access-code"
+            type="password"
+            autoComplete="one-time-code"
             value={code}
             onChange={(e) => setCode(e.target.value)}
             inputMode="numeric"
-            placeholder="請輸入 8 碼密碼"
-            className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-brand-400 focus:outline-none"
+            placeholder="請輸入 8 碼密碼…"
+            className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-brand-400"
           />
         </div>
 
         {error && (
-          <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</p>
+          <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</p>
         )}
 
         <button

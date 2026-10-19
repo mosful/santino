@@ -45,21 +45,21 @@ export default function PrototypeFormActions({
   accent?: Accent;
   submitLabel?: string;
   draftLabel?: string;
-  onDraft?: () => void;
-  onSubmit?: () => void;
+  onDraft?: () => void | boolean;
+  onSubmit?: () => void | boolean;
 }) {
   const now = usePrototypeClock();
   const [message, setMessage] = useState("尚未暫存");
   const [messageTone, setMessageTone] = useState<"idle" | "saved" | "submitted">("idle");
 
   function saveDraft() {
-    onDraft?.();
+    try { if (onDraft?.() === false) return; } catch (error) { setMessage(error instanceof Error ? error.message : "暫存失敗。"); setMessageTone("idle"); return; }
     setMessage(`草稿已暫存 ${now}`);
     setMessageTone("saved");
   }
 
   function submit() {
-    onSubmit?.();
+    try { if (onSubmit?.() === false) return; } catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); setMessageTone("idle"); return; }
     setMessage(`已完成原型送出 ${now}`);
     setMessageTone("submitted");
   }

@@ -99,7 +99,7 @@ function CourseActivityTab() {
 
 export default function CoursePage() {
   return (
-    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+    <div className="page-frame">
       <RequireAccess moduleNo="13">
       <PageHeader title="13. 課程管理" moduleNo="13" />
       <TabsFromUrl

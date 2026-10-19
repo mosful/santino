@@ -3,14 +3,15 @@
 import { useState } from "react";
 import Switch from "@/components/ui/Switch";
 import Badge from "@/components/ui/Badge";
-import DemoActionButton from "@/components/ui/DemoActionButton";
+import { domainStore, useDomainStore } from "@/lib/demo/domainStore";
+import { contractSettingActions } from "@/lib/domain/contractSettings";
 
 type Template = {
   id: number;
   name: string;
   version: string;
   active: boolean;
-  createdDate: string;
+  createdDate: string; clauses: string;
 };
 
 const CLAUSES = [
@@ -23,33 +24,16 @@ const CLAUSES = [
 ];
 
 export default function ContractTemplates() {
-  const [templates, setTemplates] = useState<Template[]>([
-    { id: 1, name: "標準21條範本 v2", version: "v2", active: true, createdDate: "2026-06-01" },
-    { id: 2, name: "標準21條範本 v1（疫情訪客限制版）", version: "v1", active: false, createdDate: "2025-05-10" },
-  ]);
+  const { data } = useDomainStore(); const templates = data.contractSettings.templates;
+  const [message, setMessage] = useState("");
   const [editing, setEditing] = useState<Template | null>(null);
 
-  function toggleActive(id: number) {
-    setTemplates((ts) =>
-      ts.map((t) => ({ ...t, active: t.id === id }))
-    );
-  }
-
-  function addTemplate() {
-    const nextVersion = `v${templates.length + 1}`;
-    const template: Template = {
-      id: Date.now(),
-      name: `標準21條範本 ${nextVersion}（草稿）`,
-      version: nextVersion,
-      active: false,
-      createdDate: new Date().toISOString().slice(0, 10),
-    };
-    setTemplates((items) => [...items, template]);
-    setEditing(template);
-  }
-
+  const editingLocked = !!(editing && templates.find((item) => item.id === editing.id)?.active);
+  function run(action: () => void) { try { action(); setMessage("已儲存合約範本設定，已簽快照保留。"); } catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); } }
+  function toggleActive(id: number) { run(() => contractSettingActions.activate(id)); }
+  function addTemplate() { run(() => { const id = contractSettingActions.addTemplate(); setEditing(domainStore.get().contractSettings.templates.find((item) => item.id === id)!); }); }
   return (
-    <div className="space-y-3 text-sm">
+    <div className="space-y-3 text-sm">{message && <p role="status">{message}</p>}
       <p className="text-xs text-stone-400">
         維護標準21條條款範本，供新增合約套用，支援版本管理；同時間僅一個版本可為「啟用中」，
         新客戶簽署一律套用啟用中版本，不影響已簽署的舊客戶。
@@ -84,7 +68,7 @@ export default function ContractTemplates() {
           ))}
         </tbody>
       </table>
-      <DemoActionButton feedback="已新增合約範本草稿並開啟編輯區" onClick={addTemplate} className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">＋ 新增範本版本</DemoActionButton>
+      <button type="button" onClick={addTemplate} className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">＋ 新增範本版本</button>
 
       {editing && (
         <div className="rounded border border-stone-200 p-3">
@@ -94,6 +78,7 @@ export default function ContractTemplates() {
               收合
             </button>
           </div>
+          <input aria-label="範本名稱" disabled={editingLocked} value={editing.name} onChange={(event) => setEditing({ ...editing, name: event.target.value })} className="mb-3 w-full rounded border border-stone-200 p-2 text-sm" /><textarea aria-label="範本條文內容" disabled={editingLocked} value={editing.clauses} onChange={(event) => setEditing({ ...editing, clauses: event.target.value })} className="mb-3 h-28 w-full rounded border border-stone-200 p-2 text-sm" /><button type="button" disabled={editingLocked} onClick={() => run(() => contractSettingActions.save(editing.id, editing.name, editing.clauses))} className="mb-3 rounded bg-rose-500 px-3 py-1.5 text-xs text-white disabled:opacity-40">儲存草稿條文</button>{editingLocked && <p className="mb-3 text-xs text-stone-500">啟用中的版本唯讀，請新增草稿版本後再修改。</p>}
           <ul className="space-y-1 text-xs text-stone-600">
             {CLAUSES.map((c) => (
               <li key={c} className="rounded border border-stone-100 px-2 py-1.5">

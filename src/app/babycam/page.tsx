@@ -11,13 +11,14 @@ import CamMonitor from "./tabs/CamMonitor";
 
 export default function BabyCamPage() {
   return (
-    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+    <div className="page-frame">
       <RequireAccess moduleNo="17">
         <PageHeader
           title="17. 寶寶視訊（WebCam）"
           moduleNo="17"
           action={
             <div className="flex gap-2">
+              <Link href="/babycam/workspace" className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50">完整功能工作區</Link>
               <Link
                 href="/view/mama"
                 className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
@@ -53,7 +54,7 @@ export default function BabyCamPage() {
           </p>
           <p>
             本階段不做：發信通知相關人員、截圖歷史回看、即時影像低延遲串流（HLS／WebRTC）、
-            合約退住自動連動有效期限。
+            正式設備服務。案件退房與托嬰期限已連動本機展示授權。
           </p>
         </div>
       </RequireAccess>

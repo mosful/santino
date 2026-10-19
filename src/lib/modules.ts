@@ -8,8 +8,10 @@ export type ModuleInfo = {
   no: string;
   label: string;
   href: string;
-  /** phase 3＝永遠不顯示在選單（PhaseSwitcher 最多只能切到 2），頁面仍可用網址直達 */
+  /** 功能所屬階段；只控制 PhaseSwitcher 的功能分類。 */
   phase: 1 | 2 | 3;
+  /** false 代表功能改由其他工作區進入；原路由、權限與深連結仍保留。 */
+  showInSidebar?: boolean;
   subItems?: SubItem[];
 };
 
@@ -19,7 +21,7 @@ export type ModuleInfo = {
 export const MODULES: ModuleInfo[] = [
   {
     no: "1",
-    label: "中控中心",
+    label: "櫃台服務",
     href: "/",
     phase: 1,
     subItems: [
@@ -32,8 +34,9 @@ export const MODULES: ModuleInfo[] = [
   },
   { no: "2", label: "媽媽照護", href: "/mama", phase: 1 },
   { no: "3", label: "寶寶照護", href: "/baby", phase: 1 },
-  { no: "4", label: "房間動態", href: "/room", phase: 1 },
-  { no: "5", label: "客戶資料", href: "/customer", phase: 1 },
+  // 房況、客戶、關懷與合約屬 Phase 1，但已整併到「櫃台服務」首頁，不再顯示獨立側邊欄入口。
+  { no: "4", label: "房況與排房", href: "/room", phase: 1, showInSidebar: false },
+  { no: "5", label: "客戶資料", href: "/customer", phase: 1, showInSidebar: false },
   {
     no: "6",
     label: "醫師巡診",
@@ -49,7 +52,8 @@ export const MODULES: ModuleInfo[] = [
     no: "7",
     label: "媽媽關懷",
     href: "/care",
-    phase: 2,
+    phase: 1,
+    showInSidebar: false,
     subItems: [
       { key: "visit", label: "參觀提醒" },
       { key: "prenatal", label: "產前關懷" },
@@ -97,9 +101,10 @@ export const MODULES: ModuleInfo[] = [
   },
   {
     no: "12",
-    label: "合約管理",
+    label: "合約與付款",
     href: "/contract",
     phase: 1,
+    showInSidebar: false,
     subItems: [
       { key: "list", label: "合約查詢與列表" },
       { key: "new", label: "新增合約" },
@@ -145,7 +150,7 @@ export const MODULES: ModuleInfo[] = [
     no: "15",
     label: "後台管理",
     href: "/admin",
-    phase: 2,
+    phase: 1,
     subItems: [
       { key: "visit", label: "預約參觀管理" },
       { key: "contract-data", label: "客戶及簽約資料" },
@@ -163,16 +168,14 @@ export const MODULES: ModuleInfo[] = [
     ],
   },
   // 寶寶視訊（WebCam）：客戶指定優先開發的獨立範圍，不屬於 Phase 1／Phase 2。
-  // 開發／驗收期間設 phase: 2 方便從選單進入；對客戶展示前改為 phase: 3 隱藏選單，
   // 頁面仍可用 /babycam 網址直達。媽媽端與親友端在 /view/mama、/view/family，
   // 屬對外頁面不列入院務選單。
   {
     no: "17",
     label: "寶寶視訊",
     href: "/babycam",
-    // 已隱藏：phase 3 永遠大於 PhaseSwitcher 能切到的最大值（2），因此任何角色都看不到此項。
-    // 要重新顯示在選單，把這裡改成 2 即可，不需要動其他檔案。
     phase: 3,
+    showInSidebar: false,
     subItems: [
       { key: "master", label: "後台設定檔" },
       { key: "binding", label: "監視器與房號綁定" },

@@ -36,10 +36,10 @@ function ContactReminderTab({ note }: { note?: string }) {
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <input placeholder="查詢日期起" className="rounded border border-stone-200 px-2 py-1.5" />
+        <input aria-label="關懷查詢開始日期" name="care-start-date" type="date" className="rounded border border-stone-200 px-2 py-1.5" />
         <span>～</span>
-        <input placeholder="查詢日期迄" className="rounded border border-stone-200 px-2 py-1.5" />
-        <select className="rounded border border-stone-200 px-2 py-1.5">
+        <input aria-label="關懷查詢結束日期" name="care-end-date" type="date" className="rounded border border-stone-200 px-2 py-1.5" />
+        <select aria-label="關懷分類" name="care-category" className="rounded border border-stone-200 px-2 py-1.5">
           <option>分類：全部</option>
         </select>
         <DemoActionButton feedback={`查詢完成，共 ${SAMPLE.length} 筆關懷紀錄`} className="rounded bg-stone-700 px-3 py-1.5 text-white">查詢</DemoActionButton>
@@ -52,9 +52,9 @@ function ContactReminderTab({ note }: { note?: string }) {
 
 export default function CarePage() {
   return (
-    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+    <div className="page-frame">
       <RequireAccess moduleNo="7">
-      <PageHeader title="7. 媽媽關懷" moduleNo="7" />
+      <PageHeader title="櫃台服務・媽媽關懷" moduleNo="7" />
       <TabsFromUrl
         tabs={[
           { key: "visit", label: "參觀提醒", content: <ContactReminderTab /> },

@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import LegacyCaseScope from "@/components/cases/LegacyCaseScope";
+import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
+import { contractSettingActions } from "@/lib/domain/contractSettings";
+import type { CaseRecord } from "@/lib/domain/types";
 
 const ARTICLES = [
   "第一條 定義",
@@ -10,8 +14,11 @@ const ARTICLES = [
   "第五條 退費規定",
 ];
 
-export default function ContractTerms() {
-  const [days, setDays] = useState(5);
+export default function ContractTerms() { return <LegacyCaseScope>{(record) => <TermsPanel key={record.id} record={record} />}</LegacyCaseScope>; }
+function TermsPanel({ record }: { record: CaseRecord }) {
+  const { data } = useDomainStore(); const days = data.contractSettings.reviewDays;
+  const [message, setMessage] = useState("");
+  function run(action: () => void) { try { action(); setMessage("已更新共用合約資料。"); } catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); } }
   const [selectedArticle, setSelectedArticle] = useState(ARTICLES[0]);
   return (
     <div className="grid gap-4 md:grid-cols-[160px_1fr]">
@@ -28,7 +35,7 @@ export default function ContractTerms() {
           </li>
         ))}
       </ul>
-      <div className="space-y-4 text-sm">
+      <div className="space-y-4 text-sm">{message && <p role="status">{message}</p>}
         <div className="rounded border border-stone-200 bg-stone-50 p-3 text-xs text-stone-600">
           目前檢視：<strong>{selectedArticle}</strong>
         </div>
@@ -39,7 +46,7 @@ export default function ContractTerms() {
             <input
               type="number"
               value={days}
-              onChange={(e) => setDays(Number(e.target.value))}
+              onChange={(e) => run(() => contractSettingActions.reviewDays(Number(e.target.value)))}
               className="w-16 rounded border border-stone-200 px-2 py-1"
             />
             天（可調整）
@@ -53,8 +60,8 @@ export default function ContractTerms() {
         <div className="rounded border border-stone-200 p-3">
           <div className="mb-2 text-xs font-medium text-stone-600">入住日期（另一個簽約後仍可修改欄位）</div>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="實際入住日" />
-            <Field label="住房天數起算" placeholder="以實際入住日起算，非簽約當天" />
+            <Field label="實際入住日" type="date" value={record.actualAdmission} onChange={(value) => run(() => caseActions.update(record.id, { actualAdmission: value }))} />
+            <Field label="住房天數起算" value={record.actualAdmission || "尚未實際入住"} />
           </div>
           <p className="mt-2 text-xs text-stone-400">
             入住日確定變動時，系統需產生「新版」合約（同編號＋新日期戳記，舊版仍保留可查）。
@@ -62,7 +69,7 @@ export default function ContractTerms() {
         </div>
 
         <div className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-700">
-          ⚠ 已簽約，調整訂房需重新簽名——房型/天數/金額被修改時，系統須自動退回「待重新簽名」並清空原簽名圖檔。
+          已簽約的房型／天數／金額異動須使用合約變更單，保留原合約快照與簽名，不清空已簽紀錄。
         </div>
 
         <div className="rounded border border-stone-200 p-3">
@@ -71,11 +78,11 @@ export default function ContractTerms() {
             <div>
               <div className="mb-1 text-stone-500">甲方簽名</div>
               <div className="flex h-16 items-center justify-center rounded bg-stone-50 text-stone-300">
-                簽名板（可重複帶入其他表單）
+                {record.signed ? "本案已簽署，可於完整案件檢視原簽名" : "尚未簽署，請開啟完整案件流程"}
               </div>
             </div>
-            <Field label="乙方" placeholder="聖帝諾產後護理之家" />
-            <Field label="簽約日期" placeholder="西元/民國並列" />
+            <Field label="乙方" value="聖帝諾產後護理之家（展示）" />
+            <Field label="簽約日期" value={record.signedDate || "尚未簽約"} />
           </div>
           <p className="mt-2 text-xs text-stone-400">簽署人一般為本人，媽媽身體不便時可由家屬代簽。</p>
         </div>
@@ -84,11 +91,11 @@ export default function ContractTerms() {
   );
 }
 
-function Field({ label, placeholder }: { label: string; placeholder?: string }) {
+function Field({ label, placeholder, value, type = "text", onChange }: { label: string; placeholder?: string; value?: string; type?: string; onChange?: (value: string) => void }) {
   return (
     <div>
       <label className="mb-1 block text-xs text-stone-500">{label}</label>
-      <input placeholder={placeholder} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm" />
+      <input aria-label={label} type={type} value={value ?? ""} readOnly={!onChange} onChange={(event) => onChange?.(event.target.value)} placeholder={placeholder} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm" />
     </div>
   );
 }

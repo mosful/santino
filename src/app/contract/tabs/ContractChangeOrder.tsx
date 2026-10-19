@@ -2,44 +2,22 @@
 
 import { useState } from "react";
 import Badge from "@/components/ui/Badge";
+import LegacyCaseScope from "@/components/cases/LegacyCaseScope";
+import { caseActions } from "@/lib/demo/domainStore";
+import type { CaseRecord } from "@/lib/domain/types";
 
-type ChangeLog = {
-  id: number;
-  contractNo: string;
-  reason: string;
-  operator: string;
-  time: string;
-  before: number;
-  after: number;
-};
-
-const LOGS: ChangeLog[] = [
-  { id: 1, contractNo: "A115082801", reason: "天數增", operator: "Leader-阿凱", time: "2026-08-20 14:03", before: 168000, after: 176000 },
-];
-
-export default function ContractChangeOrder() {
-  const [logs, setLogs] = useState(LOGS);
+export default function ContractChangeOrder() { return <LegacyCaseScope filter="signed">{(record) => <ChangePanel key={record.id} record={record} />}</LegacyCaseScope>; }
+function ChangePanel({ record }: { record: CaseRecord }) {
+  const logs = record.ledger.filter((entry) => entry.before !== undefined).map((entry) => ({ id: entry.id, contractNo: record.contractNo, reason: entry.label, operator: entry.actor ?? "歷史展示資料", time: new Date(entry.at ?? `${entry.date}T00:00:00+08:00`).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" }), before: entry.before ?? 0, after: entry.after ?? 0 }));
+  const [message, setMessage] = useState("");
+  const [detail, setDetail] = useState("");
   const [reason, setReason] = useState("房型變更");
-  const [before, setBefore] = useState(168000);
-  const [after, setAfter] = useState(168000);
+  const before = (record.overrideAmount ?? record.quotedAmount) + record.ledger.filter((entry) => /^(合約變更|合約金額調整)/.test(entry.label)).reduce((sum, entry) => sum + entry.amount, 0);
+  const [after, setAfter] = useState(before);
 
-  function submit() {
-    setLogs((ls) => [
-      {
-        id: ls.length + 1,
-        contractNo: "A115082801",
-        reason,
-        operator: "Leader-阿凱（示意，實際依登入者帶入）",
-        time: new Date().toISOString().slice(0, 16).replace("T", " "),
-        before,
-        after,
-      },
-      ...ls,
-    ]);
-  }
-
+  function submit() { try { if (!detail.trim()) throw new Error("請填寫變更詳細原因。"); caseActions.contractAmount(record.id, after, `${reason}；${detail}`); setMessage("已保存共用變更單，原合約快照保留。"); } catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); } }
   return (
-    <div className="space-y-4 text-sm">
+    <div className="space-y-4 text-sm">{message && <p role="status">{message}</p>}
       <div className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-700">
         ⚠ 開放對象：僅主管／櫃臺Leader層級帳號可直接修改（原舊系統此類修改被廠商鎖權限）。
       </div>
@@ -64,7 +42,7 @@ export default function ContractChangeOrder() {
             <input
               type="number"
               value={before}
-              onChange={(e) => setBefore(Number(e.target.value))}
+              readOnly
               className="w-full rounded border border-stone-200 px-2 py-1.5"
             />
           </div>
@@ -79,6 +57,7 @@ export default function ContractChangeOrder() {
           </div>
         </div>
         <div className="mt-2 flex justify-end">
+          <label className="mb-3 block text-xs">變更詳細原因<input aria-label="變更詳細原因" value={detail} onChange={(event) => setDetail(event.target.value)} className="mt-1 w-full rounded border border-stone-200 px-2 py-1.5" /></label>
           <button onClick={submit} className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">
             確認變更（自動留log）
           </button>

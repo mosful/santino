@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { EyeOff, VideoOff } from "lucide-react";
+import LocalMedia from "./LocalMedia";
 
 export type PreviewMode = "live" | "snapshot" | "masked" | "offline";
 
@@ -19,6 +20,7 @@ export default function CamPreview({
   statusLabel,
   watermark,
   capturedAgo,
+  backgroundId,
 }: {
   mode: PreviewMode;
   room: string;
@@ -29,6 +31,7 @@ export default function CamPreview({
   watermark?: string;
   /** snapshot 模式的「N 分鐘前」提示 */
   capturedAgo?: string;
+  backgroundId?: string;
 }) {
   const [clock, setClock] = useState("--:--:--");
 
@@ -47,7 +50,8 @@ export default function CamPreview({
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-stone-700 bg-stone-900 shadow-inner">
       {mode === "masked" || mode === "offline" ? (
-        <div className="flex h-full flex-col items-center justify-center gap-3 text-stone-400">
+        <div className="relative flex h-full flex-col items-center justify-center gap-3 text-stone-400">
+          {backgroundId && <LocalMedia key={backgroundId} id={backgroundId} alt={statusLabel ?? "遮蔽背景"} className="absolute inset-0 h-full w-full object-cover opacity-35" />}
           {mode === "masked" ? (
             <EyeOff className="h-10 w-10" />
           ) : (

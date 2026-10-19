@@ -51,7 +51,7 @@ function FriendTab() {
 
 export default function LinePage() {
   return (
-    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+    <div className="page-frame">
       <RequireAccess moduleNo="14">
       <PageHeader title="14. LINE官方帳號管理" moduleNo="14" />
       <p className="mb-3 text-xs text-amber-600">

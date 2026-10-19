@@ -11,7 +11,7 @@ export default function DashboardWorkspace({ classicContent }: { classicContent:
   return (
     <>
       <PageHeader
-        title={layout === "journey" ? "1. 媽媽流程中控" : "1. 中控中心"}
+        title="1. 櫃台服務"
         moduleNo="1"
         action={<DashboardLayoutSwitch />}
       />

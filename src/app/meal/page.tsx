@@ -5,25 +5,11 @@ import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
-import { MAMA_ROOMS } from "@/lib/mock/mamaRoom";
-import { makeRng } from "@/lib/mock/genUtil";
-import DemoActionButton from "@/components/ui/DemoActionButton";
+import { useOpsRooms } from "@/lib/domain/legacySelectors";
+import { useDomainStore } from "@/lib/demo/domainStore";
+import { useCareStore } from "@/lib/care/store";
 
-const RESTRICTIONS = ["無", "無", "無", "無", "海鮮過敏", "麩質不耐", "乳製品過敏", "堅果過敏", "素食"];
-const rngMeal = makeRng(11001);
-// 房號、媽媽姓名、入住期間皆讀取自 MAMA_ROOMS，空房不虛構訂餐資料，
-// 確保與2.媽媽照護、4.房間動態看到的入住狀態一致。
-const MEALS: Row[] = MAMA_ROOMS.map((src, i) => {
-  const occupied = !!src.motherName;
-  return {
-    id: i + 1,
-    room: src.room,
-    name: occupied ? src.motherName! : "（空房）",
-    deliveryMode: occupied ? (rngMeal.bool(0.55) ? "自然產" : "剖腹產") : "－",
-    stayRange: occupied ? (src.stayRange ?? "08/01~09/01") : "－",
-    restriction: occupied ? rngMeal.pick(RESTRICTIONS) : "－",
-  };
-});
+import DemoActionButton from "@/components/ui/DemoActionButton";
 
 const mealFields: FieldSchema[] = [
   { key: "room", label: "房號" },
@@ -33,8 +19,19 @@ const mealFields: FieldSchema[] = [
   { key: "restriction", label: "飲食禁忌" },
 ];
 
+function useMealRows(): Row[] {
+  const rooms = useOpsRooms(); const { data } = useDomainStore(); const { data: care } = useCareStore();
+  return rooms.map((room, index) => {
+    const record = data.cases.find((item) => item.room === room.room && item.actualAdmission && !item.dischargedAt);
+    const subject = record && data.subjects.find((item) => item.caseId === record.id && item.kind === "mama" && !item.historical);
+    const values = subject ? care.documents[`${subject.id}:admission`]?.values : undefined;
+    return { id: index + 1, room: room.room, name: record?.name ?? "（空房）", deliveryMode: values?.delivery === "NSD" ? "自然產" : values?.delivery === "C/S" ? "剖腹產" : "待確認", stayRange: record ? `${record.actualAdmission} 起 ${record.days} 天` : "－", restriction: record ? String(values?.diet || record.meal?.content || "待確認") : "－" };
+  });
+}
+
 function OrderTab() {
   const [occupiedOnly, setOccupiedOnly] = useState(true);
+  const MEALS = useMealRows();
   const rows = occupiedOnly ? MEALS.filter((r) => r.name !== "（空房）") : MEALS;
   return (
     <div className="space-y-2">
@@ -47,13 +44,13 @@ function OrderTab() {
         僅顯示入住中
       </label>
       <p className="text-xs text-stone-400">
-        房號/媽媽/生產方式/入住期間讀取自2.媽媽照護入住評估資料，飲食禁忌為本模組可維護欄位。
+        房號/媽媽/生產方式/入住期間讀取自2.媽媽照護入住評估資料，飲食禁忌讀取照護紀錄；入住當天餐飲請由同一案件修改。
       </p>
       <EditableList
         key={occupiedOnly ? "occupied" : "all"}
         moduleNo="9"
         fields={mealFields}
-        initialRows={rows}
+        initialRows={rows} rows={rows} editAllowed={false}
         searchPlaceholder="房號/媽媽姓名"
       />
       <div className="flex gap-2 text-xs">
@@ -98,6 +95,7 @@ function CycleTeaTab() {
 }
 
 function DailyMealTab() {
+  const MEALS = useMealRows();
   const rows = MEALS.filter((row) => row.name !== "（空房）").slice(0, 6);
   return (
     <div className="overflow-x-auto rounded border border-stone-200">
@@ -110,6 +108,7 @@ function DailyMealTab() {
 }
 
 function RestrictionStatsTab() {
+  const MEALS = useMealRows();
   const counts = MEALS.filter((row) => row.name !== "（空房）").reduce<Record<string, number>>((result, row) => {
     const key = String(row.restriction);
     result[key] = (result[key] ?? 0) + 1;
@@ -141,7 +140,7 @@ function MenuCycleTab() {
 
 export default function MealPage() {
   return (
-    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+    <div className="page-frame">
       <RequireAccess moduleNo="9">
       <PageHeader title="9. 月子餐" moduleNo="9" />
       <TabsFromUrl

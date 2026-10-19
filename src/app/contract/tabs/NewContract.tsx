@@ -1,27 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import LegacyCaseScope from "@/components/cases/LegacyCaseScope";
+import { caseActions } from "@/lib/demo/domainStore";
+import type { CaseRecord } from "@/lib/domain/types";
 import PrototypeFormActions from "@/components/ui/PrototypeFormActions";
 
-function Field({ label, placeholder }: { label: string; placeholder?: string }) {
+function Field({ label, placeholder, value, readOnly }: { label: string; placeholder?: string; value?: string | number; readOnly?: boolean }) {
   return (
     <div>
       <label className="mb-1 block text-xs text-stone-500">{label}</label>
-      <input placeholder={placeholder} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm" />
+      <input aria-label={label} name={label} defaultValue={value} readOnly={readOnly} placeholder={placeholder} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm" />
     </div>
   );
 }
 
-export default function NewContract() {
-  const [upgradeVip, setUpgradeVip] = useState(false);
-  const [mealFollowsUpgrade, setMealFollowsUpgrade] = useState(true);
+export default function NewContract() { return <LegacyCaseScope filter="draft">{(record) => <NewContractForm key={record.id} record={record} />}</LegacyCaseScope>; }
+function NewContractForm({ record }: { record: CaseRecord }) {
+  const form = useRef<HTMLFormElement>(null);
+  const [upgradeVip, setUpgradeVip] = useState((record.addOns ?? []).includes("升等房間"));
+  const [mealFollowsUpgrade, setMealFollowsUpgrade] = useState((record.addOns ?? []).includes("餐點一併升等"));
+  function save() {
+    const fields = new FormData(form.current!); const rawType = String(fields.get("房型") ?? "").replace("房", "");
+    if (!["精緻", "VIP", "VILLA"].includes(rawType)) throw new Error("房型請填精緻、VIP 或 VILLA。");
+    const addOns = [fields.has("hotpot") ? "紅蟳火鍋" : "", fields.has("gift") ? "蒙娜麗莎之吻（當天下訂且需訂位）" : "", upgradeVip ? "升等房間" : "", upgradeVip && mealFollowsUpgrade ? "餐點一併升等" : ""].filter(Boolean);
+    const hospital = String(fields.get("hospital")); const priceClass = String(fields.get("priceClass"));
+    caseActions.update(record.id, { roomType: rawType as CaseRecord["roomType"], days: Number(fields.get("住房天數")), addOns, tasting: fields.has("tasting"), bossGift: String(fields.get("bossGift") ?? ""), hospital: hospital.startsWith("園內") ? "園內" : hospital.startsWith("成大") ? "成大／奇美" : "其他", priceClass: priceClass === "一般價" ? "一般" : priceClass === "員工價" ? "員工價" : "特約企業" });
+    caseActions.save(record.id);
+  }
 
   return (
-    <div className="space-y-5 text-sm">
+    <form ref={form} onSubmit={(event) => event.preventDefault()} className="space-y-5 text-sm">
       <div className="grid grid-cols-3 gap-3">
-        <Field label="房型" placeholder="精緻房" />
-        <Field label="住房天數" placeholder="21" />
-        <Field label="單價（自動帶出，可手動調整）" placeholder="8000" />
+        <Field label="房型" value={record.roomType} />
+        <Field label="住房天數" value={record.days} />
+        <Field label="示範房型日價（唯讀）" value={{ 精緻: 7500, VIP: 8500, VILLA: 9500 }[record.roomType]} readOnly />
       </div>
 
       <div className="rounded border border-stone-200 p-3">
@@ -40,18 +53,18 @@ export default function NewContract() {
         </div>
         <div className="space-y-2 text-xs">
           <label className="flex items-center gap-2">
-            <input type="checkbox" /> 升級紅蟳火鍋
+            <input type="checkbox" name="hotpot" defaultChecked={record.addOns?.includes("紅蟳火鍋")} /> 升級紅蟳火鍋
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" /> 蒙娜麗莎之吻（需訂位，限「當天下定」才贈送）
+            <input type="checkbox" name="gift" defaultChecked={record.addOns?.some((item) => item.startsWith("蒙娜麗莎"))} /> 蒙娜麗莎之吻（需訂位，限「當天下定」才贈送）
             <input placeholder="訂位時段" className="ml-2 rounded border border-stone-200 px-2 py-0.5" />
           </label>
           <label className="flex items-center gap-2">
-            <input type="checkbox" /> 試吃（先收$350，若當次下訂自動折抵尾款）
+            <input type="checkbox" name="tasting" defaultChecked={record.tasting} /> 試吃（先收$350，若當次下訂自動折抵尾款）
           </label>
           <div className="flex items-center gap-2">
             <input type="checkbox" /> 老闆加送：
-            <input placeholder="自訂品項名稱" className="rounded border border-stone-200 px-2 py-0.5" />
+            <input name="bossGift" defaultValue={record.bossGift} placeholder="自訂品項名稱" className="rounded border border-stone-200 px-2 py-0.5" />
           </div>
         </div>
       </div>
@@ -79,7 +92,7 @@ export default function NewContract() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="mb-1 block text-xs text-stone-500">生產院所分級</label>
-            <select className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm">
+            <select name="hospital" defaultValue={record.hospital === "園內" ? "園內生產院所（最優惠）" : record.hospital === "成大／奇美" ? "成大/奇美（次之）" : "其他院所"} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm">
               <option>園內生產院所（最優惠）</option>
               <option>成大/奇美（次之）</option>
               <option>其他院所</option>
@@ -87,7 +100,7 @@ export default function NewContract() {
           </div>
           <div>
             <label className="mb-1 block text-xs text-stone-500">員工價／特約企業價</label>
-            <select className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm">
+            <select name="priceClass" defaultValue={record.priceClass === "員工價" ? "員工價" : record.priceClass === "一般" ? "一般價" : "台積電"} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm">
               <option>一般價</option>
               <option>員工價</option>
               <option>台積電</option>
@@ -104,7 +117,7 @@ export default function NewContract() {
         ✗ 已拿掉「合約檔案上傳」功能（客戶明確表示用不到）
       </p>
 
-      <PrototypeFormActions accent="rose" submitLabel="建立合約" />
-    </div>
+      <PrototypeFormActions accent="rose" submitLabel="儲存本案合約草稿" onDraft={save} onSubmit={save} />
+    </form>
   );
 }

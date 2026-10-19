@@ -11,17 +11,15 @@ import SignStatusDashboard from "./tabs/SignStatusDashboard";
 import ContractChangeOrder from "./tabs/ContractChangeOrder";
 import ChildcareContract from "./tabs/ChildcareContract";
 
-const NOT_NOW = [
-  "入住指導單",
-  "入住當天繳費通知單",
-  "簽核流程（明確排除）",
-];
-
 export default function ContractPage() {
   return (
-    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+    <div className="page-frame">
       <RequireAccess moduleNo="12">
-      <PageHeader title="12. 合約管理" moduleNo="12" />
+      <PageHeader title="櫃台服務・合約與付款" moduleNo="12" />
+      <section className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-stone-300 bg-white p-4">
+        <div><h2 className="font-semibold">合約作業已整合進案件七階段</h2><p className="mt-1 text-sm text-stone-600">新增預約、試算、下訂、審閱、簽名、付款、變更與入住 v2 請由同一案件接續，避免重複建檔。</p></div>
+        <Link href="/cases/" className="min-h-12 rounded-lg bg-stone-800 px-4 py-3 text-sm text-white">前往案件流程</Link>
+      </section>
       <TabsFromUrl
         tabs={[
           { key: "list", label: "合約查詢與列表", content: <ContractList /> },
@@ -36,9 +34,10 @@ export default function ContractPage() {
         ]}
       />
       <div className="mt-6 rounded border border-dashed border-stone-300 p-3 text-xs text-stone-400">
-        本階段不做／明確排除：{NOT_NOW.join("、")}
+        本頁保留既有合約查詢與管理工具；入住指導單、繳費通知單的紙本列印及完成狀態已移至案件「入住前」，電子簽核流程仍不在本次靜態原型範圍。
       </div>
       </RequireAccess>
     </div>
   );
 }
+import Link from "next/link";

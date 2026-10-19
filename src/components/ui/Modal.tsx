@@ -19,18 +19,20 @@ export default function Modal({
 
   return createPortal(
     <div
-      className="animate-overlay-in fixed inset-0 z-[70] flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-start sm:overflow-y-auto sm:p-4 sm:pt-10"
-      onClick={onClose}
+      className="animate-overlay-in fixed inset-0 z-[70] flex items-end justify-center sm:items-start sm:overflow-y-auto sm:p-4 sm:pt-10"
     >
+      <button type="button" className="absolute inset-0 min-h-0 w-full bg-black/40 backdrop-blur-sm" onClick={onClose} aria-label="關閉對話框" />
       <div
-        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
         className={
-          "animate-modal-pop safe-bottom flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-white shadow-2xl sm:max-h-[85vh] sm:rounded-2xl " +
+          "animate-modal-pop safe-bottom relative flex max-h-[92vh] w-full flex-col overscroll-contain rounded-t-2xl bg-surface-raised shadow-2xl sm:max-h-[85vh] sm:rounded-2xl " +
           (wide ? "sm:max-w-4xl" : "sm:max-w-xl")
         }
       >
         <div className="flex shrink-0 items-center justify-between border-b border-stone-100 px-4 py-3.5">
-          <h2 className="truncate pr-2 text-sm font-bold text-stone-800">{title}</h2>
+          <h2 id="modal-title" className="truncate pr-2 text-sm font-bold text-stone-800">{title}</h2>
           <button
             onClick={onClose}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-stone-400 hover:bg-stone-100 active:bg-stone-200"

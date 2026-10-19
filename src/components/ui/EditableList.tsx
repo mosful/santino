@@ -21,15 +21,25 @@ export default function EditableList({
   fields,
   initialRows,
   searchPlaceholder = "輸入關鍵字查詢（支援模糊搜尋）",
+  rows: controlledRows,
+  onSave,
+  onDelete,
+  editAllowed,
 }: {
   moduleNo: string;
   fields: FieldSchema[];
   initialRows: Row[];
   searchPlaceholder?: string;
+  rows?: Row[];
+  onSave?: (row: Row) => void;
+  onDelete?: (id: number) => void;
+  editAllowed?: boolean;
 }) {
   const access = useAccess(moduleNo);
-  const canEdit = access === "edit";
+  const canEdit = editAllowed ?? access === "edit";
   const [rows, setRows] = useState<Row[]>(initialRows);
+  const activeRows = controlledRows ?? rows;
+  const [error, setError] = useState("");
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -37,23 +47,26 @@ export default function EditableList({
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
-  const filtered = q ? rows.filter((r) => rowMatchesQuery(r, q)) : rows;
+  const filtered = q ? activeRows.filter((r) => rowMatchesQuery(r, q)) : activeRows;
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
   const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   function openAdd() {
+    setError("");
     setEditing({ id: 0 } as Row);
     setDraft(Object.fromEntries(fields.map((f) => [f.key, ""])));
   }
 
   function openEdit(row: Row) {
+    setError("");
     setEditing(row);
     setDraft(Object.fromEntries(fields.map((f) => [f.key, String(row[f.key] ?? "")])));
   }
 
   function save() {
     if (!editing) return;
+    if (onSave) { try { onSave({ id: editing.id, ...draft }); setEditing(null); setError(""); } catch (cause) { setError(cause instanceof Error ? cause.message : "儲存失敗。"); } return; }
     if (editing.id === 0) {
       const newRow = { id: Date.now(), ...draft } as Row;
       setRows((rs) => [...rs, newRow]);
@@ -64,14 +77,21 @@ export default function EditableList({
   }
 
   function remove(id: number) {
+    if (onDelete) { try { onDelete(id); setConfirmDeleteId(null); setError(""); } catch (cause) { setError(cause instanceof Error ? cause.message : "刪除失敗。"); } return; }
     setRows((rs) => rs.filter((r) => r.id !== id));
     setConfirmDeleteId(null);
   }
 
   return (
     <div className="space-y-3">
+      {error && <p role="status" className="text-sm text-rose-700">{error}</p>}
       <div className="flex flex-wrap items-center gap-2">
+        <label htmlFor="editable-list-search" className="sr-only">資料關鍵字查詢</label>
         <input
+          id="editable-list-search"
+          name="query"
+          type="search"
+          autoComplete="off"
           value={q}
           onChange={(e) => {
             setQ(e.target.value);
@@ -84,7 +104,7 @@ export default function EditableList({
         {canEdit ? (
           <button
             onClick={openAdd}
-            className="ml-auto rounded-lg bg-gradient-to-r from-brand-500 to-brand-400 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-brand-200 transition-all hover:shadow-md hover:shadow-brand-300 active:scale-95"
+            className="ml-auto rounded-lg bg-gradient-to-r from-brand-500 to-brand-400 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-brand-200 transition-[transform,box-shadow] hover:shadow-md hover:shadow-brand-300 active:scale-[0.98]"
           >
             ＋ 新增
           </button>
@@ -154,11 +174,15 @@ export default function EditableList({
 
       <Modal open={!!editing} title={editing?.id === 0 ? "新增" : "編輯"} onClose={() => setEditing(null)}>
         <div className="space-y-3">
-          {fields.map((f) => (
+          {fields.map((f) => {
+            const fieldId = `editable-${editing?.id ?? 0}-${f.key}`;
+            return (
             <div key={f.key}>
-              <label className="mb-1 block text-xs text-stone-500">{f.label}</label>
+              <label htmlFor={fieldId} className="mb-1 block text-xs text-stone-500">{f.label}</label>
               {f.type === "select" ? (
                 <select
+                  id={fieldId}
+                  name={f.key}
                   value={draft[f.key] ?? ""}
                   onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
                   className="w-full rounded-lg border border-stone-200 px-2 py-1.5 text-sm"
@@ -169,6 +193,8 @@ export default function EditableList({
                 </select>
               ) : (
                 <input
+                  id={fieldId}
+                  name={f.key}
                   type={f.type === "number" ? "number" : "text"}
                   value={draft[f.key] ?? ""}
                   onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
@@ -176,7 +202,7 @@ export default function EditableList({
                 />
               )}
             </div>
-          ))}
+          );})}
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={() => setEditing(null)} className="rounded-lg bg-stone-100 px-4 py-2 text-xs">
               取消

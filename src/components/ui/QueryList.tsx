@@ -35,7 +35,12 @@ export default function QueryList<T extends { id: string | number }>({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
+        <label htmlFor="query-list-search" className="sr-only">關鍵字查詢</label>
         <input
+          id="query-list-search"
+          name="query"
+          type="search"
+          autoComplete="off"
           value={q}
           onChange={(e) => {
             setQ(e.target.value);
@@ -69,9 +74,17 @@ export default function QueryList<T extends { id: string | number }>({
               <tr
                 key={row.id}
                 onClick={() => onRowClick?.(row)}
+                onKeyDown={(event) => {
+                  if (onRowClick && (event.key === "Enter" || event.key === " ")) {
+                    event.preventDefault();
+                    onRowClick(row);
+                  }
+                }}
+                tabIndex={onRowClick ? 0 : undefined}
+                role={onRowClick ? "button" : undefined}
                 className={
                   "border-t border-stone-100 transition-colors" +
-                  (onRowClick ? " cursor-pointer hover:bg-rose-50 active:bg-rose-100" : " hover:bg-stone-50")
+                  (onRowClick ? " cursor-pointer hover:bg-brand-50 active:bg-brand-100" : " hover:bg-stone-50")
                 }
               >
                 {columns.map((c) => (

@@ -72,10 +72,14 @@ export default function CareTabs({
     return (
       <button
         key={t.key}
+        type="button"
+        role="tab"
+        aria-selected={t.key === currentKey}
+        aria-controls={`care-panel-${t.key}`}
         onClick={() => handleSelect(t)}
         title={t.hasSignature ? "含簽名步驟，切換後將鎖定僅能操作本房間" : undefined}
         className={
-          "flex shrink-0 items-center gap-1 rounded-full px-3.5 py-1.5 text-sm transition-all sm:px-4 " +
+          "flex shrink-0 items-center gap-1 rounded-lg px-3.5 py-1.5 text-sm transition-[color,background-color,box-shadow] sm:px-4 " +
           (t.key === currentKey
             ? "font-bold " + ACCENT_ACTIVE[accent]
             : t.core
@@ -93,7 +97,7 @@ export default function CareTabs({
     <div>
       <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-3 border-b border-stone-100 bg-white px-4 pb-2.5 pt-4">
         {/* 核心功能排左邊、次要功能排右邊並以分隔線圈成一組，不穿插 */}
-        <div className={"tablet-care-tabs scroll-fade flex flex-wrap gap-1 overflow-x-auto rounded-2xl p-1 md:max-lg:flex-nowrap md:max-lg:pb-2 " + ACCENT_BAR[accent]}>
+        <div role="tablist" aria-label="照護作業表單" className={"tablet-care-tabs scroll-fade flex flex-wrap gap-1 overflow-x-auto rounded-xl p-1 md:max-lg:flex-nowrap md:max-lg:pb-2 " + ACCENT_BAR[accent]}>
           {coreTabs.map(tabButton)}
           {secondaryTabs.length > 0 && (
             <div className={"tablet-care-secondary ml-1 flex flex-wrap gap-1 border-l pl-2.5 md:max-lg:flex-nowrap " + ACCENT_DIVIDER[accent]}>
@@ -106,7 +110,7 @@ export default function CareTabs({
       {tabs
         .filter((t) => visibleKeys.includes(t.key))
         .map((t) => (
-          <div key={t.key} className={t.key === currentKey ? "animate-fade-in" : "hidden"}>
+          <div id={`care-panel-${t.key}`} role="tabpanel" key={t.key} className={t.key === currentKey ? "animate-fade-in" : "hidden"}>
             {t.content}
           </div>
         ))}

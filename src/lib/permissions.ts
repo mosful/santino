@@ -2,12 +2,16 @@ export type Role =
   | "櫃台"
   | "阿長 婉真"
   | "衛教師 琳雅"
+  | "護理師"
+  | "維運"
   | "系統管理員";
 
 export const ROLES: Role[] = [
   "櫃台",
   "阿長 婉真",
   "衛教師 琳雅",
+  "護理師",
+  "維運",
   "系統管理員",
 ];
 
@@ -17,6 +21,8 @@ export const ROLE_PROFILE: Record<Role, { name: string; empNo: string }> = {
   櫃台: { name: "櫃台人員", empNo: "F1001" },
   "阿長 婉真": { name: "婉真", empNo: "N1001" },
   "衛教師 琳雅": { name: "琳雅", empNo: "E3005" },
+  護理師: { name: "示範護理師", empNo: "N1002" },
+  維運: { name: "示範維運人員", empNo: "T1001" },
 };
 
 export type AccessLevel = "edit" | "view" | "none";
@@ -26,7 +32,7 @@ export type AccessLevel = "edit" | "view" | "none";
 const MATRIX: Record<string, Partial<Record<Role, AccessLevel>>> = {
   "1": { 櫃台: "edit", "阿長 婉真": "view", "衛教師 琳雅": "view" },
   "2": { 櫃台: "none", "阿長 婉真": "edit", "衛教師 琳雅": "edit" },
-  "3": { 櫃台: "view", "阿長 婉真": "edit", "衛教師 琳雅": "view" },
+  "3": { 櫃台: "none", "阿長 婉真": "edit", "衛教師 琳雅": "view" },
   "4": { 櫃台: "edit", "阿長 婉真": "view", "衛教師 琳雅": "none" },
   "5": { 櫃台: "edit", "阿長 婉真": "view", "衛教師 琳雅": "view" },
   "6": { 櫃台: "none", "阿長 婉真": "view", "衛教師 琳雅": "none" },
@@ -37,12 +43,22 @@ const MATRIX: Record<string, Partial<Record<Role, AccessLevel>>> = {
   "12": { 櫃台: "edit", "阿長 婉真": "view", "衛教師 琳雅": "view" },
   "13": { 櫃台: "edit", "阿長 婉真": "none", "衛教師 琳雅": "view" },
   "14": { 櫃台: "edit", "阿長 婉真": "none", "衛教師 琳雅": "none" },
-  "15": { 櫃台: "view", "阿長 婉真": "view", "衛教師 琳雅": "none" },
+  "15": { 櫃台: "none", "阿長 婉真": "view", "衛教師 琳雅": "none" },
   // 17 寶寶視訊：櫃台負責設定與發卡，阿長可查看狀態，衛教師不涉及
   "17": { 櫃台: "edit", "阿長 婉真": "view", "衛教師 琳雅": "none" },
 };
 
 export function getAccess(role: Role, moduleNo: string): AccessLevel {
   if (role === "系統管理員") return "edit";
+  if (role === "護理師") return ["2", "3", "17"].includes(moduleNo) ? "edit" : ["1", "4", "6"].includes(moduleNo) ? "view" : "none";
+  if (role === "維運") return ["15", "17"].includes(moduleNo) ? "edit" : "none";
   return MATRIX[moduleNo]?.[role] ?? "none";
+}
+
+export type AdminSettingGroup = "system" | "operations";
+
+/** V24 將主檔／人員／表單欄位等系統設定鎖給管理員；營運規則可由護理長維護。 */
+export function canEditAdminSetting(role: Role, group: AdminSettingGroup) {
+  if (role === "系統管理員") return true;
+  return group === "operations" && role === "阿長 婉真";
 }

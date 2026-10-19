@@ -124,7 +124,7 @@ function PermissionTab() {
 
 export default function HrPage() {
   return (
-    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+    <div className="page-frame">
       <RequireAccess moduleNo="10">
       <PageHeader title="10. 人事考勤" moduleNo="10" />
       <TabsFromUrl

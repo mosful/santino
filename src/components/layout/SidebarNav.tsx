@@ -26,7 +26,7 @@ export default function SidebarNav({
 
   return (
     <nav className="flex flex-col gap-0.5 px-2 py-2">
-      {MODULES.filter((m) => m.phase <= enabledPhase && getAccess(role, m.no) !== "none").map((m) => {
+      {MODULES.filter((m) => m.showInSidebar !== false && m.phase <= enabledPhase && getAccess(role, m.no) !== "none").map((m) => {
         const Icon = MODULE_ICONS[m.no];
         // 以路徑分段為界判斷，避免 /babycam 讓 /baby 也被判定為選取中；
         // 同時相容 trailingSlash:true 產生的 "/baby/" 形式。

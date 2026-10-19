@@ -8,11 +8,12 @@ import {
   updateKpiRule,
   useKpiSettings,
 } from "@/lib/kpiRuleStore";
-import { useAccess } from "@/lib/roleStore";
+import { canEditAdminSetting } from "@/lib/permissions";
+import { useCurrentRole } from "@/lib/roleStore";
 
 export default function KpiRuleSettings() {
   const settings = useKpiSettings();
-  const canEdit = useAccess("15") === "edit";
+  const canEdit = canEditAdminSetting(useCurrentRole(), "operations");
 
   return (
     <div className="space-y-4 text-sm">

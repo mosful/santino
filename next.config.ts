@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
   basePath: BASE_PATH,
   assetPrefix: BASE_PATH,
   trailingSlash: true,
+  // 僅公開網站根路徑，讓 QR 與標籤網址也使用相同的建置值。
+  env: { NEXT_PUBLIC_BASE_PATH: BASE_PATH },
 };
 
 export default nextConfig;

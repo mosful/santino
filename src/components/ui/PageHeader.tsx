@@ -12,7 +12,7 @@ export default function PageHeader({
 }) {
   const Icon = moduleNo ? MODULE_ICONS[moduleNo] : undefined;
   return (
-    <div className="tablet-page-header animate-fade-in-up mb-5 flex items-center justify-between gap-3 border-b border-brand-900/10 pb-3 md:max-lg:flex-col md:max-lg:items-stretch">
+    <div className="tablet-page-header animate-fade-in-up mb-6 flex items-center justify-between gap-4 border-b border-brand-900/10 pb-4 md:max-lg:flex-col md:max-lg:items-stretch">
       <title>{pageTitle(title)}</title>
       <div className="flex items-center gap-3">
         {Icon ? (
@@ -22,7 +22,7 @@ export default function PageHeader({
         ) : (
           <span className="h-6 w-1.5 shrink-0 rounded-full bg-gradient-to-b from-brand-400 to-accent-400" />
         )}
-        <h1 className="text-lg font-bold text-stone-800">{title}</h1>
+        <h1 className="text-xl font-bold tracking-[-0.02em] text-stone-800 sm:text-2xl">{title}</h1>
       </div>
       {action && <div className="tablet-page-header-action contents md:max-lg:block md:max-lg:w-full">{action}</div>}
     </div>

@@ -13,6 +13,8 @@ import SystemSettings from "./tabs/SystemSettings";
 import PhraseLibrarySettings from "./tabs/PhraseLibrarySettings";
 import AssessmentFormSettings from "./tabs/AssessmentFormSettings";
 import KpiRuleSettings from "./tabs/KpiRuleSettings";
+import { canEditAdminSetting } from "@/lib/permissions";
+import { useCurrentRole } from "@/lib/roleStore";
 
 const simpleFields: FieldSchema[] = [
   { key: "name", label: "名稱" },
@@ -90,18 +92,20 @@ const announcementFields: FieldSchema[] = [
   { key: "author", label: "發佈單位" },
 ];
 
-function BoardSettingsTab() {
+function BoardSettingsTab({ canEdit }: { canEdit: boolean }) {
   return (
     <div className="space-y-2">
-      <p className="text-xs text-stone-400">此處維護的公告會同步顯示於「1.中控中心＞公佈欄」。</p>
-      <EditableList moduleNo="15" fields={announcementFields} initialRows={ANNOUNCEMENTS} searchPlaceholder="公告標題" />
+      <p className="text-xs text-stone-400">此處維護的公告會同步顯示於「1.櫃台服務＞公佈欄」。</p>
+      <EditableList moduleNo="15" editAllowed={canEdit} fields={announcementFields} initialRows={ANNOUNCEMENTS} searchPlaceholder="公告標題" />
     </div>
   );
 }
 
 export default function AdminPage() {
+  const role = useCurrentRole();
+  const canEditOperations = canEditAdminSetting(role, "operations");
   return (
-    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+    <div className="page-frame">
       <RequireAccess moduleNo="15">
       <PageHeader title="15. 後台管理" moduleNo="15" />
       <TabsFromUrl
@@ -113,7 +117,7 @@ export default function AdminPage() {
           { key: "accounting-report", label: "帳務報表查詢", content: <ReportPicker reports={ACCOUNTING_REPORTS} /> },
           { key: "supply", label: "備品庫存管理", content: <SimpleListTab rows={SUPPLY_ROWS} placeholder="備品名稱" /> },
           { key: "room-data", label: "房間資料管理", content: <RoomDataTab /> },
-          { key: "board", label: "公佈欄設定", content: <BoardSettingsTab /> },
+          { key: "board", label: "公佈欄設定", content: <BoardSettingsTab canEdit={canEditOperations} /> },
           { key: "other", label: "產後其他設定", content: <SimpleListTab rows={OTHER_SETTINGS_ROWS} placeholder="設定項目" /> },
           { key: "assessment", label: "入住評估項目設定", content: <AssessmentFormSettings /> },
           { key: "kpi-rules", label: "評鑑統計規則設定", content: <KpiRuleSettings /> },

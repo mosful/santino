@@ -6,11 +6,18 @@ import QueryList, { type Column } from "@/components/ui/QueryList";
 import Modal from "@/components/ui/Modal";
 import Badge from "@/components/ui/Badge";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
-import DemoActionButton from "@/components/ui/DemoActionButton";
-import { BINDINGS, CAMERA_BY_ID, STATUS_BY_KEY, type Binding } from "@/lib/mock/babycam";
+import Link from "next/link";
+import { useDomainStore } from "@/lib/demo/domainStore";
+import { babycamActions, canBabycamSection } from "@/lib/babycam/actions";
+import { type Binding } from "@/lib/mock/babycam";
+import { useLegacyBabycam } from "@/lib/babycam/legacyAdapter";
 
 type Row = Binding & { id: string };
 
+export default function CamBinding() {
+const { data } = useDomainStore();
+const [message, setMessage] = useState("");
+const { BINDINGS, CAMERA_BY_ID, STATUS_BY_KEY } = useLegacyBabycam();
 const ROWS: Row[] = BINDINGS.map((b) => ({ ...b, id: b.id }));
 
 const COLUMNS: Column<Row>[] = [
@@ -58,11 +65,11 @@ const COLUMNS: Column<Row>[] = [
   },
 ];
 
-export default function CamBinding() {
   const [editing, setEditing] = useState<Row | null>(null);
 
   return (
     <div className="space-y-4">
+      {message && <p role="status" className="text-sm text-stone-600">{message}</p>}
       <PlaceholderNotice text="設定監視器編號與房號的對應關係，以及該房號對應的媽媽資訊。雙胞胎可在同一房綁定多支監視器，媽媽端以分頁切換觀看。" />
 
       <QueryList
@@ -103,12 +110,12 @@ export default function CamBinding() {
                           {cam?.codec} · {cam?.resolution} · {cam?.addr}
                         </span>
                       </div>
-                      <DemoActionButton
-                        feedback="靜態畫面稿：實際會解除此支監視器與房號的綁定"
+                      <button type="button" disabled={!canBabycamSection(data, "02")}
+                        onClick={() => { try { const baby = data.bindings.find((binding) => binding.id === editing.id)?.babies.find((item) => item.cameraId === id); if (!baby) throw new Error("找不到目前指派。"); babycamActions.unassign(editing.id, baby.babyId); setEditing(null); setMessage("已解除指派，照護紀錄保留，原識別標籤失效。"); } catch (error) { setMessage(error instanceof Error ? error.message : "解除失敗。"); } }}
                         className="rounded-md border border-stone-200 px-2 py-1 text-xs text-stone-500 hover:bg-stone-50"
                       >
                         解除綁定
-                      </DemoActionButton>
+                      </button>
                     </div>
                   );
                 })}
@@ -116,7 +123,7 @@ export default function CamBinding() {
             </div>
 
             <div className="rounded-lg bg-stone-50 p-3 text-xs leading-relaxed text-stone-500">
-              重複綁定檢查：同一支監視器不可綁定到兩個房號；退住或換房時，系統會自動解除綁定並作廢該房所有 QRCode。
+              同一監視器不可由不同寶寶共用；解除後保留照護紀錄。退房結束觀看授權，換房則重發連結，避免舊房連結繼續使用。
             </div>
 
             <div className="flex justify-end gap-2">
@@ -126,12 +133,12 @@ export default function CamBinding() {
               >
                 取消
               </button>
-              <DemoActionButton
-                feedback="靜態畫面稿：實際會寫入綁定設定並同步至 DMZ"
+              <Link
+                href={`/babycam/workspace/?binding=${encodeURIComponent(editing.id)}&section=assign`}
                 className="rounded-lg bg-gradient-to-r from-brand-500 to-brand-400 px-4 py-2 text-sm font-semibold text-white"
               >
-                儲存
-              </DemoActionButton>
+                管理本案指派
+              </Link>
             </div>
           </div>
         )}

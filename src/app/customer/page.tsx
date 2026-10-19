@@ -9,7 +9,9 @@ import QueryList, { type Column } from "@/components/ui/QueryList";
 import Modal from "@/components/ui/Modal";
 import Tabs from "@/components/ui/Tabs";
 import Badge from "@/components/ui/Badge";
-import { CUSTOMERS, type Customer } from "@/lib/mock/customer";
+import { type Customer } from "@/lib/mock/customer";
+import { useCustomerRows } from "@/lib/domain/legacySelectors";
+import { caseActions, domainStore } from "@/lib/demo/domainStore";
 import DemoActionButton from "@/components/ui/DemoActionButton";
 
 const columns: Column<Customer>[] = [
@@ -176,7 +178,8 @@ export default function CustomerPage() {
   const access = useAccess("5");
   const canEdit = access === "edit";
 
-  const [customers, setCustomers] = useState<Customer[]>(CUSTOMERS);
+  const customers = useCustomerRows();
+  const [feedback, setFeedback] = useState("");
   const [selected, setSelected] = useState<Customer | null>(null);
   const [editing, setEditing] = useState(false);
   const [isNew, setIsNew] = useState(false);
@@ -215,21 +218,19 @@ export default function CustomerPage() {
 
   function save() {
     if (!draft) return;
-    if (isNew) {
-      setCustomers((cs) => [...cs, draft]);
-    } else {
-      setCustomers((cs) => cs.map((c) => (c.id === draft.id ? draft : c)));
-    }
-    setSelected(draft);
-    setEditing(false);
-    setIsNew(false);
+    try {
+      const id = isNew ? caseActions.create(draft.name, draft.phone) : customers.find((item) => item.id === draft.id)?.caseId;
+      if (!id) throw new Error("找不到對應案件。");
+      caseActions.update(id, { name: draft.name, phone: draft.phone, dueDate: draft.dueDate, owner: draft.mainStaff, customerDetails: { level: draft.level, parity: draft.parity, birthday: draft.birthday, referrer: draft.referrer, mainNurse: draft.mainNurse, lineBound: draft.lineBound, family: draft.family } });
+      const record = domainStore.get().cases.find((item) => item.id === id)!;
+      setSelected({ ...draft, id: record.legacyId }); setEditing(false); setIsNew(false); setFeedback("客戶資料已與案件、照護及視訊同步。");
+    } catch (error) { setFeedback(error instanceof Error ? error.message : "儲存失敗。"); }
   }
 
   function remove() {
     if (!selected) return;
-    setCustomers((cs) => cs.filter((c) => c.id !== selected.id));
-    setConfirmDelete(false);
-    closeModal();
+    try { const record = customers.find((item) => item.id === selected.id); if (!record) return; caseActions.removeDraft(record.caseId); setConfirmDelete(false); closeModal(); setFeedback("已移除尚未下訂的草稿。"); }
+    catch (error) { setFeedback(error instanceof Error ? error.message : "移除失敗。"); setConfirmDelete(false); }
   }
 
   function closeModal() {
@@ -241,10 +242,10 @@ export default function CustomerPage() {
   }
 
   return (
-    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+    <div className="page-frame">
       <RequireAccess moduleNo="5">
       <PageHeader
-        title="5. 客戶資料"
+        title="櫃台服務・客戶資料"
         moduleNo="5"
         action={
           <div className="flex gap-2 text-xs">
@@ -260,6 +261,7 @@ export default function CustomerPage() {
         }
       />
       <QueryList columns={columns} rows={customers} onRowClick={openView} />
+      {feedback && <p role="status" className="my-3 text-sm text-stone-600">{feedback}</p>}
       <Modal
         open={!!selected}
         title={isNew ? "新增客戶" : `客戶基本資料 — ${selected?.name ?? ""}`}

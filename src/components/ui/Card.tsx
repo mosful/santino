@@ -8,8 +8,7 @@ export default function Card({
   children: React.ReactNode;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-100">
-      <span className="absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 bg-gradient-to-r from-brand-400 to-accent-400 transition-transform duration-300 group-hover:scale-x-100" />
+    <section className="group relative overflow-hidden rounded-2xl border border-border-subtle bg-surface-raised p-4 shadow-[0_10px_28px_rgba(var(--shadow-color),0.07)] transition-[transform,box-shadow,border-color] duration-200 hover:border-brand-200 hover:shadow-[0_14px_34px_rgba(var(--shadow-color),0.11)]">
       {(title || action) && (
         <div className="mb-3 flex items-center justify-between gap-2">
           {title && <h3 className="text-sm font-semibold text-stone-700">{title}</h3>}
@@ -17,6 +16,6 @@ export default function Card({
         </div>
       )}
       {children}
-    </div>
+    </section>
   );
 }

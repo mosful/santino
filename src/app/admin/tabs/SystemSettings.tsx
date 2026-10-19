@@ -1,12 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import Switch from "@/components/ui/Switch";
 import { useSameRoomLock, setSameRoomLock } from "@/lib/windowLockStore";
+import { careActions, useCareStore } from "@/lib/care/store";
+import { canEditAdminSetting } from "@/lib/permissions";
+import { useCurrentRole } from "@/lib/roleStore";
 
 export default function SystemSettings() {
   const multiWindowLock = useSameRoomLock();
-  const [reboundDays, setReboundDays] = useState(3);
+  const { data: care } = useCareStore();
+  const role = useCurrentRole();
+  const canEditSystem = canEditAdminSetting(role, "system");
+  const canEditOperations = canEditAdminSetting(role, "operations");
 
   return (
     <div className="space-y-5 text-sm">
@@ -15,13 +20,14 @@ export default function SystemSettings() {
           <div className="text-xs font-medium text-rose-700">
             多視窗鎖房範圍開關（系統開發總則第9條）
           </div>
-          <Switch checked={multiWindowLock} onChange={setSameRoomLock} />
+          <Switch checked={multiWindowLock} onChange={setSameRoomLock} disabled={!canEditSystem} />
         </div>
         <p className="text-xs text-rose-600">
           {multiWindowLock
             ? "已開啟：多視窗僅限「同一房間內」可多開，不可同時操作不同房間的表單。"
             : "已關閉（預設）：多視窗不限房間，可同時開啟不同房間的表單／分頁，僅「簽名」步驟強制鎖定單一房間。"}
         </p>
+        {!canEditSystem && <p className="mt-2 text-xs font-medium text-rose-700">此為系統層級設定，僅系統管理員可修改。</p>}
       </div>
 
       <div className="rounded border border-stone-200 p-3">
@@ -30,15 +36,17 @@ export default function SystemSettings() {
           退房後
           <input
             type="number"
-            value={reboundDays}
-            onChange={(e) => setReboundDays(Number(e.target.value))}
-            className="w-16 rounded border border-stone-200 px-2 py-1"
+            value={care.backfillDays}
+            onChange={(e) => careActions.backfillDays(Number(e.target.value))}
+            disabled={!canEditOperations}
+            className="w-16 rounded border border-stone-200 px-2 py-1 disabled:bg-stone-100"
           />
           天內開放回補資料
         </div>
         <p className="mt-1 text-xs text-amber-600">
           ⚠ 客戶尚未定案此天數（阿長提議「3天」但本人加了問號），此為可調整參數示意，正式上線前需與客戶再確認。
         </p>
+        {!canEditOperations && <p className="mt-1 text-xs font-medium text-stone-500">僅護理長及系統管理員可調整補登窗口。</p>}
         <p className="mt-1 text-xs text-stone-400">
           修改紀錄需正確歸屬實際登入員工，不可用共用帳號代填。
         </p>

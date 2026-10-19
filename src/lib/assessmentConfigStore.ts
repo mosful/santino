@@ -1,6 +1,8 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { canEditAdminSetting } from "./permissions";
+import { getCurrentRole } from "./roleStore";
 
 export type AssessmentFieldType = "text" | "textarea" | "single" | "multiple" | "select";
 
@@ -47,6 +49,7 @@ function getSnapshot() {
 }
 
 function writeFields(next: AssessmentField[]) {
+  if (!canEditAdminSetting(getCurrentRole(), "system")) throw new Error("僅系統管理員可修改表單欄位設定。");
   cache = next;
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
@@ -57,9 +60,12 @@ function writeFields(next: AssessmentField[]) {
 }
 
 function subscribe(listener: () => void) {
+  if (!listeners.size) window.addEventListener("storage", onStorage);
   listeners.add(listener);
-  return () => listeners.delete(listener);
+  return () => { listeners.delete(listener); if (!listeners.size) window.removeEventListener("storage", onStorage); };
 }
+function onStorage(event: StorageEvent) { if (event.key === STORAGE_KEY || event.key === null) { cache = null; listeners.forEach((listener) => listener()); } }
+export const getAssessmentFields = getSnapshot;
 
 export function addAssessmentField(input: Omit<AssessmentField, "id">) {
   writeFields([...getSnapshot(), { ...input, id: `assessment-${Date.now()}` }]);

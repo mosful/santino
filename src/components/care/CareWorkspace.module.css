@@ -1,0 +1,36 @@
+.workspace { color: var(--foreground); min-width: 0; }
+.workspace button, .workspace input, .workspace select { min-height: 48px; }
+.workspace input:not([type="checkbox"]):not([type="radio"]), .workspace select { min-height: 50px; }
+.workspace input[type="checkbox"] { min-height: 20px; width: 20px; height: 20px; flex-shrink: 0; }
+.workspace textarea { min-height: 112px; }
+.workspace :is(input, textarea)::placeholder { color: var(--text-muted); opacity: 1; }
+.workspace input:is([type="number"], [type="date"], [type="time"]) { font-variant-numeric: tabular-nums; }
+.workspace :is(button, input, select, textarea, a):focus-visible { outline: 3px solid color-mix(in srgb, var(--focus-ring) 72%, transparent); outline-offset: 3px; }
+.workspace input, .workspace textarea { caret-color: var(--brand); }
+.workspace ::selection { background: var(--brand-200); color: var(--brand-900); }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; align-items: start; }
+.sidebar { position: sticky; top: 24px; }
+.form fieldset:disabled { opacity: .75; }
+.tray { position: sticky; bottom: 0; z-index: 20; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; background: color-mix(in srgb, var(--surface-raised) 94%, transparent); border-top: 1px solid var(--border-subtle); padding: 12px; margin-top: 24px; scrollbar-color: var(--brand-300) var(--surface-muted); scrollbar-width: thin; backdrop-filter: blur(12px); }
+.tray > div { flex-wrap: nowrap; width: max-content; min-width: 100%; }
+.tray button { flex: 0 0 auto; max-width: min(320px, 80vw); }
+.subjectCard { border-color: var(--border-subtle); background: var(--surface-raised); }
+.subjectCard[data-status="入住"] { border-color: #bdd8c6; background: #f0f8f3; }
+.subjectCard[data-status="親子同室"] { border-color: #edc6d2; background: #fff2f5; }
+.subjectCard[data-status="托嬰"] { border-style: dashed; border-color: #b9a3d8; background: #f7f2fc; }
+.subjectCard[data-status="隔離"] { border-color: #e7cf9d; background: #fff8eb; }
+.status { padding: 4px 8px; border-radius: 6px; background: color-mix(in srgb, var(--surface-raised) 82%, transparent); color: var(--foreground); }
+.signedImage { max-width: 280px; max-height: 110px; object-fit: contain; }
+.photo { max-height: 320px; max-width: 100%; object-fit: contain; }
+.hiddenSection { display: none; }
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .sidebar { position: static; }
+}
+@media print {
+  .workspace [data-no-print] { display: none !important; }
+  .layout { display: block; }
+  .workspace textarea { min-height: 80px; }
+  .form { break-inside: auto; }
+  .hiddenSection { display: block; margin-top: 24px; }
+}

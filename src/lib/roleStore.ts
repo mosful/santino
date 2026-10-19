@@ -28,9 +28,11 @@ function getServerSnapshot(): Role {
 }
 
 function subscribe(listener: () => void) {
+  if (!listeners.size) window.addEventListener("storage", onStorage);
   listeners.add(listener);
-  return () => listeners.delete(listener);
+  return () => { listeners.delete(listener); if (!listeners.size) window.removeEventListener("storage", onStorage); };
 }
+function onStorage(event: StorageEvent) { if (event.key === STORAGE_KEY || event.key === null) { cache = null; listeners.forEach((listener) => listener()); window.dispatchEvent(new Event("santino-role-changed")); } }
 
 export function setCurrentRole(role: Role) {
   cache = role;
@@ -40,12 +42,16 @@ export function setCurrentRole(role: Role) {
     // localStorage 不可用時安靜忽略
   }
   listeners.forEach((l) => l());
+  window.dispatchEvent(new Event("santino-role-changed"));
 }
 
 /** 目前模擬登入身分（靜態稿示意用，無真實登入系統） */
 export function useCurrentRole(): Role {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
+
+/** 共用資料操作也讀取目前角色，避免只靠按鈕隱藏限制操作。 */
+export function getCurrentRole(): Role { return getSnapshot(); }
 
 /** 目前身分對指定模組的存取層級：edit／view／none */
 export function useAccess(moduleNo: string): AccessLevel {

@@ -20,13 +20,17 @@ export default function Tabs({
 
   return (
     <div>
-      <div className="tablet-tabs scroll-fade flex flex-wrap gap-1 overflow-x-auto rounded-full bg-stone-100/70 p-1 md:max-lg:flex-nowrap md:max-lg:rounded-xl md:max-lg:pb-2">
+      <div role="tablist" aria-label="內容分頁" className="tablet-tabs scroll-fade flex flex-wrap gap-1 overflow-x-auto rounded-xl border border-border-subtle bg-surface-muted p-1 md:max-lg:flex-nowrap md:max-lg:pb-2">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setActive(t.key)}
+            type="button"
+            role="tab"
+            aria-selected={t.key === active}
+            aria-controls={`tab-panel-${t.key}`}
             className={
-              "shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-all sm:px-4 " +
+              "shrink-0 rounded-lg px-3.5 py-1.5 text-sm font-medium transition-[color,background-color,box-shadow] sm:px-4 " +
               (t.key === active
                 ? "bg-gradient-to-r from-brand-500 to-brand-400 text-white shadow-sm shadow-brand-200"
                 : "text-stone-500 hover:bg-white hover:text-stone-800")
@@ -36,7 +40,7 @@ export default function Tabs({
           </button>
         ))}
       </div>
-      <div key={current?.key} className="animate-fade-in pt-4">
+      <div id={`tab-panel-${current?.key}`} role="tabpanel" key={current?.key} className="animate-fade-in pt-5">
         {current?.content}
       </div>
     </div>

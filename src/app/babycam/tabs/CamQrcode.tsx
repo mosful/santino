@@ -4,13 +4,20 @@ import { useState } from "react";
 import Badge from "@/components/ui/Badge";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
 import DemoActionButton from "@/components/ui/DemoActionButton";
-import { BINDINGS, VIEW_URL } from "@/lib/mock/babycam";
+import { useLegacyBabycam } from "@/lib/babycam/legacyAdapter";
+import { useDomainStore } from "@/lib/demo/domainStore";
+import { babycamActions } from "@/lib/babycam/actions";
+import { TicketQr } from "@/components/babycam/BabycamWorkspace";
 
 export default function CamQrcode() {
+  const { BINDINGS } = useLegacyBabycam();
+  const { data } = useDomainStore();
+  const [feedback, setFeedback] = useState("");
   const [roomIdx, setRoomIdx] = useState(0);
-  const target = BINDINGS[roomIdx];
+  const target = BINDINGS[roomIdx] ?? BINDINGS[0];
 
   if (!target) return null;
+  const binding = data.bindings.find((item) => item.id === target.id)!;
 
   return (
     <div className="space-y-4">
@@ -31,18 +38,20 @@ export default function CamQrcode() {
         </select>
 
         <div className="ml-auto flex gap-2">
-          <DemoActionButton
-            feedback="靜態畫面稿：實際會重新產生 Token 並作廢舊的 QRCode"
+          <button
+            type="button"
+            onClick={() => { try { babycamActions.reissue(target.id); setFeedback("已重發，舊 QRCode 失效。"); } catch (error) { setFeedback(error instanceof Error ? error.message : "重發失敗。"); } }}
             className="rounded-lg border border-stone-200 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-50"
           >
             重新產生
-          </DemoActionButton>
-          <DemoActionButton
-            feedback="靜態畫面稿：實際會將此 Token 加入作廢清單並同步至 DMZ"
+          </button>
+          <button
+            type="button"
+            onClick={() => { try { babycamActions.revoke(target.id); setFeedback("已作廢觀看授權，入住及照護資料仍保留。"); } catch (error) { setFeedback(error instanceof Error ? error.message : "作廢失敗。"); } }}
             className="rounded-lg border border-rose-200 px-3 py-1.5 text-sm text-rose-600 hover:bg-rose-50"
           >
             作廢
-          </DemoActionButton>
+          </button>
           <DemoActionButton
             action="print"
             feedback="已送出列印（靜態畫面稿）"
@@ -52,6 +61,7 @@ export default function CamQrcode() {
           </DemoActionButton>
         </div>
       </div>
+      {feedback && <p role="status" className="text-xs text-stone-600">{feedback}</p>}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <InfoCard
@@ -60,7 +70,7 @@ export default function CamQrcode() {
           badgeColor="green"
           note="可觀看即時影像（約 1 秒更新）"
           motherName={target.motherName}
-          url={VIEW_URL.mama}
+          url={`/view/mama/?ticket=${encodeURIComponent(binding.internalTicket)}`}
           code={target.mamaCode}
           validFrom={target.validFrom}
           validTo={target.validTo}
@@ -72,7 +82,7 @@ export default function CamQrcode() {
           badgeColor="blue"
           note="僅顯示截圖，限開放時段與有效期限內"
           motherName={target.motherName}
-          url={VIEW_URL.family}
+          url={`/view/family/?ticket=${encodeURIComponent(binding.familyTicket)}`}
           code={target.familyCode}
           validFrom={target.validFrom}
           validTo={target.validTo}
@@ -142,58 +152,8 @@ function InfoCard({
           <p>觀看寶寶影像 QRcode 掃描</p>
           <p className="mt-1 text-xs text-stone-400">{extra}</p>
         </div>
-        <FakeQrCode seed={code} />
+        <TicketQr href={url} size={96} />
       </div>
     </div>
-  );
-}
-
-/**
- * 示意用 QRCode：專案未安裝 QRCode 套件，這裡用種子決定性地畫出外觀相近的圖樣。
- * 僅供版面確認，無法實際掃描。
- */
-function FakeQrCode({ seed }: { seed: string }) {
-  const size = 25;
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-
-  const isFinder = (x: number, y: number) => {
-    const inBox = (ox: number, oy: number) =>
-      x >= ox && x < ox + 7 && y >= oy && y < oy + 7;
-    return inBox(0, 0) || inBox(size - 7, 0) || inBox(0, size - 7);
-  };
-  const finderOn = (x: number, y: number) => {
-    const lx = x < 7 ? x : x - (size - 7);
-    const ly = y < 7 ? y : y - (size - 7);
-    const edge = lx === 0 || lx === 6 || ly === 0 || ly === 6;
-    const core = lx >= 2 && lx <= 4 && ly >= 2 && ly <= 4;
-    return edge || core;
-  };
-
-  const cells: React.ReactNode[] = [];
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      let on: boolean;
-      if (isFinder(x, y)) {
-        on = finderOn(x, y);
-      } else {
-        h = (h * 1103515245 + 12345) >>> 0;
-        on = ((h >>> 16) & 1) === 1;
-      }
-      if (on) cells.push(<rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" />);
-    }
-  }
-
-  return (
-    <svg
-      viewBox={`-1 -1 ${size + 2} ${size + 2}`}
-      className="h-24 w-24 shrink-0"
-      fill="#1c1917"
-      role="img"
-      aria-label="示意用 QRCode（靜態畫面稿，無法掃描）"
-    >
-      <rect x="-1" y="-1" width={size + 2} height={size + 2} fill="#fff" />
-      {cells}
-    </svg>
   );
 }

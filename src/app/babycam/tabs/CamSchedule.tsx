@@ -6,34 +6,31 @@ import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Switch from "@/components/ui/Switch";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
-import DemoActionButton from "@/components/ui/DemoActionButton";
 import CamPreview from "@/components/babycam/CamPreview";
-import { BINDINGS, CAM_STATUSES, STATUS_BY_KEY, CAMERA_BY_ID } from "@/lib/mock/babycam";
+import { useLegacyBabycam } from "@/lib/babycam/legacyAdapter";
+import { babycamActions } from "@/lib/babycam/actions";
+import { domainStore } from "@/lib/demo/domainStore";
 
 export default function CamSchedule() {
+  const { BINDINGS, CAM_STATUSES, STATUS_BY_KEY, CAMERA_BY_ID } = useLegacyBabycam();
   const [roomIdx, setRoomIdx] = useState(0);
   const target = BINDINGS[roomIdx];
-  const [statusKey, setStatusKey] = useState(target?.statusKey ?? "normal");
-  const [openFrom, setOpenFrom] = useState(target?.openFrom ?? "09:00");
-  const [openTo, setOpenTo] = useState(target?.openTo ?? "21:00");
-  const [familyEnabled, setFamilyEnabled] = useState(true);
-
-  const status = STATUS_BY_KEY[statusKey];
-  const overnight = openTo < openFrom;
-
-  function switchRoom(idx: number) {
-    setRoomIdx(idx);
-    const b = BINDINGS[idx];
-    setStatusKey(b.statusKey);
-    setOpenFrom(b.openFrom);
-    setOpenTo(b.openTo);
-  }
-
+  const source = target && domainStore.get().bindings.find((binding) => binding.id === target.id);
+  const [draft, setDraft] = useState<{ id: string; statusKey: string; openFrom: string; openTo: string; familyEnabled: boolean } | null>(null);
+  const current = draft?.id === target?.id ? draft : { id: target?.id ?? "", statusKey: target?.statusKey ?? "normal", openFrom: source?.internalWindow.start ?? "10:00", openTo: source?.internalWindow.end ?? "22:00", familyEnabled: source?.familyEnabled ?? false };
+  const { statusKey, openFrom, openTo, familyEnabled } = current;
+  const setStatusKey = (value: string) => setDraft({ ...current, statusKey: value });
+  const setOpenFrom = (value: string) => setDraft({ ...current, openFrom: value });
+  const setOpenTo = (value: string) => setDraft({ ...current, openTo: value });
+  const setFamilyEnabled = (value: boolean) => setDraft({ ...current, familyEnabled: value });
+  const [feedback, setFeedback] = useState("");
+  const status = STATUS_BY_KEY[statusKey]; const overnight = openTo < openFrom;
+  function switchRoom(idx: number) { setRoomIdx(idx); setDraft(null); setFeedback(""); }
   if (!target) return null;
 
   return (
     <div className="space-y-4">
-      <PlaceholderNotice text="設定監視器開放時段、對外有效期限與目前狀態。除「正常顯示」外，其餘狀態一律自動遮蔽畫面；伺服器端每次請求都會重新檢查這三項條件，不信任前端。" />
+      <PlaceholderNotice text="設定監視器開放時段、對外有效期限與目前狀態。除「正常顯示」外，其餘狀態一律自動遮蔽畫面；本機操作介面會驗證權限與資料規則，所有入口共用相同設定。" />
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-medium text-stone-500">選擇房號</span>
@@ -98,7 +95,7 @@ export default function CamSchedule() {
               />
             </div>
             <p className="mt-2 text-xs text-stone-400">
-              有效期限不與合約連動，由櫃台在此直接設定。期限外即使密碼正確也無法觀看。
+              期限承接案件入住及托嬰，可由完整工作區調整。期限外即使密碼正確也無法觀看。
             </p>
           </Card>
 
@@ -126,12 +123,21 @@ export default function CamSchedule() {
           </Card>
 
           <div className="flex justify-end">
-            <DemoActionButton
-              feedback="靜態畫面稿：實際會寫入設定並於下一次同步推送到 DMZ"
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  babycamActions.updateBinding(target.id, { familyEnabled, internalWindow: { mode: "scheduled", start: openFrom, end: openTo }, familyWindow: { mode: "scheduled", start: openFrom, end: openTo } });
+                  const binding = domainStore.get().bindings.find((item) => item.id === target.id);
+                  binding?.babies.forEach((baby) => babycamActions.state(target.id, baby.babyId, statusKey));
+                  setFeedback("已儲存，觀看端與工作區已同步。");
+                } catch (error) { setFeedback(error instanceof Error ? error.message : "儲存失敗。"); }
+              }}
               className="rounded-lg bg-gradient-to-r from-brand-500 to-brand-400 px-5 py-2.5 text-sm font-semibold text-white shadow-sm"
             >
               儲存設定
-            </DemoActionButton>
+            </button>
+            {feedback && <p role="status" className="mt-2 text-xs text-stone-600">{feedback}</p>}
           </div>
         </div>
 
@@ -144,7 +150,7 @@ export default function CamSchedule() {
             statusLabel={status?.label}
           />
           <p className="text-xs text-stone-400">
-            此預覽即媽媽端與親友端實際會看到的畫面。
+            此區只預覽顯示狀態；觀看端另套用授權、時段、照護與裝置狀態。
           </p>
         </div>
       </div>

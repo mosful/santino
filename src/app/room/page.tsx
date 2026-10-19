@@ -13,13 +13,15 @@ import Pagination from "@/components/ui/Pagination";
 import CareSearch from "@/components/ui/CareSearch";
 import { rowMatchesQuery } from "@/lib/fuzzySearch";
 import { useMultiWindowManager } from "@/lib/useMultiWindowManager";
-import { OPS_ROOMS, DEFERRED_ROOM_ITEMS } from "@/lib/mock/opsRoom";
+import { DEFERRED_ROOM_ITEMS } from "@/lib/mock/opsRoom";
+import { useOpsRooms } from "@/lib/domain/legacySelectors";
 import DemoActionButton from "@/components/ui/DemoActionButton";
 
 // 開啟作業視窗時的預設頁籤
 const DEFAULT_TAB = "prep";
 
 export default function RoomPage() {
+  const OPS_ROOMS = useOpsRooms();
   const [listView, setListView] = useState(true);
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
@@ -48,10 +50,10 @@ export default function RoomPage() {
   }
 
   return (
-    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+    <div className="page-frame">
       <RequireAccess moduleNo="4">
       <PageHeader
-        title="4. 房間動態（房務版房卡）"
+        title="櫃台服務・房況與排房"
         moduleNo="4"
         action={
           <div className="flex gap-2 text-xs">

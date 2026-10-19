@@ -59,7 +59,7 @@ export default function SignatureBox({
       {signature ? (
         <div className="flex items-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={signature} alt="簽名" className="h-16 rounded border border-stone-100 bg-white" />
+          <img src={signature} alt="已簽署的簽名影像" width={240} height={64} className="h-16 w-auto rounded border border-stone-100 bg-white" />
           <div className="flex flex-col gap-1 text-xs">
             <span className="text-stone-400">已套用本次登入簽名</span>
             <button type="button" onClick={openSignature} className="text-left text-brand-500 underline">

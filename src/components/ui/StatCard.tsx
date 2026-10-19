@@ -27,7 +27,7 @@ export default function StatCard({
           <Icon className="h-5 w-5" />
         </span>
         <div className="min-w-0">
-          <div className="text-2xl font-bold text-stone-800">{value}</div>
+          <div className="text-2xl font-bold tabular-nums text-stone-800">{value}</div>
           <div className="truncate text-xs text-stone-400">{label}</div>
         </div>
       </div>
@@ -35,7 +35,7 @@ export default function StatCard({
   );
 
   const className =
-    "group relative block overflow-hidden rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg" +
+    "group relative block overflow-hidden rounded-2xl border border-border-subtle bg-surface-raised p-4 shadow-[0_10px_28px_rgba(var(--shadow-color),0.07)] transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-[0_14px_34px_rgba(var(--shadow-color),0.11)]" +
     (href ? " cursor-pointer" : "");
 
   if (href) {

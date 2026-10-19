@@ -3,9 +3,10 @@
 import Link from "next/link";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Badge from "@/components/ui/Badge";
-import { CONTRACTS, type Contract } from "@/lib/mock/contract";
+import { type Contract } from "@/lib/mock/contract";
+import { useContractRows } from "@/lib/domain/legacySelectors";
 
-const columns: Column<Contract>[] = [
+const columns: Column<Contract & { caseId: string }>[] = [
   { key: "contractNo", label: "合約編號" },
   { key: "motherName", label: "媽媽姓名" },
   { key: "dueDate", label: "預產日" },
@@ -23,12 +24,12 @@ const columns: Column<Contract>[] = [
   {
     key: "id",
     label: "操作",
-    render: () => (
+    render: (record) => (
       <div className="flex gap-2 whitespace-nowrap text-xs">
-        <Link href="/contract?tab=change-order" className="text-rose-500 underline">
+        <Link href={`/cases/detail/?id=${encodeURIComponent(record.caseId)}`} className="text-rose-500 underline">
           變更
         </Link>
-        <Link href="/contract?tab=termination" className="text-stone-400 underline">
+        <Link href={`/contract/?tab=termination&case=${encodeURIComponent(record.caseId)}`} className="text-stone-400 underline">
           退約/作廢
         </Link>
       </div>
@@ -37,11 +38,12 @@ const columns: Column<Contract>[] = [
 ];
 
 export default function ContractList() {
+  const CONTRACTS = useContractRows();
   const totalDeposit = CONTRACTS.reduce((s, c) => s + c.deposit, 0);
   return (
     <div className="space-y-3">
       <div className="rounded bg-stone-50 p-2 text-xs text-stone-500">
-        2026-08-01~08-28 共{CONTRACTS.length}筆合約；有效合約{CONTRACTS.length}筆；作廢合約0筆；已付訂金{CONTRACTS.length}筆；訂金總額${totalDeposit.toLocaleString()}
+        共用案件共{CONTRACTS.length}筆合約；有效合約{CONTRACTS.length}筆；作廢合約0筆；已付訂金{CONTRACTS.length}筆；訂金總額${totalDeposit.toLocaleString()}
       </div>
       <p className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-700">
         ⚠ 合約金額一經簽約即鎖定，不提供直接編輯/刪除；異動請走「合約變更單」（留存異動log），

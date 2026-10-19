@@ -51,10 +51,10 @@ function DeptTab({ showTcmConsent }: { showTcmConsent?: boolean } = {}) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <input placeholder="醫師姓名篩選" className="rounded border border-stone-200 px-2 py-1.5" />
-        <input placeholder="查詢區間起" className="rounded border border-stone-200 px-2 py-1.5" />
+        <input aria-label="醫師姓名篩選" name="doctor-name" autoComplete="off" placeholder="輸入醫師姓名…" className="rounded border border-stone-200 px-2 py-1.5" />
+        <input aria-label="巡診查詢開始日期" name="doctor-start-date" type="date" className="rounded border border-stone-200 px-2 py-1.5" />
         <span>～</span>
-        <input placeholder="查詢區間迄" className="rounded border border-stone-200 px-2 py-1.5" />
+        <input aria-label="巡診查詢結束日期" name="doctor-end-date" type="date" className="rounded border border-stone-200 px-2 py-1.5" />
         <DemoActionButton feedback={`查詢完成，共 ${SAMPLE.length} 筆巡診統計`} className="rounded bg-stone-700 px-3 py-1.5 text-white">查詢</DemoActionButton>
       </div>
       <EditableList moduleNo="6" fields={doctorFields} initialRows={SAMPLE} searchPlaceholder="醫師姓名" />
@@ -70,7 +70,7 @@ function DeptTab({ showTcmConsent }: { showTcmConsent?: boolean } = {}) {
 
 export default function DoctorPage() {
   return (
-    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+    <div className="page-frame">
       <RequireAccess moduleNo="6">
       <PageHeader title="6. 醫師巡診" moduleNo="6" />
       <TabsFromUrl

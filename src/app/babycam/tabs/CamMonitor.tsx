@@ -5,18 +5,18 @@ import StatCard from "@/components/ui/StatCard";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Badge from "@/components/ui/Badge";
 import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
-import {
-  CAMERAS,
-  CAM_SUMMARY,
-  BINDINGS,
-  STATUS_BY_KEY,
-  type Camera,
-} from "@/lib/mock/babycam";
+import { type Camera } from "@/lib/mock/babycam";
+import { useLegacyBabycam } from "@/lib/babycam/legacyAdapter";
+import { useDomainStore } from "@/lib/demo/domainStore";
+
+export default function CamMonitor() {
+const { CAMERAS, CAM_SUMMARY, STATUS_BY_KEY } = useLegacyBabycam();
+const { data } = useDomainStore();
 
 /** 監視器 → 綁定房號的反查表 */
-const ROOM_OF_CAM = new Map<string, { room: string; statusKey: string }>();
-for (const b of BINDINGS) {
-  for (const id of b.camIds) ROOM_OF_CAM.set(id, { room: b.room, statusKey: b.statusKey });
+const ROOM_OF_CAM = new Map<string, { room: string; statusKey: string; careMode: boolean }>();
+for (const binding of data.bindings.filter((item) => !item.ended)) {
+  for (const baby of binding.babies) ROOM_OF_CAM.set(baby.cameraId, { room: binding.room || "托嬰", statusKey: baby.state, careMode: baby.careMode });
 }
 
 type Row = Camera & { id: string };
@@ -55,16 +55,16 @@ const COLUMNS: Column<Row>[] = [
       if (r.abnormal) return <Badge color="rose">截圖逾時</Badge>;
       const bound = ROOM_OF_CAM.get(r.id);
       if (!bound) return <Badge color="slate">未綁定</Badge>;
+      if (bound.careMode) return <Badge color="amber">寶寶照護中</Badge>;
       const s = STATUS_BY_KEY[bound.statusKey];
       return <Badge color={s?.masked ? "amber" : "green"}>{s?.label ?? "正常"}</Badge>;
     },
   },
 ];
 
-export default function CamMonitor() {
   return (
     <div className="space-y-4">
-      <PlaceholderNotice text="本期不做發信通知，異常一律在此面板以紅字呈現，由櫃台人員自行查看。逾時未更新的監視器，親友端會自動改顯示最後一張可用截圖。" />
+      <PlaceholderNotice text="本期不發送通知，異常於此面板顯示。觀看端遇到異常或過期影像會遮蔽並提示，不繼續顯示舊畫面。每位多胞胎的狀態分別判定。" />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
@@ -83,7 +83,7 @@ export default function CamMonitor() {
           icon={Users}
           label="雙胞胎房（多支）"
           value={CAM_SUMMARY.twins}
-          gradient="from-purple-400 to-purple-600"
+          gradient="from-sky-400 to-sky-600"
         />
         <StatCard
           icon={AlertTriangle}

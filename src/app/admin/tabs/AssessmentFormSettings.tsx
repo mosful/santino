@@ -11,6 +11,8 @@ import {
   useAssessmentFields,
   type AssessmentFieldType,
 } from "@/lib/assessmentConfigStore";
+import { canEditAdminSetting } from "@/lib/permissions";
+import { useCurrentRole } from "@/lib/roleStore";
 
 const FIELD_TYPES: { value: AssessmentFieldType; label: string }[] = [
   { value: "text", label: "單行文字" },
@@ -26,6 +28,7 @@ function parseOptions(value: string) {
 
 export default function AssessmentFormSettings() {
   const fields = useAssessmentFields();
+  const canEdit = canEditAdminSetting(useCurrentRole(), "system");
   const [section, setSection] = useState(ASSESSMENT_SECTIONS[0]);
   const [label, setLabel] = useState("");
   const [type, setType] = useState<AssessmentFieldType>("text");
@@ -55,27 +58,27 @@ export default function AssessmentFormSettings() {
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <label className="text-xs text-stone-500">
             表單區段
-            <select value={section} onChange={(event) => setSection(event.target.value)} className="mt-1 w-full rounded-lg border border-stone-200 px-2 py-2 text-sm">
+            <select value={section} onChange={(event) => setSection(event.target.value)} disabled={!canEdit} className="mt-1 w-full rounded-lg border border-stone-200 px-2 py-2 text-sm disabled:bg-stone-100">
               {ASSESSMENT_SECTIONS.map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
           <label className="text-xs text-stone-500">
             題目名稱
-            <input value={label} onChange={(event) => setLabel(event.target.value)} className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm" placeholder="例如：睡眠狀況" />
+            <input value={label} onChange={(event) => setLabel(event.target.value)} disabled={!canEdit} className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm disabled:bg-stone-100" placeholder="例如：睡眠狀況" />
           </label>
           <label className="text-xs text-stone-500">
             輸入方式
-            <select value={type} onChange={(event) => setType(event.target.value as AssessmentFieldType)} className="mt-1 w-full rounded-lg border border-stone-200 px-2 py-2 text-sm">
+            <select value={type} onChange={(event) => setType(event.target.value as AssessmentFieldType)} disabled={!canEdit} className="mt-1 w-full rounded-lg border border-stone-200 px-2 py-2 text-sm disabled:bg-stone-100">
               {FIELD_TYPES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
             </select>
           </label>
           <label className="text-xs text-stone-500">
             選項（逗號分隔）
-            <input value={options} onChange={(event) => setOptions(event.target.value)} disabled={!(["single", "multiple", "select"] as AssessmentFieldType[]).includes(type)} className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm disabled:bg-stone-100" placeholder="良好,普通,需關懷" />
+            <input value={options} onChange={(event) => setOptions(event.target.value)} disabled={!canEdit || !(["single", "multiple", "select"] as AssessmentFieldType[]).includes(type)} className="mt-1 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm disabled:bg-stone-100" placeholder="良好,普通,需關懷" />
           </label>
         </div>
         <div className="mt-3 flex justify-end">
-          <button type="button" onClick={addField} disabled={!label.trim()} className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-xs font-medium text-white">
+          <button type="button" onClick={addField} disabled={!canEdit || !label.trim()} className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50">
             <Plus className="h-4 w-4" />新增題目
           </button>
         </div>
@@ -93,15 +96,15 @@ export default function AssessmentFormSettings() {
               <div className="space-y-2">
                 {sectionFields.map((field) => (
                   <div key={field.id} className="grid gap-2 rounded-lg bg-stone-50 p-3 md:grid-cols-[1fr_150px_1.2fr_auto_auto] md:items-center">
-                    <input value={field.label} onChange={(event) => updateAssessmentField(field.id, { label: event.target.value })} className="rounded-lg border border-stone-200 px-3 py-2 text-sm" aria-label={`${sectionName}題目名稱`} />
-                    <select value={field.type} onChange={(event) => updateAssessmentField(field.id, { type: event.target.value as AssessmentFieldType })} className="rounded-lg border border-stone-200 px-2 py-2 text-sm" aria-label={`${field.label}輸入方式`}>
+                    <input value={field.label} onChange={(event) => updateAssessmentField(field.id, { label: event.target.value })} disabled={!canEdit} className="rounded-lg border border-stone-200 px-3 py-2 text-sm disabled:bg-stone-100" aria-label={`${sectionName}題目名稱`} />
+                    <select value={field.type} onChange={(event) => updateAssessmentField(field.id, { type: event.target.value as AssessmentFieldType })} disabled={!canEdit} className="rounded-lg border border-stone-200 px-2 py-2 text-sm disabled:bg-stone-100" aria-label={`${field.label}輸入方式`}>
                       {FIELD_TYPES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
                     </select>
-                    <input value={field.options.join("、")} onChange={(event) => updateAssessmentField(field.id, { options: parseOptions(event.target.value) })} disabled={!(["single", "multiple", "select"] as AssessmentFieldType[]).includes(field.type)} className="rounded-lg border border-stone-200 px-3 py-2 text-sm disabled:bg-stone-100" aria-label={`${field.label}選項`} placeholder="選項以逗號分隔" />
+                    <input value={field.options.join("、")} onChange={(event) => updateAssessmentField(field.id, { options: parseOptions(event.target.value) })} disabled={!canEdit || !(["single", "multiple", "select"] as AssessmentFieldType[]).includes(field.type)} className="rounded-lg border border-stone-200 px-3 py-2 text-sm disabled:bg-stone-100" aria-label={`${field.label}選項`} placeholder="選項以逗號分隔" />
                     <label className="flex items-center gap-1.5 whitespace-nowrap text-xs text-stone-600">
-                      <input type="checkbox" checked={field.required} onChange={(event) => updateAssessmentField(field.id, { required: event.target.checked })} />必填
+                      <input type="checkbox" checked={field.required} onChange={(event) => updateAssessmentField(field.id, { required: event.target.checked })} disabled={!canEdit} />必填
                     </label>
-                    <button type="button" onClick={() => removeAssessmentField(field.id)} className="inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs text-rose-500 hover:bg-rose-50">
+                    <button type="button" onClick={() => removeAssessmentField(field.id)} disabled={!canEdit} className="inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-xs text-rose-500 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50">
                       <Trash2 className="h-3.5 w-3.5" />刪除
                     </button>
                   </div>
@@ -114,7 +117,7 @@ export default function AssessmentFormSettings() {
       </div>
 
       <div className="flex justify-end">
-        <button type="button" onClick={resetAssessmentFields} className="inline-flex items-center gap-1.5 rounded-lg bg-stone-100 px-4 py-2 text-xs text-stone-600">
+        <button type="button" onClick={resetAssessmentFields} disabled={!canEdit} className="inline-flex items-center gap-1.5 rounded-lg bg-stone-100 px-4 py-2 text-xs text-stone-600 disabled:cursor-not-allowed disabled:opacity-50">
           <RotateCcw className="h-3.5 w-3.5" />還原預設題目
         </button>
       </div>

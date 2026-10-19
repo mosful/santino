@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { BedDouble, Users, GraduationCap, Megaphone } from "lucide-react";
 import RequireAccess from "@/components/ui/RequireAccess";
@@ -9,30 +11,17 @@ import DashboardWorkspace from "@/components/dashboard/DashboardWorkspace";
 import DemoActionButton from "@/components/ui/DemoActionButton";
 import {
   ANNOUNCEMENTS,
-  MAMA_CALENDAR_SAMPLE,
   COURSES,
 } from "@/lib/mock/dashboard";
-import { MAMA_ROOMS } from "@/lib/mock/mamaRoom";
-import { CUSTOMERS } from "@/lib/mock/customer";
+import { useDomainStore } from "@/lib/demo/domainStore";
+import { useCareStore } from "@/lib/care/store";
+import { useCurrentRole } from "@/lib/roleStore";
+import { roleTaskCategories, taskEvents } from "@/lib/domain/tasks";
 
 const CATEGORY_COLOR: Record<string, "rose" | "green" | "blue" | "amber" | "purple" | "slate"> = {
-  預約參觀: "blue",
-  預約簽約: "green",
-  預產期: "rose",
-  入出住: "amber",
-  館內人數: "purple",
-  訪客預約: "slate",
+  入住: "green", 退房: "amber", 參觀: "blue", "合約／猶豫期": "green", 待收款: "rose",
+  醫師巡診: "purple", 課程: "slate", "關懷／提醒": "rose", 回補期限: "amber", 托嬰: "purple",
 };
-
-const CATEGORY_LINK: Record<string, string> = {
-  預約參觀: "/admin?tab=visit",
-  預約簽約: "/contract?tab=new",
-  預產期: "/customer",
-  入出住: "/mama",
-  館內人數: "/room",
-  訪客預約: "/room",
-};
-
 function AnnouncementTab() {
   return (
     <div className="space-y-2">
@@ -53,6 +42,10 @@ function AnnouncementTab() {
 }
 
 function MamaCalendarTab() {
+  const { data: domain } = useDomainStore();
+  const { data: care } = useCareStore(); const role = useCurrentRole();
+  const events = taskEvents(domain, care).filter((event) => !event.handled && roleTaskCategories(role).includes(event.category));
+  const days = [...new Set(events.map((event) => event.date))].sort().map((date) => ({ date, items: events.filter((event) => event.date === date) }));
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2 text-xs text-stone-500">
@@ -63,17 +56,17 @@ function MamaCalendarTab() {
         ))}
       </div>
       <div className="grid gap-3 md:grid-cols-3">
-        {MAMA_CALENDAR_SAMPLE.map((day) => (
+        {days.map((day) => (
           <Card key={day.date} title={day.date}>
             <ul className="space-y-1.5 text-sm">
               {day.items.map((it, i) => (
                 <li key={i}>
                   <Link
-                    href={CATEGORY_LINK[it.category] ?? "/"}
+                    href={it.href}
                     className="flex items-center gap-2 rounded px-1 py-0.5 -mx-1 transition-colors hover:bg-stone-50"
                   >
                     <Badge color={CATEGORY_COLOR[it.category]}>{it.category}</Badge>
-                    <span className="text-stone-600">{it.text}</span>
+                    <span className="text-stone-600">{it.title}</span>
                   </Link>
                 </li>
               ))}
@@ -158,17 +151,18 @@ function ValueAddedTab() {
 }
 
 export default function HomePage() {
-  const occupied = MAMA_ROOMS.filter((r) => r.status === "入住" || r.status === "親子同室").length;
+  const { data: domain } = useDomainStore();
+  const occupied = domain.subjects.filter((subject) => subject.kind === "mama" && !subject.historical).length;
 
   return (
-    <div className="w-full px-4 py-3 sm:px-6 sm:py-4">
+    <div className="page-frame">
       <RequireAccess moduleNo="1">
         <DashboardWorkspace
           classicContent={
             <>
               <div className="tablet-stat-grid mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <StatCard icon={BedDouble} label="入住中媽媽" value={occupied} gradient="from-brand-500 to-brand-400" href="/mama" />
-                <StatCard icon={Users} label="客戶總數" value={CUSTOMERS.length} gradient="from-sky-500 to-sky-400" href="/customer" />
+                <StatCard icon={Users} label="客戶總數" value={domain.cases.length} gradient="from-sky-500 to-sky-400" href="/customer" />
                 <StatCard icon={GraduationCap} label="本週開課數" value={COURSES.length} gradient="from-amber-500 to-amber-400" href="/course" />
                 <StatCard icon={Megaphone} label="公告則數" value={ANNOUNCEMENTS.length} gradient="from-emerald-500 to-emerald-400" href="/admin?tab=board" />
               </div>

@@ -18,11 +18,13 @@ import {
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import {
-  JOURNEY_MOTHERS,
   JOURNEY_STAGES,
   type JourneyMother,
   type JourneyStageKey,
 } from "@/lib/mock/customerJourney";
+import { useJourneyMothers } from "@/lib/domain/legacySelectors";
+import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
+import V24OperationsOverview from "./V24OperationsOverview";
 
 type QuickView = "overdue" | "today" | "staying" | "moving";
 
@@ -58,13 +60,14 @@ const QUICK_LINKS = [
 ];
 
 export default function JourneyDashboard() {
-  const [mothers, setMothers] = useState<JourneyMother[]>(JOURNEY_MOTHERS);
+  const mothers = useJourneyMothers();
+  const { data: domain } = useDomainStore();
   const [selectedStage, setSelectedStage] = useState<JourneyStageKey>("staying");
   const [quickView, setQuickView] = useState<QuickView | null>(null);
   const [query, setQuery] = useState("");
   const [selectedMotherId, setSelectedMotherId] = useState<number | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
-  const [notes, setNotes] = useState<Record<number, string[]>>({});
+  const notes = Object.fromEntries(domain.cases.map((record) => [record.legacyId, record.log.map((entry) => entry.text)]));
   const [feedback, setFeedback] = useState("");
 
   const selected = JOURNEY_STAGES.find((stage) => stage.key === selectedStage) ?? JOURNEY_STAGES[0];
@@ -87,6 +90,7 @@ export default function JourneyDashboard() {
     const priority = { overdue: 0, today: 1, upcoming: 2, normal: 3 };
     return priority[a.urgency] - priority[b.urgency];
   });
+  const visibleStageMothers = keyword ? stageMothers : stageMothers.slice(0, 8);
 
   const overdue = mothers.filter((mother) => mother.urgency === "overdue").length;
   const today = mothers.filter((mother) => mother.urgency === "today").length;
@@ -112,42 +116,31 @@ export default function JourneyDashboard() {
 
   function completeTask() {
     if (!detailMother) return;
-    setMothers((items) => items.map((mother) => mother.id === detailMother.id
-      ? { ...mother, urgency: "normal", nextAction: "待安排下一步", actionDate: "本次待辦已完成" }
-      : mother));
-    setFeedback("已完成本次待辦，並保留案件於目前階段。");
+    const record = domain.cases.find((item) => item.legacyId === detailMother.id);
+    if (!record) return;
+    try { caseActions.note(record.id, "完成本次待辦，案件保留於目前階段"); setFeedback("本次待辦已記錄於案件歷程。"); }
+    catch (error) { setFeedback(error instanceof Error ? error.message : "無法更新待辦。"); }
   }
 
   function addNote() {
     if (!detailMother || !noteDraft.trim()) return;
-    setNotes((current) => ({
-      ...current,
-      [detailMother.id]: [...(current[detailMother.id] ?? []), noteDraft.trim()],
-    }));
-    setNoteDraft("");
-    setFeedback("追蹤紀錄已新增。");
+    const record = domain.cases.find((item) => item.legacyId === detailMother.id);
+    if (!record) return;
+    try { caseActions.note(record.id, noteDraft); setNoteDraft(""); setFeedback("追蹤紀錄已新增。"); }
+    catch (error) { setFeedback(error instanceof Error ? error.message : "無法更新追蹤。"); }
   }
 
   function advanceStage() {
     if (!detailMother) return;
-    const currentIndex = JOURNEY_STAGES.findIndex((stage) => stage.key === detailMother.stage);
-    const nextStage = JOURNEY_STAGES[currentIndex + 1];
-    if (!nextStage) return;
-    setMothers((items) => items.map((mother) => mother.id === detailMother.id
-      ? {
-          ...mother,
-          stage: nextStage.key,
-          status: `已進入${nextStage.label}`,
-          urgency: "normal",
-          nextAction: `安排${nextStage.label}工作`,
-          actionDate: "待安排",
-        }
-      : mother));
-    setFeedback(`案件已移至「${nextStage.label}」。`);
+    const record = domain.cases.find((item) => item.legacyId === detailMother.id);
+    if (!record) return;
+    try { caseActions.advance(record.id); setFeedback("案件階段已更新，完整流程請由案件頁接續。"); }
+    catch (error) { setFeedback(error instanceof Error ? error.message : "請至完整案件流程填寫必要資料。"); }
   }
 
   return (
     <div className="space-y-4 animate-fade-in-up">
+      <V24OperationsOverview />
       <section className="overflow-hidden rounded-3xl border border-brand-900/10 bg-white/90 shadow-sm">
         <div className="flex flex-col gap-4 border-b border-stone-100 bg-gradient-to-r from-brand-50 via-white to-amber-50/70 px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -179,7 +172,7 @@ export default function JourneyDashboard() {
                     onClick={() => selectStage(stage.key)}
                     aria-pressed={active}
                     className={
-                      "group flex w-[108px] flex-col items-center rounded-2xl px-2 py-2 text-center transition-all " +
+                      "group flex w-[108px] flex-col items-center rounded-2xl px-2 py-2 text-center transition-[transform,background-color,box-shadow] " +
                       (active ? "bg-stone-50 shadow-sm ring-1 ring-stone-200" : "hover:bg-stone-50")
                     }
                   >
@@ -215,17 +208,17 @@ export default function JourneyDashboard() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="搜尋姓名、房號、待辦"
-                className="w-full rounded-xl border border-stone-200 bg-stone-50 py-2 pl-9 pr-3 text-sm outline-none transition focus:border-brand-300 focus:bg-white"
+                className="w-full rounded-xl border border-stone-200 bg-stone-50 py-2 pl-9 pr-3 text-sm transition-[border-color,background-color,box-shadow] focus:border-brand-300 focus:bg-white"
               />
             </label>
           </div>
 
           <div className="space-y-2.5">
-            {stageMothers.map((mother) => {
+            {visibleStageMothers.map((mother) => {
               const urgency = URGENCY[mother.urgency];
               const motherStage = JOURNEY_STAGES.find((stage) => stage.key === mother.stage);
               return (
-                <article key={mother.id} className={`group rounded-2xl border border-stone-200 border-l-4 ${urgency.border} bg-white p-3 transition hover:border-r-brand-200 hover:border-y-brand-200 hover:shadow-md sm:p-4`}>
+                <article key={mother.id} className={`group rounded-2xl border border-stone-200 ${urgency.border} bg-white p-3 transition-[border-color,box-shadow] hover:border-brand-200 hover:shadow-md sm:p-4`}>
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                     <div className="flex min-w-0 flex-1 items-start gap-3">
                       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-600">{mother.name.slice(0, 1)}</span>
@@ -259,6 +252,11 @@ export default function JourneyDashboard() {
               );
             })}
             {stageMothers.length === 0 && <div className="rounded-2xl border border-dashed border-stone-200 py-10 text-center text-sm text-stone-400">找不到符合條件的媽媽</div>}
+            {!keyword && stageMothers.length > visibleStageMothers.length && (
+              <Link href="/cases/" className="flex min-h-11 items-center justify-center rounded-2xl border border-dashed border-stone-200 text-sm font-semibold text-stone-500 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600">
+                查看其餘 {stageMothers.length - visibleStageMothers.length} 件案件
+              </Link>
+            )}
           </div>
         </div>
 
@@ -325,14 +323,14 @@ export default function JourneyDashboard() {
                 <h3 className="mb-2 text-sm font-bold text-stone-700">追蹤紀錄</h3>
                 <div className="space-y-2">
                   {(notes[detailMother.id] ?? []).map((note, index) => <div key={`${note}-${index}`} className="rounded-xl bg-brand-50 px-3 py-2 text-sm text-stone-600">剛剛・{note}</div>)}
-                  <textarea value={noteDraft} onChange={(event) => setNoteDraft(event.target.value)} placeholder="輸入本次聯繫、異常或交接內容…" className="w-full rounded-xl border border-stone-200 p-3 text-sm outline-none focus:border-brand-300" />
+                  <textarea value={noteDraft} onChange={(event) => setNoteDraft(event.target.value)} placeholder="輸入本次聯繫、異常或交接內容…" className="w-full rounded-xl border border-stone-200 p-3 text-sm focus:border-brand-300" />
                   <button type="button" onClick={addNote} disabled={!noteDraft.trim()} className="w-full rounded-xl bg-stone-700 px-3 py-2 text-sm font-medium text-white">新增追蹤紀錄</button>
                 </div>
               </div>
             </div>
 
             <div className="flex flex-col-reverse gap-2 border-t border-stone-100 pt-4 sm:flex-row sm:justify-between">
-              <Link href="/customer" className="flex items-center justify-center rounded-xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600">前往完整客戶資料</Link>
+              <Link href={`/cases/detail/?id=${encodeURIComponent(domain.cases.find((item) => item.legacyId === detailMother.id)?.id ?? "")}`} className="flex items-center justify-center rounded-xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600">前往完整案件流程</Link>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <button type="button" onClick={completeTask} className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">完成本次待辦</button>
                 {JOURNEY_STAGES.findIndex((stage) => stage.key === detailMother.stage) < JOURNEY_STAGES.length - 1 && <button type="button" onClick={advanceStage} className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white">移至下一階段</button>}

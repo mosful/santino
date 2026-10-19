@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
               {error && <p className="text-xs text-rose-500">{error}</p>}
               <button
                 type="submit"
-                className="w-full rounded-lg bg-gradient-to-r from-brand-500 to-brand-400 px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-brand-200 transition-all hover:shadow-md active:scale-95"
+                className="w-full rounded-lg bg-gradient-to-r from-brand-500 to-brand-400 px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-brand-200 transition-[transform,box-shadow] hover:shadow-md active:scale-[0.98]"
               >
                 寄送重設密碼連結
               </button>

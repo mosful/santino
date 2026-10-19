@@ -4,9 +4,12 @@ import { useState } from "react";
 import Badge from "@/components/ui/Badge";
 import { usePhraseLibrary } from "@/hooks/usePhraseLibrary";
 import { PHRASE_CATEGORIES } from "@/lib/mock/phrases";
+import { canEditAdminSetting } from "@/lib/permissions";
+import { useCurrentRole } from "@/lib/roleStore";
 
 export default function PhraseManager() {
   const { phrases, addPhrase, removePhrase } = usePhraseLibrary();
+  const canEdit = canEditAdminSetting(useCurrentRole(), "operations");
   const [category, setCategory] = useState(PHRASE_CATEGORIES[0]);
   const [tagsInput, setTagsInput] = useState("");
   const [text, setText] = useState("");
@@ -49,7 +52,7 @@ export default function PhraseManager() {
         <div className="grid gap-2 sm:grid-cols-[140px_1fr]">
           <select
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => setCategory(e.target.value)} disabled={!canEdit}
             className="rounded-lg border border-stone-200 px-2 py-2 text-sm"
           >
             {PHRASE_CATEGORIES.map((c) => (
@@ -58,19 +61,19 @@ export default function PhraseManager() {
           </select>
           <input
             value={tagsInput}
-            onChange={(e) => setTagsInput(e.target.value)}
+            onChange={(e) => setTagsInput(e.target.value)} disabled={!canEdit}
             placeholder="標籤🏷️（逗號分隔，如：母乳,傷口）"
             className="rounded-lg border border-stone-200 px-2 py-2 text-sm"
           />
         </div>
         <textarea
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => setText(e.target.value)} disabled={!canEdit}
           placeholder="片語內容"
           className="mt-2 w-full rounded-lg border border-stone-200 p-2 text-sm"
         />
         <div className="mt-2 flex justify-end">
-          <button onClick={submit} className="rounded-lg bg-rose-500 px-4 py-2 text-xs font-medium text-white hover:bg-rose-600">
+          <button onClick={submit} disabled={!canEdit} className="rounded-lg bg-rose-500 px-4 py-2 text-xs font-medium text-white hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-50">
             新增片語
           </button>
         </div>
@@ -117,7 +120,7 @@ export default function PhraseManager() {
                   🏷️ {t}
                 </Badge>
               ))}
-              <button onClick={() => removePhrase(p.id)} className="ml-auto text-xs text-rose-500 underline">
+              <button onClick={() => removePhrase(p.id)} disabled={!canEdit} className="ml-auto text-xs text-rose-500 underline disabled:cursor-not-allowed disabled:text-stone-300">
                 刪除
               </button>
             </div>

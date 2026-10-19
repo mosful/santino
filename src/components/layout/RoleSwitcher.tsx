@@ -34,6 +34,9 @@ export default function RoleSwitcher() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
+        type="button"
+        aria-expanded={open}
+        aria-controls="role-switcher-menu"
         title="切換模擬角色，選單會依該角色權限立即隱藏或顯示"
         className="flex items-center gap-1.5 rounded-full border border-brand-900/10 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 shadow-sm hover:bg-brand-50"
       >
@@ -45,13 +48,15 @@ export default function RoleSwitcher() {
         <ChevronDown className={"hidden h-3 w-3 transition-transform sm:block " + (open ? "rotate-180" : "")} />
       </button>
       {open && (
-        <div className="animate-fade-in-up absolute right-0 top-full z-40 mt-1.5 w-56 overflow-hidden rounded-xl border border-brand-900/10 bg-white py-1.5 shadow-lg">
+        <div id="role-switcher-menu" role="group" aria-label="模擬身分與帳號操作" className="animate-fade-in-up absolute right-0 top-full z-40 mt-1.5 w-56 overflow-hidden rounded-xl border border-brand-900/10 bg-surface-raised py-1.5 shadow-lg">
           <div className="px-4 py-1.5 text-[11px] text-stone-400">切換模擬身分（僅供demo測試權限）</div>
           {ROLES.map((r) => {
             const p = ROLE_PROFILE[r];
             return (
               <button
                 key={r}
+                type="button"
+                aria-pressed={r === role}
                 onClick={() => {
                   setCurrentRole(r);
                   setOpen(false);

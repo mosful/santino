@@ -2,22 +2,13 @@
 
 import { useState } from "react";
 import Badge from "@/components/ui/Badge";
-import DemoActionButton from "@/components/ui/DemoActionButton";
-
-type RenewalCandidate = {
-  id: number;
-  contractNo: string;
-  motherName: string;
-  expireDate: string;
-  daysLeft: number;
-};
-
-const CANDIDATES: RenewalCandidate[] = [
-  { id: 1, contractNo: "A115082801", motherName: "邱o乾", expireDate: "2026-09-30", daysLeft: 12 },
-];
+import Link from "next/link";
+import { useDomainStore } from "@/lib/demo/domainStore";
 
 export default function RenewalManagement() {
   const [thresholdDays, setThresholdDays] = useState(30);
+  const { data } = useDomainStore();
+  const CANDIDATES = data.cases.filter((record) => record.actualAdmission && !record.dischargedAt).map((record) => { const end = Date.parse(`${record.actualAdmission}T00:00:00+08:00`) + record.days * 86_400_000; return { id: record.id, contractNo: record.contractNo, motherName: record.name, expireDate: new Date(end).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" }), daysLeft: Math.ceil((end - Date.parse(data.demoAt)) / 86_400_000) }; });
 
   return (
     <div className="space-y-4 text-sm">
@@ -55,15 +46,15 @@ export default function RenewalManagement() {
                 <Badge color={c.daysLeft <= 7 ? "rose" : "amber"}>{c.daysLeft}天</Badge>
               </td>
               <td className="px-3 py-2">
-                <DemoActionButton feedback={`已為 ${c.motherName} 建立續約合約草稿`} className="rounded bg-rose-500 px-2 py-1 text-xs text-white">
-                  產生續約合約
-                </DemoActionButton>
+                <Link href={`/cases/detail/?id=${encodeURIComponent(c.id)}`} className="rounded bg-rose-500 px-2 py-1 text-xs text-white">
+                  辦理續住變更單
+                </Link>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="text-xs text-stone-400">產生續約合約時自動計算續約價格（依當時牌價與優惠規則）。</p>
+      <p className="text-xs text-stone-400">辦理續住變更單時自動計算續約價格（依當時牌價與優惠規則）。</p>
     </div>
   );
 }

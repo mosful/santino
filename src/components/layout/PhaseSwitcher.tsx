@@ -13,8 +13,8 @@ export default function PhaseSwitcher() {
   const enabledPhase = useEnabledPhase();
 
   return (
-    <div className="flex items-center gap-1 rounded-xl border border-brand-900/10 bg-white p-1 shadow-sm">
-      <Layers3 className="mx-0.5 h-4 w-4 text-brand-500 sm:mx-1" aria-hidden="true" />
+    <div className="flex items-center gap-1 rounded-xl border border-brand-900/10 bg-surface-raised p-1 shadow-sm">
+      <Layers3 className="mx-0.5 hidden h-4 w-4 text-brand-500 sm:block sm:mx-1" aria-hidden="true" />
       {OPTIONS.map((option) => (
         <Tooltip key={option.phase} content={option.help}>
           <button

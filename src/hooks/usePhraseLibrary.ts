@@ -2,6 +2,8 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 import { SEED_PHRASES, type Phrase } from "@/lib/mock/phrases";
+import { canEditAdminSetting } from "@/lib/permissions";
+import { getCurrentRole } from "@/lib/roleStore";
 
 const STORAGE_KEY = "santino_phrase_library_v1";
 const listeners = new Set<() => void>();
@@ -28,9 +30,11 @@ function getServerSnapshot(): Phrase[] {
 }
 
 function subscribe(listener: () => void) {
+  if (!listeners.size) window.addEventListener("storage", onStorage);
   listeners.add(listener);
-  return () => listeners.delete(listener);
+  return () => { listeners.delete(listener); if (!listeners.size) window.removeEventListener("storage", onStorage); };
 }
+function onStorage(event: StorageEvent) { if (event.key === STORAGE_KEY || event.key === null) { cache = null; listeners.forEach((listener) => listener()); } }
 
 function writePhrases(next: Phrase[]) {
   cache = next;
@@ -52,10 +56,12 @@ export function usePhraseLibrary() {
   const phrases = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const addPhrase = useCallback((input: { category: string; tags: string[]; text: string }) => {
+    if (!canEditAdminSetting(getCurrentRole(), "operations")) throw new Error("僅護理長及系統管理員可維護共用片語。");
     writePhrases([...getSnapshot(), { id: Date.now(), ...input }]);
   }, []);
 
   const removePhrase = useCallback((id: number) => {
+    if (!canEditAdminSetting(getCurrentRole(), "operations")) throw new Error("僅護理長及系統管理員可維護共用片語。");
     writePhrases(getSnapshot().filter((p) => p.id !== id));
   }, []);
 

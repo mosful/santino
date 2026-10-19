@@ -16,7 +16,7 @@ export default function DashboardLayoutSwitch() {
   const layout = useDashboardLayout();
 
   return (
-    <div className="flex items-center rounded-xl border border-brand-900/10 bg-white p-1 shadow-sm" aria-label="中控版型切換">
+    <div className="flex items-center rounded-xl border border-brand-900/10 bg-surface-raised p-1 shadow-sm" aria-label="櫃台服務版型切換">
       {OPTIONS.map((option) => {
         const Icon = option.icon;
         const active = layout === option.value;
@@ -28,7 +28,7 @@ export default function DashboardLayoutSwitch() {
             aria-pressed={active}
             title={`切換為${option.label}`}
             className={
-              "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all " +
+              "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-[color,background-color,box-shadow] " +
               (active ? "bg-brand-500 text-white shadow-sm" : "text-stone-500 hover:bg-brand-50 hover:text-brand-600")
             }
           >

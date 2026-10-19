@@ -21,12 +21,13 @@ export default function Pagination({
   const safePage = Math.min(Math.max(1, page), totalPages);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-stone-500">
+    <nav aria-label="分頁導覽" className="flex flex-wrap items-center justify-between gap-3 text-xs text-stone-500">
       <div className="flex items-center gap-1.5">
         <span>每頁顯示</span>
         <select
           value={pageSize}
           onChange={(e) => onPageSizeChange(Number(e.target.value))}
+          aria-label="每頁顯示筆數"
           className="rounded-lg border border-stone-200 px-2 py-1 text-xs md:max-lg:min-h-11 md:max-lg:px-3"
         >
           {PAGE_SIZE_OPTIONS.map((n) => (
@@ -45,7 +46,7 @@ export default function Pagination({
           onClick={() => onPageChange(Math.max(1, safePage - 1))}
           disabled={safePage <= 1}
           aria-label="上一頁"
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-stone-200 disabled:cursor-not-allowed disabled:opacity-40 md:max-lg:h-11 md:max-lg:w-11"
+          className="flex h-11 w-11 items-center justify-center rounded-lg border border-border-subtle bg-surface-raised hover:border-brand-300 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
         </button>
@@ -53,11 +54,11 @@ export default function Pagination({
           onClick={() => onPageChange(Math.min(totalPages, safePage + 1))}
           disabled={safePage >= totalPages}
           aria-label="下一頁"
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-stone-200 disabled:cursor-not-allowed disabled:opacity-40 md:max-lg:h-11 md:max-lg:w-11"
+          className="flex h-11 w-11 items-center justify-center rounded-lg border border-border-subtle bg-surface-raised hover:border-brand-300 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronRight className="h-3.5 w-3.5" />
         </button>
       </div>
-    </div>
+    </nav>
   );
 }

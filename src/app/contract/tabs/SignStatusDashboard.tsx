@@ -1,13 +1,15 @@
+"use client";
+import { useDomainStore } from "@/lib/demo/domainStore";
 import Card from "@/components/ui/Card";
 
-const STATS = [
-  { label: "已簽約未入住", value: 4, color: "text-sky-600" },
-  { label: "已入住未簽約", value: 0, color: "text-emerald-600" },
-  { label: "即將到期（30天內）", value: 1, color: "text-amber-600" },
-  { label: "逾期未簽約", value: 0, color: "text-rose-600" },
-];
-
 export default function SignStatusDashboard() {
+  const { data } = useDomainStore(); const today = data.demoAt.slice(0, 10);
+  const STATS = [
+    { label: "已簽約未入住", value: data.cases.filter((item) => item.signed && !item.actualAdmission && !item.closed).length, color: "text-sky-600" },
+    { label: "已入住未簽約", value: data.cases.filter((item) => item.actualAdmission && !item.signed && !item.dischargedAt).length, color: "text-emerald-600" },
+    { label: "即將到期（30天內）", value: data.cases.filter((item) => item.actualAdmission && !item.dischargedAt && Date.parse(item.actualAdmission) + item.days * 86400000 - Date.parse(today) <= 30 * 86400000).length, color: "text-amber-600" },
+    { label: "逾期未簽約", value: data.cases.filter((item) => item.stage === 3 && !item.signed && item.signedDate && item.signedDate < today && !item.closed).length, color: "text-rose-600" },
+  ];
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
       {STATS.map((s) => (

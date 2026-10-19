@@ -3,7 +3,6 @@ export type Role =
   | "阿長 婉真"
   | "衛教師 琳雅"
   | "護理師"
-  | "維運"
   | "系統管理員";
 
 export const ROLES: Role[] = [
@@ -11,7 +10,6 @@ export const ROLES: Role[] = [
   "阿長 婉真",
   "衛教師 琳雅",
   "護理師",
-  "維運",
   "系統管理員",
 ];
 
@@ -22,7 +20,6 @@ export const ROLE_PROFILE: Record<Role, { name: string; empNo: string }> = {
   "阿長 婉真": { name: "婉真", empNo: "N1001" },
   "衛教師 琳雅": { name: "琳雅", empNo: "E3005" },
   護理師: { name: "示範護理師", empNo: "N1002" },
-  維運: { name: "示範維運人員", empNo: "T1001" },
 };
 
 export type AccessLevel = "edit" | "view" | "none";
@@ -51,7 +48,6 @@ const MATRIX: Record<string, Partial<Record<Role, AccessLevel>>> = {
 export function getAccess(role: Role, moduleNo: string): AccessLevel {
   if (role === "系統管理員") return "edit";
   if (role === "護理師") return ["2", "3", "17"].includes(moduleNo) ? "edit" : ["1", "4", "6"].includes(moduleNo) ? "view" : "none";
-  if (role === "維運") return ["15", "17"].includes(moduleNo) ? "edit" : "none";
   return MATRIX[moduleNo]?.[role] ?? "none";
 }
 

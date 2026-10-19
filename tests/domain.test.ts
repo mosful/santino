@@ -177,7 +177,7 @@ test("退房續留的車號與期限同步，接回後終止，重開補登不�
   assert.equal(domainStore.get().cases.find((item) => item.id === record.id)!.dischargedAt, dischargedAt);
   assert.equal(domainStore.get().bindings.find((item) => item.id === binding.id)!.ended, true);
 });
-test("維運離車與掃碼復原只影響原鏡頭；RGB 依原佈線且跳過未知通道", () => {
+test("離車與掃碼復原只影響原鏡頭；RGB 依原佈線且跳過未知通道", () => {
   reset(); const binding = domainStore.get().bindings[0]; const baby = binding.babies[0];
   babycamActions.scenario(baby.cameraId, { type: "cart-away", now: Date.parse(domainStore.get().demoAt) });
   babycamActions.scenario(baby.cameraId, { type: "tick", now: Date.parse(domainStore.get().demoAt) + 5000 });

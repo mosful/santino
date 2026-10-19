@@ -45,7 +45,7 @@ export const DOMAIN_SEED: DemoDomain = {
   houseWindow: { mode: "always", start: "00:00", end: "23:59" }, internalWindow: { mode: "scheduled", start: "10:00", end: "22:00" }, familyWindow: { mode: "scheduled", start: "10:00", end: "20:00" }, enforceInternal: false, enforceFamily: false, familyLimit: 2, concurrencyEnforced: true,
   demoAt: "2026-10-16T12:00:00+08:00", viewScenario: "normal", lightColors: { empty: "熄滅", care: "熄滅", idle: "白", internal: "紅", family: "洋紅" }, relayChannels: {}, audit: [], careEvents: [],
   staff: [{ id: "demo-admin", name: "展示管理員", role: "系統管理員", enabled: true }, { id: "demo-nurse", name: "展示護理師", role: "護理師", enabled: true }],
-  sectionPermissions: { 櫃台: ["01", "02", "03"], 護理師: ["01", "02", "03"], "衛教師 琳雅": [], "阿長 婉真": ["01", "02", "03", "04", "05"], 維運: ["01", "02", "03", "04", "05", "06", "07"] },
+  sectionPermissions: { 櫃台: ["01", "02", "03"], 護理師: ["01", "02", "03"], "衛教師 琳雅": [], "阿長 婉真": ["01", "02", "03", "04", "05"] },
   printSettings: DEFAULT_PRINT_SETTINGS,
   rooms: OPS_ROOMS.map((room) => ({ room: room.room, roomType: room.roomType === "精緻房" ? "精緻" : room.roomType === "VIP房" ? "VIP" : "VILLA", enabled: true })),
   viewingHistory: [],

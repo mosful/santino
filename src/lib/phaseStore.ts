@@ -5,7 +5,7 @@ import { useSyncExternalStore } from "react";
 export type EnabledPhase = 1 | 2;
 
 const STORAGE_KEY = "santino_enabled_phase_v1";
-const DEFAULT_PHASE: EnabledPhase = 2;
+const DEFAULT_PHASE: EnabledPhase = 1;
 const listeners = new Set<() => void>();
 let cache: EnabledPhase | null = null;
 

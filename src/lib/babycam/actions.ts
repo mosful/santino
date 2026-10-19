@@ -32,7 +32,7 @@ export const babycamActions = {
   register(caseId: string) {
     domainStore.update((data) => {
       requireSection(data, "01");
-      if (!["系統管理員", "櫃台", "維運"].includes(getCurrentRole())) throw new Error("入住交付須由櫃台或管理角色操作。");
+      if (!["系統管理員", "櫃台"].includes(getCurrentRole())) throw new Error("入住交付須由櫃台或管理角色操作。");
       const record = data.cases.find((item) => item.id === caseId);
       if (!record || !record.actualAdmission || record.dischargedAt) throw new Error("請先從案件流程完成實際入住。");
       if (data.bindings.some((binding) => binding.caseId === caseId && !binding.ended)) throw new Error("此案件已有視訊登記，請沿用原資料。");
@@ -124,7 +124,7 @@ export const babycamActions = {
   detection(settings: DemoDomain["detection"]) { domainStore.update((data) => { requireSection(data, "04"); if (settings.threshold < 0.02 || settings.threshold > 0.8 || !Number.isInteger(settings.streak) || settings.streak < 1 || settings.streak > 10 || settings.intervalSeconds < 1 || settings.intervalSeconds > 300 || settings.maxAgeSeconds < 10 || settings.maxAgeSeconds > 3600) throw new Error("請確認偵測門檻、連續次數與時間範圍。"); data.detection = settings; audit(data, "修改本機偵測模擬設定", "detection"); }); },
   scenario(cameraId: string, action: DemoScenarioAction) {
     domainStore.update((data) => {
-      requireSection(data, "03"); if (!["系統管理員", "維運"].includes(getCurrentRole())) throw new Error("維運情境僅限管理員與維運角色。");
+      requireSection(data, "03"); if (getCurrentRole() !== "系統管理員") throw new Error("設備維運情境僅限系統管理員。");
       const camera = data.cameras.find((item) => item.id === cameraId); if (!camera) throw new Error("找不到監視器。");
       const previous = data.demoScenarios[cameraId] ?? initialDemoScenario(); const next = reduceDemoScenario(previous, action);
       if (action.type === "sample" && ["departing", "fault"].includes(previous.phase)) { next.abnormalSamples = Math.min(data.detection.streak, previous.abnormalSamples + 1); next.phase = next.abnormalSamples >= data.detection.streak ? "care" : previous.phase; }
@@ -135,12 +135,12 @@ export const babycamActions = {
         const careMode = ["care", "returned"].includes(next.phase); if (baby.careMode !== careMode) { baby.careMode = careMode; if (careMode) { baby.careSince = data.demoAt; data.careEvents.push({ id: crypto.randomUUID(), bindingId: binding!.id, babyId: baby.babyId, start: data.demoAt, end: null, actor: getCurrentRole() }); } else { baby.careSince = undefined; data.careEvents.filter((event) => event.babyId === baby.babyId && !event.end).forEach((event) => { event.end = data.demoAt; }); } }
       }
       if (binding && action.type === "view") { closeViewingHistory(data, binding.id, "切換模擬受眾", `demo-${cameraId}`); binding.sessions = binding.sessions.filter((session) => session.id !== `demo-${cameraId}`); if (action.viewer !== "idle") { const audience = action.viewer === "internal" ? "internal" : "family"; binding.sessions.push({ id: `demo-${cameraId}`, audience, lastSeen: data.demoAt }); data.viewingHistory.push({ id: crypto.randomUUID(), bindingId: binding.id, deviceId: `demo-${cameraId}`, audience, start: data.demoAt, lastSeen: data.demoAt, end: null, reason: "展示控制台模擬觀看" }); } }
-      audit(data, `維運情境 ${action.type} → ${next.phase}`, cameraId);
+      audit(data, `設備維運情境 ${action.type} → ${next.phase}`, cameraId);
     });
   },
   lightColor(state: string, color: string, label?: string) { domainStore.update((data) => { requireSection(data, "08"); if (!["熄滅", "紅", "綠", "藍", "黃", "洋紅", "青", "白"].includes(color) || !state.trim()) throw new Error("請選擇有效燈色與名稱。"); data.lightColors[state] = color; if (label?.trim()) data.lightLabels[state] = label.trim(); audit(data, "修改模擬燈號狀態", state); }); },
   removeLight(state: string) { domainStore.update((data) => { requireSection(data, "08"); if (["empty", "care", "idle", "internal", "family"].includes(state)) throw new Error("五種內建業務狀態不可刪除。"); delete data.lightColors[state]; delete data.lightLabels[state]; audit(data, "刪除自訂燈號狀態", state); }); },
-  relay(channel: string, enabled: boolean) { domainStore.update((data) => { requireSection(data, "07"); if (!["系統管理員", "維運"].includes(getCurrentRole())) throw new Error("通道點測模擬僅限維運與管理員。"); data.relayChannels[channel] = enabled; audit(data, `模擬通道 ${enabled ? "開" : "關"}`, channel); }); },
+  relay(channel: string, enabled: boolean) { domainStore.update((data) => { requireSection(data, "07"); if (getCurrentRole() !== "系統管理員") throw new Error("通道點測模擬僅限系統管理員。"); data.relayChannels[channel] = enabled; audit(data, `模擬通道 ${enabled ? "開" : "關"}`, channel); }); },
   staff(id: string, name: string, role: string, enabled: boolean) {
     domainStore.update((data) => { requireSection(data, "08"); if (!name.trim() || !(ROLES as readonly string[]).includes(role)) throw new Error("請填姓名並選擇有效角色。"); const old = data.staff.find((item) => item.id === id); if (old?.role === "系統管理員" && old.enabled && (role !== "系統管理員" || !enabled) && data.staff.filter((item) => item.enabled && item.role === "系統管理員").length === 1) throw new Error("最後一位啟用中的管理員不可停用或降級。"); if (old) Object.assign(old, { name, role, enabled }); else data.staff.push({ id: crypto.randomUUID(), name, role, enabled }); audit(data, "修改展示帳號", id || name); });
   },

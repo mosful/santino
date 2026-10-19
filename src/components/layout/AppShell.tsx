@@ -7,7 +7,6 @@ import { Clock3, Menu, PanelLeftClose, PanelLeftOpen, QrCode, X } from "lucide-r
 import SidebarNav from "./SidebarNav";
 import RoleSwitcher from "./RoleSwitcher";
 import ThemeSwitcher from "./ThemeSwitcher";
-import PhaseSwitcher from "./PhaseSwitcher";
 import SidebarIllustration from "./SidebarIllustration";
 import { useSidebarCollapsed, setSidebarCollapsed } from "@/lib/sidebarStore";
 
@@ -146,7 +145,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex-1" />
           <HeaderStatus />
-          <PhaseSwitcher />
           <ThemeSwitcher />
           <RoleSwitcher />
         </header>

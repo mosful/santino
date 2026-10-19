@@ -2,12 +2,11 @@
 
 /*
   三種可切換版型配色（ThemeSwitcher，見 lib/themeStore.ts）：
-  - warm（暖色，預設）：米杏暖膚色＋玫瑰紅，原始風格
+  - blue（專業藍，預設 #236276）：醫療常見的沉穩藍綠，資訊感較強
+  - warm（暖色）：米杏暖膚色＋玫瑰紅，原始風格
   - green（沉靜綠）：參考 Eleken Refera 醫療案例的「沉靜綠＋暖橘點綴」
-  - blue（專業藍）：醫療常見的沉穩藍綠，資訊感較強
-  data-theme 屬性由 ThemeSwitcher 寫在 <html> 上；未設定時預設走 warm。
+  data-theme 屬性由 ThemeSwitcher 寫在 <html> 上；未設定時預設走 blue。
 */
-:root,
 :root[data-theme="warm"] {
   --background: #faf5ee;
   --background-alt: #f3e9dc;
@@ -58,6 +57,7 @@
   --shadow-color: 22 40 27;
 }
 
+:root,
 :root[data-theme="blue"] {
   --background: #f1f6f8;
   --background-alt: #e3eef2;

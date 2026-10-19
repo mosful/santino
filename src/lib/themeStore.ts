@@ -11,7 +11,7 @@ export const THEMES: { value: Theme; label: string; swatch: string }[] = [
 ];
 
 const STORAGE_KEY = "santino_theme_v1";
-const DEFAULT_THEME: Theme = "warm";
+const DEFAULT_THEME: Theme = "blue";
 const listeners = new Set<() => void>();
 let cache: Theme | null = null;
 

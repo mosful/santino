@@ -1,6 +1,5 @@
 "use client";
 
-import DashboardLayoutSwitch from "./DashboardLayoutSwitch";
 import JourneyDashboard from "./JourneyDashboard";
 import PageHeader from "@/components/ui/PageHeader";
 import { useDashboardLayout } from "@/lib/dashboardLayoutStore";
@@ -10,11 +9,7 @@ export default function DashboardWorkspace({ classicContent }: { classicContent:
 
   return (
     <>
-      <PageHeader
-        title="1. 櫃台服務"
-        moduleNo="1"
-        action={<DashboardLayoutSwitch />}
-      />
+      <PageHeader title="1. 櫃台服務" moduleNo="1" />
       {layout === "journey" ? <JourneyDashboard /> : classicContent}
     </>
   );

@@ -57,7 +57,7 @@ export function getAccess(role: Role, moduleNo: string): AccessLevel {
 
 export type AdminSettingGroup = "system" | "operations";
 
-/** V24 將主檔／人員／表單欄位等系統設定鎖給管理員；營運規則可由護理長維護。 */
+/** 主檔／人員／表單欄位等系統設定鎖給管理員；營運規則可由護理長維護。 */
 export function canEditAdminSetting(role: Role, group: AdminSettingGroup) {
   if (role === "系統管理員") return true;
   return group === "operations" && role === "阿長 婉真";

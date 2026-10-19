@@ -8,7 +8,7 @@ export type ModuleInfo = {
   no: string;
   label: string;
   href: string;
-  /** 功能所屬階段；只控制 PhaseSwitcher 的功能分類。 */
+  /** 功能所屬階段；只控制「後台管理＞系統參數設定＞功能分期顯示」的選單分類。 */
   phase: 1 | 2 | 3;
   /** false 代表功能改由其他工作區進入；原路由、權限與深連結仍保留。 */
   showInSidebar?: boolean;

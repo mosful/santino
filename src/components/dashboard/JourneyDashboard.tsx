@@ -24,7 +24,7 @@ import {
 } from "@/lib/mock/customerJourney";
 import { useJourneyMothers } from "@/lib/domain/legacySelectors";
 import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
-import V24OperationsOverview from "./V24OperationsOverview";
+import OperationsOverview from "./OperationsOverview";
 
 type QuickView = "overdue" | "today" | "staying" | "moving";
 
@@ -140,7 +140,7 @@ export default function JourneyDashboard() {
 
   return (
     <div className="space-y-4 animate-fade-in-up">
-      <V24OperationsOverview />
+      <OperationsOverview />
       <section className="overflow-hidden rounded-3xl border border-brand-900/10 bg-white/90 shadow-sm">
         <div className="flex flex-col gap-4 border-b border-stone-100 bg-gradient-to-r from-brand-50 via-white to-amber-50/70 px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
           <div>

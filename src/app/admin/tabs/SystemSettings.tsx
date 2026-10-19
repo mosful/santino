@@ -1,10 +1,28 @@
 "use client";
 
+import { LayoutDashboard, Route } from "lucide-react";
 import Switch from "@/components/ui/Switch";
+import SegmentedControl from "@/components/ui/SegmentedControl";
 import { useSameRoomLock, setSameRoomLock } from "@/lib/windowLockStore";
 import { careActions, useCareStore } from "@/lib/care/store";
 import { canEditAdminSetting } from "@/lib/permissions";
 import { useCurrentRole } from "@/lib/roleStore";
+import { setEnabledPhase, useEnabledPhase, type EnabledPhase } from "@/lib/phaseStore";
+import {
+  setDashboardLayout,
+  useDashboardLayout,
+  type DashboardLayout,
+} from "@/lib/dashboardLayoutStore";
+
+const PHASE_OPTIONS = [
+  { value: 1 as EnabledPhase, label: "Phase 1", help: "只顯示第一階段核心功能選單" },
+  { value: 2 as EnabledPhase, label: "Phase 1＋2", help: "顯示第一、二階段功能選單" },
+];
+
+const LAYOUT_OPTIONS = [
+  { value: "journey" as DashboardLayout, label: "流程中控", icon: Route, help: "以案件七階段流程為主的中控版型" },
+  { value: "classic" as DashboardLayout, label: "原中控", icon: LayoutDashboard, help: "沿用舊系統配置的中控版型" },
+];
 
 export default function SystemSettings() {
   const multiWindowLock = useSameRoomLock();
@@ -12,9 +30,45 @@ export default function SystemSettings() {
   const role = useCurrentRole();
   const canEditSystem = canEditAdminSetting(role, "system");
   const canEditOperations = canEditAdminSetting(role, "operations");
+  const enabledPhase = useEnabledPhase();
+  const dashboardLayout = useDashboardLayout();
 
   return (
     <div className="space-y-5 text-sm">
+      <div className="rounded border border-stone-200 p-3">
+        <div className="mb-3 text-xs font-medium text-stone-600">介面顯示設定</div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stone-100 pb-3">
+          <div className="min-w-0">
+            <div className="text-xs font-medium text-stone-700">功能分期顯示</div>
+            <p className="mt-0.5 text-xs text-stone-400">
+              控制側邊選單顯示到哪一個開發階段；Phase 1＋2 會同時包含第一階段功能。
+            </p>
+          </div>
+          <SegmentedControl
+            ariaLabel="功能分期顯示"
+            value={enabledPhase}
+            onChange={setEnabledPhase}
+            options={PHASE_OPTIONS}
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-3">
+          <div className="min-w-0">
+            <div className="text-xs font-medium text-stone-700">櫃台服務中控版型</div>
+            <p className="mt-0.5 text-xs text-stone-400">
+              設定「1. 櫃台服務」首頁採流程中控或原中控配置。
+            </p>
+          </div>
+          <SegmentedControl
+            ariaLabel="櫃台服務中控版型"
+            value={dashboardLayout}
+            onChange={setDashboardLayout}
+            options={LAYOUT_OPTIONS}
+          />
+        </div>
+      </div>
+
       <div className="rounded border border-rose-200 bg-rose-50 p-3">
         <div className="mb-2 flex items-center justify-between">
           <div className="text-xs font-medium text-rose-700">

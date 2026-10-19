@@ -9,7 +9,7 @@ import { ANNOUNCEMENTS } from "@/lib/mock/dashboard";
 import { useCurrentRole } from "@/lib/roleStore";
 import { getAccess } from "@/lib/permissions";
 
-export default function V24OperationsOverview() {
+export default function OperationsOverview() {
   const { data: domain } = useDomainStore();
   const { data: care } = useCareStore();
   const role = useCurrentRole();
@@ -68,7 +68,7 @@ export default function V24OperationsOverview() {
         <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold text-rose-600">
-              <BellRing className="h-4 w-4" /> V24 今日工作台
+              <BellRing className="h-4 w-4" /> 今日工作台
             </div>
             <h2 className="mt-1 text-lg font-bold text-stone-800">先處理到期事項，再接續案件流程</h2>
           </div>

@@ -9,7 +9,7 @@ import { caseBalance, caseNextAction, casePrice, casePriceBreakdown, gifts } fro
 import { useCurrentRole } from "@/lib/roleStore";
 import { taipeiTimestamp } from "@/lib/care/rules";
 import CareSignature from "@/components/care/CareSignature";
-import { pageTitle } from "@/lib/usePageTitle";
+import PageHeader from "@/components/ui/PageHeader";
 import ContractSteps from "./ContractSteps";
 import { DailyLedger, AdmissionMeal, ReturnPhotos } from "./CaseDetails";
 
@@ -85,7 +85,7 @@ export default function CaseWorkspace() {
 
   if (!permitted) return <div className="p-8"><h1 className="text-xl font-semibold">櫃台案件流程</h1><p className="mt-4">目前角色沒有櫃台案件作業權限，請由櫃台、護理長或管理員操作。</p></div>;
   return <div className="w-full space-y-5 px-4 py-4 sm:px-6">
-    <header className="flex flex-wrap items-center justify-between gap-3"><title>{pageTitle("櫃台服務・案件流程")}</title><h1 className="text-xl font-semibold">櫃台服務・案件流程</h1><div className="flex flex-wrap gap-2">{!record && <button type="button" className={button} onClick={() => setQuoteOpen((value) => !value)}>套餐快速試算</button>}<Link href="/cases/calendar/" className={button}>待辦行事曆</Link><Link href="/customer" className={button}>客戶資料</Link><Link href="/babycam" className={button}>寶寶視訊</Link>{record && <button type="button" className={button} onClick={() => { setSelected(""); setOperation(null); setMessage(""); }}>回案件列表</button>}</div></header>
+    <PageHeader title="櫃台服務・案件流程" action={<div className="flex flex-wrap gap-2">{!record && <button type="button" className={button} onClick={() => setQuoteOpen((value) => !value)}>套餐快速試算</button>}<Link href="/cases/calendar/" className={button}>待辦行事曆</Link><Link href="/customer" className={button}>客戶資料</Link><Link href="/babycam" className={button}>寶寶視訊</Link>{record && <button type="button" className={button} onClick={() => { setSelected(""); setOperation(null); setMessage(""); }}>回案件列表</button>}</div>} />
     {(message || storageError) && <p role="status" className="whitespace-pre-line rounded-lg border border-stone-300 bg-stone-50 p-3 text-sm">{storageError ?? message}</p>}
     {!record ? <>
       {quoteOpen && <PricingCalculator onUse={(name, phone, preset) => { setReservation({ ...emptyReservation(), name, phone, hospital: preset.hospital }); setQuotePreset(preset); setCreating(true); setQuoteOpen(false); }} />}

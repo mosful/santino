@@ -1,6 +1,13 @@
-import { MODULE_ICONS } from "@/components/layout/icons";
-import { pageTitle } from "@/lib/usePageTitle";
+"use client";
 
+import { useEffect } from "react";
+import { pageTitle } from "@/lib/usePageTitle";
+import { clearPageHeading, setPageHeading } from "@/lib/pageHeadingStore";
+
+/**
+ * 頁面標題宣告元件。標題本身改由 AppShell 的頁首列顯示（與登入者資訊同一列），
+ * 這裡只負責：設定瀏覽器分頁標題、把標題交給頁首、以及渲染頁面層級的操作按鈕。
+ */
 export default function PageHeader({
   title,
   action,
@@ -10,21 +17,19 @@ export default function PageHeader({
   action?: React.ReactNode;
   moduleNo?: string;
 }) {
-  const Icon = moduleNo ? MODULE_ICONS[moduleNo] : undefined;
+  useEffect(() => {
+    setPageHeading({ title, moduleNo });
+    return () => clearPageHeading(title);
+  }, [title, moduleNo]);
+
   return (
-    <div className="tablet-page-header animate-fade-in-up mb-6 flex items-center justify-between gap-4 border-b border-brand-900/10 pb-4 md:max-lg:flex-col md:max-lg:items-stretch">
+    <>
       <title>{pageTitle(title)}</title>
-      <div className="flex items-center gap-3">
-        {Icon ? (
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-accent-400 text-white shadow-sm shadow-brand-200">
-            <Icon className="h-[18px] w-[18px]" />
-          </span>
-        ) : (
-          <span className="h-6 w-1.5 shrink-0 rounded-full bg-gradient-to-b from-brand-400 to-accent-400" />
-        )}
-        <h1 className="text-xl font-bold tracking-[-0.02em] text-stone-800 sm:text-2xl">{title}</h1>
-      </div>
-      {action && <div className="tablet-page-header-action contents md:max-lg:block md:max-lg:w-full">{action}</div>}
-    </div>
+      {action && (
+        <div className="tablet-page-header-action animate-fade-in-up mb-4 flex flex-wrap items-center justify-end gap-2">
+          {action}
+        </div>
+      )}
+    </>
   );
 }

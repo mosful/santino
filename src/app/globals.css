@@ -465,11 +465,6 @@ main#main-content > :where(div) {
     display: inline;
   }
 
-  .tablet-page-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
   .tablet-page-header-action {
     display: block !important;
     width: 100%;

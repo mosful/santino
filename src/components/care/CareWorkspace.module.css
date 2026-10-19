@@ -19,6 +19,15 @@
 .subjectCard[data-status="親子同室"] { border-color: #edc6d2; background: #fff2f5; }
 .subjectCard[data-status="托嬰"] { border-style: dashed; border-color: #b9a3d8; background: #f7f2fc; }
 .subjectCard[data-status="隔離"] { border-color: #e7cf9d; background: #fff8eb; }
+/* 清單檢視：沿用卡片檢視的狀態色彩語意，改為整列淡底 */
+.subjectRow[data-status="入住"] { background: #f0f8f3; }
+.subjectRow[data-status="親子同室"] { background: #fff2f5; }
+.subjectRow[data-status="托嬰"] { background: #f7f2fc; }
+.subjectRow[data-status="隔離"] { background: #fff8eb; }
+.subjectRow[data-status="退房回補"] { background: var(--surface-muted); }
+/* 工作區的 48px 觸控高度是為表單欄位設的；清單列的表單按鈕改用 40px，
+   仍在粗指標可點範圍內，又不會讓每列長到兩倍高。 */
+.rowAction { min-height: 40px !important; }
 .status { padding: 4px 8px; border-radius: 6px; background: color-mix(in srgb, var(--surface-raised) 82%, transparent); color: var(--foreground); }
 .signedImage { max-width: 280px; max-height: 110px; object-fit: contain; }
 .photo { max-height: 320px; max-width: 100%; object-fit: contain; }

@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Clock3, Menu, PanelLeftClose, PanelLeftOpen, QrCode, X } from "lucide-react";
+import { Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import SidebarNav from "./SidebarNav";
 import RoleSwitcher from "./RoleSwitcher";
 import ThemeSwitcher from "./ThemeSwitcher";
 import SidebarIllustration from "./SidebarIllustration";
 import { useSidebarCollapsed, setSidebarCollapsed } from "@/lib/sidebarStore";
+import { usePageHeading } from "@/lib/pageHeadingStore";
+import { MODULE_ICONS } from "./icons";
 
 const AUTH_ROUTE_PREFIXES = ["/login", "/forgot-password"];
 // 對外觀看頁（寶寶視訊的媽媽端／親友端）給手機開，不套院務側邊欄與角色切換
@@ -30,22 +32,25 @@ function Brand({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function HeaderStatus() {
-  const [clock, setClock] = useState("--:--:--");
+function PageHeading() {
+  const heading = usePageHeading();
+  const Icon = heading?.moduleNo ? MODULE_ICONS[heading.moduleNo] : undefined;
 
-  useEffect(() => {
-    const update = () => setClock(new Intl.DateTimeFormat("zh-TW", {
-      timeZone: "Asia/Taipei", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false,
-    }).format(new Date()));
-    update();
-    const timer = window.setInterval(update, 1000);
-    return () => window.clearInterval(timer);
-  }, []);
+  if (!heading) {
+    // 標題由各頁的 PageHeader 於掛載後送進來；未送達前先佔住列高避免頁首跳動。
+    return <span className="min-w-0 flex-1 md:flex-none" aria-hidden="true" />;
+  }
 
   return (
-    <div className="hidden items-center gap-2 lg:flex">
-      <span suppressHydrationWarning className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 text-xs font-semibold tabular-nums text-stone-500" aria-label={`台灣時間 ${clock}`}><Clock3 className="h-3.5 w-3.5 text-brand-500" />{clock}</span>
-      <Link href="/babycam/scan/" className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-600 hover:border-brand-200 hover:bg-brand-50"><QrCode className="h-3.5 w-3.5 text-brand-500" />QR 掃描</Link>
+    <div className="flex min-w-0 items-center gap-2.5">
+      {Icon ? (
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-accent-400 text-white shadow-xs">
+          <Icon className="h-4 w-4" />
+        </span>
+      ) : (
+        <span className="h-5 w-1.5 shrink-0 rounded-full bg-gradient-to-b from-brand-500 to-accent-400" />
+      )}
+      <h1 className="truncate text-base font-bold tracking-[-0.02em] text-stone-800 sm:text-lg">{heading.title}</h1>
     </div>
   );
 }
@@ -140,11 +145,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <div className="md:hidden">
-            <Brand compact />
-          </div>
+          <PageHeading />
           <div className="flex-1" />
-          <HeaderStatus />
           <ThemeSwitcher />
           <RoleSwitcher />
         </header>

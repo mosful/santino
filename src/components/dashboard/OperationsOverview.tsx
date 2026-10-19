@@ -34,9 +34,9 @@ export default function OperationsOverview() {
   const babycamAccess = getAccess(role, "17");
   const babycamSummary = role === "櫃台"
     ? "入住交付、標籤與日常操作"
-    : role === "阿長 婉真"
+    : role === "護理長 婉真"
       ? "查看狀態與報表"
-      : role === "系統管理員"
+      : role === "管理者"
         ? "主檔、設備與權限設定"
         : "依角色開啟可用功能";
   const serviceLinks = [
@@ -47,7 +47,7 @@ export default function OperationsOverview() {
     { href: "/contract/", icon: FileText, label: "合約與付款", value: "簽約、變更與收款", visible: getAccess(role, "12") !== "none" },
     { href: "/care/", icon: PhoneCall, label: "媽媽關懷", value: "跨階段關懷與追蹤", visible: getAccess(role, "7") !== "none" },
     { href: "/cases/calendar/", icon: CalendarClock, label: "待辦行事曆", value: "月、週、日工作排程", visible: true },
-    { href: "/babycam/workspace/", icon: Video, label: "寶寶視訊管理", value: babycamSummary, visible: babycamAccess !== "none" },
+    { href: "/babycam/", icon: Video, label: "寶寶視訊管理", value: babycamSummary, visible: babycamAccess !== "none" },
   ].filter((item) => item.visible);
 
   return (
@@ -91,7 +91,7 @@ export default function OperationsOverview() {
           <OverviewLink href="/cases/" icon={Search} label="案件搜尋" value={`${domain.cases.filter((record) => !record.closed).length} 件進行中`} />
           <OverviewLink href="/cases/" icon={FileEdit} label="未完成草稿" value={`${drafts.length} 件待續作`} tone="amber" />
           <OverviewLink href="/contract/" icon={CalendarClock} label="合約與付款" value="回到案件七階段" tone="green" />
-          {babycamAccess !== "none" && <OverviewLink href="/babycam/workspace/" icon={Video} label="寶寶視訊管理" value={babycamSummary} tone="violet" />}
+          {babycamAccess !== "none" && <OverviewLink href="/babycam/" icon={Video} label="寶寶視訊管理" value={babycamSummary} tone="violet" />}
         </div>
       </div>
 

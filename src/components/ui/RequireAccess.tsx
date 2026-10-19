@@ -23,7 +23,7 @@ export default function RequireAccess({
       <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-stone-300 bg-white/60 p-16 text-center">
         <Lock className="h-10 w-10 text-stone-300" />
         <p className="text-sm font-medium text-stone-500">目前身分「{role}」沒有此模組的存取權限</p>
-        <p className="text-xs text-stone-400">請至右上角切換身分，或洽系統管理員調整權限設定</p>
+        <p className="text-xs text-stone-400">請至右上角切換身分，或洽管理者調整權限設定</p>
       </div>
     );
   }

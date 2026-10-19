@@ -2,10 +2,10 @@ import type { Role } from "../permissions";
 import type { CareForm, CareKind, CareSubject, CareValues } from "./types";
 
 export function documentKey(subjectId: string, formKey: string) { return `${subjectId}:${formKey}`; }
-export function canAuthorizeCare(role: Role) { return role === "系統管理員" || role === "阿長 婉真"; }
+export function canAuthorizeCare(role: Role) { return role === "管理者" || role === "護理長 婉真"; }
 export function canEditCare(role: Role, kind: CareKind, formKey: string) {
   if (canAuthorizeCare(role)) return true;
-  if (role === "護理師") return true;
+  if (role === "護理師 陳護理師") return true;
   if (role === "衛教師 琳雅") return kind === "mama" || ["feeding", "io", "guidance"].includes(formKey);
   return false;
 }

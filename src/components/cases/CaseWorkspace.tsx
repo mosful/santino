@@ -68,7 +68,7 @@ export default function CaseWorkspace() {
   const [exceptionReason, setExceptionReason] = useState("");
   const selectedId = selected ?? params.get("id");
   const record = data.cases.find((item) => item.id === selectedId);
-  const permitted = ["櫃台", "阿長 婉真", "系統管理員"].includes(role);
+  const permitted = ["櫃台", "護理長 婉真", "管理者"].includes(role);
   const edit = permitted && !!record && !record.closed;
   function run(action: () => void, feedback = "已儲存並更新案件資料。") {
     try { action(); setMessage(feedback); setOperation(null); setReason(""); return true; }

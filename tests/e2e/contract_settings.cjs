@@ -2,7 +2,7 @@ const { chromium } = require("playwright"); const assert = require("node:assert/
 const base = process.env.SANTINO_PREVIEW_BASE_URL || "http://localhost:4310"; const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-results"), "contract_settings"); let activeBrowser;
 (async () => {
   await fs.mkdir(output, { recursive: true }); const browser = await chromium.launch({ headless: true }); activeBrowser = browser; const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-  await context.addInitScript(() => { localStorage.setItem("santino_auth_v1", "1"); if (!localStorage.getItem("santino_current_role_v1")) localStorage.setItem("santino_current_role_v1", "系統管理員"); });
+  await context.addInitScript(() => { localStorage.setItem("santino_auth_v1", "1"); if (!localStorage.getItem("santino_current_role_v1")) localStorage.setItem("santino_current_role_v1", "管理者"); });
   const page = await context.newPage(); const errors = []; page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(`${base}/contract/?tab=new`); const draftId = await page.getByLabel("套用案件", { exact: true }).inputValue(); await page.getByLabel("房型", { exact: true }).fill("VIP"); await page.getByLabel("住房天數", { exact: true }).fill("29"); await page.getByRole("checkbox", { name: "升級紅蟳火鍋", exact: true }).check(); await page.getByRole("button", { name: "儲存本案合約草稿", exact: true }).click();
   let data = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1"))); const draft = data.cases.find((record) => record.id === draftId); assert.equal(draft.days, 29); assert.equal(draft.quotedAmount, 238800);

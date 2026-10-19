@@ -15,7 +15,7 @@ import { toCsv } from "../src/lib/babycam/csv";
 
 const storage = new Map<string, string>(); const events = new EventTarget();
 Object.defineProperty(globalThis, "window", { value: { localStorage: { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value), removeItem: (key: string) => storage.delete(key) }, dispatchEvent: events.dispatchEvent.bind(events), addEventListener: events.addEventListener.bind(events), removeEventListener: events.removeEventListener.bind(events) }, configurable: true });
-function reset() { setCurrentRole("系統管理員"); domainStore.reset(); }
+function reset() { setCurrentRole("管理者"); domainStore.reset(); }
 function readyCase() {
   const id = caseActions.create("示範媽媽", "展示手機-新案");
   caseActions.update(id, { visitDate: "2026-10-20" }); caseActions.advance(id);
@@ -69,7 +69,7 @@ test("逐日帳加總一致，過去帳務須主管原因，重複修正不重�
   caseActions.charge(record.id, "急診展示費", 500, "2026-10-01", "急診補列展示");
   const entry = domainStore.get().cases.find((item) => item.id === record.id)!.ledger[0];
   setCurrentRole("櫃台"); assert.throws(() => caseActions.adjustCharge(record.id, entry.id, 700, "修正"), /主管授權/);
-  setCurrentRole("系統管理員"); caseActions.adjustCharge(record.id, entry.id, 700, "急診核對"); caseActions.adjustCharge(record.id, entry.id, 700, "相同金額");
+  setCurrentRole("管理者"); caseActions.adjustCharge(record.id, entry.id, 700, "急診核對"); caseActions.adjustCharge(record.id, entry.id, 700, "相同金額");
   const current = domainStore.get().cases.find((item) => item.id === record.id)!;
   assert.equal(current.ledger.length, 2); assert.equal(current.ledger[0].amount, 500);
   assert.equal(dailyCharges(current).reduce((sum, item) => sum + item.amount, 0), current.quotedAmount + 700);
@@ -83,7 +83,7 @@ test("入住前時間軸、分次付款與返家檢查保留稽核", () => {
   caseActions.payment(id, 5000, "轉帳", "2026-10-21", "入住尾款第一筆");
   const paid = domainStore.get().cases.find((item) => item.id === id)!;
   assert.equal(caseBalance(paid), before - 5000);
-  assert.match(paid.payments[0].actor, /系統管理員/);
+  assert.match(paid.payments[0].actor, /管理者/);
   caseActions.advance(id);
   caseActions.checkoutProgress(id, true);
   caseActions.update(id, { checkoutChecklist: ["房卡歸還"], checkoutNote: "其餘項目持續確認" });
@@ -153,16 +153,16 @@ test("重發連結失效、親友觀看名額與踢除", () => {
   assert.equal(domainStore.get().viewingHistory[2].reason, "重發連結");
 });
 test("最後管理員與八格固定權限不可被修改", () => {
-  reset(); assert.throws(() => babycamActions.staff("demo-admin", "展示管理員", "護理師", true), /最後一位/);
-  assert.throws(() => babycamActions.permission("護理師", "08", true), /不可調整/);
-  setCurrentRole("護理師"); assert.throws(() => babycamActions.relay("A-Y1", true), /權限/);
+  reset(); assert.throws(() => babycamActions.staff("demo-admin", "展示管理員", "護理師 陳護理師", true), /最後一位/);
+  assert.throws(() => babycamActions.permission("護理師 陳護理師", "08", true), /不可調整/);
+  setCurrentRole("護理師 陳護理師"); assert.throws(() => babycamActions.relay("A-Y1", true), /權限/);
 });
 test("寶寶視訊依櫃台、護理長與管理員區分操作權限", () => {
   reset(); const data = domainStore.get(); const camera = data.cameras[0];
   setCurrentRole("櫃台"); assert.equal(canEditBabycamSection(data, "01"), true);
-  setCurrentRole("阿長 婉真"); assert.equal(canBabycamSection(data, "03"), true); assert.equal(canEditBabycamSection(data, "03"), false);
+  setCurrentRole("護理長 婉真"); assert.equal(canBabycamSection(data, "03"), true); assert.equal(canEditBabycamSection(data, "03"), false);
   assert.throws(() => babycamActions.camera(camera.id, { health: "等待" }), /僅可檢視/);
-  setCurrentRole("系統管理員"); assert.equal(canEditBabycamSection(data, "08"), true);
+  setCurrentRole("管理者"); assert.equal(canEditBabycamSection(data, "08"), true);
 });
 test("退房續留的車號與期限同步，接回後終止，重開補登不重做退房", () => {
   reset(); const record = domainStore.get().cases.find((item) => item.stage === 5)!;
@@ -189,9 +189,9 @@ test("離車與掃碼復原只影響原鏡頭；RGB 依原佈線且跳過未知�
   assert.deepEqual(lightChannels("A16", "白"), []);
 });
 test("待辦跨角色檢視不等於處理權限，合約設定僅管理員", () => {
-  reset(); assert.deepEqual(roleTaskCategories("護理師"), ["醫師巡診", "回補期限", "托嬰"]);
+  reset(); assert.deepEqual(roleTaskCategories("護理師 陳護理師"), ["醫師巡診", "回補期限", "托嬰"]);
   setCurrentRole("櫃台"); assert.throws(() => taskActions.complete("demo-round"), /僅可檢視/); assert.throws(() => contractSettingActions.reviewDays(7), /僅管理員/);
-  setCurrentRole("系統管理員"); taskActions.complete("demo-round"); assert.ok(domainStore.get().handledTasks.includes("demo-round"));
+  setCurrentRole("管理者"); taskActions.complete("demo-round"); assert.ok(domainStore.get().handledTasks.includes("demo-round"));
 });
 test("作廢觀看不釋出寶寶與監視器，重新交付須換新連結", () => {
   reset(); const binding = domainStore.get().bindings[0];

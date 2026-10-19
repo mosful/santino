@@ -7,9 +7,10 @@ import DemoActionButton from "@/components/ui/DemoActionButton";
 import { useLegacyBabycam } from "@/lib/babycam/legacyAdapter";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { babycamActions } from "@/lib/babycam/actions";
-import { TicketQr } from "@/components/babycam/BabycamWorkspace";
+import { TicketQr } from "./BabycamWorkspace";
 
-export default function CamQrcode() {
+/** QR Code 管理（v24 §10）：產生媽媽端與親友端資訊卡。 */
+export default function QrCardPanel() {
   const { BINDINGS } = useLegacyBabycam();
   const { data } = useDomainStore();
   const [feedback, setFeedback] = useState("");

@@ -9,7 +9,7 @@ const fs = require("node:fs/promises");
   const browser = await chromium.launch({ headless: true }); activeBrowser = browser; const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   await context.addInitScript(() => {
     localStorage.setItem("santino_auth_v1", "1");
-    if (!localStorage.getItem("santino_current_role_v1")) localStorage.setItem("santino_current_role_v1", "系統管理員");
+    if (!localStorage.getItem("santino_current_role_v1")) localStorage.setItem("santino_current_role_v1", "管理者");
     localStorage.setItem("santino_assessment_fields_v1", JSON.stringify([{ id: "qa-custom", section: "TOCC", label: "自訂追蹤內容", type: "text", options: [], required: true }]));
     localStorage.setItem("santino_phrase_library_v1", JSON.stringify([{ id: 999, category: "照顧重點", tags: ["測試"], text: "管理端片語連動測試" }]));
   });
@@ -28,7 +28,7 @@ const fs = require("node:fs/promises");
   await page.getByLabel("頁內操作確認").getByRole("button", { name: "確認", exact: true }).click();
   await page.getByText("已簽出紀錄（1）", { exact: true }).waitFor();
   const care = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_care_workspace_v1")));
-  assert.equal(care.backfillDays, 7); assert.match(care.entries[0].staffStamp.author, /系統管理員/);
+  assert.equal(care.backfillDays, 7); assert.match(care.entries[0].staffStamp.author, /管理者/);
   assert.equal(care.entries[0].values["configured-qa-custom"], "自訂題目保存");
   await page.getByRole("button", { name: "回照護列表", exact: true }).click();
   await page.getByRole("button", { name: "持續護理", exact: true }).first().click();

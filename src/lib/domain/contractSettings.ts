@@ -3,7 +3,7 @@
 import { audit, domainStore } from "../demo/domainStore";
 import { getCurrentRole } from "../roleStore";
 
-function manager() { if (getCurrentRole() !== "系統管理員") throw new Error("僅管理員可修改合約設定。"); }
+function manager() { if (getCurrentRole() !== "管理者") throw new Error("僅管理員可修改合約設定。"); }
 export const contractSettingActions = {
   reviewDays(days: number) { manager(); if (!Number.isInteger(days) || days < 1 || days > 30) throw new Error("示範審閱期請填 1 至 30 天。"); domainStore.update((data) => { data.contractSettings.reviewDays = days; audit(data, "修改示範審閱天數", "contract"); }); },
   addTemplate() { manager(); let id = 0; domainStore.update((data) => { id = Math.max(0, ...data.contractSettings.templates.map((item) => item.id)) + 1; data.contractSettings.templates.push({ id, name: `合約範本 v${id}（草稿）`, version: `v${id}`, active: false, createdDate: data.demoAt.slice(0, 10), clauses: "示範草稿，請填入院方確認的條文。" }); audit(data, "新增合約範本版本", String(id)); }); return id; },

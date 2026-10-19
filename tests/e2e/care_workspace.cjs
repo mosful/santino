@@ -13,7 +13,7 @@ const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-res
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   await context.addInitScript(() => {
     localStorage.setItem("santino_auth_v1", "1");
-    if (!localStorage.getItem("santino_current_role_v1")) localStorage.setItem("santino_current_role_v1", "系統管理員");
+    if (!localStorage.getItem("santino_current_role_v1")) localStorage.setItem("santino_current_role_v1", "管理者");
   });
   const page = await context.newPage();
   page.on("pageerror", (error) => errors.push(error.message));

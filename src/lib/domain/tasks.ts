@@ -12,10 +12,10 @@ import { caseBalance } from "./rules";
 export const TASK_CATEGORIES = ["入住", "退房", "參觀", "合約／猶豫期", "待收款", "醫師巡診", "課程", "關懷／提醒", "回補期限", "托嬰"];
 export type Task = { id: string; date: string; category: string; title: string; href: string; handled: boolean };
 export function roleTaskCategories(role: Role) {
-  if (["系統管理員", "阿長 婉真"].includes(role)) return TASK_CATEGORIES;
+  if (["管理者", "護理長 婉真"].includes(role)) return TASK_CATEGORIES;
   if (role === "櫃台") return TASK_CATEGORIES.filter((item) => !["醫師巡診", "回補期限"].includes(item));
   if (role === "衛教師 琳雅") return ["關懷／提醒", "回補期限"];
-  if (role === "護理師") return ["醫師巡診", "回補期限", "托嬰"];
+  if (role === "護理師 陳護理師") return ["醫師巡診", "回補期限", "托嬰"];
   return [];
 }
 const plusDays = (date: string, days: number) => new Date(Date.parse(date.length === 10 ? `${date}T00:00:00+08:00` : date) + days * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" });

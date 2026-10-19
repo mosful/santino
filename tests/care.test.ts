@@ -14,7 +14,7 @@ Object.defineProperty(globalThis, "window", { value: {
 }, configurable: true });
 const first = CARE_SUBJECTS.find((subject) => subject.kind === "mama" && !subject.historical)!;
 const second = CARE_SUBJECTS.find((subject) => subject.kind === "mama" && !subject.historical && subject.caseId !== first.caseId)!;
-function reset() { setCurrentRole("系統管理員"); careStore.reset(); }
+function reset() { setCurrentRole("管理者"); careStore.reset(); }
 
 test("v24 媽媽六項與寶寶八項功能皆有獨立表單", () => {
   assert.equal(MAMA_FORMS.length, 6); assert.equal(BABY_FORMS.length, 8);
@@ -31,11 +31,11 @@ test("管理端自訂題目加入 v24 表單，必要題目同時受 action 驗�
   assert.ok(validateCareForm(form, { note: "示範", date: "2026-10-17", time: "12:00" }).some((error) => error.includes("自訂追蹤")));
 });
 test("回補天數限主管設定，簽出附實際員工印章且工作位置不污染紀錄", () => {
-  reset(); setCurrentRole("護理師"); assert.throws(() => careActions.backfillDays(7), /僅護理長/);
-  setCurrentRole("系統管理員"); careActions.backfillDays(7); assert.equal(careStore.get().backfillDays, 7);
+  reset(); setCurrentRole("護理師 陳護理師"); assert.throws(() => careActions.backfillDays(7), /僅護理長/);
+  setCurrentRole("管理者"); careActions.backfillDays(7); assert.equal(careStore.get().backfillDays, 7);
   careActions.open(first.id, "record"); const key = `${first.id}:record`;
   careActions.viewport(key, { sectionIndex: 1, scrollY: 500 }); careActions.change(key, { note: "印章測試" }); careActions.complete(key);
-  assert.match(careStore.get().entries[0].staffStamp!.author, /系統管理員/);
+  assert.match(careStore.get().entries[0].staffStamp!.author, /管理者/);
   assert.equal(careStore.get().documents[key].viewport?.scrollY, 500);
   assert.equal(careStore.get().entries[0].values.scrollY, undefined);
 });
@@ -95,8 +95,8 @@ test("逾期回補須主管與原因，完成紀錄以操作者署名", () => {
   reset(); const old = CARE_SUBJECTS.find((subject) => subject.kind === "mama" && subject.historical && subject.dischargedAt?.includes("10-10"))!;
   careActions.open(old.id, "record"); const key = `${old.id}:record`;
   assert.throws(() => careActions.change(key, { note: "補登" }), /回補期限/);
-  setCurrentRole("護理師"); assert.throws(() => careActions.authorize(old.id, "補登"), /護理長/);
-  setCurrentRole("阿長 婉真"); assert.throws(() => careActions.authorize(old.id, ""), /原因/);
+  setCurrentRole("護理師 陳護理師"); assert.throws(() => careActions.authorize(old.id, "補登"), /護理長/);
+  setCurrentRole("護理長 婉真"); assert.throws(() => careActions.authorize(old.id, ""), /原因/);
   careActions.authorize(old.id, "示範主管授權"); careActions.change(key, { note: "授權後補登" }); careActions.complete(key);
   assert.equal(careStore.get().entries[0].historical, true);
   assert.match(careStore.get().entries[0].author, /婉真/);

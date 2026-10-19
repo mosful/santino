@@ -6,7 +6,7 @@ const assert = require("node:assert/strict"); const fs = require("node:fs/promis
 (async () => {
   const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-results"), "case_followup"); await fs.mkdir(output, { recursive: true });
   const browser = await chromium.launch({ headless: true }); activeBrowser = browser; const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-  await context.addInitScript(() => { localStorage.setItem("santino_auth_v1", "1"); if (!localStorage.getItem("santino_current_role_v1")) localStorage.setItem("santino_current_role_v1", "系統管理員"); });
+  await context.addInitScript(() => { localStorage.setItem("santino_auth_v1", "1"); if (!localStorage.getItem("santino_current_role_v1")) localStorage.setItem("santino_current_role_v1", "管理者"); });
   const page = await context.newPage(); const errors = []; const requests = [];
   page.on("pageerror", (error) => errors.push(error.message)); page.on("request", (request) => { if (/\/api\//.test(request.url()) || /^https?:/.test(request.url()) && !request.url().startsWith(base + "")) requests.push(request.url()); });
   await page.goto(base + "/cases/"); await page.getByRole("button", { name: "入住後", exact: true }).click(); await page.getByRole("button", { name: "開啟案件", exact: true }).first().click();

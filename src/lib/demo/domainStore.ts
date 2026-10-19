@@ -53,7 +53,7 @@ export const currentActor = () => `${ROLE_PROFILE[getCurrentRole()].name}（${ge
 export function audit(data: DemoDomain, action: string, target: string) {
   data.audit.unshift({ id: crypto.randomUUID(), at: new Date().toISOString(), actor: currentActor(), action, target });
 }
-function canManageCases() { return ["櫃台", "阿長 婉真", "系統管理員"].includes(getCurrentRole()); }
+function canManageCases() { return ["櫃台", "護理長 婉真", "管理者"].includes(getCurrentRole()); }
 function caseLog(record: CaseRecord, text: string) { record.log.unshift({ id: crypto.randomUUID(), at: new Date().toISOString(), actor: currentActor(), text }); }
 function findCase(data: DemoDomain, id: string, allowClosed = false) {
   if (!canManageCases()) throw new Error("目前角色不能修改案件。");
@@ -180,17 +180,17 @@ export const caseActions = {
     domainStore.update((data) => { const record = findCase(data, id); record.previousStage = record.stage; record.closed = true; record.forced = true; caseLog(record, `強制結案；原階段${CASE_STAGES[record.stage]}；未完成${CASE_STAGES.slice(record.stage).join("、")}；原因：${reason.trim()}；入住狀態未變更`); audit(data, "強制結案", id); });
   },
   reopen(id: string, reason: string) {
-    if (!["阿長 婉真", "系統管理員"].includes(getCurrentRole())) throw new Error("僅主管可重新開啟案件。");
+    if (!["護理長 婉真", "管理者"].includes(getCurrentRole())) throw new Error("僅主管可重新開啟案件。");
     if (!reason.trim()) throw new Error("請填寫重開原因。");
     domainStore.update((data) => { const record = findCase(data, id, true); if (!record.closed) throw new Error("案件尚未結案。"); record.closed = false; record.stage = record.forced ? record.previousStage ?? record.stage : 6; record.forced = false; caseLog(record, `重新開啟；原因：${reason.trim()}；原視訊授權及房間不自動恢復`); audit(data, "重開案件", id); });
   },
   charge(id: string, label: string, amount: number, date: string, exceptionReason = "") {
     if (!label.trim() || !Number.isFinite(amount) || !date) throw new Error("請填寫項目、日期與有效金額。");
-    domainStore.update((data) => { const record = findCase(data, id); const today = data.demoAt.slice(0, 10); if (date < today && (!["阿長 婉真", "系統管理員"].includes(getCurrentRole()) || !exceptionReason.trim())) throw new Error("今日以前帳務須主管授權並填寫急診例外原因。"); record.ledger.push({ id: crypto.randomUUID(), date, label, amount }); caseLog(record, `新增費用：${label}，${amount} 元${exceptionReason ? `；主管例外：${exceptionReason}` : ""}`); audit(data, "新增自費費用", id); });
+    domainStore.update((data) => { const record = findCase(data, id); const today = data.demoAt.slice(0, 10); if (date < today && (!["護理長 婉真", "管理者"].includes(getCurrentRole()) || !exceptionReason.trim())) throw new Error("今日以前帳務須主管授權並填寫急診例外原因。"); record.ledger.push({ id: crypto.randomUUID(), date, label, amount }); caseLog(record, `新增費用：${label}，${amount} 元${exceptionReason ? `；主管例外：${exceptionReason}` : ""}`); audit(data, "新增自費費用", id); });
   },
   change(id: string, days: number, roomType: CaseRecord["roomType"], reason: string, room?: string) {
     if (!reason.trim() || !Number.isInteger(days) || days < 1 || days > 365 || !["精緻", "VIP", "VILLA"].includes(roomType)) throw new Error("請填寫變更原因、1 至 365 天與有效房型。");
-    if (!["阿長 婉真", "系統管理員"].includes(getCurrentRole())) throw new Error("合約變更需由主管授權。");
+    if (!["護理長 婉真", "管理者"].includes(getCurrentRole())) throw new Error("合約變更需由主管授權。");
     domainStore.update((data) => {
       const record = findCase(data, id); if (!record.signed) throw new Error("尚未簽約請直接調整試算。");
       if (room && room !== record.room) {
@@ -205,11 +205,11 @@ export const caseActions = {
     });
   },
   adjustCharge(id: string, entryId: string, newAmount: number, reason: string) {
-    if (!["阿長 婉真", "系統管理員"].includes(getCurrentRole()) || !reason.trim() || !Number.isFinite(newAmount)) throw new Error("帳務例外調整須主管授權、有效金額與原因。");
+    if (!["護理長 婉真", "管理者"].includes(getCurrentRole()) || !reason.trim() || !Number.isFinite(newAmount)) throw new Error("帳務例外調整須主管授權、有效金額與原因。");
     domainStore.update((data) => { const record = findCase(data, id); const entry = record.ledger.find((item) => item.id === entryId && !item.adjustsId); if (!entry) throw new Error("找不到原收費項目。"); const before = entry.amount + record.ledger.filter((item) => item.adjustsId === entryId).reduce((sum, item) => sum + item.amount, 0); if (before === newAmount) return; record.ledger.push({ id: crypto.randomUUID(), date: entry.date, label: `主管例外：${entry.label} ${before} → ${newAmount}；${reason.trim()}`, amount: newAmount - before, adjustsId: entryId }); caseLog(record, `帳務例外調整 ${before} → ${newAmount}；${reason.trim()}（原項目保留）`); audit(data, "主管帳務例外調整", id); });
   },
   contractAmount(id: string, amount: number, reason: string) {
-    if (!["阿長 婉真", "系統管理員"].includes(getCurrentRole()) || !reason.trim() || !Number.isFinite(amount) || amount < 0) throw new Error("合約金額變更須主管、有效金額與原因。");
+    if (!["護理長 婉真", "管理者"].includes(getCurrentRole()) || !reason.trim() || !Number.isFinite(amount) || amount < 0) throw new Error("合約金額變更須主管、有效金額與原因。");
     domainStore.update((data) => { const record = findCase(data, id); if (!record.signed) throw new Error("尚未簽約請回原案件試算。"); const before = (record.overrideAmount ?? record.quotedAmount) + record.ledger.filter((entry) => /^(合約變更|合約金額調整)/.test(entry.label)).reduce((sum, entry) => sum + entry.amount, 0); if (before === amount) return; record.ledger.push({ id: crypto.randomUUID(), date: data.demoAt.slice(0, 10), label: `合約金額調整；${reason.trim()}`, amount: amount - before, before, after: amount, actor: currentActor(), at: new Date().toISOString() }); caseLog(record, `合約金額調整 ${before} → ${amount}；${reason.trim()}`); audit(data, "合約金額變更單", id); });
   },
   meal(id: string, people: number, content: string) {

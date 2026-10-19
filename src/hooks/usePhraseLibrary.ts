@@ -56,12 +56,12 @@ export function usePhraseLibrary() {
   const phrases = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const addPhrase = useCallback((input: { category: string; tags: string[]; text: string }) => {
-    if (!canEditAdminSetting(getCurrentRole(), "operations")) throw new Error("僅護理長及系統管理員可維護共用片語。");
+    if (!canEditAdminSetting(getCurrentRole(), "operations")) throw new Error("僅護理長及管理者可維護共用片語。");
     writePhrases([...getSnapshot(), { id: Date.now(), ...input }]);
   }, []);
 
   const removePhrase = useCallback((id: number) => {
-    if (!canEditAdminSetting(getCurrentRole(), "operations")) throw new Error("僅護理長及系統管理員可維護共用片語。");
+    if (!canEditAdminSetting(getCurrentRole(), "operations")) throw new Error("僅護理長及管理者可維護共用片語。");
     writePhrases(getSnapshot().filter((p) => p.id !== id));
   }, []);
 

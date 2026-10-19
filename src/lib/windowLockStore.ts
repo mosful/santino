@@ -32,7 +32,7 @@ function subscribe(listener: () => void) {
 
 /** 多視窗鎖房範圍開關（系統開發總則#9）：true=多視窗僅限同一房間可多開；false(預設)=不限房間 */
 export function setSameRoomLock(v: boolean) {
-  if (!canEditAdminSetting(getCurrentRole(), "system")) throw new Error("僅系統管理員可修改多視窗鎖定規則。");
+  if (!canEditAdminSetting(getCurrentRole(), "system")) throw new Error("僅管理者可修改多視窗鎖定規則。");
   cache = v;
   try {
     window.localStorage.setItem(STORAGE_KEY, v ? "1" : "0");

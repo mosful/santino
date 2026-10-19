@@ -1,13 +1,9 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import WorkspaceEntry from "@/components/babycam/WorkspaceEntry";
 import { ExternalLink, QrCode } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
-import TabsFromUrl from "@/components/ui/TabsFromUrl";
-import CamMaster from "./tabs/CamMaster";
-import CamBinding from "./tabs/CamBinding";
-import CamSchedule from "./tabs/CamSchedule";
-import CamQrcode from "./tabs/CamQrcode";
-import CamMonitor from "./tabs/CamMonitor";
 
 export default function BabyCamPage() {
   return (
@@ -19,7 +15,6 @@ export default function BabyCamPage() {
           action={
             <div className="flex gap-2">
               <Link href="/babycam/scan/" className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"><QrCode className="h-3.5 w-3.5" />QR 掃描</Link>
-              <Link href="/babycam/workspace" className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50">完整功能工作區</Link>
               <Link
                 href="/view/mama"
                 className="inline-flex items-center gap-1.5 rounded-lg border border-stone-200 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-stone-50"
@@ -38,15 +33,9 @@ export default function BabyCamPage() {
           }
         />
 
-        <TabsFromUrl
-          tabs={[
-            { key: "master", label: "後台設定檔", content: <CamMaster /> },
-            { key: "binding", label: "監視器與房號綁定", content: <CamBinding /> },
-            { key: "schedule", label: "開放時段與狀態", content: <CamSchedule /> },
-            { key: "qrcode", label: "QRCode 資訊卡", content: <CamQrcode /> },
-            { key: "monitor", label: "監控面板", content: <CamMonitor /> },
-          ]}
-        />
+        <Suspense fallback={<p className="p-4 text-sm text-stone-500">載入視訊工作區…</p>}>
+          <WorkspaceEntry />
+        </Suspense>
 
         <div className="mt-6 space-y-2 rounded border border-dashed border-stone-300 p-3 text-xs text-stone-400">
           <p>

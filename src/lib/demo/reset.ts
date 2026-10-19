@@ -6,6 +6,6 @@ import { clearCarePhotos } from "../care/media";
 import { getCurrentRole } from "../roleStore";
 
 export async function resetIntegratedDemo() {
-  if (getCurrentRole() !== "系統管理員") throw new Error("僅管理員可還原整合展示資料。");
+  if (getCurrentRole() !== "管理者") throw new Error("僅管理員可還原整合展示資料。");
   await clearCarePhotos(); domainStore.reset(); careStore.reset(); careActions.syncRole();
 }

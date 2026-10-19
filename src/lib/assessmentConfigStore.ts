@@ -49,7 +49,7 @@ function getSnapshot() {
 }
 
 function writeFields(next: AssessmentField[]) {
-  if (!canEditAdminSetting(getCurrentRole(), "system")) throw new Error("僅系統管理員可修改表單欄位設定。");
+  if (!canEditAdminSetting(getCurrentRole(), "system")) throw new Error("僅管理者可修改表單欄位設定。");
   cache = next;
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));

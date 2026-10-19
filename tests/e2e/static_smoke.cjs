@@ -2,7 +2,7 @@ const { chromium } = require("playwright"); const assert = require("node:assert/
 const base = process.env.SANTINO_PREVIEW_BASE_URL || "http://localhost:4310"; const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-results"), "static_smoke"); let activeBrowser;
 (async () => {
   await fs.mkdir(output, { recursive: true }); const browser = await chromium.launch({ headless: true }); activeBrowser = browser; const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-  await context.addInitScript(() => { localStorage.setItem("santino_auth_v1", "1"); localStorage.setItem("santino_current_role_v1", "系統管理員"); });
+  await context.addInitScript(() => { localStorage.setItem("santino_auth_v1", "1"); localStorage.setItem("santino_current_role_v1", "管理者"); });
   const page = await context.newPage(); const errors = []; const failed = []; const external = []; page.on("pageerror", (error) => errors.push(error.message)); page.on("response", (response) => { if (response.status() >= 400) failed.push(`${response.status()} ${new URL(response.url()).pathname}`); }); page.on("request", (request) => { if (/\/api\//.test(request.url()) || /^https?:/.test(request.url()) && new URL(request.url()).origin !== new URL(base).origin) external.push(request.url()); });
   const routes = ["/", "/mama/", "/baby/", "/babycam/", "/babycam/workspace/", "/cases/", "/cases/calendar/", "/contract/", "/customer/", "/room/", "/meal/", "/care/", "/doctor/", "/kpi/", "/hr/", "/course/", "/line/", "/admin/", "/view/mama/", "/view/family/"];
   for (const route of routes) { const response = await page.goto(base + route); assert.equal(response.status(), 200); await page.locator("body").waitFor(); }

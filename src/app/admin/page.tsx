@@ -3,6 +3,7 @@
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
+import Tabs from "@/components/ui/Tabs";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import ReportPicker from "@/components/reports/ReportPicker";
 import { POSTPARTUM_REPORTS, ACCOUNTING_REPORTS } from "@/lib/reports";
@@ -10,6 +11,11 @@ import { ANNOUNCEMENTS } from "@/lib/mock/dashboard";
 import { OPS_ROOMS } from "@/lib/mock/opsRoom";
 import { makeRng } from "@/lib/mock/genUtil";
 import SystemSettings from "./tabs/SystemSettings";
+import BackfillSettings from "./tabs/BackfillSettings";
+import StaffPermissionSettings from "./tabs/StaffPermissionSettings";
+import QrCardPanel from "@/components/babycam/QrCardPanel";
+import PlaceholderNotice from "@/components/ui/PlaceholderNotice";
+import Link from "next/link";
 import PhraseLibrarySettings from "./tabs/PhraseLibrarySettings";
 import AssessmentFormSettings from "./tabs/AssessmentFormSettings";
 import KpiRuleSettings from "./tabs/KpiRuleSettings";
@@ -19,45 +25,6 @@ import { useCurrentRole } from "@/lib/roleStore";
 const simpleFields: FieldSchema[] = [
   { key: "name", label: "名稱" },
   { key: "note", label: "說明" },
-];
-
-function SimpleListTab({ rows, placeholder }: { rows: Row[]; placeholder: string }) {
-  return <EditableList moduleNo="15" fields={simpleFields} initialRows={rows} searchPlaceholder={placeholder} />;
-}
-
-const VISIT_ROWS: Row[] = [
-  { id: 1, name: "預約參觀報名資料", note: "已於畫面確認" },
-  { id: 2, name: "取消預約明細表", note: "僅見選單，待確認" },
-  { id: 3, name: "預約參觀時段設定", note: "僅見選單，待確認" },
-];
-const CONTRACT_DATA_ROWS: Row[] = [
-  { id: 1, name: "客戶簽約資料", note: "已於畫面確認" },
-  { id: 2, name: "客戶退訂資料", note: "僅見選單，待確認" },
-  { id: 3, name: "合約轉住房資料", note: "僅見選單，待確認" },
-];
-const NURSING_DATA_ROWS: Row[] = [{ id: 1, name: "歷史病歷查詢", note: "已於畫面確認" }];
-
-const SUPPLY_CATEGORIES = ["尿布", "濕紙巾", "奶粉", "母乳袋", "產褥墊", "看護墊", "束腹帶", "冰枕", "溢乳墊", "沐浴乳"];
-const SUPPLY_BRANDS = ["幫寶適", "好奇", "妙而舒", "滿意寶寶", "貝親", "桃樂比", "小獅王", "惠氏", "雪印", "森永"];
-const rngSupply = makeRng(15001);
-const usedSupplyNames = new Set<string>();
-function nextSupplyName() {
-  let name = `${rngSupply.pick(SUPPLY_BRANDS)}${rngSupply.pick(SUPPLY_CATEGORIES)}`;
-  let guard = 0;
-  while (usedSupplyNames.has(name) && guard < 300) {
-    name = `${rngSupply.pick(SUPPLY_BRANDS)}${rngSupply.pick(SUPPLY_CATEGORIES)}`;
-    guard++;
-  }
-  usedSupplyNames.add(name);
-  return name;
-}
-const SUPPLY_ROWS: Row[] = [
-  { id: 1, name: "備品名稱設定", note: "已於畫面確認" },
-  ...Array.from({ length: 49 }, (_, i) => ({
-    id: i + 2,
-    name: nextSupplyName(),
-    note: `庫存下限${rngSupply.int(5, 30)}件`,
-  })),
 ];
 
 const OTHER_SETTINGS_BASE = [
@@ -82,10 +49,6 @@ const ROOM_DATA_ROWS: Row[] = [
   })),
 ];
 
-function RoomDataTab() {
-  return <EditableList moduleNo="15" fields={simpleFields} initialRows={ROOM_DATA_ROWS} searchPlaceholder="項目名稱" />;
-}
-
 const announcementFields: FieldSchema[] = [
   { key: "title", label: "公告標題" },
   { key: "date", label: "發佈日期" },
@@ -101,28 +64,74 @@ function BoardSettingsTab({ canEdit }: { canEdit: boolean }) {
   );
 }
 
+/** 基礎主檔設定：房間與院內各式主檔，v24 §10 標示為僅管理者可修改。 */
+function MasterDataTab({ canEdit }: { canEdit: boolean }) {
+  return (
+    <div className="space-y-4">
+      {!canEdit && (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+          此為系統面設定，僅「管理者」可修改，目前為唯讀檢視。
+        </p>
+      )}
+      <section className="space-y-2">
+        <h3 className="text-sm font-semibold text-stone-700">房型與房間資料</h3>
+        <EditableList moduleNo="15" editAllowed={canEdit} fields={simpleFields} initialRows={ROOM_DATA_ROWS} searchPlaceholder="項目名稱" />
+      </section>
+      <section className="space-y-2">
+        <h3 className="text-sm font-semibold text-stone-700">產後其他主檔</h3>
+        <EditableList moduleNo="15" editAllowed={canEdit} fields={simpleFields} initialRows={OTHER_SETTINGS_ROWS} searchPlaceholder="設定項目" />
+      </section>
+    </div>
+  );
+}
+
+/** 報表查詢：產後與帳務兩組報表合併為 v24 的單一「報表查詢」入口。 */
+function ReportTab() {
+  return (
+    <Tabs
+      tabs={[
+        { key: "postpartum", label: "產後報表", content: <ReportPicker reports={POSTPARTUM_REPORTS} /> },
+        { key: "accounting", label: "帳務報表", content: <ReportPicker reports={ACCOUNTING_REPORTS} /> },
+      ]}
+    />
+  );
+}
+
+/** v24 §10 列為「入口，待製作」的項目：誠實說明範圍，並指向目前能看到的地方。 */
+function PendingEntry({ title, detail, href, hrefLabel }: { title: string; detail: string; href: string; hrefLabel: string }) {
+  return (
+    <div className="max-w-3xl space-y-3">
+      <PlaceholderNotice text={`${title}：依 v24 規格為後台入口，本階段尚未製作維護畫面。`} />
+      <p className="text-sm leading-6 text-stone-600">{detail}</p>
+      <Link href={href} className="inline-flex min-h-10 items-center rounded-lg border border-border-subtle px-3 text-sm font-medium text-stone-600 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600">
+        {hrefLabel}
+      </Link>
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const role = useCurrentRole();
   const canEditOperations = canEditAdminSetting(role, "operations");
+  const canEditSystem = canEditAdminSetting(role, "system");
   return (
     <div className="page-frame">
       <RequireAccess moduleNo="15">
       <PageHeader title="15. 後台管理" moduleNo="15" />
       <TabsFromUrl
         tabs={[
-          { key: "visit", label: "預約參觀管理", content: <SimpleListTab rows={VISIT_ROWS} placeholder="項目名稱" /> },
-          { key: "contract-data", label: "客戶及簽約資料", content: <SimpleListTab rows={CONTRACT_DATA_ROWS} placeholder="項目名稱" /> },
-          { key: "nursing-data", label: "護理紀錄資料", content: <SimpleListTab rows={NURSING_DATA_ROWS} placeholder="項目名稱" /> },
-          { key: "postpartum-report", label: "產後報表查詢", content: <ReportPicker reports={POSTPARTUM_REPORTS} /> },
-          { key: "accounting-report", label: "帳務報表查詢", content: <ReportPicker reports={ACCOUNTING_REPORTS} /> },
-          { key: "supply", label: "備品庫存管理", content: <SimpleListTab rows={SUPPLY_ROWS} placeholder="備品名稱" /> },
-          { key: "room-data", label: "房間資料管理", content: <RoomDataTab /> },
+          { key: "master", label: "基礎主檔設定 🔒", content: <MasterDataTab canEdit={canEditSystem} /> },
+          { key: "staff", label: "人員與權限 🔒", content: <StaffPermissionSettings /> },
+          { key: "forms", label: "表單與欄位設定 🔒", content: <AssessmentFormSettings /> },
+          { key: "qrcode", label: "QR Code 管理 🔒", content: <QrCardPanel /> },
+          { key: "package", label: "套餐與贈品規則", content: <PendingEntry title="套餐與贈品規則" detail="房型 × 天數 × 生產院所 × 價格身分的定價表、贈天數與贈課程門檻，目前寫在程式內的示範值。待取得客戶實際定價 Excel 後改為此處維護。" href="/cases/" hrefLabel="先到案件流程看套餐快速試算" /> },
+          { key: "contract-version", label: "合約版本管理", content: <PendingEntry title="合約版本管理" detail="合約條文版本（啟用中／停用）與合約範本的維護入口。改條文一律開新版，不影響已簽署合約。目前可於合約模組內檢視。" href="/contract/?tab=terms" hrefLabel="前往合約條款檢視" /> },
+          { key: "phrases", label: "片語庫管理", content: <PhraseLibrarySettings /> },
+          { key: "backfill", label: "資料回補與例外處理", content: <BackfillSettings /> },
+          { key: "kpi-rules", label: "評鑑指標設定", content: <KpiRuleSettings /> },
+          { key: "report", label: "報表查詢", content: <ReportTab /> },
           { key: "board", label: "公佈欄設定", content: <BoardSettingsTab canEdit={canEditOperations} /> },
-          { key: "other", label: "產後其他設定", content: <SimpleListTab rows={OTHER_SETTINGS_ROWS} placeholder="設定項目" /> },
-          { key: "assessment", label: "入住評估項目設定", content: <AssessmentFormSettings /> },
-          { key: "kpi-rules", label: "評鑑統計規則設定", content: <KpiRuleSettings /> },
           { key: "system", label: "系統參數設定", content: <SystemSettings /> },
-          { key: "phrases", label: "常用語／片語庫設定", content: <PhraseLibrarySettings /> },
         ]}
       />
       </RequireAccess>

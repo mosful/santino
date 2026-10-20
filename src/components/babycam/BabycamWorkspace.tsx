@@ -16,6 +16,7 @@ import { babycamActions, canBabycamSection } from "@/lib/babycam/actions";
 import { effectiveViewingWindow } from "@/lib/babycam/viewing";
 import { downloadFile, toBrowserXlsx } from "@/lib/babycam/exports";
 import { loadPrintFont, printWristbands, renderWristband } from "@/lib/babycam/wristband-print";
+import { printFamilyNotice } from "@/lib/babycam/familyNotice";
 import { taipeiTimestamp } from "@/lib/care/rules";
 import { cameraHost, DEFAULT_NETWORK_PREFIX } from "@/lib/babycam/network";
 import type { WindowRule } from "@/lib/domain/types";
@@ -171,12 +172,15 @@ function WindowEditor({ label, value, onChange }: { label: string; value: Window
   );
 }
 
-/** QR 圖預設隨容器縮放（兩張卡並排時欄寬只有一半，寫死 px 會溢出）；`size` 只設上限。 */
+/**
+ * QR 圖隨容器縮放（兩張卡並排時欄寬只有一半，寫死 px 會溢出）；`size` 只設上限。
+ * 產圖固定 320px 再縮下來，欄位變寬時才不會糊掉。
+ */
 export function TicketQr({ href, size = 160 }: { href: string; size?: number }) {
   const [src, setSrc] = useState("");
   useEffect(() => {
     let active = true;
-    void QRCode.toDataURL(`${window.location.origin}${BASE_PATH}${href}`, { width: 160, margin: 4 }).then((value) => {
+    void QRCode.toDataURL(`${window.location.origin}${BASE_PATH}${href}`, { width: 320, margin: 2 }).then((value) => {
       if (active) setSrc(value);
     });
     return () => {
@@ -184,9 +188,9 @@ export function TicketQr({ href, size = 160 }: { href: string; size?: number }) 
     };
   }, [href]);
   return src ? (
-    <img src={src} width={size} height={size} style={{ maxWidth: size }} alt="可掃描的展示 QRCode" className="h-auto w-full rounded-lg border border-border-subtle bg-white" />
+    <img src={src} width={size} height={size} style={{ maxWidth: size }} alt="可掃描的展示 QRCode" className="mx-auto h-auto w-full rounded-lg border border-border-subtle bg-white" />
   ) : (
-    <span className="text-sm">產生 QRCode…</span>
+    <span className="block py-8 text-center text-sm text-stone-400">產生 QRCode…</span>
   );
 }
 
@@ -514,7 +518,7 @@ export default function BabycamWorkspace({
                         audience === "internal" ? binding.internalTicket : binding.familyTicket,
                       )}`;
                       return (
-                        <article key={audience} className="space-y-2 rounded-xl border border-border-subtle bg-surface-raised p-3">
+                        <article key={audience} className="space-y-2 rounded-xl border border-border-subtle bg-surface-raised p-3 text-center">
                           <span
                             className={
                               "inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold " +
@@ -524,7 +528,7 @@ export default function BabycamWorkspace({
                             {audience === "internal" ? "院內" : "親友"}
                           </span>
                           <h4 className="text-sm font-bold text-stone-800">{audience === "internal" ? "媽媽即時畫面" : "親友觀看畫面"}</h4>
-                          <TicketQr href={href} />
+                          <TicketQr href={href} size={200} />
                           <Link href={href} className="block break-all text-xs text-brand-600 underline underline-offset-4">
                             開啟觀看頁
                           </Link>
@@ -543,7 +547,21 @@ export default function BabycamWorkspace({
                       </span>
                       <small className="block pt-1 text-xs text-stone-500">請交由指定家屬保管，不要公開或轉傳。</small>
                     </section>
-                    <Button size="sm" onClick={() => window.print()}>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        void printFamilyNotice({
+                          room: binding.room || "托嬰",
+                          motherName: binding.motherName,
+                          phone: binding.phone,
+                          passcode: binding.passcode,
+                          validFrom: binding.validFrom,
+                          validTo: binding.validTo,
+                          internalHref: `/view/mama/?ticket=${encodeURIComponent(binding.internalTicket)}`,
+                          familyHref: `/view/family/?ticket=${encodeURIComponent(binding.familyTicket)}`,
+                        });
+                      }}
+                    >
                       <Printer className="h-3.5 w-3.5" aria-hidden="true" />
                       列印家屬通知單
                     </Button>

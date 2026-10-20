@@ -17,3 +17,21 @@
 .swatch[data-status="隔離"] { border-color: #e7cf9d; background: #fff8eb; }
 .roomCard[data-status="托嬰"],
 .swatch[data-status="托嬰"] { border-style: dashed; border-color: #b9a3d8; background: #f7f2fc; }
+
+/* 圖例色票：房卡本身要保持淡底（上面有文字），但圖例只是色塊，
+   淡底會讓六種狀態看起來幾乎一樣。圖例改用飽和填色＋深色邊框。 */
+.legendSwatch { border: 1px solid var(--neutral-300); background: var(--surface-raised); }
+.legendSwatch[data-status="入住"] { border-color: #2f8f5b; background: #34a06a; }
+.legendSwatch[data-status="親子同室"] { border-color: #c9527d; background: #e06a95; }
+.legendSwatch[data-status="打掃中"] { border-color: #c4892b; background: #e0a53c; }
+.legendSwatch[data-status="報修中"] { border-color: #3a7cc0; background: #4a90d9; }
+.legendSwatch[data-status="托嬰"] { border-style: dashed; border-color: #6f52ad; background: #8a6fc4; }
+
+/* 房卡左緣的狀態條：淡底之外再給一個明確的顏色訊號。 */
+.statusBar { background: var(--neutral-300); }
+.statusBar[data-status="入住"] { background: #34a06a; }
+.statusBar[data-status="親子同室"] { background: #e06a95; }
+.statusBar[data-status="打掃中"] { background: #e0a53c; }
+.statusBar[data-status="報修中"] { background: #4a90d9; }
+.statusBar[data-status="隔離"] { background: #e0a53c; }
+.statusBar[data-status="托嬰"] { background: #8a6fc4; }

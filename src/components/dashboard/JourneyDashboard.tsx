@@ -51,7 +51,7 @@ const QUICK_VIEW_INFO: Record<QuickView, { label: string; description: string; i
   overdue: { label: "全部逾期待辦", description: "跨階段彙整需要立即處理的案件", icon: AlertCircle },
   today: { label: "全部今日追蹤", description: "跨階段彙整今天應完成的聯繫與工作", icon: CalendarClock },
   staying: { label: "目前入住中", description: "查看館內媽媽的照護與合約狀態", icon: UserRound },
-  moving: { label: "近日入退宿", description: "集中處理入住準備、到期與退宿交接", icon: CircleCheckBig },
+  moving: { label: "近日入退房", description: "集中處理入住準備、到期與退房交接", icon: CircleCheckBig },
 };
 
 const QUICK_LINKS = [
@@ -63,7 +63,7 @@ const QUICK_LINKS = [
 export default function JourneyDashboard() {
   const mothers = useJourneyMothers();
   const { data: domain } = useDomainStore();
-  const [selectedStage, setSelectedStage] = useState<JourneyStageKey>("staying");
+  const [selectedStage, setSelectedStage] = useState<JourneyStageKey>("入住中");
   const [quickView, setQuickView] = useState<QuickView | null>(null);
   const [query, setQuery] = useState("");
   const [selectedMotherId, setSelectedMotherId] = useState<number | null>(null);
@@ -95,8 +95,8 @@ export default function JourneyDashboard() {
 
   const overdue = mothers.filter((mother) => mother.urgency === "overdue").length;
   const today = mothers.filter((mother) => mother.urgency === "today").length;
-  const inHouse = mothers.filter((mother) => mother.stage === "staying").length;
-  const movingSoon = mothers.filter((mother) => mother.stage === "preAdmission" || mother.stage === "discharge").length;
+  const inHouse = mothers.filter((mother) => mother.stage === "入住中").length;
+  const movingSoon = mothers.filter((mother) => mother.stage === "入住前" || mother.stage === "退房").length;
 
   function selectStage(stage: JourneyStageKey) {
     setSelectedStage(stage);
@@ -141,22 +141,22 @@ export default function JourneyDashboard() {
 
   return (
     <div className="space-y-4 animate-fade-in-up">
-      <OperationsOverview />
+      <OperationsOverview
+        quickStats={[
+          { key: "overdue", label: "逾期待辦", value: overdue, tone: "rose", active: quickView === "overdue", onClick: () => selectQuickView("overdue") },
+          { key: "today", label: "今日追蹤", value: today, tone: "amber", active: quickView === "today", onClick: () => selectQuickView("today") },
+          { key: "staying", label: "入住中", value: inHouse, tone: "brand", active: quickView === "staying", onClick: () => selectQuickView("staying") },
+          { key: "moving", label: "近日入退房", value: movingSoon, tone: "blue", active: quickView === "moving", onClick: () => selectQuickView("moving") },
+        ]}
+      />
       <section className="overflow-hidden rounded-2xl border border-brand-900/10 bg-white/90 shadow-sm">
-        <div className="flex flex-col gap-4 border-b border-stone-100 bg-gradient-to-r from-brand-50 via-surface-raised to-surface-muted px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="flex items-center gap-2 text-lg font-bold text-stone-800">
-              <Sparkles className="h-[18px] w-[18px] shrink-0 text-brand-500" aria-hidden="true" />
-              從第一次詢問，到母嬰安心返家
-            </h2>
-            <p className="mt-1 text-sm text-stone-500">上方數字可看跨階段待辦，下方流程可聚焦單一階段。</p>
-          </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:min-w-[480px]">
-            <Summary label="逾期待辦" value={overdue} tone="rose" icon={AlertCircle} active={quickView === "overdue"} onClick={() => selectQuickView("overdue")} />
-            <Summary label="今日追蹤" value={today} tone="amber" icon={CalendarClock} active={quickView === "today"} onClick={() => selectQuickView("today")} />
-            <Summary label="入住中" value={inHouse} tone="brand" icon={UserRound} active={quickView === "staying"} onClick={() => selectQuickView("staying")} />
-            <Summary label="近日入退宿" value={movingSoon} tone="blue" icon={CircleCheckBig} active={quickView === "moving"} onClick={() => selectQuickView("moving")} />
-          </div>
+        {/* ⚠️ 這裡以前還有一整條「從第一次詢問，到母嬰安心返家」標題帶＋四個數字，
+            但那四個數字與上方今日工作台完全相同——客戶回報的「重複資訊」就是它。
+            數字已移進今日工作台，這裡只留一行小標與漏斗本身。 */}
+        <div className="flex items-center gap-2 border-b border-stone-100 px-4 pt-3 pb-1 sm:px-5">
+          <Sparkles className="h-4 w-4 shrink-0 text-brand-500" aria-hidden="true" />
+          <h2 className="text-sm font-bold text-stone-800">案件流程</h2>
+          <span className="text-xs text-stone-500">點階段可聚焦該階段的案件</span>
         </div>
 
         <div className="scroll-fade overflow-x-auto px-3 py-4 sm:px-5">
@@ -180,7 +180,7 @@ export default function JourneyDashboard() {
                       <Icon className="h-5 w-5" />
                       <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-stone-800 px-1 text-[10px] font-bold text-white ring-2 ring-white">{count}</span>
                     </span>
-                    <span className={`mt-2 text-xs font-semibold ${active ? "text-stone-800" : "text-stone-500"}`}>{stage.shortLabel}</span>
+                    <span className={`mt-2 text-xs font-semibold ${active ? "text-stone-800" : "text-stone-500"}`}>{stage.label}</span>
                   </button>
                   {index < JOURNEY_STAGES.length - 1 && <ChevronRight className="mt-5 h-4 w-4 shrink-0 text-stone-300" />}
                 </div>
@@ -226,7 +226,7 @@ export default function JourneyDashboard() {
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="font-bold text-stone-800">{mother.name}</h3>
                           <Badge color={urgency.badge}>{urgency.label}</Badge>
-                          {quickView && <Badge color="purple">{motherStage?.shortLabel}</Badge>}
+                          {quickView && <Badge color="purple">{motherStage?.label}</Badge>}
                           <span className="text-xs font-medium text-stone-500">{mother.status}</span>
                         </div>
                         <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-stone-500">
@@ -343,32 +343,11 @@ export default function JourneyDashboard() {
 function matchesQuickView(mother: JourneyMother, view: QuickView) {
   if (view === "overdue") return mother.urgency === "overdue";
   if (view === "today") return mother.urgency === "today";
-  if (view === "staying") return mother.stage === "staying";
-  return mother.stage === "preAdmission" || mother.stage === "discharge";
+  if (view === "staying") return mother.stage === "入住中";
+  return mother.stage === "入住前" || mother.stage === "退房";
 }
 
 function CaseField({ label, value }: { label: string; value: string }) {
   return <div><div className="text-[11px] font-medium text-stone-500">{label}</div><div className="mt-1 text-sm font-semibold text-stone-700">{value}</div></div>;
 }
 
-function Summary({ label, value, tone, icon: Icon, active, onClick }: {
-  label: string;
-  value: number;
-  tone: "rose" | "amber" | "brand" | "blue";
-  icon: LucideIcon;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const styles = {
-    rose: "bg-rose-50 text-rose-700",
-    amber: "bg-amber-50 text-amber-700",
-    brand: "bg-brand-50 text-brand-600",
-    blue: "bg-sky-50 text-sky-700",
-  };
-  return (
-    <button type="button" onClick={onClick} aria-pressed={active} className={`flex items-center gap-2 rounded-2xl px-3 py-2 text-left transition hover:-translate-y-0.5 hover:shadow-sm ${styles[tone]} ${active ? "ring-2 ring-current ring-offset-1" : ""}`}>
-      <Icon className="h-4 w-4 shrink-0 opacity-70" />
-      <div><div className="text-lg font-bold leading-none">{value}</div><div className="mt-1 whitespace-nowrap text-[10px] font-medium opacity-80">{label}</div></div>
-    </button>
-  );
-}

@@ -71,8 +71,7 @@ const GROUPS: { id: GroupId; label: string; heading: string; description: string
     id: "01",
     label: "入住登記",
     heading: "入住登記",
-    description:
-      "櫃台登記媽媽與房號，登記後即可交付觀看 QRCode 與密碼；寶寶與監視器由護理人員在「寶寶登錄」指派。入住狀態可改顯示狀態、重發連結與作廢授權。",
+    description: "登記後即可交付觀看 QRCode 與密碼；寶寶與監視器由護理人員在「寶寶登錄」指派。",
     tabs: [
       { id: "desk", label: "櫃檯入住與交付", access: "01", roles: ["櫃台", "護理長 婉真", "管理者"] },
       { id: "list", label: "入住狀態", access: "01" },
@@ -85,7 +84,7 @@ const GROUPS: { id: GroupId; label: string; heading: string; description: string
     id: "02",
     label: "寶寶登錄",
     heading: "寶寶登錄",
-    description: "承接櫃台的入住登記：選定媽媽後指派寶寶、車號與監視器，並列印手圈與嬰兒車標籤；歸位時以標籤掃碼核對。",
+    description: "指派寶寶、車號與監視器，列印手圈與嬰兒車標籤；歸位時掃碼核對。",
     tabs: [
       { id: "assign", label: "寶寶登錄與標籤", access: "02" },
       { id: "scan", label: "掃碼歸位核對", access: "02" },
@@ -95,7 +94,7 @@ const GROUPS: { id: GroupId; label: string; heading: string; description: string
     id: "04",
     label: "後臺管理",
     heading: "後臺管理",
-    description: "全院開放時段、房型與房號、顯示狀態與背景圖，以及監視器主檔與健康狀態。",
+    description: "開放時段、房型房號、顯示狀態與背景圖，以及監視器主檔。",
     tabs: [
       { id: "schedule", label: "開放時段", access: "04" },
       { id: "rooms", label: "房間清單", access: "04" },
@@ -111,7 +110,7 @@ const GROUPS: { id: GroupId; label: string; heading: string; description: string
     id: "08",
     label: "系統設定",
     heading: "系統設定",
-    description: "環狀燈號看板、繼電器板點測與院方燈號語意定義。三個畫面讀同一份燈色設定，現場對照才不會各說各話。",
+    description: "環狀燈號、繼電器點測與院方燈號語意；三頁讀同一份燈色設定。",
     tabs: [
       { id: "ringlight", label: "環狀燈號", access: "06" },
       { id: "relay", label: "繼電器板", access: "07" },
@@ -349,16 +348,8 @@ export default function BabycamWorkspace({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm leading-6 text-stone-600">
-        純靜態展示，影像、抓圖與繼電器均為模擬，不會連線院內設備。
-        <span className="font-medium text-stone-700">{ROLE_GUIDANCE[role]}</span>
-      </p>
-
-      <GroupNav
-        groups={visibleGroups.map((item) => ({ id: item.id, label: item.label, icon: GROUP_ICONS[item.id] }))}
-        active={activeGroup.id}
-        onSelect={selectGroup}
-      />
+      {/* 角色提示收成一行；「影像為模擬」那句移到頁尾的範圍說明，不在工作區重複。 */}
+      <p className="text-xs leading-5 text-stone-500">{ROLE_GUIDANCE[role]}</p>
 
       {(message || storageError) && (
         <p role="status" className="whitespace-pre-line rounded-xl border border-border-subtle bg-surface-muted px-4 py-3 text-sm">
@@ -371,13 +362,31 @@ export default function BabycamWorkspace({
         </p>
       )}
 
-      <Panel no={activeGroup.id} title={activeGroup.heading} description={activeGroup.description} flush>
-        <AreaTabs
-          tabs={groupTabs.map((tab) => ({ id: tab.id, label: tab.label }))}
-          active={active.id}
-          onSelect={selectTab}
-          label={`${activeGroup.label}工作區`}
+      {/*
+        導覽全部收在同一張卡裡：群組列（多於一個群組時才出現）→ 頁籤 → 內容。
+        以前是「說明一段＋群組列一張卡＋大標題一塊＋頁籤」四層，開畫面第一屏看不到資料。
+      */}
+      <Panel flush>
+        <GroupNav
+          groups={visibleGroups.map((item) => ({ id: item.id, label: item.label, icon: GROUP_ICONS[item.id] }))}
+          active={activeGroup.id}
+          onSelect={selectGroup}
         />
+        {groupTabs.length > 1 ? (
+          <AreaTabs
+            tabs={groupTabs.map((tab) => ({ id: tab.id, label: tab.label }))}
+            active={active.id}
+            onSelect={selectTab}
+            label={`${activeGroup.label}工作區`}
+            hint={activeGroup.description}
+          />
+        ) : (
+          // 群組內只有一個頁籤時，用一行標題代替空蕩蕩的頁籤列。
+          <div className="border-b border-border-subtle px-4 py-3 sm:px-5">
+            <h2 className="text-sm font-bold text-stone-800">{active.label}</h2>
+            <p className="mt-0.5 text-xs leading-5 text-stone-500">{activeGroup.description}</p>
+          </div>
+        )}
 
         {/* ── 01 入住登記 ── */}
         {active.id === "desk" && (

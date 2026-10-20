@@ -15,7 +15,7 @@ const PHASE_OPTIONS = [
 ];
 
 const LAYOUT_OPTIONS = [
-  { value: "journey" as DashboardLayout, label: "流程中控", icon: Route, help: "以案件七階段流程為主的中控版型" },
+  { value: "journey" as DashboardLayout, label: "流程中控", icon: Route, help: "以案件流程為主的中控版型" },
   { value: "classic" as DashboardLayout, label: "原中控", icon: LayoutDashboard, help: "沿用舊系統配置的中控版型" },
 ];
 

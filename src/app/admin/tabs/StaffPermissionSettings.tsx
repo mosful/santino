@@ -20,14 +20,14 @@ const panel = "space-y-3 rounded-xl border border-border-subtle bg-surface-raise
  * 管理者在這裡勾的，必須能對應到他在 17 模組裡看到的那一頁。
  */
 const BABYCAM_SECTIONS: { code: string; label: string; group: string }[] = [
-  { code: "01", label: "入住登記（含紀錄與報表）", group: "01 入住登記" },
-  { code: "02", label: "寶寶登錄與掃碼歸位", group: "02 寶寶登錄" },
-  { code: "03", label: "監視器狀態", group: "04 後臺管理" },
-  { code: "04", label: "開放時段／房間清單／狀態維護", group: "04 後臺管理" },
-  { code: "05", label: "狀態背景圖上傳", group: "04 後臺管理" },
-  { code: "06", label: "環狀燈號看板", group: "08 系統設定" },
-  { code: "07", label: "繼電器通道點測", group: "08 系統設定" },
-  { code: "08", label: "燈號狀態定義", group: "08 系統設定" },
+  { code: "01", label: "入住登記（含紀錄與報表）", group: "入住登記" },
+  { code: "02", label: "寶寶登錄與掃碼歸位", group: "寶寶登錄" },
+  { code: "03", label: "監視器狀態", group: "後臺管理" },
+  { code: "04", label: "開放時段／房間清單／狀態維護", group: "後臺管理" },
+  { code: "05", label: "狀態背景圖上傳", group: "後臺管理" },
+  { code: "06", label: "環狀燈號看板", group: "系統設定" },
+  { code: "07", label: "繼電器通道點測", group: "系統設定" },
+  { code: "08", label: "燈號狀態定義", group: "系統設定" },
 ];
 
 /** 寶寶視訊模組代號；此模組不屬於 Phase 1／2，但仍要出現在權限表上。 */
@@ -146,8 +146,8 @@ export default function StaffPermissionSettings() {
                         <th scope="row" className="whitespace-nowrap py-1.5 pl-8 pr-3 text-left font-normal text-stone-600">
                           <span className="mr-1.5 font-mono text-[10px] text-stone-400">{section.code}</span>
                           {section.label}
-                          {/* 群組只在編號不同時才標，否則會變成「01 入住登記 … 01 入住登記」 */}
-                          {!section.group.startsWith(section.code) && (
+                          {/* 群組只在與項目名稱不同時才標，否則會變成「入住登記 … 入住登記」 */}
+                          {!section.label.startsWith(section.group) && (
                             <span className="ml-1.5 text-[10px] text-stone-400">→ {section.group}</span>
                           )}
                         </th>
@@ -182,7 +182,7 @@ export default function StaffPermissionSettings() {
         </div>
         <p className="text-xs leading-5 text-stone-500">
           ⚠️ 勾選影響的是「看得到哪一個功能群組」：某個角色只要有任一格，該群組就會出現在寶寶視訊的上方導覽。
-          不希望櫃台看到「後臺管理」，就不要勾 03／04／05。
+          不希望櫃台看到「後臺管理」，就不要勾代號 03／04／05 這三格。
         </p>
       </section>
 

@@ -27,7 +27,7 @@ export type ModuleInfo = {
 export const MODULES: ModuleInfo[] = [
   // 待辦擺在選單最上方：依 v24 §9，院內每個角色上線後第一件事都是看「今天我要處理什麼」，
   // 而非先進某個模組。內容（可處理的類別、預設篩選）依角色不同，見 lib/domain/tasks.ts。
-  { no: "0", label: "待辦", href: "/todo", phase: 1 },
+  { no: "0", label: "待辦事項", href: "/todo", phase: 1 },
   {
     no: "1",
     label: "櫃台服務",

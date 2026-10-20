@@ -11,7 +11,7 @@ import { roleTaskCategories, TASK_CATEGORIES, taskActions, taskEvents, type Task
 import { ROLE_PROFILE, type Role } from "@/lib/permissions";
 
 /*
-  待辦行事曆（v24 §9）。
+  待辦事項（v24 §9 的待辦行事曆）。
 
   三件規格要求在這裡落地，改動前請先看懂：
   1. 月曆整合 10 類事件，點日期右側列出明細並可「處理」。
@@ -238,7 +238,7 @@ function Workspace() {
                   <button
                     type="button"
                     key={date}
-                    aria-label={`${date}，${items.length} 項待辦`}
+                    aria-label={`${date}，${items.length} 項待辦事項`}
                     aria-pressed={selected === date}
                     onClick={() => setSelected(date)}
                     className={
@@ -298,7 +298,7 @@ function Workspace() {
 
           {view === "日" && (
             <div className="space-y-2">
-              <h2 className="font-semibold text-stone-700">{selected} 全日待辦</h2>
+              <h2 className="font-semibold text-stone-700">{selected} 全日待辦事項</h2>
               {selectedEvents.map((item) => (
                 <Link
                   href={item.href}
@@ -350,10 +350,10 @@ function Workspace() {
 
       {defaults.length > 0 && (
         <section className="space-y-3 rounded-2xl border border-border-subtle bg-surface-raised p-4 shadow-xs">
-          <h2 className="font-semibold text-stone-700">新增 {selected} 的待辦</h2>
+          <h2 className="font-semibold text-stone-700">新增 {selected} 的待辦事項</h2>
           <div className="flex flex-wrap gap-3">
             <select
-              aria-label="新增待辦類別"
+              aria-label="新增待辦事項類別"
               className={input}
               value={category}
               onChange={(event) => setCategory(event.target.value)}
@@ -363,7 +363,7 @@ function Workspace() {
               ))}
             </select>
             <input
-              aria-label="待辦內容"
+              aria-label="待辦事項內容"
               placeholder="例：302 房明早 10:00 產前關懷電話"
               className={`${input} min-w-0 flex-1`}
               value={title}
@@ -379,7 +379,7 @@ function Workspace() {
               }
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
-              新增待辦
+              新增待辦事項
             </Button>
           </div>
           <p className="text-xs text-stone-500">只能新增您職掌內的類別；原型存在瀏覽器記憶體，重新整理會回到示範資料。</p>

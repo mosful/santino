@@ -16,24 +16,33 @@ import type { CameraRecord } from "@/lib/domain/types";
                        下拉選單，也不是「一支一列、兩個停用輸入框」的長清單。
   - `AreaTabs`       ← BabyCam 的 `.admission-area-tabs`：卡片內的底線式頁籤。
 
-  差異之處只有一個，且是刻意的：BabyCam 的四個功能群組放在左側 244px 側欄，
-  但聖帝諾院務系統本身已經有一條全域模組側欄，再疊一條會變成兩層導覽，
-  因此功能群組改成橫向的圖示分段列（`GroupNav`），群組內的頁籤維持底線式。
+  與 BabyCam 刻意不同之處：
+  - BabyCam 的四個功能群組放在左側 244px 側欄；本系統已有一條全域模組側欄，
+    再疊一條會變兩層導覽，因此群組改成**卡片內最上方的一列**（`GroupNav`），
+    與頁籤同屬一張卡，不另外佔一個區塊。
+  - **只剩一個群組時完全不畫群組列**（例如櫃台只有「入住登記」），
+    直接顯示該群組的頁籤——一排只有一顆的導覽只是噪音。
+  - **不顯示 01／02／04／08 這些編號**：那是權限代號，給管理者在後台對照用的，
+    不該出現在每天操作的畫面上。編號仍保留在程式與權限表裡。
 */
 
 export const GROUP_ICONS = { "01": Bed, "02": Tags, "04": SlidersHorizontal, "08": Settings2 } as const;
 
-/** BabyCam 的 `.panel` ＋ `.panel-title`：編號徽章、標題、一行說明。 */
+/**
+ * 卡片外框。
+ *
+ * ⚠️ 標題與說明改為**選用**：群組名稱已經在上方的群組列或頁籤上，
+ * 再用一個大標題重寫一次只是把內容往下推（客戶回報「上方選單太多、空白太多」）。
+ * 只有真的需要補充說明時才給 `title`／`description`。
+ */
 export function Panel({
-  no,
   title,
   description,
   action,
   flush = false,
   children,
 }: {
-  no?: string;
-  title: string;
+  title?: string;
   description?: string;
   action?: ReactNode;
   /** true 代表內容要貼齊卡片邊緣（左右兩欄版面用），卡片本身不給內距。 */
@@ -47,18 +56,15 @@ export function Panel({
         (flush ? "" : "p-4 sm:p-5")
       }
     >
-      <div className={"flex items-start gap-3 " + (flush ? "p-4 pb-0 sm:p-5 sm:pb-0" : "mb-4")}>
-        {no && (
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-900 text-xs font-bold tabular-nums text-white">
-            {no}
-          </span>
-        )}
-        <div className="min-w-0 flex-1">
-          <h2 className="text-base font-bold text-stone-800">{title}</h2>
-          {description && <p className="mt-1 text-sm leading-6 text-stone-500">{description}</p>}
+      {(title || action) && (
+        <div className={"flex items-start gap-3 " + (flush ? "p-4 pb-0 sm:p-5 sm:pb-0" : "mb-4")}>
+          <div className="min-w-0 flex-1">
+            {title && <h2 className="text-base font-bold text-stone-800">{title}</h2>}
+            {description && <p className="mt-1 text-sm leading-6 text-stone-500">{description}</p>}
+          </div>
+          {action}
         </div>
-        {action}
-      </div>
+      )}
       {children}
     </section>
   );
@@ -126,15 +132,19 @@ export function AreaTabs<T extends string>({
   active,
   onSelect,
   label,
+  hint,
 }: {
   tabs: { id: T; label: string }[];
   active: T;
   onSelect: (id: T) => void;
   label: string;
+  /** 右側的一行說明；取代原本獨立一塊的大標題區。 */
+  hint?: string;
 }) {
   if (tabs.length <= 1) return null;
   return (
-    <div role="group" aria-label={label} className="scroll-fade mx-4 flex gap-1 overflow-x-auto border-b border-border-subtle pt-4 sm:mx-5">
+    <div className="flex flex-wrap items-end justify-between gap-x-4 border-b border-border-subtle px-4 pt-3 sm:px-5">
+    <div role="group" aria-label={label} className="scroll-fade -mb-px flex gap-1 overflow-x-auto">
       {tabs.map((tab) => (
         <button
           key={tab.id}
@@ -153,10 +163,16 @@ export function AreaTabs<T extends string>({
         </button>
       ))}
     </div>
+    {hint && <p className="hidden max-w-[52ch] truncate pb-2.5 text-xs text-stone-500 xl:block" title={hint}>{hint}</p>}
+    </div>
   );
 }
 
-/** 功能群組導覽：BabyCam 側欄的橫向版（見檔頭說明）。 */
+/**
+ * 功能群組導覽：卡片內最上方的一列。
+ *
+ * ⚠️ 只有一個群組時回 null，由呼叫端直接畫頁籤即可（見檔頭說明）。
+ */
 export function GroupNav<T extends string>({
   groups,
   active,
@@ -166,10 +182,11 @@ export function GroupNav<T extends string>({
   active: T;
   onSelect: (id: T) => void;
 }) {
+  if (groups.length <= 1) return null;
   return (
     <nav
       aria-label="寶寶視訊功能"
-      className="scroll-fade flex gap-1 overflow-x-auto rounded-2xl border border-border-subtle bg-surface-raised p-1.5 shadow-xs"
+      className="scroll-fade flex gap-1 overflow-x-auto border-b border-border-subtle bg-surface-muted/50 px-2 py-2 sm:px-3"
     >
       {groups.map((group) => {
         const Icon = group.icon;
@@ -181,12 +198,11 @@ export function GroupNav<T extends string>({
             aria-pressed={on}
             onClick={() => onSelect(group.id)}
             className={
-              "flex h-11 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-bold transition-colors " +
-              (on ? "bg-brand-600 text-white shadow-sm" : "text-stone-500 hover:bg-brand-50 hover:text-brand-700")
+              "flex h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-bold transition-colors " +
+              (on ? "bg-brand-600 text-white shadow-xs" : "text-stone-600 hover:bg-surface-raised hover:text-brand-700")
             }
           >
-            <Icon className="h-[18px] w-[18px] shrink-0" />
-            <span className="tabular-nums opacity-70">{group.id}</span>
+            <Icon className="h-[17px] w-[17px] shrink-0" />
             {group.label}
           </button>
         );

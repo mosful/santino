@@ -26,13 +26,13 @@ function ChildcarePanel({ record }: { record: CaseRecord }) {
   return (
     <form ref={form} onSubmit={(event) => event.preventDefault()} className="space-y-4 text-sm">
       <div className="rounded-xl border border-teal-200 bg-teal-50 p-3 text-xs text-teal-800">
-        媽媽原住房合約於退宿日結束；寶寶留房需另立托嬰合約。托嬰案件沒有房號時，以家長車號作為主要辨識資訊。
+        媽媽原住房合約於退房日結束；寶寶續留需另立托嬰合約。托嬰案件沒有房號時，以家長車號作為主要辨識資訊。
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="媽媽姓名" value={record.name} />
         <Field label="原住房合約編號" value={record.contractNo} />
-        <Field label="媽媽退宿日" value={record.dischargedAt.slice(0, 10) || "尚未退房"} />
+        <Field label="媽媽退房日" value={record.dischargedAt.slice(0, 10) || "尚未退房"} />
         <Field label="寶寶姓名／病歷號" value={data.subjects.filter((subject) => subject.caseId === record.id && subject.kind === "baby").map((subject) => `${subject.name}／${subject.chartNo}`).join("、")} />
         <Field label="家長車號（無房號案件識別）" value={record.childcareCar} editable />
         <Field label="留房原因" value={record.note} editable />

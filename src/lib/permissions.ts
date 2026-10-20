@@ -89,6 +89,22 @@ export function getAccess(role: Role, moduleNo: string): AccessLevel {
   return MATRIX[moduleNo]?.[role] ?? "none";
 }
 
+/**
+ * 櫃台案件作業（案件流程、案件清單、建立預約、收費與合約異動）的操作角色。
+ *
+ * ⚠️ 這份清單以前散在三個地方各寫一次（CaseWorkspace 的擋頁、domainStore 的
+ * canManageCases、首頁的連結），改權限時很容易只改到其中一個——結果就是
+ * 選單上看得到入口、點進去卻被擋，客戶實際回報過。要改就只改這裡。
+ */
+const CASE_FLOW_ROLES: Role[] = ["櫃台", "護理長 婉真", "管理者"];
+
+export function canUseCaseFlow(role: Role) {
+  return CASE_FLOW_ROLES.includes(role);
+}
+
+/** 給使用者看的提示：誰可以做這件事。 */
+export const CASE_FLOW_ROLE_HINT = CASE_FLOW_ROLES.join("、");
+
 export type AdminSettingGroup = "system" | "operations";
 
 /**

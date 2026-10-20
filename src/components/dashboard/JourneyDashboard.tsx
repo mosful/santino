@@ -24,7 +24,10 @@ import {
 } from "@/lib/mock/customerJourney";
 import { useJourneyMothers } from "@/lib/domain/legacySelectors";
 import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
+import { canUseCaseFlow } from "@/lib/permissions";
+import { useCurrentRole } from "@/lib/roleStore";
 import OperationsOverview from "./OperationsOverview";
+import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 
 type QuickView = "overdue" | "today" | "staying" | "moving";
@@ -61,6 +64,8 @@ const QUICK_LINKS = [
 ];
 
 export default function JourneyDashboard() {
+  const role = useCurrentRole();
+  const caseFlow = canUseCaseFlow(role);
   const mothers = useJourneyMothers();
   const { data: domain } = useDomainStore();
   const [selectedStage, setSelectedStage] = useState<JourneyStageKey>("入住中");
@@ -93,10 +98,6 @@ export default function JourneyDashboard() {
   });
   const visibleStageMothers = keyword ? stageMothers : stageMothers.slice(0, 8);
 
-  const overdue = mothers.filter((mother) => mother.urgency === "overdue").length;
-  const today = mothers.filter((mother) => mother.urgency === "today").length;
-  const inHouse = mothers.filter((mother) => mother.stage === "入住中").length;
-  const movingSoon = mothers.filter((mother) => mother.stage === "入住前" || mother.stage === "退房").length;
 
   function selectStage(stage: JourneyStageKey) {
     setSelectedStage(stage);
@@ -139,27 +140,35 @@ export default function JourneyDashboard() {
     catch (error) { setFeedback(error instanceof Error ? error.message : "請至完整案件流程填寫必要資料。"); }
   }
 
+  /*
+    沒有櫃台案件作業權限的角色（衛教師、護理師）只看今日工作台與房況總覽。
+
+    ⚠️ 以前不分角色一律渲染整條案件漏斗與案件清單，護理人員打開首頁看到的是
+    一整頁自己不能操作的櫃檯資料；點下去才被擋頁。要改可操作角色請改
+    permissions.canUseCaseFlow，不要在這裡另寫一組判斷。
+  */
+  if (!caseFlow) {
+    return (
+      <div className="space-y-4 animate-fade-in-up">
+        <OperationsOverview />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 animate-fade-in-up">
-      <OperationsOverview
-        quickStats={[
-          { key: "overdue", label: "逾期待辦", value: overdue, tone: "rose", active: quickView === "overdue", onClick: () => selectQuickView("overdue") },
-          { key: "today", label: "今日追蹤", value: today, tone: "amber", active: quickView === "today", onClick: () => selectQuickView("today") },
-          { key: "staying", label: "入住中", value: inHouse, tone: "brand", active: quickView === "staying", onClick: () => selectQuickView("staying") },
-          { key: "moving", label: "近日入退房", value: movingSoon, tone: "blue", active: quickView === "moving", onClick: () => selectQuickView("moving") },
-        ]}
-      />
-      <section className="overflow-hidden rounded-2xl border border-brand-900/10 bg-white/90 shadow-sm">
-        {/* ⚠️ 這裡以前還有一整條「從第一次詢問，到母嬰安心返家」標題帶＋四個數字，
-            但那四個數字與上方今日工作台完全相同——客戶回報的「重複資訊」就是它。
-            數字已移進今日工作台，這裡只留一行小標與漏斗本身。 */}
-        <div className="flex items-center gap-2 border-b border-stone-100 px-4 pt-3 pb-1 sm:px-5">
-          <Sparkles className="h-4 w-4 shrink-0 text-brand-500" aria-hidden="true" />
-          <h2 className="text-sm font-bold text-stone-800">案件流程</h2>
-          <span className="text-xs text-stone-500">點階段可聚焦該階段的案件</span>
-        </div>
-
-        <div className="scroll-fade overflow-x-auto px-3 py-4 sm:px-5">
+      <OperationsOverview quickView={quickView} onQuickView={selectQuickView} />
+      {/* ⚠️ 這裡以前還有一整條「從第一次詢問，到母嬰安心返家」標題帶＋四個數字，
+          但那四個數字與上方今日工作台完全相同——客戶回報的「重複資訊」就是它。
+          數字已移進今日工作台，這裡只留漏斗本身。 */}
+      <CollapsibleSection
+        id="case-funnel"
+        title="案件流程"
+        summary="點階段可聚焦該階段的案件"
+        icon={<Sparkles className="h-4 w-4 shrink-0 text-brand-500" aria-hidden="true" />}
+        bodyClassName="!px-0"
+      >
+        <div className="scroll-fade overflow-x-auto px-3 pb-1 sm:px-5">
           <div className="flex min-w-max items-start sm:min-w-0 sm:justify-center">
             {JOURNEY_STAGES.map((stage, index) => {
               const Icon = stage.icon;
@@ -188,21 +197,22 @@ export default function JourneyDashboard() {
             })}
           </div>
         </div>
-      </section>
+      </CollapsibleSection>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.7fr)]">
-        <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div className="flex items-center gap-2">
-              <span className={`flex h-9 w-9 items-center justify-center rounded-xl ring-1 ${quickInfo ? "bg-brand-50 text-brand-600 ring-brand-200" : STAGE_STYLE[selected.color]}`}>
-                <ContextIcon className="h-[18px] w-[18px]" />
-              </span>
-              <div>
-                <h2 className="font-bold text-stone-800">{quickInfo?.label ?? selected.label}</h2>
-                <p className="text-xs text-stone-500">{quickInfo?.description ?? selected.description}</p>
-              </div>
-            </div>
-            <label className="relative block sm:w-56">
+        {/* 篩選結果整塊也可收合：護理站只想看房況時，這一長串案件清單可以先收起來。
+            id 固定不隨階段變，否則每切一個階段就是一個新的收合偏好。 */}
+        <CollapsibleSection
+          id="stage-cases"
+          title={quickInfo?.label ?? selected.label}
+          summary={`${visibleStageMothers.length} 件`}
+          icon={
+            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ring-1 ${quickInfo ? "bg-brand-50 text-brand-600 ring-brand-200" : STAGE_STYLE[selected.color]}`}>
+              <ContextIcon className="h-4 w-4" />
+            </span>
+          }
+          action={
+            <label className="relative block w-full sm:w-56">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
               <input
                 value={query}
@@ -211,7 +221,9 @@ export default function JourneyDashboard() {
                 className="w-full rounded-xl border border-stone-200 bg-stone-50 py-2 pl-9 pr-3 text-sm transition-[border-color,background-color,box-shadow] focus:border-brand-300 focus:bg-white"
               />
             </label>
-          </div>
+          }
+        >
+          <p className="mb-3 text-xs text-stone-500">{quickInfo?.description ?? selected.description}</p>
 
           <div className="space-y-2.5">
             {visibleStageMothers.map((mother) => {
@@ -258,16 +270,18 @@ export default function JourneyDashboard() {
               </Link>
             )}
           </div>
-        </div>
+        </CollapsibleSection>
 
         <aside className="space-y-4">
-          <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="font-bold text-stone-800">{quickInfo ? "跨階段快速處理" : `${selected.label}相關功能`}</h2>
-              <span className={`flex h-9 w-9 items-center justify-center rounded-xl ring-1 ${quickInfo ? "bg-brand-50 text-brand-600 ring-brand-200" : STAGE_STYLE[selected.color]}`}>
-                <ContextIcon className="h-[18px] w-[18px]" />
+          <CollapsibleSection
+            id="stage-links"
+            title={quickInfo ? "跨階段快速處理" : `${selected.label}相關功能`}
+            icon={
+              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ring-1 ${quickInfo ? "bg-brand-50 text-brand-600 ring-brand-200" : STAGE_STYLE[selected.color]}`}>
+                <ContextIcon className="h-4 w-4" />
               </span>
-            </div>
+            }
+          >
             <div className="space-y-2">
               {(quickInfo ? QUICK_LINKS : selected.links).map((link) => (
                 <Link key={link.label} href={link.href} className="group flex items-center gap-3 rounded-xl border border-stone-200 bg-stone-50 p-3 transition-[border-color,background-color] hover:border-brand-300 hover:bg-brand-50">
@@ -279,7 +293,7 @@ export default function JourneyDashboard() {
                 </Link>
               ))}
             </div>
-          </div>
+          </CollapsibleSection>
 
           {!quickInfo && (
             <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm sm:p-5">

@@ -1,6 +1,7 @@
 import { CARE_SUBJECTS } from "../care/seed";
 import { MAMA_ROOMS } from "../mock/mamaRoom";
 import { ROOM_MASTER } from "../mock/roomMaster";
+import { cameraCodec, DEFAULT_NETWORK_PREFIX } from "../babycam/network";
 /*
   展示用的手機與密碼。
 
@@ -76,12 +77,13 @@ export const DISPLAY_STATE_SEED: DemoDomain["displayStates"] = STATE_BACKGROUNDS
 
 export const DOMAIN_SEED: DemoDomain = {
   version: 2, subjects: structuredClone(CARE_SUBJECTS), cases,
-  cameras: cameraCodes.map((code, index) => ({ id: `camera-${index + 1}`, code, zone: code[0] as "A" | "B", enabled: true, health: index === 12 ? "異常" : "正常", lastShotAt: "2026-10-16T12:00:00+08:00", scheduleInternal: inheritWindow(), scheduleFamily: inheritWindow(), baseline: false })),
+  cameras: cameraCodes.map((code, index) => ({ id: `camera-${index + 1}`, code, zone: code[0] as "A" | "B", enabled: true, codec: cameraCodec(code) ?? "H.264", health: index === 12 ? "異常" : "正常", lastShotAt: "2026-10-16T12:00:00+08:00", scheduleInternal: inheritWindow(), scheduleFamily: inheritWindow(), baseline: false })),
   bindings: cases.filter((record) => record.stage === 5 || record.childcare && !record.childcareEnded).map((record, index) => ({
     id: `binding-${record.id}`, caseId: record.id, room: record.room, motherName: record.name, phone: record.phone,
     validFrom: "2026-10-01", validTo: record.childcare ? "2026-10-22" : "2026-11-01", familyEnabled: true, familyFrom: "", familyTo: "", internalWindow: inheritWindow(), familyWindow: inheritWindow(), internalTicket: `demo-internal-${index + 1}`, familyTicket: `demo-family-${index + 1}`, passcode: DEMO_PASSCODE,
     babies: CARE_SUBJECTS.filter((subject) => subject.caseId === record.id && subject.kind === "baby" && (index < 28 || record.childcare)).map((baby) => ({ babyId: baby.id, cameraId: `camera-${record.childcare ? index - 3 : index + 1}`, cartNo: record.childcare ? baby.carNo! : `C${String(index + 1).padStart(2, "0")}`, identityCode: `DEMO-${String(index + 1).padStart(4, "0")}-BABY`, state: "normal", careMode: false })), sessions: [], ended: false,
   })),
+  networkPrefix: DEFAULT_NETWORK_PREFIX,
   displayStates: DISPLAY_STATE_SEED,
   houseWindow: { mode: "always", start: "00:00", end: "23:59" }, internalWindow: { mode: "scheduled", start: "10:00", end: "22:00" }, familyWindow: { mode: "scheduled", start: "10:00", end: "20:00" }, enforceInternal: false, enforceFamily: false, familyLimit: 2, concurrencyEnforced: true,
   demoAt: "2026-10-16T12:00:00+08:00", viewScenario: "normal", lightColors: { empty: "熄滅", care: "熄滅", idle: "白", internal: "紅", family: "洋紅" }, relayChannels: {}, audit: [], careEvents: [],

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, CalendarDays, Check, Eye, Plus, RotateCcw } from "lucide-react";
 import Button, { ButtonLink } from "@/components/ui/Button";
+import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { useCareStore } from "@/lib/care/store";
 import { useCurrentRole } from "@/lib/roleStore";
@@ -163,9 +164,8 @@ function Workspace() {
       )}
 
       {/* 類別篩選：角色預設為實心可處理，其餘虛線＋👁 僅供檢視 */}
-      <section className="space-y-2 rounded-2xl border border-border-subtle bg-surface-raised p-3 shadow-xs">
+      <CollapsibleSection id="todo-filters" title="顯示類別" summary={`${filters.length}／${TASK_CATEGORIES.length} 類`} bodyClassName="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="mr-1 text-xs font-semibold text-stone-500">顯示類別</h2>
           {TASK_CATEGORIES.map((item) => {
             const own = defaults.includes(item);
             const on = filters.includes(item);
@@ -190,36 +190,36 @@ function Workspace() {
           </Button>
         </div>
         <p className="text-xs text-stone-500">虛線＋👁 的類別不在您的職掌，開啟後只能「檢視」，不會出現「處理完成」。</p>
-      </section>
-
-      {/* 月份與檢視切換 */}
-      <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm text-stone-600">
-          月份
-          <input
-            aria-label="行事曆月份"
-            type="month"
-            className={input}
-            value={month}
-            onChange={(event) => {
-              if (event.target.value) setMonth(event.target.value);
-            }}
-          />
-        </label>
-        <div role="group" aria-label="檢視方式" className="flex gap-1.5">
-          {(["月", "週", "日"] as const).map((item) => (
-            <Button key={item} size="sm" selected={view === item} onClick={() => setView(item)}>
-              {item}檢視
-            </Button>
-          ))}
-        </div>
-        <span className="ml-auto text-xs text-stone-500">
-          本月顯示 {events.filter((item) => item.date.startsWith(month)).length} 項
-        </span>
-      </div>
+      </CollapsibleSection>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
-        <section className="overflow-x-auto rounded-2xl border border-border-subtle bg-surface-raised p-3 shadow-xs">
+        {/* 月份與檢視切換做成標題列的 action，收合時整條一起收起來。 */}
+        <CollapsibleSection
+          id="todo-calendar"
+          title="行事曆"
+          summary={`本月 ${events.filter((item) => item.date.startsWith(month)).length} 項`}
+          bodyClassName="overflow-x-auto"
+          action={
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                aria-label="行事曆月份"
+                type="month"
+                className={input}
+                value={month}
+                onChange={(event) => {
+                  if (event.target.value) setMonth(event.target.value);
+                }}
+              />
+              <div role="group" aria-label="檢視方式" className="flex gap-1.5">
+                {(["月", "週", "日"] as const).map((item) => (
+                  <Button key={item} size="sm" selected={view === item} onClick={() => setView(item)}>
+                    {item}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          }
+        >
           {view === "月" && (
             <div className="grid min-w-[700px] grid-cols-7 gap-px rounded-xl bg-border-subtle">
               {["日", "一", "二", "三", "四", "五", "六"].map((label) => (
@@ -312,11 +312,10 @@ function Workspace() {
               {!selectedEvents.length && <p className="py-6 text-center text-sm text-stone-500">本日沒有符合篩選的待辦。</p>}
             </div>
           )}
-        </section>
+        </CollapsibleSection>
 
         {/* 所選日期的明細：可處理的才給「處理完成」，其餘僅「檢視」（v24 §9） */}
-        <section className="space-y-3 rounded-2xl border border-border-subtle bg-surface-raised p-4 shadow-xs">
-          <h2 className="font-semibold text-stone-700">{selected} 明細</h2>
+        <CollapsibleSection id="todo-detail" title={`${selected} 明細`} summary={`${selectedEvents.length} 項`} bodyClassName="space-y-3">
           {selectedEvents.map((event) => {
             const own = defaults.includes(event.category);
             return (
@@ -345,12 +344,11 @@ function Workspace() {
             );
           })}
           {!selectedEvents.length && <p className="text-sm text-stone-500">所選日期沒有符合篩選的待辦。</p>}
-        </section>
+        </CollapsibleSection>
       </div>
 
       {defaults.length > 0 && (
-        <section className="space-y-3 rounded-2xl border border-border-subtle bg-surface-raised p-4 shadow-xs">
-          <h2 className="font-semibold text-stone-700">新增 {selected} 的待辦事項</h2>
+        <CollapsibleSection id="todo-add" title={`新增 ${selected} 的待辦事項`} bodyClassName="space-y-3">
           <div className="flex flex-wrap gap-3">
             <select
               aria-label="新增待辦事項類別"
@@ -383,7 +381,7 @@ function Workspace() {
             </Button>
           </div>
           <p className="text-xs text-stone-500">只能新增您職掌內的類別；原型存在瀏覽器記憶體，重新整理會回到示範資料。</p>
-        </section>
+        </CollapsibleSection>
       )}
     </div>
   );

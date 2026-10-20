@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Baby } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { useDomainStore } from "@/lib/demo/domainStore";
+import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import { roomActions, ROOM_SERVICE_STATUSES, roomCardStatus, type RoomCardStatus } from "@/lib/domain/roomStatus";
 import type { RoomServiceStatus } from "@/lib/domain/types";
 import { useCurrentRole } from "@/lib/roleStore";
@@ -72,13 +73,13 @@ export default function RoomStatusOverview() {
   }
 
   return (
-    <section aria-labelledby="room-status-title" className="space-y-3">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id="room-status-title" className="text-lg font-bold text-stone-800">房況總覽</h2>
-        <p className="text-sm tabular-nums text-stone-500">
-          館內 {mothers.length} 位　寶寶 {babies.length} 位　今日入住 {admissionsToday}　今日退房 {dischargesToday}
-        </p>
-      </div>
+    <CollapsibleSection
+      id="room-status"
+      title={<span id="room-status-title">房況總覽</span>}
+      summary={`館內 ${mothers.length} 位　寶寶 ${babies.length} 位　今日入住 ${admissionsToday}　今日退房 ${dischargesToday}`}
+      className="scroll-mt-20"
+      bodyClassName="space-y-3"
+    >
 
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
         {LEGEND.map((item) => (
@@ -168,6 +169,6 @@ export default function RoomStatusOverview() {
           </div>
         </div>
       </Modal>
-    </section>
+    </CollapsibleSection>
   );
 }

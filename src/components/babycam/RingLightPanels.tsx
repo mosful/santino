@@ -6,6 +6,7 @@ import { babycamActions } from "@/lib/babycam/actions";
 import { deriveDemoLight } from "@/lib/babycam/viewing";
 import { ringLightsInZone, UNMAPPED_CAMERA_CODES, type RelayZone } from "@/lib/babycam/ring-light-map";
 import { CHANNEL_CSS, MIX_DISPLAY_ORDER, mixChannels, mixCss, mixLabel, mixOf } from "@/lib/babycam/lightMix";
+import { cameraHost, DEFAULT_NETWORK_PREFIX, relayHost } from "@/lib/babycam/network";
 import type { DemoDomain } from "@/lib/domain/types";
 
 /*
@@ -49,6 +50,7 @@ export function LightDot({ mix, size = 26 }: { mix: string; size?: number }) {
 
 export function RingLightBoard({ data }: { data: DemoDomain }) {
   const unmapped = UNMAPPED_CAMERA_CODES.filter((code) => data.cameras.some((camera) => camera.code === code));
+  const prefix = data.networkPrefix || DEFAULT_NETWORK_PREFIX;
 
   return (
     <div className="space-y-5">
@@ -85,6 +87,7 @@ export function RingLightBoard({ data }: { data: DemoDomain }) {
                 );
                 const baby = binding?.babies.find((item) => item.cameraId === camera.id);
                 const babyName = data.subjects.find((subject) => subject.id === baby?.babyId)?.name;
+                const host = cameraHost(prefix, light.cameraCode);
                 return (
                   <article
                     key={light.cameraCode}
@@ -109,8 +112,8 @@ export function RingLightBoard({ data }: { data: DemoDomain }) {
                     <b className="text-[0.72rem] font-bold text-brand-700">
                       {binding ? `${binding.room || "托嬰"}　${babyName ?? ""}`.trim() : "—"}
                     </b>
-                    <em className="col-start-2 font-mono text-[0.66rem] not-italic text-stone-500">
-                      {light.channels.map((channel) => `Y${channel.yNumber}`).join("／")}
+                    <em className="col-start-2 font-mono text-[0.66rem] not-italic text-stone-500" translate="no">
+                      {host ?? "位址未設定"}　{light.channels.map((channel) => `Y${channel.yNumber}`).join("／")}
                     </em>
                     {camera.enabled && camera.health === "異常" && (
                       <u className="col-start-2 text-[0.68rem] text-amber-800 no-underline">⚠️ 抓圖異常，燈亮不代表畫面正常</u>
@@ -122,6 +125,11 @@ export function RingLightBoard({ data }: { data: DemoDomain }) {
           </section>
         );
       })}
+
+      <p className="text-xs text-stone-500">
+        位址由網段前綴 <code className="rounded bg-surface-muted px-1 py-0.5 font-mono" translate="no">{prefix}</code> ＋ 各機末碼組成；
+        末碼對照取自 BabyCam 的監視器主檔。網段可於「後臺管理 → 展示控制台」調整。
+      </p>
 
       {unmapped.length > 0 && (
         <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-7 text-amber-900">
@@ -138,6 +146,9 @@ export function RingLightBoard({ data }: { data: DemoDomain }) {
 export function RelayBoard({ data, onToggle }: { data: DemoDomain; onToggle: (channel: string, next: boolean) => void }) {
   const [zone, setZone] = useState<RelayZone>("A");
   const [unlocked, setUnlocked] = useState(false);
+  // 清單／卡片：33 支機器時卡片要捲很久，現場對照佈線通常用清單（沿用 BabyCam 的 viewMode）。
+  const [view, setView] = useState<"cards" | "list">("cards");
+  const prefix = data.networkPrefix || DEFAULT_NETWORK_PREFIX;
   const lights = ringLightsInZone(zone).filter((light) => data.cameras.some((camera) => camera.code === light.cameraCode));
 
   function channelKey(zoneId: RelayZone, yNumber: number) {
@@ -185,7 +196,7 @@ export function RelayBoard({ data, onToggle }: { data: DemoDomain; onToggle: (ch
               }
             >
               <b className="block text-[13.5px] font-semibold">{item} 區板</b>
-              <span className="block font-mono text-[10px] opacity-75">模擬位址未設定</span>
+              <span className="block font-mono text-[10px] opacity-75" translate="no">{relayHost(prefix, item)}</span>
             </button>
           ))}
         </div>
@@ -198,13 +209,28 @@ export function RelayBoard({ data, onToggle }: { data: DemoDomain; onToggle: (ch
       </p>
 
       <section className="mt-4 rounded-xl border border-[#2b3542] bg-[#1a212b] p-4">
-        <h4 className="mb-3 flex items-baseline gap-2.5 text-xs font-semibold tracking-wide text-[#8b98a8]">
-          寶寶監視器環狀燈
-          <small className="font-normal">
-            {zone} 區板　{lights.length} 台 × 3 通道 = {lights.length * 3}
-          </small>
-        </h4>
-        <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <h4 className="flex items-baseline gap-2.5 text-xs font-semibold tracking-wide text-[#8b98a8]">
+            寶寶監視器環狀燈
+            <small className="font-normal">
+              {zone} 區板　{lights.length} 台 × 3 通道 = {lights.length * 3}
+            </small>
+          </h4>
+          <div role="group" aria-label="監視器顯示方式" className="inline-flex gap-1 rounded-lg border border-[#2b3542] bg-[#161d27] p-1">
+            {([["cards", "卡片"], ["list", "清單"]] as const).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={view === key}
+                onClick={() => setView(key)}
+                className={"rounded-md px-3 py-1 text-xs font-bold " + (view === key ? "bg-[#2f6feb] text-white" : "text-[#8b98a8] hover:text-[#e6edf3]")}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className={view === "list" ? "grid gap-1.5" : "grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3"}>
           {lights.map((light) => {
             const on = (color: "red" | "green" | "blue") => {
               const channel = light.channels.find((item) => item.color === color);
@@ -213,10 +239,17 @@ export function RelayBoard({ data, onToggle }: { data: DemoDomain; onToggle: (ch
             const mix = mixOf(on("red"), on("green"), on("blue"));
             const semantic = BUILTIN_STATES.find((state) => (data.lightColors[state.key] ?? "熄滅") === mix);
             return (
-              <article key={light.cameraCode} className="rounded-xl border border-[#2b3542] bg-[#141b24] p-3">
-                <div className="mb-2.5 flex items-center gap-2.5">
+              <article
+                key={light.cameraCode}
+                className={
+                  "rounded-xl border border-[#2b3542] bg-[#141b24] p-3 " +
+                  (view === "list" ? "flex flex-wrap items-center gap-x-3 gap-y-2" : "")
+                }
+              >
+                <div className={"flex items-center gap-2.5 " + (view === "list" ? "min-w-0 flex-1" : "mb-2.5")}>
                   <LightDot mix={mix} size={22} />
                   <strong className="text-base font-bold tracking-wide">{light.cameraCode}</strong>
+                  <b className="font-mono text-[11px] font-normal text-[#8b98a8]" translate="no">{cameraHost(prefix, light.cameraCode) ?? "位址未設定"}</b>
                   <span className="ml-auto truncate text-[11.5px] text-[#8b98a8]">
                     <span style={{ color: mix === "熄滅" ? undefined : mixCss(mix).color }}>{mixLabel(mix)}</span>
                     <em className="ml-1 not-italic">
@@ -224,7 +257,7 @@ export function RelayBoard({ data, onToggle }: { data: DemoDomain; onToggle: (ch
                     </em>
                   </span>
                 </div>
-                <div className="flex gap-1.5">
+                <div className={"flex gap-1.5 " + (view === "list" ? "w-full sm:w-[300px]" : "")}>
                   {light.channels.map((channel) => {
                     const key = channelKey(light.zone, channel.yNumber);
                     const active = !!data.relayChannels[key];

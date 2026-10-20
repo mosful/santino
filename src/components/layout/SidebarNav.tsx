@@ -7,7 +7,7 @@ import { ChevronDown } from "lucide-react";
 import { MODULES } from "@/lib/modules";
 import { MODULE_ICONS } from "./icons";
 import { useCurrentRole } from "@/lib/roleStore";
-import { canEditAdminSetting, getAccess } from "@/lib/permissions";
+import { canEditAdminSetting, canUseCaseFlow, getAccess } from "@/lib/permissions";
 import { useEnabledPhase } from "@/lib/phaseStore";
 import { useDashboardLayout } from "@/lib/dashboardLayoutStore";
 
@@ -28,6 +28,8 @@ export default function SidebarNav({
     <nav className="flex flex-col gap-0.5 px-2 py-2">
       {MODULES.filter((m) => m.showInSidebar !== false && m.phase <= enabledPhase && getAccess(role, m.no) !== "none").map((m) => {
         const Icon = MODULE_ICONS[m.no];
+        // 模組 1 對沒有櫃台案件作業權限的角色改用別名（見 modules.ts 的 altLabel）。
+        const label = m.no === "1" && m.altLabel && !canUseCaseFlow(role) ? m.altLabel : m.label;
         // 以路徑分段為界判斷，避免 /babycam 讓 /baby 也被判定為選取中；
         // 同時相容 trailingSlash:true 產生的 "/baby/" 形式。
         const active =
@@ -58,7 +60,7 @@ export default function SidebarNav({
                     onNavigate?.();
                   }
                 }}
-                title={collapsed ? m.label : undefined}
+                title={collapsed ? label : undefined}
                 className={
                   "group flex flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors md:max-lg:min-h-12 md:max-lg:justify-center md:max-lg:px-2 " +
                   (active
@@ -69,7 +71,7 @@ export default function SidebarNav({
                 <Icon className="h-[18px] w-[18px] shrink-0" />
                 {!collapsed && (
                   <>
-                    <span className="flex-1 truncate">{m.label}</span>
+                    <span className="flex-1 truncate">{label}</span>
                     {!!visibleSubItems?.length && (
                       <ChevronDown
                         className={"h-3.5 w-3.5 shrink-0 transition-transform " + (isExpanded ? "rotate-180" : "")}

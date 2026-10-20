@@ -5,7 +5,7 @@ import { DOMAIN_SEED, blankCase, inheritWindow } from "./domainSeed";
 import { CASE_STAGES, type CaseRecord, type DemoDomain, type ReservationInput } from "../domain/types";
 import { casePrice, caseTransitionErrors } from "../domain/rules";
 import { getCurrentRole } from "../roleStore";
-import { ROLE_PROFILE } from "../permissions";
+import { canUseCaseFlow, ROLE_PROFILE } from "../permissions";
 import { closeViewingHistory } from "../babycam/history";
 import { normalizeCartNo } from "../babycam/cart-no";
 
@@ -18,6 +18,7 @@ function valid(value: unknown): value is DemoDomain {
   data.tasks ??= structuredClone(DOMAIN_SEED.tasks); data.handledTasks ??= [];
   data.contractSettings ??= structuredClone(DOMAIN_SEED.contractSettings);
   data.demoScenarios ??= {}; data.detection ??= structuredClone(DOMAIN_SEED.detection);
+  data.networkPrefix ??= DOMAIN_SEED.networkPrefix;
   data.roomTypes ??= structuredClone(DOMAIN_SEED.roomTypes); data.lightLabels ??= structuredClone(DOMAIN_SEED.lightLabels);
   data.cameraIntervals ??= data.bindings.filter((binding) => !binding.ended).flatMap((binding) => binding.babies.map((baby) => ({ id: `migrated-${baby.babyId}`, bindingId: binding.id, babyId: baby.babyId, cameraId: baby.cameraId, start: `${binding.validFrom}T00:00:00+08:00`, end: null })));
   for (const subject of data.subjects.filter((item) => !item.historical)) {
@@ -53,7 +54,7 @@ export const currentActor = () => `${ROLE_PROFILE[getCurrentRole()].name}（${ge
 export function audit(data: DemoDomain, action: string, target: string) {
   data.audit.unshift({ id: crypto.randomUUID(), at: new Date().toISOString(), actor: currentActor(), action, target });
 }
-function canManageCases() { return ["櫃台", "護理長 婉真", "管理者"].includes(getCurrentRole()); }
+function canManageCases() { return canUseCaseFlow(getCurrentRole()); }
 function caseLog(record: CaseRecord, text: string) { record.log.unshift({ id: crypto.randomUUID(), at: new Date().toISOString(), actor: currentActor(), text }); }
 function findCase(data: DemoDomain, id: string, allowClosed = false) {
   if (!canManageCases()) throw new Error("目前角色不能修改案件。");

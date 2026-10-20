@@ -6,17 +6,18 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
-import { Printer } from "lucide-react";
+import { ExternalLink, Printer, QrCode } from "lucide-react";
 import { BASE_PATH } from "@/lib/basePath";
-import Button from "@/components/ui/Button";
+import Button, { ButtonLink } from "@/components/ui/Button";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { useCurrentRole } from "@/lib/roleStore";
-import { type Role } from "@/lib/permissions";
+import { canUseCaseFlow, ROLES, type Role } from "@/lib/permissions";
 import { babycamActions, canBabycamSection } from "@/lib/babycam/actions";
 import { effectiveViewingWindow } from "@/lib/babycam/viewing";
 import { downloadFile, toBrowserXlsx } from "@/lib/babycam/exports";
 import { loadPrintFont, printWristbands, renderWristband } from "@/lib/babycam/wristband-print";
 import { taipeiTimestamp } from "@/lib/care/rules";
+import { cameraHost, DEFAULT_NETWORK_PREFIX } from "@/lib/babycam/network";
 import type { WindowRule } from "@/lib/domain/types";
 import CamPreview from "./CamPreview";
 import BindingEditor from "./BindingEditor";
@@ -66,6 +67,9 @@ type TabDef = {
   roles?: Role[];
 };
 
+/** 櫃檯交付與觀看紀錄跟著案件作業權限走（與 permissions.canUseCaseFlow 同一組角色）。 */
+const CASE_FLOW_ROLES_FOR_BABYCAM: Role[] = ROLES.filter((item) => canUseCaseFlow(item));
+
 const GROUPS: { id: GroupId; label: string; heading: string; description: string; tabs: TabDef[] }[] = [
   {
     id: "01",
@@ -73,11 +77,11 @@ const GROUPS: { id: GroupId; label: string; heading: string; description: string
     heading: "入住登記",
     description: "登記後即可交付觀看 QRCode 與密碼；寶寶與監視器由護理人員在「寶寶登錄」指派。",
     tabs: [
-      { id: "desk", label: "櫃檯入住與交付", access: "01", roles: ["櫃台", "護理長 婉真", "管理者"] },
+      { id: "desk", label: "櫃檯入住與交付", access: "01", roles: CASE_FLOW_ROLES_FOR_BABYCAM },
       { id: "list", label: "入住狀態", access: "01" },
       // 報表查的是觀看與照護紀錄，和「誰在住、授權到什麼時候」是同一條線，
       // 所以跟著 01 走；護理師不需要看誰在觀看，故限定角色。
-      { id: "report", label: "紀錄與報表", access: "01", roles: ["櫃台", "護理長 婉真", "管理者"] },
+      { id: "report", label: "紀錄與報表", access: "01", roles: CASE_FLOW_ROLES_FOR_BABYCAM },
     ],
   },
   {
@@ -133,13 +137,6 @@ const LEGACY_SECTION: Record<string, { group: GroupId; tab: string }> = {
   lights: { group: "08", tab: "ringlight" },
 };
 
-const ROLE_GUIDANCE: Record<Role, string> = {
-  櫃台: "櫃台負責入住登記與交付 QRCode／密碼，並可查看入住狀態、監視器與紀錄報表。",
-  "護理長 婉真": "護理長可操作入住、寶寶登錄與後臺設定；維運類（繼電器、燈號定義）仍由管理者負責。",
-  管理者: "管理者可維護全部主檔、設備、展示設定與角色權限。",
-  "護理師 陳護理師": "護理師負責寶寶登錄、監視器指派與歸位掃碼核對。",
-  "衛教師 琳雅": "目前角色沒有寶寶視訊管理權限。",
-};
 
 function WindowEditor({ label, value, onChange }: { label: string; value: WindowRule; onChange: (rule: WindowRule) => void }) {
   const [draft, setDraft] = useState(value);
@@ -348,9 +345,6 @@ export default function BabycamWorkspace({
 
   return (
     <div className="space-y-4">
-      {/* 角色提示收成一行；「影像為模擬」那句移到頁尾的範圍說明，不在工作區重複。 */}
-      <p className="text-xs leading-5 text-stone-500">{ROLE_GUIDANCE[role]}</p>
-
       {(message || storageError) && (
         <p role="status" className="whitespace-pre-line rounded-xl border border-border-subtle bg-surface-muted px-4 py-3 text-sm">
           {storageError ?? message}
@@ -371,6 +365,22 @@ export default function BabycamWorkspace({
           groups={visibleGroups.map((item) => ({ id: item.id, label: item.label, icon: GROUP_ICONS[item.id] }))}
           active={activeGroup.id}
           onSelect={selectGroup}
+          action={
+            <>
+              <ButtonLink href="/babycam/scan/" size="sm">
+                <QrCode className="h-3.5 w-3.5" aria-hidden="true" />
+                QR 掃描
+              </ButtonLink>
+              <ButtonLink href="/view/mama" size="sm">
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                媽媽端畫面
+              </ButtonLink>
+              <ButtonLink href="/view/family" size="sm">
+                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                親友端畫面
+              </ButtonLink>
+            </>
+          }
         />
         {groupTabs.length > 1 ? (
           <AreaTabs
@@ -904,6 +914,22 @@ export default function BabycamWorkspace({
                 </select>
               </label>
             </div>
+            <label className="block max-w-sm space-y-1.5 text-sm">
+              院內網段前綴
+              <input
+                className={input}
+                placeholder={DEFAULT_NETWORK_PREFIX}
+                defaultValue={data.networkPrefix ?? DEFAULT_NETWORK_PREFIX}
+                onBlur={(event) => {
+                  const next = event.target.value.trim() || DEFAULT_NETWORK_PREFIX;
+                  if (next !== (data.networkPrefix ?? DEFAULT_NETWORK_PREFIX)) run(() => babycamActions.settings({ networkPrefix: next }), "已更新網段前綴；燈號看板與繼電器板的位址同步改寫。");
+                }}
+              />
+              <span className="block text-xs text-stone-500">
+                預設為院內 IPCam 專網 {DEFAULT_NETWORK_PREFIX}；改動只存在這台瀏覽器，
+                燈號看板、繼電器板與監視器明細的位址會一起改寫。
+              </span>
+            </label>
             {role === "管理者" && <DemoReset />}
           </div>
         )}
@@ -920,6 +946,9 @@ export default function BabycamWorkspace({
                 <div className="grid gap-2 text-sm sm:grid-cols-2">
                   <p>設備代號：{camera.code}</p>
                   <p>健康狀態：{camera.health}</p>
+                  <p>
+                    位址：<span className="font-mono" translate="no">{cameraHost(data.networkPrefix || DEFAULT_NETWORK_PREFIX, camera.code) ?? "未設定末碼"}</span>
+                  </p>
                   <p>來源標示：{camera.sourceLabel || `展示-${camera.code}`}</p>
                   <p>解析度：{camera.resolution || "1920×1080"}</p>
                   <p>啟用狀態：{camera.enabled ? "啟用" : "停用"}</p>

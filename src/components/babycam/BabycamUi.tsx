@@ -144,7 +144,9 @@ export function AreaTabs<T extends string>({
   if (tabs.length <= 1) return null;
   return (
     <div className="flex flex-wrap items-end justify-between gap-x-4 border-b border-border-subtle px-4 pt-3 sm:px-5">
-    <div role="group" aria-label={label} className="scroll-fade -mb-px flex gap-1 overflow-x-auto">
+    {/* ⚠️ 必須同時寫 overflow-y-hidden：只寫 overflow-x-auto 時 CSS 會把 overflow-y
+          一併算成 auto，而按鈕的 -mb-px 讓內容比容器高 1px，就會冒出一條直向捲軸。 */}
+      <div role="group" aria-label={label} className="scroll-fade -mb-px flex gap-1 overflow-x-auto overflow-y-hidden">
       {tabs.map((tab) => (
         <button
           key={tab.id}
@@ -169,45 +171,52 @@ export function AreaTabs<T extends string>({
 }
 
 /**
- * 功能群組導覽：卡片內最上方的一列。
+ * 卡片最上方的導覽列：左邊功能群組，右邊外部連結（QR 掃描、媽媽端、親友端）。
  *
- * ⚠️ 只有一個群組時回 null，由呼叫端直接畫頁籤即可（見檔頭說明）。
+ * ⚠️ 外部連結一定要放在這一列，不要另開一條工具列。
+ * 以前它們掛在頁首的 action 區，加上一行角色提示，就多佔掉整整一個band——
+ * 客戶直接指著那塊說「重複資訊，整塊拿掉」。
+ * 只有一個群組時不畫群組鈕，但這一列仍然存在（因為右邊的連結要有地方放）。
  */
 export function GroupNav<T extends string>({
   groups,
   active,
   onSelect,
+  action,
 }: {
   groups: { id: T; label: string; icon: React.ComponentType<{ className?: string }> }[];
   active: T;
   onSelect: (id: T) => void;
+  action?: ReactNode;
 }) {
-  if (groups.length <= 1) return null;
+  if (groups.length <= 1 && !action) return null;
   return (
-    <nav
-      aria-label="寶寶視訊功能"
-      className="scroll-fade flex gap-1 overflow-x-auto border-b border-border-subtle bg-surface-muted/50 px-2 py-2 sm:px-3"
-    >
-      {groups.map((group) => {
-        const Icon = group.icon;
-        const on = active === group.id;
-        return (
-          <button
-            key={group.id}
-            type="button"
-            aria-pressed={on}
-            onClick={() => onSelect(group.id)}
-            className={
-              "flex h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-bold transition-colors " +
-              (on ? "bg-brand-600 text-white shadow-xs" : "text-stone-600 hover:bg-surface-raised hover:text-brand-700")
-            }
-          >
-            <Icon className="h-[17px] w-[17px] shrink-0" />
-            {group.label}
-          </button>
-        );
-      })}
-    </nav>
+    <div className="flex flex-wrap items-center gap-2 border-b border-border-subtle bg-surface-muted/50 px-2 py-2 sm:px-3">
+      {groups.length > 1 && (
+        <nav aria-label="寶寶視訊功能" className="scroll-fade flex gap-1 overflow-x-auto overflow-y-hidden">
+          {groups.map((group) => {
+            const Icon = group.icon;
+            const on = active === group.id;
+            return (
+              <button
+                key={group.id}
+                type="button"
+                aria-pressed={on}
+                onClick={() => onSelect(group.id)}
+                className={
+                  "flex h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-bold transition-colors " +
+                  (on ? "bg-brand-600 text-white shadow-xs" : "text-stone-600 hover:bg-surface-raised hover:text-brand-700")
+                }
+              >
+                <Icon className="h-[17px] w-[17px] shrink-0" />
+                {group.label}
+              </button>
+            );
+          })}
+        </nav>
+      )}
+      {action && <div className="ml-auto flex flex-wrap items-center gap-2">{action}</div>}
+    </div>
   );
 }
 

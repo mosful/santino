@@ -13,6 +13,12 @@ export type SubItem = {
 export type ModuleInfo = {
   no: string;
   label: string;
+  /**
+   * 沒有該模組主要作業權限時改用的名稱。
+   * 模組 1 對櫃台是「櫃台服務」，對護理人員實際上只有房況與待辦，
+   * 仍叫櫃台服務會讓人以為點錯地方。
+   */
+  altLabel?: string;
   href: string;
   /** 功能所屬階段；只控制「後台管理＞系統參數設定＞功能分期顯示」的選單分類。 */
   phase: 1 | 2 | 3;
@@ -31,6 +37,7 @@ export const MODULES: ModuleInfo[] = [
   {
     no: "1",
     label: "櫃台服務",
+    altLabel: "首頁・房況",
     href: "/",
     phase: 1,
     subItems: [

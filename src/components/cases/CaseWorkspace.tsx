@@ -14,6 +14,7 @@ import ContractSteps from "./ContractSteps";
 import RoomServicePanel from "./RoomServicePanel";
 import { DailyLedger, AdmissionMeal, ReturnPhotos } from "./CaseDetails";
 import { buttonStyles } from "@/components/ui/buttonStyles";
+import { CASE_FLOW_ROLE_HINT, canUseCaseFlow } from "@/lib/permissions";
 
 const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm disabled:bg-stone-100";
 // 按鈕樣式一律取自 components/ui/Button，不在此另開複本（見該檔開頭說明）。
@@ -71,7 +72,7 @@ export default function CaseWorkspace() {
   const [exceptionReason, setExceptionReason] = useState("");
   const selectedId = selected ?? params.get("id");
   const record = data.cases.find((item) => item.id === selectedId);
-  const permitted = ["櫃台", "護理長 婉真", "管理者"].includes(role);
+  const permitted = canUseCaseFlow(role);
   const edit = permitted && !!record && !record.closed;
   function run(action: () => void, feedback = "已儲存並更新案件資料。") {
     try { action(); setMessage(feedback); setOperation(null); setReason(""); return true; }
@@ -84,16 +85,21 @@ export default function CaseWorkspace() {
     if (quotePreset) caseActions.update(id, quotePreset);
     setReservation(emptyReservation()); setQuotePreset(null); setCreating(false); setSelected(id);
   }, asDraft ? "已暫存預約案件，可稍後繼續。" : "已建立完整預約案件。");
-  const matches = data.cases.filter((item) => tab === "已結案" ? item.closed : !item.closed && (tab === "入住前" ? item.stage <= 4 : item.stage >= 5)).filter((item) => [item.name, item.phone, item.contractNo, item.room].join(" ").includes(query));
+  // ⚠️ 分頁鈕上的筆數與清單必須用同一支判定，不要各寫一次 filter。
+  const inTab = (item: typeof data.cases[number], label: string) =>
+    label === "已結案" ? item.closed : !item.closed && (label === "入住前" ? item.stage <= 4 : item.stage >= 5);
+  // 筆數不套搜尋條件：那是「這個分頁總共有幾件」，搜尋後數字跟著跳反而看不出全貌。
+  const tabCount = (label: string) => data.cases.filter((item) => inTab(item, label)).length;
+  const matches = data.cases.filter((item) => inTab(item, tab)).filter((item) => [item.name, item.phone, item.contractNo, item.room].join(" ").includes(query));
 
-  if (!permitted) return <div className="p-8"><h1 className="text-xl font-semibold">櫃台案件流程</h1><p className="mt-4">目前角色沒有櫃台案件作業權限，請由櫃台、護理長或管理員操作。</p></div>;
+  if (!permitted) return <div className="p-8"><h1 className="text-xl font-semibold">櫃台案件流程</h1><p className="mt-4 text-sm text-stone-600">目前身分「{role}」沒有櫃台案件作業權限，可操作的角色為 {CASE_FLOW_ROLE_HINT}。</p></div>;
   return <div className="w-full space-y-5 px-4 py-4 sm:px-6">
     <PageHeader title="櫃台服務・案件流程" action={<div className="flex flex-wrap gap-2">{!record && <button type="button" className={button} onClick={() => setQuoteOpen((value) => !value)}>套餐快速試算</button>}<Link href="/todo/" className={button}>待辦事項</Link><Link href="/customer" className={button}>客戶資料</Link><Link href="/babycam" className={button}>寶寶視訊</Link>{record && <button type="button" className={button} onClick={() => { setSelected(""); setOperation(null); setMessage(""); }}>回案件列表</button>}</div>} />
     {(message || storageError) && <p role="status" className="whitespace-pre-line rounded-lg border border-stone-300 bg-stone-50 p-3 text-sm">{storageError ?? message}</p>}
     {!record ? <>
       {quoteOpen && <PricingCalculator onUse={(name, phone, preset) => { setReservation({ ...emptyReservation(), name, phone, hospital: preset.hospital }); setQuotePreset(preset); setCreating(true); setQuoteOpen(false); }} />}
       {!creating ? <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white p-4"><div><h2 className="font-semibold">案件清單</h2><p className="mt-1 text-sm text-stone-500">由預約開始，沿案件流程的七個階段追蹤參觀、下訂、合約、入住與退房。</p></div><button type="button" className={buttonStyles({ variant: "primary" })} onClick={() => setCreating(true)}>＋ 新增預約（新案件）</button></section> : <section className="rounded-xl border border-stone-300 bg-white p-4" aria-label="新增預約"><div className="mb-4 flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-semibold">新增預約</h2><p className="mt-1 text-sm text-stone-500">登記諮詢與參觀預約；必填欄位完成後可建立案件，資料也可先暫存。</p></div><button type="button" className={button} onClick={() => { setCreating(false); setReservation(emptyReservation()); }}>取消新增</button></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><Field label="類別" value={reservation.category} options={["懷孕", "小產", "婦科術後"]} onChange={(category) => patchReservation({ category })} /><Field label="媽媽姓名" value={reservation.name} onChange={(name) => patchReservation({ name })} /><Field label="聯絡電話（展示資料）" value={reservation.phone} type="tel" onChange={(phone) => patchReservation({ phone })} /><Field label="預產期" value={reservation.dueDate} type="date" onChange={(dueDate) => patchReservation({ dueDate })} /><Field label="胎次" value={reservation.parity} options={["第 1 胎", "第 2 胎", "第 3 胎以上"]} onChange={(parity) => patchReservation({ parity })} /><Field label="生產方式" value={reservation.deliveryMethod} options={["自然產", "剖腹產", "未定"]} onChange={(deliveryMethod) => patchReservation({ deliveryMethod })} /><Field label="生產醫院" value={reservation.hospital} options={["景星（園內）", "永新（園內）", "成大", "奇美", "其他"]} onChange={(hospital) => patchReservation({ hospital })} /><Field label="參觀日期" value={reservation.visitDate} type="date" onChange={(visitDate) => patchReservation({ visitDate })} /><Field label="參觀時段" value={reservation.visitTime} options={["10:00", "11:00", "14:00", "15:00", "16:00"]} onChange={(visitTime) => patchReservation({ visitTime })} /><Field label="訊息來源" value={reservation.source} options={["親友介紹", "網路推薦", "媽媽教室", "有入住經驗", "其他"]} onChange={(source) => patchReservation({ source })} /><Field label="接待人員" value={reservation.receptionist} options={["林小姐", "陳小姐"]} onChange={(receptionist) => patchReservation({ receptionist })} /><label className="block space-y-2 text-sm sm:col-span-2 xl:col-span-3"><span>備註（諮詢問題、待回覆事項）</span><textarea aria-label="備註（諮詢問題、待回覆事項）" className={input} value={reservation.note} onChange={(event) => patchReservation({ note: event.target.value })} placeholder="例：詢問 VIP 房 24 天價格、是否可帶大寶同住" /></label></div><div className="mt-4 flex flex-wrap justify-end gap-2"><button type="button" className={button} onClick={() => window.print()}>列印空白預約單</button><button type="button" className={button} onClick={() => createReservation(true)}>暫存</button><button type="button" className={buttonStyles({ variant: "primary" })} onClick={() => createReservation(false)}>儲存預約</button></div></section>}
-      <div className="flex flex-wrap gap-2">{([["入住前", "預約～入住前階段"], ["入住後", "入住中～退房階段"], ["已結案", "媽媽已退房（含寶寶續留托嬰）"]] as const).map(([label, hint]) => <button type="button" key={label} title={`${label}：${hint}`} aria-pressed={tab === label} className={buttonStyles({ selected: tab === label })} onClick={() => setTab(label)}>{label}</button>)}<input aria-label="搜尋案件" placeholder="搜尋姓名、電話、收字號、房號" value={query} onChange={(event) => setQuery(event.target.value)} className={`${input} sm:ml-auto sm:w-80`} /></div>
+      <div className="flex flex-wrap gap-2">{([["入住前", "預約～入住前階段"], ["入住後", "入住中～退房階段"], ["已結案", "媽媽已退房（含寶寶續留托嬰）"]] as const).map(([label, hint]) => { const count = tabCount(label); return <button type="button" key={label} title={`${label}：${hint}，共 ${count} 件`} aria-label={`${label}，共 ${count} 件`} aria-pressed={tab === label} className={buttonStyles({ selected: tab === label, className: "relative overflow-visible" })} onClick={() => setTab(label)}>{label}<span aria-hidden="true" className={"absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums ring-2 ring-surface " + (tab === label ? "bg-stone-800 text-white" : "bg-stone-200 text-stone-700")}>{count}</span></button>; })}<input aria-label="搜尋案件" placeholder="搜尋姓名、電話、收字號、房號" value={query} onChange={(event) => setQuery(event.target.value)} className={`${input} sm:ml-auto sm:w-80`} /></div>
       {/* 「入住前」同時是分頁名與階段名（v24 §4.2／§4.3 皆如此用字），
           iPad 上沒有滑鼠提示，所以把涵蓋範圍直接寫出來，避免被讀成只有該階段。 */}
       <p className="-mt-2 text-xs text-stone-500">入住前＝預約～入住前階段　·　入住後＝入住中～退房階段　·　已結案＝媽媽已退房（含寶寶續留托嬰）</p>

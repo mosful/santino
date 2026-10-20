@@ -4,9 +4,11 @@ import { useState } from "react";
 import { babycamActions } from "@/lib/babycam/actions";
 import { LIGHT_COLORS } from "@/lib/babycam/lights";
 import type { DemoDomain } from "@/lib/domain/types";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 const input = "min-h-12 rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
-const button = "min-h-12 rounded-lg border border-stone-300 px-3 py-2 text-sm";
+// 按鈕樣式一律取自 components/ui/Button，不在此另開複本（見該檔開頭說明）。
+const button = buttonStyles();
 export default function LightSettings({ data }: { data: DemoDomain }) {
   const [name, setName] = useState(""); const [color, setColor] = useState("白"); const [message, setMessage] = useState("");
   function run(action: () => void) { try { action(); setMessage("已更新模擬燈號狀態。"); } catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); } }

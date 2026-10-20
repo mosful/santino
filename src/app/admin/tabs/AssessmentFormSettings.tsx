@@ -13,6 +13,7 @@ import {
 } from "@/lib/assessmentConfigStore";
 import { canEditAdminSetting } from "@/lib/permissions";
 import { useCurrentRole } from "@/lib/roleStore";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 const FIELD_TYPES: { value: AssessmentFieldType; label: string }[] = [
   { value: "text", label: "單行文字" },
@@ -78,7 +79,7 @@ export default function AssessmentFormSettings() {
           </label>
         </div>
         <div className="mt-3 flex justify-end">
-          <button type="button" onClick={addField} disabled={!canEdit || !label.trim()} className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="button" onClick={addField} disabled={!canEdit || !label.trim()} className={buttonStyles({ variant: "primary", size: "sm" })}>
             <Plus className="h-4 w-4" />新增題目
           </button>
         </div>
@@ -117,7 +118,7 @@ export default function AssessmentFormSettings() {
       </div>
 
       <div className="flex justify-end">
-        <button type="button" onClick={resetAssessmentFields} disabled={!canEdit} className="inline-flex items-center gap-1.5 rounded-lg bg-stone-100 px-4 py-2 text-xs text-stone-600 disabled:cursor-not-allowed disabled:opacity-50">
+        <button type="button" onClick={resetAssessmentFields} disabled={!canEdit} className={buttonStyles({ variant: "subtle", size: "sm" })}>
           <RotateCcw className="h-3.5 w-3.5" />還原預設題目
         </button>
       </div>

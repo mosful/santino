@@ -14,10 +14,12 @@ import {
   MessageCircle,
   Settings,
   Cctv,
+  ListTodo,
   type LucideIcon,
 } from "lucide-react";
 
 export const MODULE_ICONS: Record<string, LucideIcon> = {
+  "0": ListTodo,
   "1": LayoutDashboard,
   "2": HeartPulse,
   "3": Baby,

@@ -1,6 +1,7 @@
 "use client";
 
 import { createPortal } from "react-dom";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 export default function Modal({
   open,
@@ -35,7 +36,7 @@ export default function Modal({
           <h2 id="modal-title" className="truncate pr-2 text-sm font-bold text-stone-800">{title}</h2>
           <button
             onClick={onClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-stone-400 hover:bg-stone-100 active:bg-stone-200"
+            className={buttonStyles({ variant: "ghost", size: "sm", iconOnly: true, className: "rounded-full" })}
             aria-label="關閉"
           >
             ✕

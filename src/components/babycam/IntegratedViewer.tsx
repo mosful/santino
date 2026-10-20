@@ -9,6 +9,7 @@ import { enterViewer, leaveViewer, viewerHeartbeat } from "@/lib/babycam/viewerS
 import { viewingBlock } from "@/lib/babycam/viewing";
 import CamPreview from "./CamPreview";
 import ViewLoginCard from "./ViewLoginCard";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 /** 沿用既有觀看頁的登入卡、標題、頁籤及影像元件，僅替換資料與授權流程。 */
 export default function IntegratedViewer({ audience }: { audience: "internal" | "family" }) {
@@ -50,7 +51,7 @@ export default function IntegratedViewer({ audience }: { audience: "internal" | 
   return <div className="space-y-4" ref={frame}>
     <div className="flex items-center justify-between gap-3"><div><h1 className="text-base font-bold text-stone-800">{binding.room ? `${binding.room} 房` : "托嬰"} · {binding.motherName} 媽咪{family ? "的寶寶" : ""}</h1><p className="text-xs text-stone-400">有效期限 {binding.validFrom} ～ {binding.validTo}</p></div><button type="button" onClick={() => { leaveViewer(binding.id, session.deviceId); setSession(null); }} className="flex items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1.5 text-xs text-stone-500 hover:bg-stone-50"><LogOut className="h-3.5 w-3.5" />登出</button></div>
     {binding.babies.length > 1 ? <Tabs tabs={binding.babies.map((baby, index) => ({ key: baby.babyId, label: data.subjects.find((subject) => subject.id === baby.babyId)?.name ?? `寶寶 ${index + 1}`, content: renderCamera(index) }))} /> : renderCamera(0)}
-    <button type="button" className="inline-flex items-center gap-1 rounded-lg border border-stone-200 px-3 py-2 text-xs text-stone-600" onClick={async () => { if (!frame.current?.requestFullscreen) { setViewerMessage("此瀏覽器不支援全螢幕，可旋轉裝置橫向觀看。"); return; } try { await frame.current.requestFullscreen(); setViewerMessage(""); } catch { setViewerMessage("瀏覽器未允許全螢幕，請確認瀏覽器設定或旋轉裝置觀看。"); } }}><Maximize size={14} />全螢幕</button>
+    <button type="button" className={buttonStyles({ size: "sm" })} onClick={async () => { if (!frame.current?.requestFullscreen) { setViewerMessage("此瀏覽器不支援全螢幕，可旋轉裝置橫向觀看。"); return; } try { await frame.current.requestFullscreen(); setViewerMessage(""); } catch { setViewerMessage("瀏覽器未允許全螢幕，請確認瀏覽器設定或旋轉裝置觀看。"); } }}><Maximize size={14} />全螢幕</button>
     {viewerMessage && <p role="status" className="text-xs text-stone-600">{viewerMessage}</p>}
     <div className="rounded-lg bg-stone-50 p-3 text-xs leading-relaxed text-stone-500"><p>若寶寶不在專屬位置上，應是在媽媽房內，或正由護理人員護理中。</p><p className="mt-1.5 text-stone-400">{family ? "親友端僅顯示模擬截圖。" : "院內端顯示模擬影像。"}請勿轉傳畫面或將密碼提供給他人。</p></div>
   </div>;

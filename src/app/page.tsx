@@ -75,7 +75,7 @@ function MamaCalendarTab() {
         ))}
       </div>
       <div className="flex justify-end">
-        <DemoActionButton feedback="媽媽行事曆列印預覽已開啟" action="print" className="rounded bg-stone-100 px-3 py-1.5 text-xs">列印媽媽行事曆</DemoActionButton>
+        <DemoActionButton feedback="媽媽行事曆列印預覽已開啟" action="print" variant="subtle" size="sm">列印媽媽行事曆</DemoActionButton>
       </div>
     </div>
   );
@@ -87,10 +87,10 @@ function InternalCalendarTab() {
       title="內部行事曆"
       action={
         <div className="flex gap-2">
-          <DemoActionButton feedback="已開啟批次新增處理項目（Demo 模式）" className="rounded bg-stone-100 px-3 py-1 text-xs">
+          <DemoActionButton feedback="已開啟批次新增處理項目（Demo 模式）" variant="subtle" size="sm">
             批次新增處理項目
           </DemoActionButton>
-          <DemoActionButton feedback="已建立一筆新的行事曆項目草稿" className="rounded bg-rose-500 px-3 py-1 text-xs text-white">
+          <DemoActionButton feedback="已建立一筆新的行事曆項目草稿" variant="danger" size="sm">
             ＋ 新增項目
           </DemoActionButton>
         </div>

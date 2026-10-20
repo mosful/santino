@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { babycamActions } from "@/lib/babycam/actions";
 import type { DemoDomain } from "@/lib/domain/types";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 const input = "min-h-12 rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
-const button = "min-h-12 rounded-lg border border-stone-300 px-3 py-2 text-sm";
+// 按鈕樣式一律取自 components/ui/Button，不在此另開複本（見該檔開頭說明）。
+const button = buttonStyles();
 export default function RoomTypeSettings({ data }: { data: DemoDomain }) {
   const [name, setName] = useState(""); const [price, setPrice] = useState<"精緻" | "VIP" | "VILLA">("精緻"); const [message, setMessage] = useState("");
   function run(action: () => void) { try { action(); setMessage("房型主檔已儲存，既有合約價格保留。"); } catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); } }

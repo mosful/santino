@@ -4,6 +4,7 @@ import { useState } from "react";
 import Badge from "@/components/ui/Badge";
 import Link from "next/link";
 import { useDomainStore } from "@/lib/demo/domainStore";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 export default function RenewalManagement() {
   const [thresholdDays, setThresholdDays] = useState(30);
@@ -46,7 +47,7 @@ export default function RenewalManagement() {
                 <Badge color={c.daysLeft <= 7 ? "rose" : "amber"}>{c.daysLeft}天</Badge>
               </td>
               <td className="px-3 py-2">
-                <Link href={`/cases/detail/?id=${encodeURIComponent(c.id)}`} className="rounded bg-rose-500 px-2 py-1 text-xs text-white">
+                <Link href={`/cases/detail/?id=${encodeURIComponent(c.id)}`} className={buttonStyles({ variant: "danger", size: "sm" })}>
                   辦理續住變更單
                 </Link>
               </td>

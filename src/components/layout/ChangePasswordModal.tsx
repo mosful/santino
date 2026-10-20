@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 export default function ChangePasswordModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [current, setCurrent] = useState("");
@@ -44,7 +45,7 @@ export default function ChangePasswordModal({ open, onClose }: { open: boolean; 
         <div className="flex flex-col items-center gap-3 py-4 text-center">
           <CheckCircle2 className="h-10 w-10 text-emerald-500" />
           <p className="text-sm font-medium text-stone-700">密碼已更新（模擬畫面，未真實變更帳號密碼）</p>
-          <button onClick={handleClose} className="rounded-lg bg-stone-100 px-4 py-2 text-xs">
+          <button onClick={handleClose} className={buttonStyles({ variant: "subtle", size: "sm" })}>
             關閉
           </button>
         </div>
@@ -79,10 +80,10 @@ export default function ChangePasswordModal({ open, onClose }: { open: boolean; 
           </div>
           {error && <p className="text-xs text-rose-500">{error}</p>}
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={handleClose} className="rounded-lg bg-stone-100 px-4 py-2 text-xs">
+            <button type="button" onClick={handleClose} className={buttonStyles({ variant: "subtle", size: "sm" })}>
               取消
             </button>
-            <button type="submit" className="rounded-lg bg-brand-500 px-4 py-2 text-xs text-white">
+            <button type="submit" className={buttonStyles({ variant: "primary", size: "sm" })}>
               確認修改
             </button>
           </div>

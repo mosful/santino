@@ -10,18 +10,24 @@ import { normalizePrintSettings } from "./wristband-print";
 import { getAccess, ROLES, type AccessLevel } from "../permissions";
 import { initialDemoScenario, reduceDemoScenario, type DemoScenarioAction } from "./demo-scenario";
 
+/**
+ * 寶寶視訊的分段權限（對齊 BabyCam 的 01–08 八格）。
+ *
+ * ⚠️ 只會回 "edit" 或 "none"：客戶要求不屬於該角色的功能直接不顯示，
+ * 不要再出現「進得去但整頁停用」的唯讀分頁（護理長原本就是這樣）。
+ * 看得到哪幾格由 data.sectionPermissions 決定；"08" 系統格固定只給管理者。
+ */
 export function getBabycamSectionAccess(data: DemoDomain, section: string): AccessLevel {
   const role = getCurrentRole();
   if (getAccess(role, "17") === "none") return "none";
   if (role === "管理者") return "edit";
   if (section === "08" || !(data.sectionPermissions[role] ?? []).includes(section)) return "none";
-  return role === "護理長 婉真" ? "view" : "edit";
+  return "edit";
 }
 export function canBabycamSection(data: DemoDomain, section: string) { return getBabycamSectionAccess(data, section) !== "none"; }
 export function canEditBabycamSection(data: DemoDomain, section: string) { return getBabycamSectionAccess(data, section) === "edit"; }
 function requireSection(data: DemoDomain, section: string) {
   const access = getBabycamSectionAccess(data, section);
-  if (access === "view") throw new Error("目前角色僅可檢視此視訊功能。");
   if (access === "none") throw new Error("目前角色沒有此視訊功能權限。");
 }
 function bindingOf(data: DemoDomain, id: string) { const binding = data.bindings.find((item) => item.id === id); if (!binding || binding.ended) throw new Error("此視訊登記不存在或已結束。"); return binding; }

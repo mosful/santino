@@ -6,6 +6,7 @@ import Modal from "./Modal";
 import Pagination from "./Pagination";
 import { useAccess } from "@/lib/roleStore";
 import { rowMatchesQuery } from "@/lib/fuzzySearch";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 export type FieldSchema = {
   key: string;
@@ -104,13 +105,13 @@ export default function EditableList({
         {canEdit ? (
           <button
             onClick={openAdd}
-            className="ml-auto rounded-lg bg-gradient-to-r from-brand-500 to-brand-400 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-brand-200 transition-[transform,box-shadow] hover:shadow-md hover:shadow-brand-300 active:scale-[0.98]"
+            className={buttonStyles({ variant: "primary", className: "ml-auto" })}
           >
             ＋ 新增
           </button>
         ) : (
           <span className="ml-auto rounded-full bg-stone-100 px-3 py-1 text-xs text-stone-400">
-            {access === "view" ? "唯讀權限，無法新增/修改/刪除" : "無存取權限"}
+            無存取權限
           </span>
         )}
       </div>
@@ -207,7 +208,7 @@ export default function EditableList({
             <button onClick={() => setEditing(null)} className="rounded-lg bg-stone-100 px-4 py-2 text-xs">
               取消
             </button>
-            <button onClick={save} className="rounded-lg bg-brand-500 px-4 py-2 text-xs text-white">
+            <button onClick={save} className={buttonStyles({ variant: "primary", size: "sm" })}>
               儲存
             </button>
           </div>

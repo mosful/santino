@@ -2,6 +2,12 @@ export type SubItem = {
   key: string;
   label: string;
   phase?: 1 | 2 | 3;
+  /**
+   * 後台管理子項的權限分群（v24 §10）。
+   * "system" ＝🔒僅管理者；"operations" ＝護理長也能維護。
+   * 不屬於該角色的子項**直接不顯示**（不是顯示後改唯讀），選單與頁籤同步過濾。
+   */
+  adminGroup?: "system" | "operations";
 };
 
 export type ModuleInfo = {
@@ -19,6 +25,9 @@ export type ModuleInfo = {
 // subItems 對應各模組頁面內 Tabs 的 key/label，用於選單多層下拉；
 // 點擊子項會導向 `{href}?tab={key}`，頁面會以該key預先選取對應頁籤。
 export const MODULES: ModuleInfo[] = [
+  // 待辦擺在選單最上方：依 v24 §9，院內每個角色上線後第一件事都是看「今天我要處理什麼」，
+  // 而非先進某個模組。內容（可處理的類別、預設篩選）依角色不同，見 lib/domain/tasks.ts。
+  { no: "0", label: "待辦", href: "/todo", phase: 1 },
   {
     no: "1",
     label: "櫃台服務",
@@ -154,18 +163,18 @@ export const MODULES: ModuleInfo[] = [
     phase: 1,
     // 項目依 v24 規格 §10；🔒 四項僅管理者可修改（見 permissions.canEditAdminSetting）
     subItems: [
-      { key: "master", label: "基礎主檔設定 🔒" },
-      { key: "staff", label: "人員與權限 🔒" },
-      { key: "forms", label: "表單與欄位設定 🔒" },
-      { key: "qrcode", label: "QR Code 管理 🔒" },
-      { key: "package", label: "套餐與贈品規則" },
-      { key: "contract-version", label: "合約版本管理" },
-      { key: "phrases", label: "片語庫管理" },
-      { key: "backfill", label: "資料回補與例外處理" },
-      { key: "kpi-rules", label: "評鑑指標設定" },
-      { key: "report", label: "報表查詢" },
-      { key: "board", label: "公佈欄設定" },
-      { key: "system", label: "系統參數設定" },
+      { adminGroup: "system", key: "master", label: "基礎主檔設定 🔒" },
+      { adminGroup: "system", key: "staff", label: "人員與權限 🔒" },
+      { adminGroup: "system", key: "forms", label: "表單與欄位設定 🔒" },
+      { adminGroup: "system", key: "qrcode", label: "QR Code 管理 🔒" },
+      { adminGroup: "operations", key: "package", label: "套餐與贈品規則" },
+      { adminGroup: "operations", key: "contract-version", label: "合約版本管理" },
+      { adminGroup: "operations", key: "phrases", label: "片語庫管理" },
+      { adminGroup: "operations", key: "backfill", label: "資料回補與例外處理" },
+      { adminGroup: "operations", key: "kpi-rules", label: "評鑑指標設定" },
+      { adminGroup: "operations", key: "report", label: "報表查詢" },
+      { adminGroup: "operations", key: "board", label: "公佈欄設定" },
+      { adminGroup: "operations", key: "system", label: "系統參數設定" },
     ],
   },
   // 寶寶視訊（WebCam）：客戶指定優先開發的獨立範圍，不屬於 Phase 1／Phase 2。

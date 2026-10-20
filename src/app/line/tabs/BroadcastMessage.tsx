@@ -30,13 +30,13 @@ function TemplateTab() {
                 <Badge color="purple">{t.type}</Badge>
               </td>
               <td className="px-2 py-1.5">
-                <DemoActionButton feedback={`已開啟「${t.name}」範本編輯器（Demo 模式）`} className="text-rose-500 underline">編輯</DemoActionButton>
+                <DemoActionButton feedback={`已開啟「${t.name}」範本編輯器（Demo 模式）`} variant="link" size="sm">編輯</DemoActionButton>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <DemoActionButton feedback="已建立一筆訊息範本草稿" className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">＋ 新增範本</DemoActionButton>
+      <DemoActionButton feedback="已建立一筆訊息範本草稿" variant="danger" size="sm">＋ 新增範本</DemoActionButton>
     </div>
   );
 }
@@ -81,7 +81,7 @@ function AudienceTab() {
           課程報名狀態（已報名／未報名特定課程）
         </label>
       </div>
-      <DemoActionButton feedback="Audience 群組條件已更新（Demo 模式不呼叫 LINE API）" className="rounded bg-brand-600 px-3 py-1.5 text-xs text-white">建立/更新 audience 群組</DemoActionButton>
+      <DemoActionButton feedback="Audience 群組條件已更新（Demo 模式不呼叫 LINE API）" variant="primary" size="sm">建立/更新 audience 群組</DemoActionButton>
       <p className="text-xs text-stone-400">
         建議提前建立好audience群組，不要每次發送才即時計算（Narrowcast為非同步API）。
       </p>
@@ -109,7 +109,7 @@ function ScheduleTab() {
           <input placeholder="發送時間" className="rounded border border-stone-200 px-2 py-1.5" />
         </div>
         <div className="mt-2 flex justify-end">
-          <DemoActionButton feedback="訊息排程草稿已建立（Demo 模式不發送訊息）" className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">建立排程</DemoActionButton>
+          <DemoActionButton feedback="訊息排程草稿已建立（Demo 模式不發送訊息）" variant="danger" size="sm">建立排程</DemoActionButton>
         </div>
       </div>
       <table className="w-full text-left text-xs">

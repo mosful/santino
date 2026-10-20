@@ -6,6 +6,7 @@ import { usePhraseLibrary } from "@/hooks/usePhraseLibrary";
 import { PHRASE_CATEGORIES } from "@/lib/mock/phrases";
 import { canEditAdminSetting } from "@/lib/permissions";
 import { useCurrentRole } from "@/lib/roleStore";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 export default function PhraseManager() {
   const { phrases, addPhrase, removePhrase } = usePhraseLibrary();
@@ -73,7 +74,7 @@ export default function PhraseManager() {
           className="mt-2 w-full rounded-lg border border-stone-200 p-2 text-sm"
         />
         <div className="mt-2 flex justify-end">
-          <button onClick={submit} disabled={!canEdit} className="rounded-lg bg-rose-500 px-4 py-2 text-xs font-medium text-white hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-50">
+          <button onClick={submit} disabled={!canEdit} className={buttonStyles({ variant: "danger", size: "sm" })}>
             新增片語
           </button>
         </div>

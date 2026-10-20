@@ -2,10 +2,14 @@
 
 import { useEffect, useState, type ButtonHTMLAttributes } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { buttonStyles, type ButtonSize, type ButtonVariant } from "./Button";
 
 type DemoActionButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   feedback: string;
   action?: "print";
+  /** 樣式一律交給 Button 的 variant／size，呼叫端不要再自己寫 bg／px／py。 */
+  variant?: ButtonVariant;
+  size?: ButtonSize;
 };
 
 /**
@@ -17,6 +21,9 @@ export default function DemoActionButton({
   children,
   type = "button",
   onClick,
+  variant,
+  size,
+  className,
   ...props
 }: DemoActionButtonProps) {
   const [visible, setVisible] = useState(false);
@@ -32,6 +39,7 @@ export default function DemoActionButton({
       <button
         {...props}
         type={type}
+        className={buttonStyles({ variant, size, className })}
         onClick={(event) => {
           onClick?.(event);
           if (action === "print") window.print();

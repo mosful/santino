@@ -49,7 +49,7 @@ export default function CareSearch({
             <button
               type="button"
               onClick={() => onChange("")}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-stone-500 hover:bg-white hover:text-stone-800"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 hover:text-stone-800"
               aria-label="清除搜尋"
             >
               <X className="h-4 w-4" />

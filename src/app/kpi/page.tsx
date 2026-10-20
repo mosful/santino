@@ -123,7 +123,7 @@ function RedRashStatistics() {
           const count = RASH_CASES.filter((item) => item.grade === grade).length;
           const included = settings.includedRashGrades.includes(grade);
           return (
-            <button type="button" key={grade} onClick={() => setGradeFilter(grade)} className={"rounded-xl border p-3 text-left " + (gradeFilter === grade ? "border-rose-400 bg-rose-50" : "border-stone-200 bg-stone-50")}>
+            <button type="button" key={grade} onClick={() => setGradeFilter(grade)} className={"flex flex-col items-stretch rounded-xl border p-3 text-left " + (gradeFilter === grade ? "border-rose-400 bg-rose-50" : "border-stone-200 bg-stone-50")}>
               <div className="flex items-center justify-between text-xs text-stone-500"><span>{grade}</span><span>{included ? "納入" : "排除"}</span></div>
               <div className="mt-1 text-xl font-bold text-stone-700">{count}<span className="ml-1 text-xs font-normal">人</span></div>
             </button>

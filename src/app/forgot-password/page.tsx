@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { MailCheck } from "lucide-react";
 import { pageTitle } from "@/lib/usePageTitle";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 export default function ForgotPasswordPage() {
   const [account, setAccount] = useState("");
@@ -43,7 +44,7 @@ export default function ForgotPasswordPage() {
             </p>
             <Link
               href="/login"
-              className="mt-2 w-full rounded-lg bg-gradient-to-r from-brand-500 to-brand-400 px-4 py-2.5 text-center text-sm font-medium text-white shadow-sm shadow-brand-200"
+              className={buttonStyles({ variant: "primary", fullWidth: true, className: "mt-2 bg-gradient-to-r from-brand-500 to-brand-400 shadow-sm shadow-brand-200 hover:from-brand-600 hover:to-brand-500" })}
             >
               返回登入
             </Link>
@@ -66,7 +67,7 @@ export default function ForgotPasswordPage() {
               {error && <p className="text-xs text-rose-500">{error}</p>}
               <button
                 type="submit"
-                className="w-full rounded-lg bg-gradient-to-r from-brand-500 to-brand-400 px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-brand-200 transition-[transform,box-shadow] hover:shadow-md active:scale-[0.98]"
+                className={buttonStyles({ variant: "primary", fullWidth: true, className: "bg-gradient-to-r from-brand-500 to-brand-400 shadow-sm shadow-brand-200 hover:from-brand-600 hover:to-brand-500 active:scale-[0.98]" })}
               >
                 寄送重設密碼連結
               </button>

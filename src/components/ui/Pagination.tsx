@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { buttonStyles } from "./buttonStyles";
 
 export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
@@ -46,7 +47,7 @@ export default function Pagination({
           onClick={() => onPageChange(Math.max(1, safePage - 1))}
           disabled={safePage <= 1}
           aria-label="上一頁"
-          className="flex h-11 w-11 items-center justify-center rounded-lg border border-border-subtle bg-surface-raised hover:border-brand-300 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className={buttonStyles({ iconOnly: true })}
         >
           <ChevronLeft className="h-3.5 w-3.5" />
         </button>
@@ -54,7 +55,7 @@ export default function Pagination({
           onClick={() => onPageChange(Math.min(totalPages, safePage + 1))}
           disabled={safePage >= totalPages}
           aria-label="下一頁"
-          className="flex h-11 w-11 items-center justify-center rounded-lg border border-border-subtle bg-surface-raised hover:border-brand-300 hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className={buttonStyles({ iconOnly: true })}
         >
           <ChevronRight className="h-3.5 w-3.5" />
         </button>

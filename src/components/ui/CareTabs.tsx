@@ -83,8 +83,8 @@ export default function CareTabs({
           (t.key === currentKey
             ? "font-bold " + ACCENT_ACTIVE[accent]
             : t.core
-            ? "font-semibold text-stone-700 hover:bg-white hover:text-stone-900"
-            : "font-normal text-stone-400 hover:bg-white hover:text-stone-700")
+            ? "font-semibold text-stone-700 hover:bg-surface-raised hover:text-brand-700 hover:shadow-2xs"
+            : "font-normal text-stone-500 hover:bg-surface-raised hover:text-brand-700 hover:shadow-2xs")
         }
       >
         {t.hasSignature && <PenLine className="h-3.5 w-3.5 shrink-0 opacity-80" />}

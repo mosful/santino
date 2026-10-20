@@ -4,13 +4,15 @@
 /* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
+import { Printer } from "lucide-react";
 import { BASE_PATH } from "@/lib/basePath";
+import Button from "@/components/ui/Button";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { useCurrentRole } from "@/lib/roleStore";
 import { type Role } from "@/lib/permissions";
-import { babycamActions, canBabycamSection, getBabycamSectionAccess } from "@/lib/babycam/actions";
+import { babycamActions, canBabycamSection } from "@/lib/babycam/actions";
 import { deriveDemoLight, effectiveViewingWindow } from "@/lib/babycam/viewing";
 import { downloadFile, toBrowserXlsx } from "@/lib/babycam/exports";
 import { loadPrintFont, printWristbands, renderWristband } from "@/lib/babycam/wristband-print";
@@ -26,43 +28,186 @@ import { lightChannels } from "@/lib/babycam/lights";
 import { cameraTimeRows } from "@/lib/babycam/cameraTime";
 import { toCsv } from "@/lib/babycam/csv";
 import { BackgroundSettings, RoomSettings, PrintSettingsEditor, CameraMetadata } from "./BabycamMasterPanels";
+import {
+  AreaTabs,
+  AsideEmpty,
+  AsideHeading,
+  CameraChipGrid,
+  GROUP_ICONS,
+  GroupNav,
+  Panel,
+  SectionHeading,
+  SplitWorkspace,
+  ZoneFilter,
+} from "./BabycamUi";
 
-const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
-const button = "min-h-12 rounded-lg border border-stone-300 px-3 py-2 text-sm hover:bg-stone-100 disabled:opacity-40";
-const panel = "space-y-4 rounded-xl border border-stone-200 bg-white p-4";
-const sections = [{ key: "registration", label: "入住與交付", access: "01" }, { key: "assign", label: "寶寶登錄與標籤", access: "02" }, { key: "schedule", label: "時段與狀態", access: "04" }, { key: "backgrounds", label: "背景圖維護", access: "05" }, { key: "cameras", label: "監視器狀態", access: "03" }, { key: "lights", label: "燈號與點測模擬", access: "06" }, { key: "reports", label: "紀錄與報表", access: "01" }];
-const roleSections: Partial<Record<Role, string[]>> = {
-  櫃台: ["registration", "assign", "cameras", "reports"],
-  "護理長 婉真": ["schedule", "cameras", "reports"],
+/*
+  寶寶視訊管理工作區。
+
+  資訊架構刻意對齊 BabyCam 專案（C:\\Code\\BabyCam）的管理端 `/admin`：四個功能群組
+  01 入住登記／02 寶寶登錄／04 後臺管理／08 系統設定，群組底下是底線式頁籤。
+  同一批院內人員要在兩套系統間切換，版面與用字不一致就是訓練成本。
+
+  ⚠️ 要改群組或頁籤，先比對 BabyCam 的 `src/components/admin/shared.ts` 的 `adminNav`；
+  兩邊的群組編號（01/02/04/08）與分段權限代號（01–08）是同一套，不要只改一邊。
+  權限判斷見 lib/babycam/actions.ts 的 getBabycamSectionAccess（只回 edit／none）。
+*/
+
+const input = "min-h-11 w-full rounded-lg border border-border-subtle bg-surface-raised px-3 py-2 text-sm";
+const subPanel = "space-y-4 rounded-xl border border-border-subtle bg-surface-raised p-4";
+
+type GroupId = "01" | "02" | "04" | "08";
+type TabDef = {
+  id: string;
+  label: string;
+  /** 對應 BabyCam 的 01–08 分段權限代號（不是群組編號）。 */
+  access: string;
+  /** 限定角色；未填代表只看分段權限。對應 BabyCam 的 `capability: "createStay"`。 */
+  roles?: Role[];
 };
-const roleGuidance: Record<Role, string> = {
-  櫃台: "櫃台可辦理入住交付、寶寶標籤、日常狀態及報表作業。",
-  "護理長 婉真": "護理長可查看時段、監視器狀態與報表；設定欄位為唯讀。",
-  管理者: "管理者可維護主檔、設備、展示設定及角色權限。",
-  "護理師 陳護理師": "護理師依授權執行寶寶指派、照護與歸位核對。",
+
+const GROUPS: { id: GroupId; label: string; heading: string; description: string; tabs: TabDef[] }[] = [
+  {
+    id: "01",
+    label: "入住登記",
+    heading: "入住登記",
+    description:
+      "櫃台登記媽媽與房號，登記後即可交付觀看 QRCode 與密碼；寶寶與監視器由護理人員在「寶寶登錄」指派。入住狀態可改顯示狀態、重發連結與作廢授權。",
+    tabs: [
+      { id: "desk", label: "櫃檯入住與交付", access: "01", roles: ["櫃台", "護理長 婉真", "管理者"] },
+      { id: "list", label: "入住狀態", access: "01" },
+    ],
+  },
+  {
+    id: "02",
+    label: "寶寶登錄",
+    heading: "寶寶登錄",
+    description: "承接櫃台的入住登記：選定媽媽後指派寶寶、車號與監視器，並列印手圈與嬰兒車標籤；歸位時以標籤掃碼核對。",
+    tabs: [
+      { id: "assign", label: "寶寶登錄與標籤", access: "02" },
+      { id: "scan", label: "掃碼歸位核對", access: "02" },
+    ],
+  },
+  {
+    id: "04",
+    label: "後臺管理",
+    heading: "後臺管理",
+    description: "全院開放時段、房型與房號、顯示狀態的名稱與背景圖，以及觀看與照護的紀錄報表。",
+    tabs: [
+      { id: "schedule", label: "開放時段", access: "04" },
+      { id: "rooms", label: "房間清單", access: "04" },
+      { id: "states", label: "狀態維護", access: "04" },
+      { id: "backgrounds", label: "狀態背景圖", access: "05" },
+      // 報表查的是觀看與照護紀錄，屬事後查核不是現場作業，放後臺管理；權限仍跟著 01。
+      { id: "report", label: "紀錄與報表", access: "01" },
+      { id: "demo", label: "展示控制台", access: "04" },
+    ],
+  },
+  {
+    id: "08",
+    label: "系統設定",
+    heading: "系統設定",
+    description: "監視器主檔與健康狀態，以及環狀燈號、繼電器板的維運工具。看得到哪些頁籤由角色權限決定。",
+    tabs: [
+      { id: "cameras", label: "監視器狀態", access: "03" },
+      { id: "ringlight", label: "環狀燈號", access: "06" },
+      { id: "relay", label: "繼電器板", access: "07" },
+      { id: "lightstates", label: "燈號狀態", access: "08" },
+    ],
+  },
+];
+
+/** 每個群組預設停在哪個頁籤（對齊 BabyCam 的 DEFAULT_TABS）。 */
+const DEFAULT_TAB: Record<GroupId, string> = { "01": "desk", "02": "assign", "04": "schedule", "08": "cameras" };
+
+/** 舊版 `?section=` 深連結 → 新的群組／頁籤，既有書籤與測試連結不會壞掉。 */
+const LEGACY_SECTION: Record<string, { group: GroupId; tab: string }> = {
+  registration: { group: "01", tab: "desk" },
+  assign: { group: "02", tab: "assign" },
+  schedule: { group: "04", tab: "schedule" },
+  backgrounds: { group: "04", tab: "backgrounds" },
+  reports: { group: "04", tab: "report" },
+  cameras: { group: "08", tab: "cameras" },
+  lights: { group: "08", tab: "ringlight" },
+};
+
+const ROLE_GUIDANCE: Record<Role, string> = {
+  櫃台: "櫃台負責入住登記與交付 QRCode／密碼，並可查看入住狀態、監視器與紀錄報表。",
+  "護理長 婉真": "護理長可操作入住、寶寶登錄與後臺設定；維運類（繼電器、燈號定義）仍由管理者負責。",
+  管理者: "管理者可維護全部主檔、設備、展示設定與角色權限。",
+  "護理師 陳護理師": "護理師負責寶寶登錄、監視器指派與歸位掃碼核對。",
   "衛教師 琳雅": "目前角色沒有寶寶視訊管理權限。",
 };
+
 function WindowEditor({ label, value, onChange }: { label: string; value: WindowRule; onChange: (rule: WindowRule) => void }) {
   const [draft, setDraft] = useState(value);
-  return <fieldset className="space-y-3 rounded-lg border border-stone-200 p-3"><legend className="px-2 text-sm font-medium">{label}</legend><div className="grid gap-3 sm:grid-cols-3"><select aria-label={`${label}模式`} className={input} value={draft.mode} onChange={(event) => setDraft({ ...draft, mode: event.target.value as WindowRule["mode"] })}>{[["inherit", "依上層設定"], ["always", "全天"], ["closed", "關閉"], ["scheduled", "指定時段"]].map(([key, title]) => <option key={key} value={key}>{title}</option>)}</select><input aria-label={`${label}開始`} className={input} type="time" value={draft.start} onChange={(event) => setDraft({ ...draft, start: event.target.value })} /><input aria-label={`${label}結束`} className={input} type="time" value={draft.end} onChange={(event) => setDraft({ ...draft, end: event.target.value })} /></div><button type="button" className={button} onClick={() => onChange(draft)}>儲存{label}</button></fieldset>;
+  return (
+    <fieldset className="space-y-3 rounded-xl border border-border-subtle p-3">
+      <legend className="px-2 text-sm font-semibold text-stone-700">{label}</legend>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <select
+          aria-label={`${label}模式`}
+          className={input}
+          value={draft.mode}
+          onChange={(event) => setDraft({ ...draft, mode: event.target.value as WindowRule["mode"] })}
+        >
+          {[
+            ["inherit", "依上層設定"],
+            ["always", "全天"],
+            ["closed", "關閉"],
+            ["scheduled", "指定時段"],
+          ].map(([key, title]) => (
+            <option key={key} value={key}>
+              {title}
+            </option>
+          ))}
+        </select>
+        <input aria-label={`${label}開始`} className={input} type="time" value={draft.start} onChange={(event) => setDraft({ ...draft, start: event.target.value })} />
+        <input aria-label={`${label}結束`} className={input} type="time" value={draft.end} onChange={(event) => setDraft({ ...draft, end: event.target.value })} />
+      </div>
+      <Button size="sm" onClick={() => onChange(draft)}>
+        儲存{label}
+      </Button>
+    </fieldset>
+  );
 }
+
 export function TicketQr({ href, size = 160 }: { href: string; size?: number }) {
   const [src, setSrc] = useState("");
-  useEffect(() => { let active = true; void QRCode.toDataURL(`${window.location.origin}${BASE_PATH}${href}`, { width: 160, margin: 4 }).then((value) => { if (active) setSrc(value); }); return () => { active = false; }; }, [href]);
-  return src ? <img src={src} width={size} height={size} alt="可掃描的展示 QRCode" /> : <span className="text-sm">產生 QRCode…</span>;
+  useEffect(() => {
+    let active = true;
+    void QRCode.toDataURL(`${window.location.origin}${BASE_PATH}${href}`, { width: 160, margin: 4 }).then((value) => {
+      if (active) setSrc(value);
+    });
+    return () => {
+      active = false;
+    };
+  }, [href]);
+  return src ? (
+    <img src={src} width={size} height={size} alt="可掃描的展示 QRCode" className="rounded-lg border border-border-subtle bg-white" />
+  ) : (
+    <span className="text-sm">產生 QRCode…</span>
+  );
 }
-export default function BabycamWorkspace({ initialSection = "registration", initialScanCode = "", initialBindingId = "" }: { initialSection?: string; initialScanCode?: string; initialBindingId?: string }) {
+
+export default function BabycamWorkspace({
+  initialSection = "registration",
+  initialScanCode = "",
+  initialBindingId = "",
+}: {
+  initialSection?: string;
+  initialScanCode?: string;
+  initialBindingId?: string;
+}) {
   const { data, storageError } = useDomainStore();
   const role = useCurrentRole();
-  const [section, setSection] = useState(initialSection);
+
+  const legacy = LEGACY_SECTION[initialSection] ?? LEGACY_SECTION.registration;
+  const [group, setGroup] = useState<GroupId>(legacy.group);
+  const [tabs, setTabs] = useState<Record<GroupId, string>>({ ...DEFAULT_TAB, [legacy.group]: legacy.tab });
   const [bindingId, setBindingId] = useState(initialBindingId);
   const [cameraId, setCameraId] = useState("");
   const [message, setMessage] = useState("");
-
-
-
-
-
   const [scanCode, setScanCode] = useState(initialScanCode);
   const [scanBaby, setScanBaby] = useState("");
   const [labelImages, setLabelImages] = useState<string[]>([]);
@@ -70,66 +215,881 @@ export default function BabycamWorkspace({ initialSection = "registration", init
   const [testColor, setTestColor] = useState("白");
   const [zone, setZone] = useState("全部");
   const [reportChoice, setReport] = useState("照護");
-  const report = role !== "管理者" && reportChoice === "操作" ? "照護" : reportChoice;
   const [keyword, setKeyword] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [reportPage, setReportPage] = useState(1);
-  const allowedSections = roleSections[role];
-  const visible = sections.filter((item) => canBabycamSection(data, item.access) && (!allowedSections || allowedSections.includes(item.key)));
-  const active = visible.find((item) => item.key === section) ?? visible[0];
-  const scannedBinding = initialScanCode ? data.bindings.find((item) => !item.ended && item.babies.some((baby) => baby.identityCode === initialScanCode)) : undefined;
-  const binding = data.bindings.find((item) => item.id === bindingId && !item.ended) ?? scannedBinding ?? (initialScanCode ? undefined : data.bindings.find((item) => !item.ended));
+
+  /** 看得到的頁籤＝分段權限 ∩ 角色限定；群組只要還有頁籤就顯示（對齊 BabyCam 的 tabsOf）。 */
+  const tabsOf = useMemo(
+    () => (id: GroupId) =>
+      (GROUPS.find((item) => item.id === id)?.tabs ?? []).filter(
+        (tab) => canBabycamSection(data, tab.access) && (!tab.roles || tab.roles.includes(role)),
+      ),
+    [data, role],
+  );
+  const visibleGroups = GROUPS.filter((item) => tabsOf(item.id).length > 0);
+  const activeGroup = visibleGroups.find((item) => item.id === group) ?? visibleGroups[0];
+  const groupTabs = activeGroup ? tabsOf(activeGroup.id) : [];
+  const active = groupTabs.find((tab) => tab.id === tabs[activeGroup?.id ?? "01"]) ?? groupTabs[0];
+
+  const report = role !== "管理者" && reportChoice === "操作" ? "照護" : reportChoice;
+  const scannedBinding = initialScanCode
+    ? data.bindings.find((item) => !item.ended && item.babies.some((baby) => baby.identityCode === initialScanCode))
+    : undefined;
+  const binding =
+    data.bindings.find((item) => item.id === bindingId && !item.ended) ??
+    scannedBinding ??
+    (initialScanCode ? undefined : data.bindings.find((item) => !item.ended));
   const expectedBabyId = scanBaby || scannedBinding?.babies.find((baby) => baby.identityCode === initialScanCode)?.babyId || "";
   const camera = data.cameras.find((item) => item.id === cameraId) ?? data.cameras[0];
-  function run(action: () => void, feedback = "已儲存，相關畫面及紀錄已同步。") { try { action(); setMessage(feedback); } catch (error) { setMessage(error instanceof Error ? error.message : "操作失敗。"); } }
-  const reportHeaders = report === "在鏡頭下" ? ["媽媽／房號", "寶寶", "監視器", "開始", "結束", "在鏡頭下秒數（推算）", "照護秒數"] : report === "照護" ? ["媽媽／房號", "寶寶", "開始", "結束", "照護秒數", "執行者"] : report === "觀看" ? ["媽媽／房號", "受眾", "裝置識別", "開始", "最後觀看", "結束", "結果"] : ["時間", "操作者", "操作", "對象"];
-  const reportRows: (string | number)[][] = report === "在鏡頭下" ? cameraTimeRows(data, dateFrom, dateTo) : report === "照護" ? data.careEvents.map((event) => { const target = data.bindings.find((item) => item.id === event.bindingId); return [`${target?.motherName ?? ""}／${target?.room ?? "托嬰"}`, data.subjects.find((subject) => subject.id === event.babyId)?.name ?? "", event.start, event.end ?? "進行中", Math.max(0, Math.round((Date.parse(event.end ?? data.demoAt) - Date.parse(event.start)) / 1000)), event.actor]; }) : report === "觀看" ? data.viewingHistory.map((event) => { const item = data.bindings.find((binding) => binding.id === event.bindingId); return [`${item?.motherName ?? ""}／${item?.room || "托嬰"}`, event.audience, event.deviceId, event.start, event.lastSeen, event.end ?? "觀看中", event.reason]; }) : data.audit.map((entry) => [entry.at, entry.actor, entry.action, entry.target]);
-  const filteredRows = reportRows.filter((row) => { const raw = String(row[report === "照護" ? 2 : ["觀看", "在鏡頭下"].includes(report) ? 3 : 0]); const date = new Date(raw).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" }); return row.join(" ").includes(keyword) && (!dateFrom || date >= dateFrom) && (!dateTo || date <= dateTo); });
-  if (!active) return <p className="p-4">目前角色沒有 BabyCam 作業權限。</p>;
-  const activeAccess = getBabycamSectionAccess(data, active.access);
+  const zoneCameras = data.cameras.filter((item) => zone === "全部" || item.code.startsWith(zone));
 
-  // 標題與操作列由頁面的 PageHeader 提供，這裡只渲染工作區本身
-  return <div className="space-y-5">
-    <p className="text-sm text-stone-600">純靜態展示，影像、抓圖與繼電器均為模擬，不會連線院內設備。</p>
-    <p className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm text-violet-900">{roleGuidance[role]}</p>
-    <nav aria-label="BabyCam 功能" className="flex flex-wrap gap-2">{visible.map((item) => <button type="button" key={item.key} aria-pressed={active.key === item.key} className={`${button} ${active.key === item.key ? "bg-brand-600 text-white" : ""}`} onClick={() => { setSection(item.key); setMessage(""); setLabelImages([]); }}>{item.label}</button>)}</nav>
-    {(message || storageError) && <p role="status" className="whitespace-pre-line rounded-lg border border-stone-300 bg-stone-50 p-3 text-sm">{storageError ?? message}</p>}
-    {initialScanCode && !scannedBinding && <p role="status" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">此識別標籤已失效或無有效指派，請先人工確認案件，不可直接歸位。</p>}
-    {activeAccess === "view" && <p className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">此分頁為唯讀檢視；可切換監視器、篩選及匯出報表，不能變更院內設定。</p>}
-    <fieldset disabled={activeAccess === "view" && !["cameras", "reports"].includes(active.key)} className="contents">
-    {["registration", "assign"].includes(active.key) && <section className={panel}><label className="block space-y-2 text-sm">選擇入住案件<select aria-label="選擇入住案件" className={input} value={binding?.id ?? ""} onChange={(event) => { setBindingId(event.target.value); setLabelImages([]); }}><option value="">請選擇正確入住案件</option>{data.bindings.filter((item) => !item.ended).map((item) => <option key={item.id} value={item.id}>{item.room || "托嬰"}｜{item.motherName}｜{item.babies.length ? `${item.babies.length} 位寶寶` : "待護理指派"}</option>)}</select></label>{binding && <Link href={`/cases/detail/?id=${encodeURIComponent(binding.caseId)}`} className="text-sm underline underline-offset-4">開啟同一筆案件流程</Link>}</section>}
-    {active.key === "registration" && binding && <>
-      <section className={panel}><h2 className="font-semibold">兩段式入住與授權</h2>{binding.viewingRevoked && <p className="text-sm text-amber-900">觀看授權已作廢；重發後才恢復，寶寶原指派仍保留。</p>}<p className="text-sm">{binding.motherName}｜{binding.room || "無房號托嬰"}｜{binding.babies.length ? "已完成護理指派" : "櫃台已登記，待護理指派"}</p><div className="grid gap-4 sm:grid-cols-2"><label className="space-y-2 text-sm">觀看起日<input type="date" className={input} value={binding.validFrom} onChange={(event) => run(() => babycamActions.updateBinding(binding.id, { validFrom: event.target.value }))} /></label><label className="space-y-2 text-sm">觀看迄日<input type="date" className={input} value={binding.validTo} onChange={(event) => run(() => babycamActions.updateBinding(binding.id, { validTo: event.target.value }))} /></label></div><div className="grid gap-3 sm:grid-cols-2"><label className="text-sm">親友另訂起日（選填）<input aria-label="親友另訂起日" type="date" className={input} value={binding.familyFrom} onChange={(event) => run(() => babycamActions.updateBinding(binding.id, { familyFrom: event.target.value }))} /></label><label className="text-sm">親友另訂迄日（選填）<input aria-label="親友另訂迄日" type="date" className={input} value={binding.familyTo} onChange={(event) => run(() => babycamActions.updateBinding(binding.id, { familyTo: event.target.value }))} /></label></div><label className="flex min-h-12 items-center gap-2 text-sm"><input type="checkbox" checked={binding.familyEnabled} onChange={(event) => run(() => babycamActions.updateBinding(binding.id, { familyEnabled: event.target.checked }))} />開放親友觀看</label><div className="flex flex-wrap gap-2"><button type="button" className={button} onClick={() => run(() => babycamActions.reissue(binding.id), "已重發，舊觀看連結及工作階段失效。")}>重發連結</button><button type="button" className={button} onClick={() => run(() => babycamActions.kick(binding.id), "已踢除親友展示登入。")}>踢除親友登入</button><button type="button" className={button} onClick={() => run(() => babycamActions.revoke(binding.id), "已作廢觀看授權，寶寶原指派保留。")}>作廢觀看授權</button><button type="button" className={button} onClick={() => run(() => babycamActions.passcode(binding.id, `DEMO-${Date.now().toString().slice(-6)}`))}>重設展示密碼</button></div>
-        <WindowEditor key={`${binding.id}-internal`} label="本筆入住院內時段" value={binding.internalWindow} onChange={(internalWindow) => run(() => babycamActions.updateBinding(binding.id, { internalWindow }))} /><WindowEditor key={`${binding.id}-family`} label="本筆入住親友時段" value={binding.familyWindow} onChange={(familyWindow) => run(() => babycamActions.updateBinding(binding.id, { familyWindow }))} />
-      </section>
-      <div className="grid gap-4 lg:grid-cols-2">{(["internal", "family"] as const).map((audience) => { const href = `/view/${audience === "internal" ? "mama" : "family"}/?ticket=${encodeURIComponent(audience === "internal" ? binding.internalTicket : binding.familyTicket)}`; return <section className={panel} key={audience}><h2 className="font-semibold">{audience === "internal" ? "媽媽本人" : "親友"}資訊卡</h2><p className="text-sm">{binding.motherName}｜展示手機 {binding.phone}<br />展示密碼 {binding.passcode}<br />{binding.validFrom} 至 {binding.validTo}</p><TicketQr href={href} /><Link href={href} className="block break-all text-sm underline">開啟觀看頁</Link><button type="button" className={button} onClick={() => window.print()}>列印資訊卡</button></section>; })}</div>
-      <section className={panel}><h2 className="font-semibold">入住狀態</h2>{binding.babies.map((baby) => <div key={baby.babyId} className="flex flex-wrap items-center gap-3 border-t border-stone-200 pt-3"><span className="text-sm">{data.subjects.find((subject) => subject.id === baby.babyId)?.name}｜車 {baby.cartNo}｜{data.cameras.find((item) => item.id === baby.cameraId)?.code}</span><select aria-label="寶寶顯示狀態" className={`${input} sm:w-48`} value={baby.state} onChange={(event) => run(() => babycamActions.state(binding.id, baby.babyId, event.target.value))}>{data.displayStates.map((state) => <option key={state.key} value={state.key}>{state.name}</option>)}</select><button type="button" disabled={!canBabycamSection(data, "02")} className={button} onClick={() => run(() => babycamActions.care(binding.id, baby.babyId, !baby.careMode))}>{baby.careMode ? "結束照護" : "設為照護中"}</button></div>)}</section>
-    </>}
-    {active.key === "assign" && binding && <>
-      <BindingEditor key={binding.id} data={data} binding={binding} onChange={() => setLabelImages([])} />
-      <PrintSettingsEditor value={data.printSettings} onSaved={() => setLabelImages([])} />
-      <section className={panel}><h2 className="font-semibold">手圈與嬰兒車標籤</h2><p className="text-sm">識別 QR 只用於核對寶寶，不授予觀看權限。瀏覽器列印保留原版 40 × 15 mm 雙排版型。</p><button type="button" className={button} onClick={async () => {
-        try { await loadPrintFont(data.printSettings); const images = binding.babies.map((baby) => { const subject = data.subjects.find((item) => item.id === baby.babyId)!; const rendered = renderWristband(binding.room, binding.motherName, { cameraId: Number(baby.cameraId.replace("camera-", "")) || 1, cameraCode: data.cameras.find((item) => item.id === baby.cameraId)?.code ?? "", babyName: subject.name, cartNo: baby.cartNo, identityCode: baby.identityCode, scanUrl: `${window.location.origin}${BASE_PATH}/babycam/scan/?code=${encodeURIComponent(baby.identityCode)}`, birthDate: subject.birthDate ?? "2026-10-01", sex: subject.gender === "女" ? "female" : "male", birthOrder: baby.birthOrder ?? 0 }, data.printSettings); if (rendered.overflow) throw new Error(rendered.reasons.join("、")); return rendered.canvas.toDataURL(); }); setLabelImages(images); setMessage("已產生本機標籤預覽。"); } catch (error) { setMessage(error instanceof Error ? error.message : "標籤預覽失敗。"); }
-      }}>產生標籤預覽</button><div className="space-y-3">{labelImages.map((src, index) => <div key={index}><img src={src} alt={`寶寶 ${index + 1} 標籤預覽`} className="max-w-full border border-stone-300" /></div>)}</div>{labelImages.length > 0 && <button type="button" className={button} onClick={() => void printWristbands(labelImages, data.printSettings.gap).catch((error: Error) => setMessage(error.message))}>列印標籤</button>}</section>
-      <section className={panel}><h2 className="font-semibold">掃碼歸位核對</h2><label className="block space-y-2 text-sm">應歸位的寶寶<select aria-label="應歸位的寶寶" className={input} value={expectedBabyId} onChange={(event) => setScanBaby(event.target.value)}><option value="">請選擇</option>{binding.babies.map((baby) => <option key={baby.babyId} value={baby.babyId}>{data.subjects.find((subject) => subject.id === baby.babyId)?.name}｜車 {baby.cartNo}｜展示短碼 {baby.identityCode}</option>)}</select></label><label className="block space-y-2 text-sm">掃碼結果／手動輸入識別碼<input aria-label="掃碼結果／手動輸入識別碼" className={input} value={scanCode} onChange={(event) => setScanCode(event.target.value)} /></label><button type="button" className={button} onClick={() => run(() => babycamActions.scan(scanCode, expectedBabyId), "身分核對通過，寶寶已歸位並結束照護。")}>核對並歸位</button><p className="text-xs text-stone-600">平板可用相機 App 掃標籤，再於此核對；瀏覽器相機不可用時手動輸入即可。</p></section>
-    </>}
-    {active.key === "backgrounds" && <BackgroundSettings data={data} />}
-    {active.key === "schedule" && <>
-      <RoomTypeSettings data={data} /><RoomSettings data={data} />
-      <section className={panel}><h2 className="font-semibold">全院、受眾與每機時段</h2>{(["houseWindow", "internalWindow", "familyWindow"] as const).map((key) => <WindowEditor key={key} label={{ houseWindow: "全院總時段", internalWindow: "院內受眾時段", familyWindow: "親友受眾時段" }[key]} value={data[key]} onChange={(rule) => run(() => babycamActions.settings({ [key]: rule }))} />)}<div className="flex flex-wrap gap-4">{(["enforceInternal", "enforceFamily"] as const).map((key) => <label key={key} className="flex min-h-12 items-center gap-2 text-sm"><input type="checkbox" checked={data[key]} onChange={(event) => run(() => babycamActions.settings({ [key]: event.target.checked }))} />{key === "enforceInternal" ? "院內" : "親友"}時段外擋住畫面</label>)}</div><p className="text-sm text-stone-600">未勾選時僅影響觀看燈號；每筆入住自行關閉的時段仍會擋住畫面。</p><label className="flex min-h-12 items-center gap-2 text-sm"><input type="checkbox" checked={data.concurrencyEnforced} onChange={(event) => run(() => babycamActions.settings({ concurrencyEnforced: event.target.checked }))} />模擬同房觀看人數限制</label><label className="block text-sm">同房親友觀看上限（0＝不限）<input className={input} type="number" min={0} value={data.familyLimit} onChange={(event) => run(() => babycamActions.settings({ familyLimit: Number(event.target.value) }))} /></label></section>
-      <section className={panel}><h2 className="font-semibold">顯示狀態維護</h2>{data.displayStates.map((state) => <div key={state.key} className="flex flex-wrap gap-3"><input aria-label={`${state.name}名稱`} className={`${input} sm:w-64`} defaultValue={state.name} onBlur={(event) => { if (event.target.value !== state.name) run(() => babycamActions.display(state.key, event.target.value)); }} /><span className="self-center text-sm">{state.masked ? "遮蔽畫面" : "正常顯示"}</span></div>)}</section>
-      <section className={panel}><h2 className="font-semibold">展示情境控制</h2><label className="text-sm">台灣時間<input type="datetime-local" className={input} defaultValue={data.demoAt.slice(0, 16)} onBlur={(event) => { if (event.target.value) run(() => babycamActions.settings({ demoAt: `${event.target.value}+08:00` })); }} /></label><select aria-label="展示影像情境" className={input} value={data.viewScenario} onChange={(event) => run(() => babycamActions.settings({ viewScenario: event.target.value as typeof data.viewScenario }))}>{[["normal", "正常"], ["stale", "過期截圖"], ["fault", "連線異常"], ["cart-away", "嬰兒車離開鏡頭"]].map(([key, label]) => <option value={key} key={key}>{label}</option>)}</select></section>
-    </>}
-    {active.key === "cameras" && activeAccess === "view" && <section className={panel}><h2 className="font-semibold">監視器狀態（{data.cameras.length} 支）</h2><select aria-label="選擇監視器" className={input} value={camera.id} onChange={(event) => setCameraId(event.target.value)}>{data.cameras.map((item) => <option key={item.id} value={item.id}>{item.code}｜{item.health}</option>)}</select><div className="grid gap-3 text-sm sm:grid-cols-2"><p>設備代號：{camera.code}</p><p>健康狀態：{camera.health}</p><p>來源標示：{camera.sourceLabel}</p><p>解析度：{camera.resolution}</p><p>啟用狀態：{camera.enabled ? "啟用" : "停用"}</p><p>最後截圖（模擬）：{taipeiTimestamp(camera.lastShotAt)}</p></div>{(["internal", "family"] as const).map((audience) => { const result = effectiveViewingWindow(data, camera, audience); return <p key={audience} className="text-sm">{audience === "internal" ? "院內" : "親友"}實際生效：{result.window.mode === "closed" ? "全天關閉（交集為空）" : result.window.mode === "always" ? "全天" : `${result.window.start}–${result.window.end}`}{result.truncated ? "；不連續交集已保守採較長時段" : ""}</p>; })}<CamPreview mode={camera.health === "異常" ? "offline" : "snapshot"} room="展示" camCode={camera.code} /></section>}
-    {active.key === "cameras" && activeAccess === "edit" && <><section className={panel}><h2 className="font-semibold">監視器主檔與健康（{data.cameras.length} 支）</h2><select aria-label="選擇監視器" className={input} value={camera.id} onChange={(event) => setCameraId(event.target.value)}>{data.cameras.map((item) => <option key={item.id} value={item.id}>{item.code}｜{item.health}</option>)}</select><CameraMetadata key={camera.id} camera={camera} /><label className="flex min-h-12 items-center gap-2 text-sm"><input type="checkbox" checked={camera.enabled} onChange={(event) => run(() => babycamActions.camera(camera.id, { enabled: event.target.checked }))} />啟用監視器</label><select aria-label="監視器健康狀態" className={input} value={camera.health} onChange={(event) => run(() => babycamActions.camera(camera.id, { health: event.target.value as typeof camera.health }))}>{["正常", "等待", "異常"].map((item) => <option key={item}>{item}</option>)}</select><p className="text-sm">最後截圖（模擬）：{taipeiTimestamp(camera.lastShotAt)}｜{camera.baseline ? "已設定正常停放基準" : "尚未設定基準"}</p><button type="button" className={button} onClick={() => run(() => babycamActions.camera(camera.id, { baseline: true }), "已儲存模擬正常停放基準；未啟動真實影像偵測。")}>設為正常停放基準</button><WindowEditor key={`${camera.id}-internal`} label="每機院內時段" value={camera.scheduleInternal} onChange={(rule) => run(() => babycamActions.camera(camera.id, { scheduleInternal: rule }))} /><WindowEditor key={`${camera.id}-family`} label="每機親友時段" value={camera.scheduleFamily} onChange={(rule) => run(() => babycamActions.camera(camera.id, { scheduleFamily: rule }))} />{(["internal", "family"] as const).map((audience) => { const result = effectiveViewingWindow(data, camera, audience); return <p key={audience} className="text-sm">{audience === "internal" ? "院內" : "親友"}實際生效：{result.window.mode === "closed" ? "全天關閉（交集為空）" : result.window.mode === "always" ? "全天" : `${result.window.start}–${result.window.end}`}{result.truncated ? "；不連續交集已保守採較長時段" : ""}</p>; })}<CamPreview mode={camera.health === "異常" ? "offline" : "snapshot"} room="展示" camCode={camera.code} /></section>{role === "管理者" && <MaintenanceConsole key={camera.id} data={data} camera={camera} />}</>}
-    {active.key === "lights" && <>
-      <section className={panel}><h2 className="font-semibold">環狀燈號看板</h2><div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-5">{data.cameras.map((item) => { const state = deriveDemoLight(data, item); return <div key={item.id} className="rounded-lg border border-stone-200 p-3 text-sm">{item.code}<br />{data.lightLabels[state] ?? state}<br />模擬燈色：{data.lightColors[state]}<br />{lightChannels(item.code, data.lightColors[state]).map((channel) => `${channel.channel} ${channel.color} ${channel.enabled ? "開" : "關"}`).join("／") || "尚無佈線對照，略過通道"}</div>; })}</div></section>
-      {canBabycamSection(data, "07") && <section className={panel}><h2 className="font-semibold">繼電器通道點測（僅本機模擬）</h2><label className="flex min-h-12 items-center gap-2 text-sm"><input type="checkbox" checked={relayUnlocked} onChange={(event) => setRelayUnlocked(event.target.checked)} />確認僅模擬，解鎖通道操作</label><fieldset disabled={!relayUnlocked} className="space-y-3"><div className="flex flex-wrap gap-3"><select aria-label="點測監視器" className={`${input} sm:w-48`} value={camera.id} onChange={(event) => setCameraId(event.target.value)}>{data.cameras.map((item) => <option key={item.id} value={item.id}>{item.code}</option>)}</select><select aria-label="RGB 點測燈色" className={`${input} sm:w-48`} value={testColor} onChange={(event) => setTestColor(event.target.value)}>{["熄滅", "紅", "綠", "藍", "黃", "洋紅", "青", "白"].map((item) => <option key={item}>{item}</option>)}</select><button type="button" className={button} onClick={() => run(() => { const channels = lightChannels(camera.code, testColor); if (!channels.length) throw new Error("此監視器沒有佈線對照，略過點測。"); channels.forEach((channel) => babycamActions.relay(channel.channel, channel.enabled)); })}>套用 RGB 點測</button><select aria-label="繼電器分區" className={`${input} sm:w-40`} value={zone} onChange={(event) => setZone(event.target.value)}>{["全部", "A", "B"].map((item) => <option key={item}>{item}</option>)}</select></div><div className="grid grid-cols-4 gap-2 sm:grid-cols-8">{["A", "B"].filter((item) => zone === "全部" || zone === item).flatMap((area) => Array.from({ length: 48 }, (_, index) => `${area}-Y${index + 1}`)).map((channel) => <button type="button" key={channel} aria-pressed={!!data.relayChannels[channel]} className={`${button} ${data.relayChannels[channel] ? "bg-brand-600 text-white" : ""}`} onClick={() => run(() => babycamActions.relay(channel, !data.relayChannels[channel]))}>{channel}</button>)}</div></fieldset></section>}
-      {role === "管理者" && <><LightSettings data={data} /><DemoReset /></>}
-    </>}
-    {active.key === "reports" && <section className={panel}><h2 className="font-semibold">紀錄與報表</h2><div className="flex flex-wrap gap-3">{["照護", "在鏡頭下", "觀看", ...(role === "管理者" ? ["操作"] : [])].map((item) => <button type="button" key={item} className={button} onClick={() => { setReport(item); setReportPage(1); }}>{item}</button>)}<input aria-label="篩選報表" className={`${input} sm:w-64`} placeholder="篩選房號、姓名、內容" value={keyword} onChange={(event) => { setKeyword(event.target.value); setReportPage(1); }} /><label className="text-sm">開始日期<input aria-label="報表開始日期" type="date" className={input} value={dateFrom} onChange={(event) => { setDateFrom(event.target.value); setReportPage(1); }} /></label><label className="text-sm">結束日期<input aria-label="報表結束日期" type="date" className={input} value={dateTo} onChange={(event) => { setDateTo(event.target.value); setReportPage(1); }} /></label><button type="button" className={button} onClick={() => downloadFile("寶寶視訊報表.xlsx", toBrowserXlsx(reportHeaders, filteredRows), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}>匯出 Excel</button><button type="button" className={button} onClick={() => downloadFile("寶寶視訊報表.csv", toCsv(reportHeaders, filteredRows), "text/csv;charset=utf-8")}>匯出 CSV</button></div><div className="overflow-x-auto"><table className="w-full min-w-[600px] text-left text-sm"><thead><tr>{reportHeaders.map((item) => <th className="border-b border-stone-300 p-2" key={item}>{item}</th>)}</tr></thead><tbody>{filteredRows.slice((reportPage - 1) * 10, reportPage * 10).map((row, index) => <tr key={index}>{row.map((value, cell) => <td className="border-b border-stone-200 p-2" key={cell}>{value}</td>)}</tr>)}</tbody></table></div><div className="flex items-center gap-3"><button type="button" className={button} disabled={reportPage <= 1} onClick={() => setReportPage(reportPage - 1)}>上一頁</button><span className="text-sm">第 {reportPage} 頁，共 {filteredRows.length} 筆</span><button type="button" className={button} disabled={reportPage * 10 >= filteredRows.length} onClick={() => setReportPage(reportPage + 1)}>下一頁</button></div></section>}
+  function run(action: () => void, feedback = "已儲存，相關畫面及紀錄已同步。") {
+    try {
+      action();
+      setMessage(feedback);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "操作失敗。");
+    }
+  }
+  function selectGroup(id: GroupId) {
+    setGroup(id);
+    setMessage("");
+    setLabelImages([]);
+  }
+  function selectTab(id: string) {
+    if (!activeGroup) return;
+    setTabs((current) => ({ ...current, [activeGroup.id]: id }));
+    setMessage("");
+    setLabelImages([]);
+  }
 
-    </fieldset>
-  </div>;
+  const reportHeaders =
+    report === "在鏡頭下"
+      ? ["媽媽／房號", "寶寶", "監視器", "開始", "結束", "在鏡頭下秒數（推算）", "照護秒數"]
+      : report === "照護"
+        ? ["媽媽／房號", "寶寶", "開始", "結束", "照護秒數", "執行者"]
+        : report === "觀看"
+          ? ["媽媽／房號", "受眾", "裝置識別", "開始", "最後觀看", "結束", "結果"]
+          : ["時間", "操作者", "操作", "對象"];
+  const reportRows: (string | number)[][] =
+    report === "在鏡頭下"
+      ? cameraTimeRows(data, dateFrom, dateTo)
+      : report === "照護"
+        ? data.careEvents.map((event) => {
+            const target = data.bindings.find((item) => item.id === event.bindingId);
+            return [
+              `${target?.motherName ?? ""}／${target?.room ?? "托嬰"}`,
+              data.subjects.find((subject) => subject.id === event.babyId)?.name ?? "",
+              event.start,
+              event.end ?? "進行中",
+              Math.max(0, Math.round((Date.parse(event.end ?? data.demoAt) - Date.parse(event.start)) / 1000)),
+              event.actor,
+            ];
+          })
+        : report === "觀看"
+          ? data.viewingHistory.map((event) => {
+              const item = data.bindings.find((target) => target.id === event.bindingId);
+              return [
+                `${item?.motherName ?? ""}／${item?.room || "托嬰"}`,
+                event.audience,
+                event.deviceId,
+                event.start,
+                event.lastSeen,
+                event.end ?? "觀看中",
+                event.reason,
+              ];
+            })
+          : data.audit.map((entry) => [entry.at, entry.actor, entry.action, entry.target]);
+  const filteredRows = reportRows.filter((row) => {
+    const raw = String(row[report === "照護" ? 2 : ["觀看", "在鏡頭下"].includes(report) ? 3 : 0]);
+    const date = new Date(raw).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" });
+    return row.join(" ").includes(keyword) && (!dateFrom || date >= dateFrom) && (!dateTo || date <= dateTo);
+  });
+
+  if (!activeGroup || !active) {
+    return (
+      <p className="rounded-2xl border border-dashed border-border-subtle bg-surface-raised p-8 text-center text-sm text-stone-500">
+        目前身分「{role}」沒有寶寶視訊的作業權限。
+      </p>
+    );
+  }
+
+  const caseSelector = (
+    <label className="block space-y-2 text-sm font-semibold text-stone-700">
+      選擇入住案件
+      <select
+        aria-label="選擇入住案件"
+        className={input}
+        value={binding?.id ?? ""}
+        onChange={(event) => {
+          setBindingId(event.target.value);
+          setLabelImages([]);
+        }}
+      >
+        <option value="">請選擇正確入住案件</option>
+        {data.bindings
+          .filter((item) => !item.ended)
+          .map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.room || "托嬰"}｜{item.motherName}｜{item.babies.length ? `${item.babies.length} 位寶寶` : "待護理指派"}
+            </option>
+          ))}
+      </select>
+      {binding && (
+        <Link href={`/cases/detail/?id=${encodeURIComponent(binding.caseId)}`} className="block text-xs font-normal text-brand-600 underline underline-offset-4">
+          開啟同一筆案件流程
+        </Link>
+      )}
+    </label>
+  );
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm leading-6 text-stone-600">
+        純靜態展示，影像、抓圖與繼電器均為模擬，不會連線院內設備。
+        <span className="font-medium text-stone-700">{ROLE_GUIDANCE[role]}</span>
+      </p>
+
+      <GroupNav
+        groups={visibleGroups.map((item) => ({ id: item.id, label: item.label, icon: GROUP_ICONS[item.id] }))}
+        active={activeGroup.id}
+        onSelect={selectGroup}
+      />
+
+      {(message || storageError) && (
+        <p role="status" className="whitespace-pre-line rounded-xl border border-border-subtle bg-surface-muted px-4 py-3 text-sm">
+          {storageError ?? message}
+        </p>
+      )}
+      {initialScanCode && !scannedBinding && (
+        <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          此識別標籤已失效或無有效指派，請先人工確認案件，不可直接歸位。
+        </p>
+      )}
+
+      <Panel no={activeGroup.id} title={activeGroup.heading} description={activeGroup.description} flush>
+        <AreaTabs
+          tabs={groupTabs.map((tab) => ({ id: tab.id, label: tab.label }))}
+          active={active.id}
+          onSelect={selectTab}
+          label={`${activeGroup.label}工作區`}
+        />
+
+        {/* ── 01 入住登記 ── */}
+        {active.id === "desk" && (
+          <SplitWorkspace
+            form={
+              <div className="space-y-4">
+                <SectionHeading no={1} title="櫃台登記與授權期間" description="選定案件後設定觀看起迄；親友可另訂期間，也可單獨關閉。" />
+                {caseSelector}
+                {binding ? (
+                  <>
+                    {binding.viewingRevoked && (
+                      <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                        觀看授權已作廢；重發後才恢復，寶寶原指派仍保留。
+                      </p>
+                    )}
+                    <p className="rounded-lg bg-surface-muted px-3 py-2 text-sm">
+                      {binding.motherName}｜{binding.room || "無房號托嬰"}｜
+                      {binding.babies.length ? "已完成護理指派" : "櫃台已登記，待護理指派"}
+                    </p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="space-y-1.5 text-sm">
+                        觀看起日
+                        <input
+                          type="date"
+                          className={input}
+                          value={binding.validFrom}
+                          onChange={(event) => run(() => babycamActions.updateBinding(binding.id, { validFrom: event.target.value }))}
+                        />
+                      </label>
+                      <label className="space-y-1.5 text-sm">
+                        觀看迄日
+                        <input
+                          type="date"
+                          className={input}
+                          value={binding.validTo}
+                          onChange={(event) => run(() => babycamActions.updateBinding(binding.id, { validTo: event.target.value }))}
+                        />
+                      </label>
+                      <label className="space-y-1.5 text-sm">
+                        親友另訂起日（選填）
+                        <input
+                          aria-label="親友另訂起日"
+                          type="date"
+                          className={input}
+                          value={binding.familyFrom}
+                          onChange={(event) => run(() => babycamActions.updateBinding(binding.id, { familyFrom: event.target.value }))}
+                        />
+                      </label>
+                      <label className="space-y-1.5 text-sm">
+                        親友另訂迄日（選填）
+                        <input
+                          aria-label="親友另訂迄日"
+                          type="date"
+                          className={input}
+                          value={binding.familyTo}
+                          onChange={(event) => run(() => babycamActions.updateBinding(binding.id, { familyTo: event.target.value }))}
+                        />
+                      </label>
+                    </div>
+                    <label className="flex min-h-11 items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={binding.familyEnabled}
+                        onChange={(event) => run(() => babycamActions.updateBinding(binding.id, { familyEnabled: event.target.checked }))}
+                      />
+                      開放親友觀看
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="primary" onClick={() => run(() => babycamActions.reissue(binding.id), "已重發，舊觀看連結及工作階段失效。")}>
+                        重發連結
+                      </Button>
+                      <Button size="sm" onClick={() => run(() => babycamActions.kick(binding.id), "已踢除親友展示登入。")}>
+                        踢除親友登入
+                      </Button>
+                      <Button size="sm" onClick={() => run(() => babycamActions.passcode(binding.id, `DEMO-${Date.now().toString().slice(-6)}`))}>
+                        重設展示密碼
+                      </Button>
+                      <Button size="sm" variant="danger" onClick={() => run(() => babycamActions.revoke(binding.id), "已作廢觀看授權，寶寶原指派保留。")}>
+                        作廢觀看授權
+                      </Button>
+                    </div>
+                    <SectionHeading no={2} title="本筆入住的時段覆寫" description="未設定時沿用全院與受眾時段；交集為空會顯示全天關閉。" />
+                    <WindowEditor
+                      key={`${binding.id}-internal`}
+                      label="本筆入住院內時段"
+                      value={binding.internalWindow}
+                      onChange={(internalWindow) => run(() => babycamActions.updateBinding(binding.id, { internalWindow }))}
+                    />
+                    <WindowEditor
+                      key={`${binding.id}-family`}
+                      label="本筆入住親友時段"
+                      value={binding.familyWindow}
+                      onChange={(familyWindow) => run(() => babycamActions.updateBinding(binding.id, { familyWindow }))}
+                    />
+                  </>
+                ) : (
+                  <p className="text-sm text-stone-500">請先選擇一筆入住案件。</p>
+                )}
+              </div>
+            }
+            aside={
+              <>
+                <AsideHeading eyebrow="櫃檯交付" title="觀看 QRCode 與密碼" description="院內即時畫面與親友觀看畫面使用不同連結。" />
+                {!binding ? (
+                  <AsideEmpty mark="QR" title="等待選擇案件" description="選定入住案件後，交付資料會顯示在這裡。" />
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-sm">
+                      <strong className="text-stone-800">{binding.room || "托嬰"} 房</strong> · {binding.motherName}
+                    </p>
+                    {(["internal", "family"] as const).map((audience) => {
+                      const href = `/view/${audience === "internal" ? "mama" : "family"}/?ticket=${encodeURIComponent(
+                        audience === "internal" ? binding.internalTicket : binding.familyTicket,
+                      )}`;
+                      return (
+                        <article key={audience} className="space-y-2 rounded-xl border border-border-subtle bg-surface-raised p-3">
+                          <span
+                            className={
+                              "inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold " +
+                              (audience === "internal" ? "bg-brand-100 text-brand-700" : "bg-purple-100 text-purple-700")
+                            }
+                          >
+                            {audience === "internal" ? "院內" : "親友"}
+                          </span>
+                          <h4 className="text-sm font-bold text-stone-800">{audience === "internal" ? "媽媽即時畫面" : "親友觀看畫面"}</h4>
+                          <TicketQr href={href} size={150} />
+                          <Link href={href} className="block break-all text-xs text-brand-600 underline underline-offset-4">
+                            開啟觀看頁
+                          </Link>
+                        </article>
+                      );
+                    })}
+                    <section className="space-y-1 rounded-xl border border-border-subtle bg-surface-raised p-3 text-sm">
+                      <strong className="block text-stone-800">家屬登入資料</strong>
+                      <span className="block text-stone-600">登入帳號：{binding.phone}</span>
+                      <span className="block text-stone-600">
+                        展示密碼：<strong className="tabular-nums tracking-[0.12em] text-stone-800">{binding.passcode}</strong>
+                      </span>
+                      <span className="block text-stone-600">
+                        觀看期間：{binding.validFrom} 至 {binding.validTo}
+                      </span>
+                      <small className="block pt-1 text-xs text-stone-500">請交由指定家屬保管，不要公開或轉傳。</small>
+                    </section>
+                    <Button size="sm" onClick={() => window.print()}>
+                      <Printer className="h-3.5 w-3.5" aria-hidden="true" />
+                      列印家屬通知單
+                    </Button>
+                  </div>
+                )}
+              </>
+            }
+          />
+        )}
+
+        {active.id === "list" && (
+          <div className="space-y-4 p-4 sm:p-5">
+            <SectionHeading no={1} title="入住中的視訊授權" description="顯示狀態會即時反映到媽媽端與親友端；設為照護中會遮蔽畫面。" />
+            <div className="overflow-x-auto rounded-xl border border-border-subtle">
+              <table className="w-full min-w-[640px] text-left text-sm">
+                <thead className="bg-surface-muted">
+                  <tr>
+                    {["房號／媽媽", "寶寶・車號・監視器", "顯示狀態", "照護", "觀看期間"].map((label) => (
+                      <th key={label} className="p-3 font-semibold text-stone-600">
+                        {label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.bindings
+                    .filter((item) => !item.ended)
+                    .flatMap((item) =>
+                      (item.babies.length ? item.babies : [null]).map((baby, index) => (
+                        <tr key={`${item.id}-${baby?.babyId ?? "none"}`} className="border-t border-border-subtle align-middle">
+                          {index === 0 && (
+                            <td className="p-3" rowSpan={Math.max(1, item.babies.length)}>
+                              <strong className="text-stone-800">{item.room || "托嬰"}</strong>
+                              <br />
+                              <span className="text-stone-500">{item.motherName}</span>
+                            </td>
+                          )}
+                          <td className="p-3">
+                            {baby ? (
+                              <>
+                                {data.subjects.find((subject) => subject.id === baby.babyId)?.name}｜車 {baby.cartNo}｜
+                                {data.cameras.find((cam) => cam.id === baby.cameraId)?.code}
+                              </>
+                            ) : (
+                              <span className="text-stone-400">待護理指派</span>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            {baby && (
+                              <select
+                                aria-label="寶寶顯示狀態"
+                                className={`${input} sm:w-44`}
+                                value={baby.state}
+                                onChange={(event) => run(() => babycamActions.state(item.id, baby.babyId, event.target.value))}
+                              >
+                                {data.displayStates.map((state) => (
+                                  <option key={state.key} value={state.key}>
+                                    {state.name}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </td>
+                          <td className="p-3">
+                            {baby && (
+                              <Button
+                                size="sm"
+                                variant={baby.careMode ? "primary" : "secondary"}
+                                disabled={!canBabycamSection(data, "02")}
+                                onClick={() => run(() => babycamActions.care(item.id, baby.babyId, !baby.careMode))}
+                              >
+                                {baby.careMode ? "結束照護" : "設為照護中"}
+                              </Button>
+                            )}
+                          </td>
+                          {index === 0 && (
+                            <td className="p-3 text-stone-500" rowSpan={Math.max(1, item.babies.length)}>
+                              {item.validFrom} ～ {item.validTo}
+                              {item.viewingRevoked && <span className="ml-1 text-rose-600">（已作廢）</span>}
+                            </td>
+                          )}
+                        </tr>
+                      )),
+                    )}
+                </tbody>
+              </table>
+              {!data.bindings.some((item) => !item.ended) && <p className="p-6 text-center text-sm text-stone-500">目前沒有入住中的視訊授權。</p>}
+            </div>
+          </div>
+        )}
+
+        {/* ── 02 寶寶登錄 ── */}
+        {active.id === "assign" && (
+          <SplitWorkspace
+            form={
+              <div className="space-y-4">
+                <SectionHeading no={2} title="護理指派寶寶與監視器" description="先選媽媽，再選監視器與寶寶資料；儲存後即可列印手圈及嬰兒車標籤。" />
+                {caseSelector}
+                {binding ? (
+                  <>
+                    <BindingEditor key={binding.id} data={data} binding={binding} onChange={() => setLabelImages([])} />
+                    <PrintSettingsEditor value={data.printSettings} onSaved={() => setLabelImages([])} />
+                  </>
+                ) : (
+                  <p className="text-sm text-stone-500">請先選擇一筆入住案件。</p>
+                )}
+              </div>
+            }
+            aside={
+              <>
+                <AsideHeading eyebrow="護理交付" title="手圈與嬰兒車標籤" description="識別 QR 只用於核對寶寶，不授予觀看權限；版型固定 40 × 15 mm 雙排。" />
+                {!binding || !binding.babies.length ? (
+                  <AsideEmpty mark="標籤" title="等待指派寶寶" description="完成寶寶與監視器指派後，可在這裡產生並列印標籤。" />
+                ) : (
+                  <div className="space-y-3">
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={async () => {
+                        try {
+                          await loadPrintFont(data.printSettings);
+                          const images = binding.babies.map((baby) => {
+                            const subject = data.subjects.find((item) => item.id === baby.babyId)!;
+                            const rendered = renderWristband(
+                              binding.room,
+                              binding.motherName,
+                              {
+                                cameraId: Number(baby.cameraId.replace("camera-", "")) || 1,
+                                cameraCode: data.cameras.find((item) => item.id === baby.cameraId)?.code ?? "",
+                                babyName: subject.name,
+                                cartNo: baby.cartNo,
+                                identityCode: baby.identityCode,
+                                scanUrl: `${window.location.origin}${BASE_PATH}/babycam/scan/?code=${encodeURIComponent(baby.identityCode)}`,
+                                birthDate: subject.birthDate ?? "2026-10-01",
+                                sex: subject.gender === "女" ? "female" : "male",
+                                birthOrder: baby.birthOrder ?? 0,
+                              },
+                              data.printSettings,
+                            );
+                            if (rendered.overflow) throw new Error(rendered.reasons.join("、"));
+                            return rendered.canvas.toDataURL();
+                          });
+                          setLabelImages(images);
+                          setMessage("已產生本機標籤預覽。");
+                        } catch (error) {
+                          setMessage(error instanceof Error ? error.message : "標籤預覽失敗。");
+                        }
+                      }}
+                    >
+                      產生標籤預覽
+                    </Button>
+                    {labelImages.map((src, index) => (
+                      <img key={index} src={src} alt={`寶寶 ${index + 1} 標籤預覽`} className="max-w-full rounded-lg border border-border-subtle bg-white" />
+                    ))}
+                    {labelImages.length > 0 && (
+                      <Button size="sm" onClick={() => void printWristbands(labelImages, data.printSettings.gap).catch((error: Error) => setMessage(error.message))}>
+                        <Printer className="h-3.5 w-3.5" aria-hidden="true" />
+                        列印標籤
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </>
+            }
+          />
+        )}
+
+        {active.id === "scan" && (
+          <div className="space-y-4 p-4 sm:p-5">
+            <SectionHeading no={3} title="掃碼歸位核對" description="平板可用相機 App 掃標籤再於此核對；瀏覽器相機不可用時手動輸入識別碼即可。" />
+            {caseSelector}
+            {binding && (
+              <>
+                <label className="block space-y-1.5 text-sm">
+                  應歸位的寶寶
+                  <select aria-label="應歸位的寶寶" className={input} value={expectedBabyId} onChange={(event) => setScanBaby(event.target.value)}>
+                    <option value="">請選擇</option>
+                    {binding.babies.map((baby) => (
+                      <option key={baby.babyId} value={baby.babyId}>
+                        {data.subjects.find((subject) => subject.id === baby.babyId)?.name}｜車 {baby.cartNo}｜展示短碼 {baby.identityCode}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block space-y-1.5 text-sm">
+                  掃碼結果／手動輸入識別碼
+                  <input aria-label="掃碼結果／手動輸入識別碼" className={input} value={scanCode} onChange={(event) => setScanCode(event.target.value)} />
+                </label>
+                <Button variant="primary" onClick={() => run(() => babycamActions.scan(scanCode, expectedBabyId), "身分核對通過，寶寶已歸位並結束照護。")}>
+                  核對並歸位
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── 04 後臺管理 ── */}
+        {active.id === "schedule" && (
+          <div className="space-y-4 p-4 sm:p-5">
+            <SectionHeading no={1} title="全院、受眾與同房人數" description="每筆入住自行關閉的時段仍會擋住畫面；未勾選「擋住畫面」時只影響觀看燈號。" />
+            {(["houseWindow", "internalWindow", "familyWindow"] as const).map((key) => (
+              <WindowEditor
+                key={key}
+                label={{ houseWindow: "全院總時段", internalWindow: "院內受眾時段", familyWindow: "親友受眾時段" }[key]}
+                value={data[key]}
+                onChange={(rule) => run(() => babycamActions.settings({ [key]: rule }))}
+              />
+            ))}
+            <div className="flex flex-wrap gap-4">
+              {(["enforceInternal", "enforceFamily"] as const).map((key) => (
+                <label key={key} className="flex min-h-11 items-center gap-2 text-sm">
+                  <input type="checkbox" checked={data[key]} onChange={(event) => run(() => babycamActions.settings({ [key]: event.target.checked }))} />
+                  {key === "enforceInternal" ? "院內" : "親友"}時段外擋住畫面
+                </label>
+              ))}
+            </div>
+            <label className="flex min-h-11 items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={data.concurrencyEnforced}
+                onChange={(event) => run(() => babycamActions.settings({ concurrencyEnforced: event.target.checked }))}
+              />
+              模擬同房觀看人數限制
+            </label>
+            <label className="block max-w-xs space-y-1.5 text-sm">
+              同房親友觀看上限（0＝不限）
+              <input className={input} type="number" min={0} value={data.familyLimit} onChange={(event) => run(() => babycamActions.settings({ familyLimit: Number(event.target.value) }))} />
+            </label>
+          </div>
+        )}
+
+        {active.id === "rooms" && (
+          <div className="space-y-4 p-4 sm:p-5">
+            <RoomTypeSettings data={data} />
+            <RoomSettings data={data} />
+          </div>
+        )}
+
+        {active.id === "states" && (
+          <div className="space-y-4 p-4 sm:p-5">
+            <SectionHeading no={1} title="顯示狀態維護" description="名稱可改；是否遮蔽畫面由狀態本身決定，背景圖在「狀態背景圖」頁籤設定。" />
+            {data.displayStates.map((state) => (
+              <div key={state.key} className="flex flex-wrap items-center gap-3">
+                <input
+                  aria-label={`${state.name}名稱`}
+                  className={`${input} sm:w-64`}
+                  defaultValue={state.name}
+                  onBlur={(event) => {
+                    if (event.target.value !== state.name) run(() => babycamActions.display(state.key, event.target.value));
+                  }}
+                />
+                <span
+                  className={
+                    "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold " +
+                    (state.masked ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800")
+                  }
+                >
+                  {state.masked ? "遮蔽畫面" : "正常顯示"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {active.id === "backgrounds" && (
+          <div className="p-4 sm:p-5">
+            <BackgroundSettings data={data} />
+          </div>
+        )}
+
+        {active.id === "report" && (
+          <div className="space-y-4 p-4 sm:p-5">
+            <SectionHeading no={1} title="紀錄與報表" description="觀看、照護與在鏡頭下的時間皆為模擬推算；可匯出 Excel 或 CSV。" />
+            <div className="flex flex-wrap items-end gap-2">
+              {["照護", "在鏡頭下", "觀看", ...(role === "管理者" ? ["操作"] : [])].map((item) => (
+                <Button
+                  key={item}
+                  size="sm"
+                  selected={report === item}
+                  onClick={() => {
+                    setReport(item);
+                    setReportPage(1);
+                  }}
+                >
+                  {item}
+                </Button>
+              ))}
+              <input
+                aria-label="篩選報表"
+                className={`${input} sm:w-56`}
+                placeholder="篩選房號、姓名、內容"
+                value={keyword}
+                onChange={(event) => {
+                  setKeyword(event.target.value);
+                  setReportPage(1);
+                }}
+              />
+              <label className="space-y-1 text-xs text-stone-500">
+                開始日期
+                <input
+                  aria-label="報表開始日期"
+                  type="date"
+                  className={input}
+                  value={dateFrom}
+                  onChange={(event) => {
+                    setDateFrom(event.target.value);
+                    setReportPage(1);
+                  }}
+                />
+              </label>
+              <label className="space-y-1 text-xs text-stone-500">
+                結束日期
+                <input
+                  aria-label="報表結束日期"
+                  type="date"
+                  className={input}
+                  value={dateTo}
+                  onChange={(event) => {
+                    setDateTo(event.target.value);
+                    setReportPage(1);
+                  }}
+                />
+              </label>
+              <Button
+                size="sm"
+                onClick={() =>
+                  downloadFile(
+                    "寶寶視訊報表.xlsx",
+                    toBrowserXlsx(reportHeaders, filteredRows),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                  )
+                }
+              >
+                匯出 Excel
+              </Button>
+              <Button size="sm" onClick={() => downloadFile("寶寶視訊報表.csv", toCsv(reportHeaders, filteredRows), "text/csv;charset=utf-8")}>
+                匯出 CSV
+              </Button>
+            </div>
+            <div className="overflow-x-auto rounded-xl border border-border-subtle">
+              <table className="w-full min-w-[600px] text-left text-sm">
+                <thead className="bg-surface-muted">
+                  <tr>
+                    {reportHeaders.map((item) => (
+                      <th className="p-2.5 font-semibold text-stone-600" key={item}>
+                        {item}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRows.slice((reportPage - 1) * 10, reportPage * 10).map((row, index) => (
+                    <tr key={index} className="border-t border-border-subtle">
+                      {row.map((value, cell) => (
+                        <td className="p-2.5" key={cell}>
+                          {value}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!filteredRows.length && <p className="p-6 text-center text-sm text-stone-500">沒有符合條件的紀錄。</p>}
+            </div>
+            <div className="flex items-center gap-3">
+              <Button size="sm" disabled={reportPage <= 1} onClick={() => setReportPage(reportPage - 1)}>
+                上一頁
+              </Button>
+              <span className="text-sm text-stone-600">
+                第 {reportPage} 頁，共 {filteredRows.length} 筆
+              </span>
+              <Button size="sm" disabled={reportPage * 10 >= filteredRows.length} onClick={() => setReportPage(reportPage + 1)}>
+                下一頁
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {active.id === "demo" && (
+          <div className="space-y-4 p-4 sm:p-5">
+            <SectionHeading no={1} title="展示情境控制" description="調整示範時間與影像情境，用來演示過期截圖、連線異常與離車遮蔽。" />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="space-y-1.5 text-sm">
+                台灣時間
+                <input
+                  type="datetime-local"
+                  className={input}
+                  defaultValue={data.demoAt.slice(0, 16)}
+                  onBlur={(event) => {
+                    if (event.target.value) run(() => babycamActions.settings({ demoAt: `${event.target.value}+08:00` }));
+                  }}
+                />
+              </label>
+              <label className="space-y-1.5 text-sm">
+                展示影像情境
+                <select
+                  aria-label="展示影像情境"
+                  className={input}
+                  value={data.viewScenario}
+                  onChange={(event) => run(() => babycamActions.settings({ viewScenario: event.target.value as typeof data.viewScenario }))}
+                >
+                  {[
+                    ["normal", "正常"],
+                    ["stale", "過期截圖"],
+                    ["fault", "連線異常"],
+                    ["cart-away", "嬰兒車離開鏡頭"],
+                  ].map(([key, label]) => (
+                    <option value={key} key={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {role === "管理者" && <DemoReset />}
+          </div>
+        )}
+
+        {/* ── 08 系統設定 ── */}
+        {active.id === "cameras" && (
+          <div className="space-y-4 p-4 sm:p-5">
+            <SectionHeading no={1} title={`監視器狀態（${data.cameras.length} 支）`} description="以代碼晶片挑選要檢視或維護的監視器；灰字為停用或異常。" />
+            <ZoneFilter zones={["全部", "A", "B"]} active={zone} onSelect={setZone} count={`目前 ${zoneCameras.length} 支`} />
+            <CameraChipGrid cameras={zoneCameras} selectedIds={camera ? [camera.id] : []} onToggle={(id) => setCameraId(id)} />
+            {camera && (
+              <section className={subPanel}>
+                <h3 className="text-sm font-bold text-stone-800">{camera.code} 明細</h3>
+                <div className="grid gap-2 text-sm sm:grid-cols-2">
+                  <p>設備代號：{camera.code}</p>
+                  <p>健康狀態：{camera.health}</p>
+                  <p>來源標示：{camera.sourceLabel || `展示-${camera.code}`}</p>
+                  <p>解析度：{camera.resolution || "1920×1080"}</p>
+                  <p>啟用狀態：{camera.enabled ? "啟用" : "停用"}</p>
+                  <p>最後截圖（模擬）：{taipeiTimestamp(camera.lastShotAt)}</p>
+                </div>
+                {(["internal", "family"] as const).map((audience) => {
+                  const result = effectiveViewingWindow(data, camera, audience);
+                  return (
+                    <p key={audience} className="text-sm text-stone-600">
+                      {audience === "internal" ? "院內" : "親友"}實際生效：
+                      {result.window.mode === "closed"
+                        ? "全天關閉（交集為空）"
+                        : result.window.mode === "always"
+                          ? "全天"
+                          : `${result.window.start}–${result.window.end}`}
+                      {result.truncated ? "；不連續交集已保守採較長時段" : ""}
+                    </p>
+                  );
+                })}
+                <CamPreview mode={camera.health === "異常" ? "offline" : "snapshot"} room="展示" camCode={camera.code} />
+                <CameraMetadata key={camera.id} camera={camera} />
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="flex min-h-11 items-center gap-2 text-sm">
+                    <input type="checkbox" checked={camera.enabled} onChange={(event) => run(() => babycamActions.camera(camera.id, { enabled: event.target.checked }))} />
+                    啟用監視器
+                  </label>
+                  <select
+                    aria-label="監視器健康狀態"
+                    className={`${input} sm:w-40`}
+                    value={camera.health}
+                    onChange={(event) => run(() => babycamActions.camera(camera.id, { health: event.target.value as typeof camera.health }))}
+                  >
+                    {["正常", "等待", "異常"].map((item) => (
+                      <option key={item}>{item}</option>
+                    ))}
+                  </select>
+                  <Button size="sm" onClick={() => run(() => babycamActions.camera(camera.id, { baseline: true }), "已儲存模擬正常停放基準；未啟動真實影像偵測。")}>
+                    設為正常停放基準
+                  </Button>
+                  <span className="text-xs text-stone-500">{camera.baseline ? "已設定正常停放基準" : "尚未設定基準"}</span>
+                </div>
+                <WindowEditor
+                  key={`${camera.id}-internal`}
+                  label="每機院內時段"
+                  value={camera.scheduleInternal}
+                  onChange={(rule) => run(() => babycamActions.camera(camera.id, { scheduleInternal: rule }))}
+                />
+                <WindowEditor
+                  key={`${camera.id}-family`}
+                  label="每機親友時段"
+                  value={camera.scheduleFamily}
+                  onChange={(rule) => run(() => babycamActions.camera(camera.id, { scheduleFamily: rule }))}
+                />
+              </section>
+            )}
+            {role === "管理者" && camera && <MaintenanceConsole key={camera.id} data={data} camera={camera} />}
+          </div>
+        )}
+
+        {active.id === "ringlight" && (
+          <div className="space-y-4 p-4 sm:p-5">
+            <SectionHeading no={1} title="環狀燈號看板" description="燈色由顯示狀態推導；佈線對照缺漏的監視器會標示略過。" />
+            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
+              {data.cameras.map((item) => {
+                const state = deriveDemoLight(data, item);
+                return (
+                  <div key={item.id} className="rounded-xl border border-border-subtle bg-surface-raised p-3 text-sm">
+                    <strong className="text-stone-800">{item.code}</strong>
+                    <br />
+                    {data.lightLabels[state] ?? state}
+                    <br />
+                    <span className="text-stone-500">模擬燈色：{data.lightColors[state]}</span>
+                    <br />
+                    <span className="text-xs text-stone-500">
+                      {lightChannels(item.code, data.lightColors[state])
+                        .map((channel) => `${channel.channel} ${channel.color} ${channel.enabled ? "開" : "關"}`)
+                        .join("／") || "尚無佈線對照，略過通道"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {active.id === "relay" && (
+          <div className="space-y-4 p-4 sm:p-5">
+            <SectionHeading no={1} title="繼電器通道點測（僅本機模擬）" description="不會連線院內繼電器板；請先勾選確認後才解鎖通道操作。" />
+            <label className="flex min-h-11 items-center gap-2 text-sm">
+              <input type="checkbox" checked={relayUnlocked} onChange={(event) => setRelayUnlocked(event.target.checked)} />
+              確認僅模擬，解鎖通道操作
+            </label>
+            <fieldset disabled={!relayUnlocked} className="space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <select aria-label="點測監視器" className={`${input} sm:w-44`} value={camera?.id ?? ""} onChange={(event) => setCameraId(event.target.value)}>
+                  {data.cameras.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.code}
+                    </option>
+                  ))}
+                </select>
+                <select aria-label="RGB 點測燈色" className={`${input} sm:w-40`} value={testColor} onChange={(event) => setTestColor(event.target.value)}>
+                  {["熄滅", "紅", "綠", "藍", "黃", "洋紅", "青", "白"].map((item) => (
+                    <option key={item}>{item}</option>
+                  ))}
+                </select>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    run(() => {
+                      const channels = lightChannels(camera?.code ?? "", testColor);
+                      if (!channels.length) throw new Error("此監視器沒有佈線對照，略過點測。");
+                      channels.forEach((channel) => babycamActions.relay(channel.channel, channel.enabled));
+                    })
+                  }
+                >
+                  套用 RGB 點測
+                </Button>
+                <ZoneFilter zones={["全部", "A", "B"]} active={zone} onSelect={setZone} />
+              </div>
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+                {["A", "B"]
+                  .filter((item) => zone === "全部" || zone === item)
+                  .flatMap((area) => Array.from({ length: 48 }, (_, index) => `${area}-Y${index + 1}`))
+                  .map((channel) => (
+                    <Button key={channel} size="sm" selected={!!data.relayChannels[channel]} onClick={() => run(() => babycamActions.relay(channel, !data.relayChannels[channel]))}>
+                      {channel}
+                    </Button>
+                  ))}
+              </div>
+            </fieldset>
+          </div>
+        )}
+
+        {active.id === "lightstates" && (
+          <div className="p-4 sm:p-5">
+            <LightSettings data={data} />
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
 }

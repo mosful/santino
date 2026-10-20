@@ -25,7 +25,7 @@ Next.js 16 與訓練資料中的版本有破壞性差異 —— **寫任何程�
 | Store | 職責 |
 |-------|------|
 | `phaseStore` | 功能分期顯示；未開放模組以 `phase` 隱藏選單 |
-| `roleStore`／`permissions` | 三大角色（櫃臺／衛教師／阿長＋護理同仁）權限 |
+| `roleStore`／`permissions` | 五角色（櫃台／衛教師/護理師/護理長/管理者）權限；**只有 edit／none 兩階，沒有「唯讀」**——沒權限的功能一律從選單與頁籤拿掉，不是顯示後改唯讀 |
 | `authStore` | 登入狀態 |
 | `signatureStore` | 簽名一次多處帶入 |
 | `windowLockStore`／`useMultiWindowManager` | 多視窗並行＋簽名步驟鎖房防呆 |
@@ -34,7 +34,15 @@ Next.js 16 與訓練資料中的版本有破壞性差異 —— **寫任何程�
 
 ## 路由即模組
 
-`src/app/` 下各路由對應 15 大模組：`mama`／`baby`／`babycam`／`room`／`customer`／`doctor`／`care`／`kpi`／`meal`／`hr`／`contract`／`course`／`line`／`admin`，另有 `login`／`view`。
+`src/app/` 下各路由對應各模組：`todo`（待辦，選單第一項）／`mama`／`baby`／`babycam`／`customer`／`doctor`／`care`／`kpi`／`meal`／`hr`／`contract`／`course`／`line`／`admin`／`cases`，另有 `login`／`forgot-password`／`view`。**沒有 `room` 路由**（房況收回首頁總覽）；`/cases/calendar` 僅保留舊連結，實際轉導 `/todo`。
+
+## 按鈕樣式只有一個來源
+
+所有按鈕一律用 `components/ui/Button`（元件 `<Button>`／`<ButtonLink>`，或樣式函式 `buttonStyles()`，後者在 `components/ui/buttonStyles.ts`，**沒有 `"use client"`，Server Component 也能呼叫**）。
+
+- **不要**再寫 `const button = "min-h-12 rounded-lg border ..."` 這類區域複本。曾經有 12 份互不一致的複本，造成實際回報的三個缺陷：高度不一致、hover 後整顆變白看不見、文字沒有垂直置中。
+- 「選取中」的分頁／篩選鈕用 `selected` 旗標，**不要**自己疊 `bg-brand-600 text-white`：Tailwind 的 hover 變體排在基礎工具類之後，hover 時底色會被基底的 `hover:bg-stone-100` 蓋掉而文字仍是白的。
+- 尺寸只有 `sm`／`md`／`lg` 三階（36／40／48 px，觸控環境由 `globals.css` 的 `.btn-sm/md/lg` 整體上推），不要用 `!min-h-*` 硬調。
 
 ## 完成定義
 

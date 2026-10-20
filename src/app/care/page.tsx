@@ -42,7 +42,7 @@ function ContactReminderTab({ note }: { note?: string }) {
         <select aria-label="關懷分類" name="care-category" className="rounded border border-stone-200 px-2 py-1.5">
           <option>分類：全部</option>
         </select>
-        <DemoActionButton feedback={`查詢完成，共 ${SAMPLE.length} 筆關懷紀錄`} className="rounded bg-brand-600 px-3 py-1.5 text-white">查詢</DemoActionButton>
+        <DemoActionButton feedback={`查詢完成，共 ${SAMPLE.length} 筆關懷紀錄`} variant="primary">查詢</DemoActionButton>
       </div>
       <EditableList moduleNo="7" fields={reminderFields} initialRows={SAMPLE} searchPlaceholder="孕媽姓名" />
       {note && <p className="text-xs text-stone-400">{note}</p>}

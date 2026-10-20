@@ -4,9 +4,11 @@ import { useState } from "react";
 import { babycamActions, canBabycamSection } from "@/lib/babycam/actions";
 import { initialDemoScenario, type DemoScenarioAction } from "@/lib/babycam/demo-scenario";
 import type { CameraRecord, DemoDomain } from "@/lib/domain/types";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
-const button = "min-h-12 rounded-lg border border-stone-300 px-3 py-2 text-sm";
+// 按鈕樣式一律取自 components/ui/Button，不在此另開複本（見該檔開頭說明）。
+const button = buttonStyles();
 
 export default function MaintenanceConsole({ data, camera }: { data: DemoDomain; camera: CameraRecord }) {
   const state = data.demoScenarios[camera.id] ?? initialDemoScenario();

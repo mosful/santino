@@ -25,6 +25,7 @@ import {
 import { useJourneyMothers } from "@/lib/domain/legacySelectors";
 import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
 import OperationsOverview from "./OperationsOverview";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 type QuickView = "overdue" | "today" | "staying" | "moving";
 
@@ -320,7 +321,7 @@ export default function JourneyDashboard() {
                 <div className="space-y-2">
                   {(notes[detailMother.id] ?? []).map((note, index) => <div key={`${note}-${index}`} className="rounded-xl bg-brand-50 px-3 py-2 text-sm text-stone-600">剛剛・{note}</div>)}
                   <textarea value={noteDraft} onChange={(event) => setNoteDraft(event.target.value)} placeholder="輸入本次聯繫、異常或交接內容…" className="w-full rounded-xl border border-stone-200 p-3 text-sm focus:border-brand-300" />
-                  <button type="button" onClick={addNote} disabled={!noteDraft.trim()} className="w-full rounded-xl bg-brand-600 px-3 py-2 text-sm font-medium text-white">新增追蹤紀錄</button>
+                  <button type="button" onClick={addNote} disabled={!noteDraft.trim()} className={buttonStyles({ variant: "primary", fullWidth: true, className: "rounded-xl" })}>新增追蹤紀錄</button>
                 </div>
               </div>
             </div>
@@ -328,8 +329,8 @@ export default function JourneyDashboard() {
             <div className="flex flex-col-reverse gap-2 border-t border-stone-100 pt-4 sm:flex-row sm:justify-between">
               <Link href={`/cases/detail/?id=${encodeURIComponent(domain.cases.find((item) => item.legacyId === detailMother.id)?.id ?? "")}`} className="flex items-center justify-center rounded-xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600">前往完整案件流程</Link>
               <div className="flex flex-col gap-2 sm:flex-row">
-                <button type="button" onClick={completeTask} className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">完成本次待辦</button>
-                {JOURNEY_STAGES.findIndex((stage) => stage.key === detailMother.stage) < JOURNEY_STAGES.length - 1 && <button type="button" onClick={advanceStage} className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-medium text-white">移至下一階段</button>}
+                <button type="button" onClick={completeTask} className={buttonStyles({ variant: "success", className: "rounded-xl" })}>完成本次待辦</button>
+                {JOURNEY_STAGES.findIndex((stage) => stage.key === detailMother.stage) < JOURNEY_STAGES.length - 1 && <button type="button" onClick={advanceStage} className={buttonStyles({ variant: "primary", className: "rounded-xl" })}>移至下一階段</button>}
               </div>
             </div>
           </div>

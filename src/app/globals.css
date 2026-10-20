@@ -247,14 +247,29 @@ main#main-content > :where(div) {
 
 /* 觸控友善：按鈕/表單元件最小尺寸符合行動裝置點擊標準（約44px） */
 @layer base {
-  button:not([role="switch"]) {
+  button {
     cursor: pointer;
-    min-height: 2.5rem;
     touch-action: manipulation;
   }
-  button[role="switch"] {
-    cursor: pointer;
-    touch-action: manipulation;
+  /*
+    全域按鈕正規化。
+
+    ⚠️ 這三行是「文字沒有垂直置中」的解法，不要拿掉：原生 button 只有在
+    「單一匿名文字節點」時才會自己置中；一旦內部出現 <span>／<svg>／多個子節點
+    （專案裡絕大多數按鈕都是），內容就會靠上黏在 padding 邊緣。
+    統一改為 inline-flex 置中後，min-height 與 padding 再怎麼配都不會歪。
+    注意要排除 role="switch"（Switch 元件自己用 absolute 定位滑塊）。
+  */
+  button:not([role="switch"]) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* 沒有套 .btn 的原生按鈕（表格內嵌控制項、純圖示鈕）仍保住最小點擊區；
+     套了 .btn 的由元件給固定 height，不能再被 min-height 撐大，否則 sm/md/lg
+     三階在平板上會被壓成同一個高度——那正是「按鈕高度不一致」的來源之一。 */
+  button:not([role="switch"]):not(.btn) {
+    min-height: 2.5rem;
   }
   button:disabled {
     cursor: not-allowed;
@@ -415,11 +430,24 @@ main#main-content > :where(div) {
   }
 }
 
+/* ── 統一按鈕尺寸階梯（搭配 components/ui/Button.tsx） ──────────────
+   .btn-sm/md/lg 刻意寫在 @layer 之外：未分層的規則在 CSS 階層中勝過
+   Tailwind 的 utilities 層，才壓得住元件自帶的 h-9/h-10/h-12，
+   讓觸控環境能整體抬高而不必在 TSX 裡分岔寫兩套尺寸。 */
+.btn > svg,
+.btn > img {
+  flex-shrink: 0;
+}
+
 @media (pointer: coarse), (max-width: 767px) {
-  button:not([role="switch"]),
-  a[href] {
+  button:not([role="switch"]):not(.btn),
+  a[href]:not(.btn) {
     min-height: 2.75rem;
   }
+  /* 觸控：v24 §2 要求按鈕 48px；小尺寸鈕也抬到 44px 以上。 */
+  .btn-sm { height: 2.75rem; }
+  .btn-md { height: 3rem; }
+  .btn-lg { height: 3.25rem; }
 }
 
 @media (pointer: fine) {
@@ -433,9 +461,13 @@ main#main-content > :where(div) {
 
 @media (min-width: 768px) and (max-width: 1023px),
   (min-width: 768px) and (max-width: 1366px) and (hover: none) and (pointer: coarse) {
-  button:not([role="switch"]) {
+  button:not([role="switch"]):not(.btn) {
     min-height: 2.75rem;
   }
+
+  .btn-sm { height: 2.75rem; }
+  .btn-md { height: 3rem; }
+  .btn-lg { height: 3.25rem; }
 
   input,
   select {

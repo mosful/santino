@@ -5,6 +5,7 @@ import Switch from "@/components/ui/Switch";
 import Badge from "@/components/ui/Badge";
 import { domainStore, useDomainStore } from "@/lib/demo/domainStore";
 import { contractSettingActions } from "@/lib/domain/contractSettings";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 type Template = {
   id: number;
@@ -68,7 +69,7 @@ export default function ContractTemplates() {
           ))}
         </tbody>
       </table>
-      <button type="button" onClick={addTemplate} className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">＋ 新增範本版本</button>
+      <button type="button" onClick={addTemplate} className={buttonStyles({ variant: "danger", size: "sm" })}>＋ 新增範本版本</button>
 
       {editing && (
         <div className="rounded border border-stone-200 p-3">

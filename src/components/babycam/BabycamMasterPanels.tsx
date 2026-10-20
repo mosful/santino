@@ -7,9 +7,11 @@ import { DEFAULT_PRINT_SETTINGS, type PrintSettings } from "@/lib/babycam/wristb
 import type { CameraRecord, DemoDomain } from "@/lib/domain/types";
 import { ROLES } from "@/lib/permissions";
 import LocalMedia from "./LocalMedia";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
-const button = "min-h-12 rounded-lg border border-stone-300 px-3 py-2 text-sm hover:bg-stone-100";
+// 按鈕樣式一律取自 components/ui/Button，不在此另開複本（見該檔開頭說明）。
+const button = buttonStyles();
 const panel = "space-y-4 rounded-xl border border-stone-200 bg-white p-4";
 
 export function CameraMetadata({ camera }: { camera: CameraRecord }) {

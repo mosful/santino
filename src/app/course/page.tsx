@@ -63,8 +63,8 @@ function CourseRegistrationTab() {
         </div>
       ))}
       <div className="flex gap-2 text-xs">
-        <DemoActionButton feedback="已建立團體課程草稿" className="rounded bg-stone-100 px-3 py-1.5">＋新增團課</DemoActionButton>
-        <DemoActionButton feedback="已開啟自費課程報名流程（Demo 模式）" className="rounded bg-stone-100 px-3 py-1.5">自費報名</DemoActionButton>
+        <DemoActionButton feedback="已建立團體課程草稿" variant="subtle">＋新增團課</DemoActionButton>
+        <DemoActionButton feedback="已開啟自費課程報名流程（Demo 模式）" variant="subtle">自費報名</DemoActionButton>
       </div>
     </div>
   );
@@ -90,7 +90,7 @@ function CourseActivityTab() {
       {["新生兒沐浴實作", "爸爸育兒體驗日"].map((name, index) => (
         <div key={name} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 p-3">
           <div><div className="font-medium text-stone-700">{name}</div><div className="text-xs text-stone-400">{index === 0 ? "09/18 14:00・親子活動室" : "09/21 10:00・多功能教室"}</div></div>
-          <DemoActionButton feedback={`已開啟「${name}」活動名單`} className="rounded bg-stone-100 px-3 py-1.5 text-xs">查看名單</DemoActionButton>
+          <DemoActionButton feedback={`已開啟「${name}」活動名單`} variant="subtle" size="sm">查看名單</DemoActionButton>
         </div>
       ))}
     </div>

@@ -13,6 +13,7 @@ import { type Customer } from "@/lib/mock/customer";
 import { useCustomerRows } from "@/lib/domain/legacySelectors";
 import { caseActions, domainStore } from "@/lib/demo/domainStore";
 import DemoActionButton from "@/components/ui/DemoActionButton";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 const columns: Column<Customer>[] = [
   { key: "name", label: "媽媽姓名" },
@@ -107,7 +108,7 @@ function DetailTabs({
               <Field label="通訊地址" value="（欄位範例，未填）" />
               <Field label="LINE ID" value="（供14.會員綁定比對）" />
               <div className="col-span-2">
-                <DemoActionButton feedback="WebApp 綁定邀請已建立（Demo 模式，未發送真實訊息）" className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">
+                <DemoActionButton feedback="WebApp 綁定邀請已建立（Demo 模式，未發送真實訊息）" variant="danger" size="sm">
                   綁定WebApp登入帳號
                 </DemoActionButton>
               </div>
@@ -147,7 +148,7 @@ function DetailTabs({
                     </Link>
                   </div>
                 ) : (
-                  <DemoActionButton feedback="已建立待簽約資料，請至「12. 合約管理」接續處理" className="rounded bg-brand-600 px-3 py-1.5 text-xs text-white">
+                  <DemoActionButton feedback="已建立待簽約資料，請至「12. 合約管理」接續處理" variant="primary" size="sm">
                     轉入簽約資料 → 12.合約管理
                   </DemoActionButton>
                 )}
@@ -253,7 +254,7 @@ export default function CustomerPage() {
             <DemoActionButton feedback="空白預約參觀單列印預覽已開啟" onClick={() => window.print()} className="rounded bg-stone-100 px-3 py-1.5">空白預約參觀單</DemoActionButton>
             <DemoActionButton feedback="空白契約書列印預覽已開啟" onClick={() => window.print()} className="rounded bg-stone-100 px-3 py-1.5">空白契約書</DemoActionButton>
             {canEdit && (
-              <button onClick={openAdd} className="rounded bg-rose-500 px-3 py-1.5 font-medium text-white">
+              <button onClick={openAdd} className={buttonStyles({ variant: "danger", size: "sm" })}>
                 ＋ 新增客戶
               </button>
             )}
@@ -274,16 +275,16 @@ export default function CustomerPage() {
               <div className="flex justify-end gap-2">
                 {editing ? (
                   <>
-                    <button onClick={cancelEdit} className="rounded-lg bg-stone-100 px-3 py-1.5 text-xs">
+                    <button onClick={cancelEdit} className={buttonStyles({ variant: "subtle", size: "sm" })}>
                       取消
                     </button>
-                    <button onClick={save} className="rounded-lg bg-rose-500 px-3 py-1.5 text-xs text-white">
+                    <button onClick={save} className={buttonStyles({ variant: "danger", size: "sm" })}>
                       儲存
                     </button>
                   </>
                 ) : (
                   <>
-                    <button onClick={startEdit} className="rounded-lg bg-stone-100 px-3 py-1.5 text-xs">
+                    <button onClick={startEdit} className={buttonStyles({ variant: "subtle", size: "sm" })}>
                       編輯
                     </button>
                     <button
@@ -311,7 +312,7 @@ export default function CustomerPage() {
           <button onClick={() => setConfirmDelete(false)} className="rounded-lg bg-stone-100 px-4 py-2 text-xs">
             取消
           </button>
-          <button onClick={remove} className="rounded-lg bg-rose-600 px-4 py-2 text-xs text-white">
+          <button onClick={remove} className={buttonStyles({ variant: "danger", size: "sm" })}>
             確定刪除
           </button>
         </div>

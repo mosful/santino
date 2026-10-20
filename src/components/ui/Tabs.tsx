@@ -33,7 +33,7 @@ export default function Tabs({
               "shrink-0 rounded-lg px-3.5 py-1.5 text-sm font-medium transition-[color,background-color,box-shadow] sm:px-4 " +
               (t.key === active
                 ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm shadow-brand-200"
-                : "text-stone-500 hover:bg-white hover:text-stone-800")
+                : "text-stone-600 hover:bg-surface-raised hover:text-brand-700 hover:shadow-2xs")
             }
           >
             {t.label}

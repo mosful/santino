@@ -5,6 +5,7 @@ import Badge from "@/components/ui/Badge";
 import LegacyCaseScope from "@/components/cases/LegacyCaseScope";
 import { caseActions } from "@/lib/demo/domainStore";
 import type { CaseRecord } from "@/lib/domain/types";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 export default function ContractChangeOrder() { return <LegacyCaseScope filter="signed">{(record) => <ChangePanel key={record.id} record={record} />}</LegacyCaseScope>; }
 function ChangePanel({ record }: { record: CaseRecord }) {
@@ -58,7 +59,7 @@ function ChangePanel({ record }: { record: CaseRecord }) {
         </div>
         <div className="mt-2 flex justify-end">
           <label className="mb-3 block text-xs">變更詳細原因<input aria-label="變更詳細原因" value={detail} onChange={(event) => setDetail(event.target.value)} className="mt-1 w-full rounded border border-stone-200 px-2 py-1.5" /></label>
-          <button onClick={submit} className="rounded bg-rose-500 px-3 py-1.5 text-xs text-white">
+          <button onClick={submit} className={buttonStyles({ variant: "danger", size: "sm" })}>
             確認變更（自動留log）
           </button>
         </div>

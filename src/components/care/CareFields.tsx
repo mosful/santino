@@ -5,9 +5,11 @@ import { readCarePhoto, saveCarePhoto } from "@/lib/care/media";
 import type { CareField, CareValues } from "@/lib/care/types";
 import styles from "./CareWorkspace.module.css";
 import { usePhraseLibrary } from "@/hooks/usePhraseLibrary";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 export const inputClass = "w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm disabled:bg-stone-100";
-export const buttonClass = "inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm hover:bg-stone-100 disabled:cursor-not-allowed disabled:opacity-40";
+/** 照護模組沿用的按鈕樣式；實作在 components/ui/Button，這裡只是再匯出。 */
+export const buttonClass = buttonStyles();
 export const valueText = (value: string | string[] | undefined) => Array.isArray(value) ? value.join("、") : value ?? "";
 
 function PhotoField({ id, label, onChange }: { id: string; label: string; onChange: (value: string) => void }) {

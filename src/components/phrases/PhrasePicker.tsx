@@ -68,7 +68,7 @@ export default function PhrasePicker({ onInsert }: { onInsert: (text: string) =>
                     onInsert(p.text);
                     setOpen(false);
                   }}
-                  className="w-full rounded-xl border border-transparent p-2.5 text-left text-sm transition-colors hover:border-brand-200 hover:bg-brand-50 active:scale-[0.98]"
+                  className="flex w-full flex-col items-stretch rounded-xl border border-transparent p-2.5 text-left text-sm transition-colors hover:border-brand-200 hover:bg-brand-50 active:scale-[0.98]"
                 >
                   <div className="mb-1 flex flex-wrap gap-1">
                     <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">

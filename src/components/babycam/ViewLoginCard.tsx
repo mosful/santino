@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Baby, ShieldCheck } from "lucide-react";
 import type { DemoAccount } from "@/lib/mock/babycam";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 /**
  * 媽媽端／親友端共用的登入卡。
@@ -83,7 +84,7 @@ export default function ViewLoginCard({
 
         <button
           type="submit"
-          className="w-full rounded-lg bg-gradient-to-r from-brand-500 to-brand-400 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+          className={buttonStyles({ variant: "primary", fullWidth: true, className: "bg-gradient-to-r from-brand-500 to-brand-400 shadow-sm shadow-brand-200 hover:from-brand-600 hover:to-brand-500 active:scale-[0.98]" })}
         >
           進入觀看
         </button>

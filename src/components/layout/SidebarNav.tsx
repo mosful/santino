@@ -7,7 +7,7 @@ import { ChevronDown } from "lucide-react";
 import { MODULES } from "@/lib/modules";
 import { MODULE_ICONS } from "./icons";
 import { useCurrentRole } from "@/lib/roleStore";
-import { getAccess } from "@/lib/permissions";
+import { canEditAdminSetting, getAccess } from "@/lib/permissions";
 import { useEnabledPhase } from "@/lib/phaseStore";
 import { useDashboardLayout } from "@/lib/dashboardLayoutStore";
 
@@ -34,11 +34,16 @@ export default function SidebarNav({
           m.href === "/"
             ? pathname === "/"
             : pathname === m.href || pathname.startsWith(m.href + "/");
-        const access = getAccess(role, m.no);
         const isExpanded = expanded === m.no;
+        // 子項過濾：未開放的分期不列；後台「系統設定」類（🔒）只有管理者看得到——
+        // 依客戶要求，沒有權限的項目直接不出現在選單，不做「看得到但不能改」。
         const visibleSubItems = m.no === "1" && dashboardLayout === "journey"
           ? []
-          : m.subItems?.filter((item) => (item.phase ?? m.phase) <= enabledPhase);
+          : m.subItems?.filter(
+              (item) =>
+                (item.phase ?? m.phase) <= enabledPhase &&
+                (!item.adminGroup || canEditAdminSetting(role, item.adminGroup)),
+            );
 
         return (
           <div key={m.no}>
@@ -65,16 +70,6 @@ export default function SidebarNav({
                 {!collapsed && (
                   <>
                     <span className="flex-1 truncate">{m.label}</span>
-                    {access === "view" && (
-                      <span
-                        className={
-                          "shrink-0 rounded-full px-1.5 py-0.5 text-[10px] " +
-                          (active ? "bg-white/20 text-white" : "bg-stone-100 text-stone-400")
-                        }
-                      >
-                        唯讀
-                      </span>
-                    )}
                     {!!visibleSubItems?.length && (
                       <ChevronDown
                         className={"h-3.5 w-3.5 shrink-0 transition-transform " + (isExpanded ? "rotate-180" : "")}

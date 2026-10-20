@@ -1,5 +1,14 @@
 .workspace { color: var(--foreground); min-width: 0; }
 .workspace button, .workspace input, .workspace select { min-height: 48px; }
+/* 護理表單以 iPad 為主，點擊目標整體放大到 48px。
+   ⚠️ 但 .btn（components/ui/Button）自己帶固定 height，用 min-height 壓過去會讓
+   sm／md／lg 三階在護理頁全部變成同一高度——那正是「全站按鈕高度不一致」的另一面。
+   因此這裡改成「整體上推一階」，而不是把所有按鈕壓平。
+   類別名以 :global 標出，CSS Modules 才不會把它們雜湊掉。 */
+.workspace :global(.btn) { min-height: 0; }
+.workspace :global(.btn-sm) { height: 40px; }
+.workspace :global(.btn-md) { height: 48px; }
+.workspace :global(.btn-lg) { height: 52px; }
 .workspace input:not([type="checkbox"]):not([type="radio"]), .workspace select { min-height: 50px; }
 .workspace input[type="checkbox"] { min-height: 20px; width: 20px; height: 20px; flex-shrink: 0; }
 .workspace textarea { min-height: 112px; }

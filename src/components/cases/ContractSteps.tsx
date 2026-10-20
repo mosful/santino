@@ -4,9 +4,11 @@ import { useState } from "react";
 import type { CaseRecord } from "@/lib/domain/types";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { freeDays, gifts } from "@/lib/domain/rules";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
-const button = "min-h-12 rounded-lg border border-stone-300 px-3 py-2 text-sm disabled:opacity-40";
+// 按鈕樣式一律取自 components/ui/Button，不在此另開複本（見該檔開頭說明）。
+const button = buttonStyles();
 const steps = ["基本資料", "套餐與加購", "審閱期與入住日", "簽名", "產生合約"];
 
 export default function ContractSteps({ record, onChange, onSign, readOnly = false }: { readOnly?: boolean; record: CaseRecord; onChange: (patch: Partial<CaseRecord>) => void; onSign: () => void }) {
@@ -17,7 +19,7 @@ export default function ContractSteps({ record, onChange, onSign, readOnly = fal
   function updateDetails(patch: Partial<NonNullable<CaseRecord["customerDetails"]>>) { onChange({ customerDetails: { ...details, ...patch } }); }
   function toggle(item: string) { const current = record.addOns ?? []; onChange({ addOns: current.includes(item) ? current.filter((entry) => entry !== item) : [...current, item] }); }
   return <div className="space-y-4 sm:col-span-2">
-    <nav aria-label="合約五步驟" className="flex flex-wrap gap-2">{steps.map((label, index) => <button type="button" key={label} aria-current={step === index ? "step" : undefined} className={`${button} ${step === index ? "bg-brand-600 text-white" : ""}`} onClick={() => setStep(index)}>{index + 1}. {label}</button>)}</nav>
+    <nav aria-label="合約五步驟" className="flex flex-wrap gap-2">{steps.map((label, index) => <button type="button" key={label} aria-current={step === index ? "step" : undefined} className={buttonStyles({ selected: step === index })} onClick={() => setStep(index)}>{index + 1}. {label}</button>)}</nav>
     <h3 className="font-semibold">{steps[step]}</h3>
     <fieldset disabled={readOnly} className="space-y-4">
     {step === 0 && <div className="grid gap-3 text-sm sm:grid-cols-2"><label>媽媽姓名<input className={input} value={record.name} onChange={(event) => onChange({ name: event.target.value })} /></label><label>聯絡電話<input className={input} value={record.phone} onChange={(event) => onChange({ phone: event.target.value })} /></label><label>身分證字號<input className={input} value={record.idNo} onChange={(event) => onChange({ idNo: event.target.value })} /></label><label>預產期<input type="date" className={input} value={record.dueDate} onChange={(event) => onChange({ dueDate: event.target.value })} /></label><label>生產醫院<input className={input} value={record.hospital} onChange={(event) => onChange({ hospital: event.target.value })} /></label><label>預計生產方式<select className={input} value={record.deliveryMethod} onChange={(event) => onChange({ deliveryMethod: event.target.value })}><option>自然產</option><option>剖腹產</option><option>未定</option></select></label><label className="sm:col-span-2">通訊地址<input className={input} value={details.address ?? ""} onChange={(event) => updateDetails({ address: event.target.value })} /></label><label>緊急聯絡人<input className={input} value={details.emergencyContact ?? ""} onChange={(event) => updateDetails({ emergencyContact: event.target.value })} /></label><label>關係<input className={input} value={details.emergencyRelation ?? ""} onChange={(event) => updateDetails({ emergencyRelation: event.target.value })} /></label><label>聯絡人手機<input className={input} value={details.emergencyPhone ?? ""} onChange={(event) => updateDetails({ emergencyPhone: event.target.value })} /></label><label>陪宿者<input className={input} value={details.companion ?? ""} onChange={(event) => updateDetails({ companion: event.target.value })} /></label><label>24 小時親子同室<select className={input} value={details.roomingIn ?? "否（嬰兒室照護）"} onChange={(event) => updateDetails({ roomingIn: event.target.value })}><option>否（嬰兒室照護）</option><option>是</option></select></label><label>餐飲摘要<input className={input} value={details.mealSummary ?? "媽媽 1 人・標準月子餐"} onChange={(event) => updateDetails({ mealSummary: event.target.value })} /></label><p className="sm:col-span-2">合約編號＝收字號：{record.contractNo || "尚未建立"}</p></div>}

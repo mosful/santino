@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { login } from "@/lib/authStore";
 import { pageTitle } from "@/lib/usePageTitle";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -63,7 +64,7 @@ export default function LoginPage() {
           {error && <p className="text-xs text-rose-500">{error}</p>}
           <button
             type="submit"
-            className="w-full rounded-lg bg-gradient-to-r from-brand-500 to-brand-400 px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-brand-200 transition-[transform,box-shadow] hover:shadow-md active:scale-[0.98]"
+            className={buttonStyles({ variant: "primary", fullWidth: true, className: "bg-gradient-to-r from-brand-500 to-brand-400 shadow-sm shadow-brand-200 hover:from-brand-600 hover:to-brand-500 active:scale-[0.98]" })}
           >
             登入
           </button>

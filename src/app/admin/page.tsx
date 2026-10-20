@@ -21,6 +21,7 @@ import AssessmentFormSettings from "./tabs/AssessmentFormSettings";
 import KpiRuleSettings from "./tabs/KpiRuleSettings";
 import { canEditAdminSetting } from "@/lib/permissions";
 import { useCurrentRole } from "@/lib/roleStore";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 const simpleFields: FieldSchema[] = [
   { key: "name", label: "名稱" },
@@ -103,7 +104,7 @@ function PendingEntry({ title, detail, href, hrefLabel }: { title: string; detai
     <div className="max-w-3xl space-y-3">
       <PlaceholderNotice text={`${title}：依 v24 規格為後台入口，本階段尚未製作維護畫面。`} />
       <p className="text-sm leading-6 text-stone-600">{detail}</p>
-      <Link href={href} className="inline-flex min-h-10 items-center rounded-lg border border-border-subtle px-3 text-sm font-medium text-stone-600 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600">
+      <Link href={href} className={buttonStyles()}>
         {hrefLabel}
       </Link>
     </div>
@@ -119,11 +120,17 @@ export default function AdminPage() {
       <RequireAccess moduleNo="15">
       <PageHeader title="15. 後台管理" moduleNo="15" />
       <TabsFromUrl
+        // 依客戶要求：沒有權限的後台項目直接不顯示（不是顯示後改唯讀）。
+        // 🔒 四項為 v24 §10 的「系統設定」類，只有管理者看得到。
         tabs={[
-          { key: "master", label: "基礎主檔設定 🔒", content: <MasterDataTab canEdit={canEditSystem} /> },
-          { key: "staff", label: "人員與權限 🔒", content: <StaffPermissionSettings /> },
-          { key: "forms", label: "表單與欄位設定 🔒", content: <AssessmentFormSettings /> },
-          { key: "qrcode", label: "QR Code 管理 🔒", content: <QrCardPanel /> },
+          ...(canEditSystem
+            ? [
+                { key: "master", label: "基礎主檔設定 🔒", content: <MasterDataTab canEdit={canEditSystem} /> },
+                { key: "staff", label: "人員與權限 🔒", content: <StaffPermissionSettings /> },
+                { key: "forms", label: "表單與欄位設定 🔒", content: <AssessmentFormSettings /> },
+                { key: "qrcode", label: "QR Code 管理 🔒", content: <QrCardPanel /> },
+              ]
+            : []),
           { key: "package", label: "套餐與贈品規則", content: <PendingEntry title="套餐與贈品規則" detail="房型 × 天數 × 生產院所 × 價格身分的定價表、贈天數與贈課程門檻，目前寫在程式內的示範值。待取得客戶實際定價 Excel 後改為此處維護。" href="/cases/" hrefLabel="先到案件流程看套餐快速試算" /> },
           { key: "contract-version", label: "合約版本管理", content: <PendingEntry title="合約版本管理" detail="合約條文版本（啟用中／停用）與合約範本的維護入口。改條文一律開新版，不影響已簽署合約。目前可於合約模組內檢視。" href="/contract/?tab=terms" hrefLabel="前往合約條款檢視" /> },
           { key: "phrases", label: "片語庫管理", content: <PhraseLibrarySettings /> },

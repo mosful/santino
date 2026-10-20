@@ -7,9 +7,11 @@ import { useCurrentRole } from "@/lib/roleStore";
 import { saveCarePhoto } from "@/lib/care/media";
 import type { CaseRecord } from "@/lib/domain/types";
 import LocalMedia from "../babycam/LocalMedia";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
-const button = "min-h-12 rounded-lg border border-stone-300 px-3 py-2 text-sm disabled:opacity-40";
+// 按鈕樣式一律取自 components/ui/Button，不在此另開複本（見該檔開頭說明）。
+const button = buttonStyles();
 
 export function DailyLedger({ record, editable }: { record: CaseRecord; editable: boolean }) {
   const role = useCurrentRole();

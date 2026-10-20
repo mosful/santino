@@ -6,6 +6,7 @@ import Modal from "./Modal";
 import { useSessionSignature, setSessionSignature } from "@/lib/signatureStore";
 import { useCurrentRole } from "@/lib/roleStore";
 import { ROLE_PROFILE } from "@/lib/permissions";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 /**
  * 簽名可重複應用（總則#4）：本次登入session簽過一次後，其餘簽名欄位自動帶入同一份簽名，
@@ -62,7 +63,7 @@ export default function SignatureBox({
           <img src={signature} alt="已簽署的簽名影像" width={240} height={64} className="h-16 w-auto rounded border border-stone-100 bg-white" />
           <div className="flex flex-col gap-1 text-xs">
             <span className="text-stone-400">已套用本次登入簽名</span>
-            <button type="button" onClick={openSignature} className="text-left text-brand-500 underline">
+            <button type="button" onClick={openSignature} className={buttonStyles({ variant: "link", size: "sm" })}>
               重新簽名
             </button>
           </div>

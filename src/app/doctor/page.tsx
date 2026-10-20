@@ -55,7 +55,7 @@ function DeptTab({ showTcmConsent }: { showTcmConsent?: boolean } = {}) {
         <input aria-label="巡診查詢開始日期" name="doctor-start-date" type="date" className="rounded border border-stone-200 px-2 py-1.5" />
         <span>～</span>
         <input aria-label="巡診查詢結束日期" name="doctor-end-date" type="date" className="rounded border border-stone-200 px-2 py-1.5" />
-        <DemoActionButton feedback={`查詢完成，共 ${SAMPLE.length} 筆巡診統計`} className="rounded bg-brand-600 px-3 py-1.5 text-white">查詢</DemoActionButton>
+        <DemoActionButton feedback={`查詢完成，共 ${SAMPLE.length} 筆巡診統計`} variant="primary">查詢</DemoActionButton>
       </div>
       <EditableList moduleNo="6" fields={doctorFields} initialRows={SAMPLE} searchPlaceholder="醫師姓名" />
       {showTcmConsent && (

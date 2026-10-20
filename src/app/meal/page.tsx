@@ -124,7 +124,7 @@ function RestrictionStatsTab() {
 function MenuPublishTab() {
   return (
     <div className="space-y-3 text-sm">
-      {["09/14～09/20 秋季調養菜單", "09/21～09/27 產後修復菜單"].map((name, index) => <div key={name} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 p-3"><div><div className="font-medium text-stone-700">{name}</div><div className="text-xs text-stone-400">{index === 0 ? "已發佈至住客 WebApp" : "草稿・待營養師確認"}</div></div><DemoActionButton feedback={index === 0 ? "已開啟菜單預覽" : "菜單草稿已送交確認"} className="rounded bg-stone-100 px-3 py-1.5 text-xs">{index === 0 ? "預覽" : "送交確認"}</DemoActionButton></div>)}
+      {["09/14～09/20 秋季調養菜單", "09/21～09/27 產後修復菜單"].map((name, index) => <div key={name} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 p-3"><div><div className="font-medium text-stone-700">{name}</div><div className="text-xs text-stone-400">{index === 0 ? "已發佈至住客 WebApp" : "草稿・待營養師確認"}</div></div><DemoActionButton feedback={index === 0 ? "已開啟菜單預覽" : "菜單草稿已送交確認"} variant="subtle" size="sm">{index === 0 ? "預覽" : "送交確認"}</DemoActionButton></div>)}
     </div>
   );
 }

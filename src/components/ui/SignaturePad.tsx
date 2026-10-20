@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 export default function SignaturePad({
   onConfirm,
@@ -78,18 +79,18 @@ export default function SignaturePad({
         style={{ height: 140 }}
       />
       <div className="flex justify-between gap-2">
-        <button type="button" onClick={handleClear} className="rounded-lg bg-stone-100 px-3 py-1.5 text-xs">
+        <button type="button" onClick={handleClear} className={buttonStyles({ variant: "subtle", size: "sm" })}>
           清除
         </button>
         <div className="flex gap-2">
-          <button type="button" onClick={onCancel} className="rounded-lg bg-stone-100 px-3 py-1.5 text-xs">
+          <button type="button" onClick={onCancel} className={buttonStyles({ variant: "subtle", size: "sm" })}>
             取消
           </button>
           <button
             type="button"
             onClick={handleConfirm}
             disabled={!hasDrawn}
-            className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs text-white disabled:cursor-not-allowed disabled:opacity-40"
+            className={buttonStyles({ variant: "primary", size: "sm" })}
           >
             確認簽名
           </button>

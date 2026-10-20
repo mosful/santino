@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Eye, Minus } from "lucide-react";
+import { Check, Minus } from "lucide-react";
 import { babycamActions } from "@/lib/babycam/actions";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { MODULES } from "@/lib/modules";
@@ -9,9 +9,11 @@ import { getAccess, ROLE_PROFILE, ROLES, type AccessLevel, type Role } from "@/l
 import { canEditAdminSetting } from "@/lib/permissions";
 import { useCurrentRole } from "@/lib/roleStore";
 import { StaffEditor } from "@/components/babycam/BabycamMasterPanels";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 const input = "min-h-10 w-full rounded-lg border border-border-subtle bg-surface-raised px-3 py-2 text-sm";
-const button = "min-h-10 rounded-lg border border-border-subtle px-3 py-2 text-sm hover:bg-stone-100 disabled:opacity-40";
+// 按鈕樣式一律取自 components/ui/Button，不在此另開複本（見該檔開頭說明）。
+const button = buttonStyles();
 const panel = "space-y-3 rounded-xl border border-border-subtle bg-surface-raised p-4 shadow-xs";
 
 const BABYCAM_SECTIONS: { code: string; label: string }[] = [
@@ -27,7 +29,6 @@ const BABYCAM_SECTIONS: { code: string; label: string }[] = [
 
 function AccessMark({ level }: { level: AccessLevel }) {
   if (level === "edit") return <span className="inline-flex items-center gap-1 text-brand-600" title="可編輯"><Check className="h-3.5 w-3.5" aria-hidden="true" />編輯</span>;
-  if (level === "view") return <span className="inline-flex items-center gap-1 text-stone-500" title="唯讀"><Eye className="h-3.5 w-3.5" aria-hidden="true" />唯讀</span>;
   return <span className="inline-flex items-center gap-1 text-stone-400" title="無權限"><Minus className="h-3.5 w-3.5" aria-hidden="true" /><span className="sr-only">無權限</span></span>;
 }
 

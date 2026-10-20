@@ -9,6 +9,7 @@ import { ANNOUNCEMENTS } from "@/lib/mock/dashboard";
 import { useCurrentRole } from "@/lib/roleStore";
 import RoomStatusOverview from "./RoomStatusOverview";
 import { getAccess } from "@/lib/permissions";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 export default function OperationsOverview() {
   const { data: domain } = useDomainStore();
@@ -38,7 +39,7 @@ export default function OperationsOverview() {
     { href: "/#room-status-title", icon: BedDouble, label: "房況總覽", value: "依樓層查看房況與托嬰", visible: true },
     { href: "/contract/", icon: FileText, label: "合約與付款", value: "簽約、變更與收款", visible: getAccess(role, "12") !== "none" },
     { href: "/care/", icon: PhoneCall, label: "媽媽關懷", value: "跨階段關懷與追蹤", visible: getAccess(role, "7") !== "none" },
-    { href: "/cases/calendar/", icon: CalendarClock, label: "待辦行事曆", value: "月、週、日工作排程", visible: true },
+    { href: "/todo/", icon: CalendarClock, label: "待辦行事曆", value: "月、週、日工作排程", visible: true },
     { href: "/babycam/", icon: Video, label: "寶寶視訊管理", value: babycamSummary, visible: babycamAccess !== "none" },
   ].filter((item) => item.visible);
 
@@ -61,7 +62,7 @@ export default function OperationsOverview() {
             <BellRing className="h-[18px] w-[18px] shrink-0 text-rose-500" aria-hidden="true" />
             今日工作台：先處理到期事項
           </h2>
-          <Link href="/cases/calendar/" className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-stone-200 px-3 text-sm font-semibold text-stone-600 hover:border-brand-200 hover:bg-brand-50">
+          <Link href="/todo/" className={buttonStyles({ className: "rounded-xl" })}>
             <CalendarClock className="h-4 w-4" /> 開啟行事曆
           </Link>
         </div>

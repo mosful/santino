@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CheckCircle2, Clock3, Save } from "lucide-react";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 type Accent = "rose" | "sky" | "teal" | "brand";
 
@@ -90,7 +91,7 @@ export default function PrototypeFormActions({
         <button
           type="button"
           onClick={saveDraft}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-white px-4 py-2 text-stone-600 shadow-sm ring-1 ring-stone-200 hover:bg-stone-100"
+          className={buttonStyles({ size: "sm" })}
         >
           <Save className="h-3.5 w-3.5" />
           {draftLabel}
@@ -98,7 +99,7 @@ export default function PrototypeFormActions({
         <button
           type="button"
           onClick={submit}
-          className={`rounded-lg px-4 py-2 font-medium text-white ${PRIMARY_CLASS[accent]}`}
+          className={buttonStyles({ variant: "primary", size: "sm", className: PRIMARY_CLASS[accent] })}
         >
           {submitLabel}
         </button>

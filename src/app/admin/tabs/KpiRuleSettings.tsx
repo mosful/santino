@@ -10,6 +10,7 @@ import {
 } from "@/lib/kpiRuleStore";
 import { canEditAdminSetting } from "@/lib/permissions";
 import { useCurrentRole } from "@/lib/roleStore";
+import { buttonStyles } from "@/components/ui/buttonStyles";
 
 export default function KpiRuleSettings() {
   const settings = useKpiSettings();
@@ -58,7 +59,7 @@ export default function KpiRuleSettings() {
 
       {canEdit && (
         <div className="flex justify-end">
-          <button type="button" onClick={resetKpiSettings} className="inline-flex items-center gap-1.5 rounded-lg bg-stone-100 px-4 py-2 text-xs text-stone-600">
+          <button type="button" onClick={resetKpiSettings} className={buttonStyles({ variant: "subtle", size: "sm" })}>
             <RotateCcw className="h-3.5 w-3.5" />還原預設規則
           </button>
         </div>

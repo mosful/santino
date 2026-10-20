@@ -19,7 +19,7 @@ export function createPersistentStore<T>(key: string, initial: T, validate: (val
       const raw = window.localStorage.getItem(key);
       if (raw) {
         const parsed: unknown = JSON.parse(raw);
-        if (!validate(parsed)) throw new Error("展示資料版本不相容，請還原展示資料。");
+        if (!validate(parsed)) throw new Error("示範資料已更新為新版內容（房號主檔、展示帳密與權限皆已重設），原本在這台瀏覽器上的操作紀錄不保留。");
         snapshot = { data: parsed, storageError: null };
       }
     } catch (error) {

@@ -15,6 +15,18 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   // 僅公開網站根路徑，讓 QR 與標籤網址也使用相同的建置值。
   env: { NEXT_PUBLIC_BASE_PATH: BASE_PATH },
+  /*
+    開發伺服器允許的額外來源（`next dev` 專用，不影響 `next build` 的靜態輸出）。
+
+    Next.js 16 預設只接受啟動時的主機名稱（localhost）；用其他寫法連進來時，
+    頁面 HTML 仍會回 200，但 `/_next/static/chunks/*.js` 會被擋成 403——
+    畫面看起來正常卻完全不能點，而且瀏覽器主控台只有一行 403，很難聯想到是來源檢查。
+
+    - 127.0.0.1：與 localhost 視為不同來源，手動輸入 IP 時會中招。
+    - 10.6.1.15：本機 LAN 位址，供 iPad／手機等其他裝置連進來看 DEMO（雙平台驗收需要）。
+      換網段時這裡要跟著改，或改用 192.168.*.* 之類的萬用字元。
+  */
+  allowedDevOrigins: ["127.0.0.1", "10.6.1.15"],
 };
 
 export default nextConfig;

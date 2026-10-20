@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { EyeOff, VideoOff } from "lucide-react";
-import LocalMedia from "./LocalMedia";
+import { useStateBackground } from "./StateMaintenance";
+import type { DisplayState } from "@/lib/domain/types";
 
 export type PreviewMode = "live" | "snapshot" | "masked" | "offline";
 
@@ -20,7 +21,7 @@ export default function CamPreview({
   statusLabel,
   watermark,
   capturedAgo,
-  backgroundId,
+  backgroundState,
 }: {
   mode: PreviewMode;
   room: string;
@@ -31,8 +32,10 @@ export default function CamPreview({
   watermark?: string;
   /** snapshot 模式的「N 分鐘前」提示 */
   capturedAgo?: string;
-  backgroundId?: string;
+  /** 遮蔽時要墊在底下的狀態（內建底圖或院方上傳的底圖，由 useStateBackground 決定）。 */
+  backgroundState?: DisplayState;
 }) {
+  const background = useStateBackground(backgroundState);
   const [clock, setClock] = useState("--:--:--");
 
   useEffect(() => {
@@ -51,7 +54,10 @@ export default function CamPreview({
     <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-stone-700 bg-stone-900 shadow-inner">
       {mode === "masked" || mode === "offline" ? (
         <div className="relative flex h-full flex-col items-center justify-center gap-3 text-stone-400">
-          {backgroundId && <LocalMedia key={backgroundId} id={backgroundId} alt={statusLabel ?? "遮蔽背景"} className="absolute inset-0 h-full w-full object-cover opacity-35" />}
+          {background && (
+            // eslint-disable-next-line @next/next/no-img-element -- 本機 blob 或靜態圖，不走 Next.js 圖片服務
+            <img src={background} alt={statusLabel ?? "遮蔽背景"} className="absolute inset-0 h-full w-full object-cover opacity-40" />
+          )}
           {mode === "masked" ? (
             <EyeOff className="h-10 w-10" />
           ) : (

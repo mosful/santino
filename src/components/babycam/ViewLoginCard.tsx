@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Baby, ShieldCheck } from "lucide-react";
 import type { DemoAccount } from "@/lib/mock/babycam";
+import { DEMO_PASSCODE, DEMO_PHONE } from "@/lib/demo/domainSeed";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 
 /**
@@ -25,8 +26,10 @@ export default function ViewLoginCard({
   accounts?: DemoAccount[];
   onSubmit: (phone: string, code: string) => string | null;
 }) {
-  const [phone, setPhone] = useState("");
-  const [code, setCode] = useState("");
+  /* 預帶展示帳密：客戶驗收時直接按「進入觀看」即可，不必回頭查櫃台交付的那一組。
+     正式版當然是空白，這裡是 DEMO 的刻意設定（見 domainSeed 的 DEMO_PHONE／DEMO_PASSCODE）。 */
+  const [phone, setPhone] = useState(DEMO_PHONE);
+  const [code, setCode] = useState(DEMO_PASSCODE);
   const [error, setError] = useState<string | null>(null);
 
   function handle(e: React.FormEvent) {
@@ -57,7 +60,7 @@ export default function ViewLoginCard({
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             inputMode="tel"
-            placeholder="例如 0912-345-678"
+            placeholder="例如 0912345678"
             className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-brand-400"
           />
         </div>
@@ -73,7 +76,7 @@ export default function ViewLoginCard({
             value={code}
             onChange={(e) => setCode(e.target.value)}
             inputMode="numeric"
-            placeholder="請輸入 8 碼密碼…"
+            placeholder="請輸入 6 碼密碼…"
             className="w-full rounded-lg border border-stone-200 px-3 py-2.5 text-sm focus:border-brand-400"
           />
         </div>

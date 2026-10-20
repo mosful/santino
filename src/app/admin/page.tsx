@@ -121,14 +121,15 @@ export default function AdminPage() {
       <PageHeader title="15. 後台管理" moduleNo="15" />
       <TabsFromUrl
         // 依客戶要求：沒有權限的後台項目直接不顯示（不是顯示後改唯讀）。
-        // 🔒 四項為 v24 §10 的「系統設定」類，只有管理者看得到。
+        // 前四項為 v24 §10 的「系統設定」類，只有管理者看得到；
+        // 標題不加鎖頭圖示——看得到就是能改，再掛鎖只會造成「被鎖住」的誤解。
         tabs={[
           ...(canEditSystem
             ? [
-                { key: "master", label: "基礎主檔設定 🔒", content: <MasterDataTab canEdit={canEditSystem} /> },
-                { key: "staff", label: "人員與權限 🔒", content: <StaffPermissionSettings /> },
-                { key: "forms", label: "表單與欄位設定 🔒", content: <AssessmentFormSettings /> },
-                { key: "qrcode", label: "QR Code 管理 🔒", content: <QrCardPanel /> },
+                { key: "master", label: "基礎主檔設定", content: <MasterDataTab canEdit={canEditSystem} /> },
+                { key: "staff", label: "人員與權限", content: <StaffPermissionSettings /> },
+                { key: "forms", label: "表單與欄位設定", content: <AssessmentFormSettings /> },
+                { key: "qrcode", label: "QR Code 管理", content: <QrCardPanel /> },
               ]
             : []),
           { key: "package", label: "套餐與贈品規則", content: <PendingEntry title="套餐與贈品規則" detail="房型 × 天數 × 生產院所 × 價格身分的定價表、贈天數與贈課程門檻，目前寫在程式內的示範值。待取得客戶實際定價 Excel 後改為此處維護。" href="/cases/" hrefLabel="先到案件流程看套餐快速試算" /> },

@@ -161,12 +161,14 @@ export const MODULES: ModuleInfo[] = [
     label: "後台管理",
     href: "/admin",
     phase: 1,
-    // 項目依 v24 規格 §10；🔒 四項僅管理者可修改（見 permissions.canEditAdminSetting）
+    // 項目依 v24 規格 §10。adminGroup "system" 的四項僅管理者可見（見 permissions.canEditAdminSetting）。
+    // ⚠️ 標題不要再加 🔒：這些項目對沒權限的角色根本不會出現，掛鎖頭只會讓有權限的
+    // 管理者誤以為「被鎖住不能改」——客戶實際回報過這個誤解。
     subItems: [
-      { adminGroup: "system", key: "master", label: "基礎主檔設定 🔒" },
-      { adminGroup: "system", key: "staff", label: "人員與權限 🔒" },
-      { adminGroup: "system", key: "forms", label: "表單與欄位設定 🔒" },
-      { adminGroup: "system", key: "qrcode", label: "QR Code 管理 🔒" },
+      { adminGroup: "system", key: "master", label: "基礎主檔設定" },
+      { adminGroup: "system", key: "staff", label: "人員與權限" },
+      { adminGroup: "system", key: "forms", label: "表單與欄位設定" },
+      { adminGroup: "system", key: "qrcode", label: "QR Code 管理" },
       { adminGroup: "operations", key: "package", label: "套餐與贈品規則" },
       { adminGroup: "operations", key: "contract-version", label: "合約版本管理" },
       { adminGroup: "operations", key: "phrases", label: "片語庫管理" },

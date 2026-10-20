@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import { babycamActions } from "@/lib/babycam/actions";
-import { saveCarePhoto } from "@/lib/care/media";
 import { DEFAULT_PRINT_SETTINGS, type PrintSettings } from "@/lib/babycam/wristband-print";
 import type { CameraRecord, DemoDomain } from "@/lib/domain/types";
 import { ROLES } from "@/lib/permissions";
-import LocalMedia from "./LocalMedia";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 
 const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
@@ -26,20 +24,6 @@ export function StaffEditor({ staff }: { staff: DemoDomain["staff"][number] }) {
   const [message, setMessage] = useState("");
   function save(enabled: boolean) { try { babycamActions.staff(staff.id, name, role, enabled); setMessage("已儲存展示員工。"); } catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); } }
   return <div className="space-y-2 border-b border-stone-200 pb-3"><div className="flex flex-wrap gap-3"><input aria-label={`${staff.name}姓名`} className={`${input} sm:w-48`} value={name} onChange={(event) => setName(event.target.value)} /><select aria-label={`${staff.name}角色`} className={`${input} sm:w-48`} value={role} onChange={(event) => setRole(event.target.value)}>{ROLES.map((item) => <option key={item}>{item}</option>)}</select><button type="button" className={button} onClick={() => save(staff.enabled)}>儲存員工</button><button type="button" className={button} onClick={() => save(!staff.enabled)}>{staff.enabled ? "停用" : "啟用"}</button></div>{message && <p role="status" className="text-sm">{message}</p>}</div>;
-}
-
-export function BackgroundSettings({ data }: { data: DemoDomain }) {
-  const [message, setMessage] = useState("");
-  return <section className={panel}><h2 className="font-semibold">狀態背景圖（僅存本機）</h2><p className="text-sm">選用匿名圖片，遮蔽時顯示在原觀看影像區。清除後恢復原提示畫面。</p><div className="grid gap-4 sm:grid-cols-2">{data.displayStates.filter((state) => state.masked).map((state) => <div key={state.key} className="space-y-3 rounded-lg border border-stone-200 p-3"><label className="block space-y-2 text-sm">{state.name}背景<input aria-label={`${state.name}背景圖`} type="file" accept="image/*" className={input} onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; try { const id = await saveCarePhoto(file); babycamActions.display(state.key, state.name, id); setMessage(`已更新${state.name}背景，未對外上傳。`); } catch (error) { setMessage(error instanceof Error ? error.message : "圖片儲存失敗。"); } event.target.value = ""; }} /></label>{state.image && <><LocalMedia key={state.image} id={state.image} alt={`${state.name}背景預覽`} className="aspect-video w-full rounded-lg object-cover" /><button type="button" className={button} onClick={() => { try { babycamActions.display(state.key, state.name, ""); setMessage("已清除背景。"); } catch (error) { setMessage(error instanceof Error ? error.message : "清除失敗。"); } }}>清除{state.name}背景</button></>}</div>)}</div>{message && <p role="status" className="text-sm">{message}</p>}</section>;
-}
-
-export function RoomSettings({ data }: { data: DemoDomain }) {
-  const [room, setRoom] = useState(data.rooms[0]?.room ?? "");
-  const current = data.rooms.find((item) => item.room === room);
-  const [roomType, setRoomType] = useState(data.rooms[0]?.typeId || data.rooms[0]?.roomType || data.roomTypes[0]?.id || "精緻");
-  const [message, setMessage] = useState("");
-  function save(enabled: boolean) { try { babycamActions.room(room, data.roomTypes.find((type) => type.id === roomType)?.priceCategory ?? "精緻", enabled, roomType); setMessage("房型房號已儲存，案件排房及房況同步。"); } catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); } }
-  return <section className={panel}><h2 className="font-semibold">房型與房號主檔</h2><div className="grid gap-3 sm:grid-cols-3"><label className="text-sm">選擇既有房號<select aria-label="選擇既有房號" className={input} value={current?.room ?? ""} onChange={(event) => { const selected = data.rooms.find((item) => item.room === event.target.value); setRoom(selected?.room ?? ""); setRoomType(selected?.typeId || selected?.roomType || data.roomTypes[0]?.id || "精緻"); }}><option value="">新增房號</option>{data.rooms.map((item) => <option key={item.room} value={item.room}>{item.room}｜{item.roomType}{item.enabled ? "" : "（停用）"}</option>)}</select></label><label className="text-sm">房號<input aria-label="主檔房號" className={input} value={room} onChange={(event) => setRoom(event.target.value)} /></label><label className="text-sm">房型<select aria-label="主檔房型" className={input} value={roomType} onChange={(event) => setRoomType(event.target.value as typeof roomType)}>{data.roomTypes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label></div><div className="flex flex-wrap gap-3"><button type="button" className={button} onClick={() => save(true)}>儲存並啟用房號</button>{current && <button type="button" className={button} onClick={() => save(false)}>停用此房號</button>}</div>{message && <p role="status" className="text-sm">{message}</p>}</section>;
 }
 
 export function PrintSettingsEditor({ value, onSaved }: { value: PrintSettings; onSaved: () => void }) {

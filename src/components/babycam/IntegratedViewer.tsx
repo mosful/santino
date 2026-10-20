@@ -45,8 +45,9 @@ export default function IntegratedViewer({ audience }: { audience: "internal" | 
     const baby = binding!.babies[index];
     const camera = data.cameras.find((item) => item.id === baby?.cameraId);
     const blocked = invalidated ? "觀看連結已重發或登入已由院方釋出，請重新登入" : viewingBlock(data, binding!, baby, audience);
-    const background = data.displayStates.find((state) => state.key === baby?.state && state.name === blocked)?.image;
-    return <CamPreview mode={blocked ? "masked" : family ? "snapshot" : "live"} room={binding!.room || "托嬰"} camCode={camera?.code ?? "待指派"} statusLabel={blocked ?? undefined} backgroundId={background} watermark={`${binding!.room || "托嬰"} · 展示觀看`} />;
+    // 遮蔽時墊的底圖：以寶寶目前的顯示狀態為準（內建底圖或院方上傳的）。
+    const background = blocked ? data.displayStates.find((state) => state.key === baby?.state) : undefined;
+    return <CamPreview mode={blocked ? "masked" : family ? "snapshot" : "live"} room={binding!.room || "托嬰"} camCode={camera?.code ?? "待指派"} statusLabel={blocked ?? undefined} backgroundState={background} watermark={`${binding!.room || "托嬰"} · 展示觀看`} />;
   }
   return <div className="space-y-4" ref={frame}>
     <div className="flex items-center justify-between gap-3"><div><h1 className="text-base font-bold text-stone-800">{binding.room ? `${binding.room} 房` : "托嬰"} · {binding.motherName} 媽咪{family ? "的寶寶" : ""}</h1><p className="text-xs text-stone-400">有效期限 {binding.validFrom} ～ {binding.validTo}</p></div><button type="button" onClick={() => { leaveViewer(binding.id, session.deviceId); setSession(null); }} className="flex items-center gap-1 rounded-lg border border-stone-200 px-2.5 py-1.5 text-xs text-stone-500 hover:bg-stone-50"><LogOut className="h-3.5 w-3.5" />登出</button></div>

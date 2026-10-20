@@ -43,7 +43,15 @@ export type CaseRecord = {
 };
 export type CameraRecord = { id: string; code: string; zone: "A" | "B"; enabled: boolean; health: "正常" | "等待" | "異常"; lastShotAt: string; scheduleInternal: WindowRule; scheduleFamily: WindowRule; baseline: boolean; codec?: string; sourceType?: string; sourceLabel?: string; resolution?: string };
 export type WindowRule = { mode: "inherit" | "always" | "closed" | "scheduled"; start: string; end: string };
-export type DisplayState = { key: string; name: string; masked: boolean; image?: string };
+export type DisplayState = {
+  key: string;
+  name: string;
+  masked: boolean;
+  /** 院方自行上傳、存在瀏覽器 IndexedDB 的背景圖 id；有值時蓋過 defaultImage。 */
+  image?: string;
+  /** 內建背景圖的靜態路徑（public/state-backgrounds/*.webp），隨程式一起出貨。 */
+  defaultImage?: string;
+};
 export type BabyBinding = { babyId: string; cameraId: string; cartNo: string; identityCode: string; state: string; careMode: boolean; careSince?: string; birthOrder?: number };
 export type ViewingBinding = {
   id: string; caseId: string; room: string; motherName: string; phone: string;
@@ -55,7 +63,8 @@ export type ViewingBinding = {
   viewingRevoked?: boolean;
 };
 export type DemoDomain = {
-  version: 1; subjects: CareSubject[]; cases: CaseRecord[]; cameras: CameraRecord[]; bindings: ViewingBinding[];
+  /** 示範資料結構版本；不符時 domainStore 會丟棄本機資料重新播種。 */
+  version: 2; subjects: CareSubject[]; cases: CaseRecord[]; cameras: CameraRecord[]; bindings: ViewingBinding[];
   displayStates: DisplayState[]; houseWindow: WindowRule; internalWindow: WindowRule; familyWindow: WindowRule;
   enforceInternal: boolean; enforceFamily: boolean; familyLimit: number; concurrencyEnforced: boolean;
   demoAt: string; viewScenario: "normal" | "stale" | "fault" | "cart-away";

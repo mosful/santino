@@ -13,7 +13,7 @@ import { useDomainStore } from "@/lib/demo/domainStore";
 import { useCurrentRole } from "@/lib/roleStore";
 import { type Role } from "@/lib/permissions";
 import { babycamActions, canBabycamSection } from "@/lib/babycam/actions";
-import { deriveDemoLight, effectiveViewingWindow } from "@/lib/babycam/viewing";
+import { effectiveViewingWindow } from "@/lib/babycam/viewing";
 import { downloadFile, toBrowserXlsx } from "@/lib/babycam/exports";
 import { loadPrintFont, printWristbands, renderWristband } from "@/lib/babycam/wristband-print";
 import { taipeiTimestamp } from "@/lib/care/rules";
@@ -21,13 +21,13 @@ import type { WindowRule } from "@/lib/domain/types";
 import CamPreview from "./CamPreview";
 import BindingEditor from "./BindingEditor";
 import MaintenanceConsole from "./MaintenanceConsole";
-import LightSettings from "./LightSettings";
 import DemoReset from "./DemoReset";
-import RoomTypeSettings from "./RoomTypeSettings";
-import { lightChannels } from "@/lib/babycam/lights";
 import { cameraTimeRows } from "@/lib/babycam/cameraTime";
 import { toCsv } from "@/lib/babycam/csv";
-import { BackgroundSettings, RoomSettings, PrintSettingsEditor, CameraMetadata } from "./BabycamMasterPanels";
+import { PrintSettingsEditor, CameraMetadata } from "./BabycamMasterPanels";
+import StateMaintenance from "./StateMaintenance";
+import { LightStatePanel, RelayBoard, RingLightBoard } from "./RingLightPanels";
+import { RoomListPanel, SchedulePanel } from "./RoomSchedulePanels";
 import {
   AreaTabs,
   AsideEmpty,
@@ -76,6 +76,9 @@ const GROUPS: { id: GroupId; label: string; heading: string; description: string
     tabs: [
       { id: "desk", label: "櫃檯入住與交付", access: "01", roles: ["櫃台", "護理長 婉真", "管理者"] },
       { id: "list", label: "入住狀態", access: "01" },
+      // 報表查的是觀看與照護紀錄，和「誰在住、授權到什麼時候」是同一條線，
+      // 所以跟著 01 走；護理師不需要看誰在觀看，故限定角色。
+      { id: "report", label: "紀錄與報表", access: "01", roles: ["櫃台", "護理長 婉真", "管理者"] },
     ],
   },
   {
@@ -92,14 +95,15 @@ const GROUPS: { id: GroupId; label: string; heading: string; description: string
     id: "04",
     label: "後臺管理",
     heading: "後臺管理",
-    description: "全院開放時段、房型與房號、顯示狀態的名稱與背景圖，以及觀看與照護的紀錄報表。",
+    description: "全院開放時段、房型與房號、顯示狀態與背景圖，以及監視器主檔與健康狀態。",
     tabs: [
       { id: "schedule", label: "開放時段", access: "04" },
       { id: "rooms", label: "房間清單", access: "04" },
+      // 名稱與背景圖已合併成同一頁（見 StateMaintenance 的說明）；上傳底圖另吃 05 權限。
       { id: "states", label: "狀態維護", access: "04" },
-      { id: "backgrounds", label: "狀態背景圖", access: "05" },
-      // 報表查的是觀看與照護紀錄，屬事後查核不是現場作業，放後臺管理；權限仍跟著 01。
-      { id: "report", label: "紀錄與報表", access: "01" },
+      // 監視器主檔與健康狀態屬營運維護，不是系統設定；放這裡護理長才不必為了
+      // 看一支鏡頭的健康狀態就被塞進「系統設定」群組（與 BabyCam 的差異，刻意）。
+      { id: "cameras", label: "監視器狀態", access: "03" },
       { id: "demo", label: "展示控制台", access: "04" },
     ],
   },
@@ -107,9 +111,8 @@ const GROUPS: { id: GroupId; label: string; heading: string; description: string
     id: "08",
     label: "系統設定",
     heading: "系統設定",
-    description: "監視器主檔與健康狀態，以及環狀燈號、繼電器板的維運工具。看得到哪些頁籤由角色權限決定。",
+    description: "環狀燈號看板、繼電器板點測與院方燈號語意定義。三個畫面讀同一份燈色設定，現場對照才不會各說各話。",
     tabs: [
-      { id: "cameras", label: "監視器狀態", access: "03" },
       { id: "ringlight", label: "環狀燈號", access: "06" },
       { id: "relay", label: "繼電器板", access: "07" },
       { id: "lightstates", label: "燈號狀態", access: "08" },
@@ -118,16 +121,16 @@ const GROUPS: { id: GroupId; label: string; heading: string; description: string
 ];
 
 /** 每個群組預設停在哪個頁籤（對齊 BabyCam 的 DEFAULT_TABS）。 */
-const DEFAULT_TAB: Record<GroupId, string> = { "01": "desk", "02": "assign", "04": "schedule", "08": "cameras" };
+const DEFAULT_TAB: Record<GroupId, string> = { "01": "desk", "02": "assign", "04": "schedule", "08": "ringlight" };
 
 /** 舊版 `?section=` 深連結 → 新的群組／頁籤，既有書籤與測試連結不會壞掉。 */
 const LEGACY_SECTION: Record<string, { group: GroupId; tab: string }> = {
   registration: { group: "01", tab: "desk" },
   assign: { group: "02", tab: "assign" },
   schedule: { group: "04", tab: "schedule" },
-  backgrounds: { group: "04", tab: "backgrounds" },
-  reports: { group: "04", tab: "report" },
-  cameras: { group: "08", tab: "cameras" },
+  backgrounds: { group: "04", tab: "states" },
+  reports: { group: "01", tab: "report" },
+  cameras: { group: "04", tab: "cameras" },
   lights: { group: "08", tab: "ringlight" },
 };
 
@@ -172,6 +175,7 @@ function WindowEditor({ label, value, onChange }: { label: string; value: Window
   );
 }
 
+/** QR 圖預設隨容器縮放（兩張卡並排時欄寬只有一半，寫死 px 會溢出）；`size` 只設上限。 */
 export function TicketQr({ href, size = 160 }: { href: string; size?: number }) {
   const [src, setSrc] = useState("");
   useEffect(() => {
@@ -184,7 +188,7 @@ export function TicketQr({ href, size = 160 }: { href: string; size?: number }) 
     };
   }, [href]);
   return src ? (
-    <img src={src} width={size} height={size} alt="可掃描的展示 QRCode" className="rounded-lg border border-border-subtle bg-white" />
+    <img src={src} width={size} height={size} style={{ maxWidth: size }} alt="可掃描的展示 QRCode" className="h-auto w-full rounded-lg border border-border-subtle bg-white" />
   ) : (
     <span className="text-sm">產生 QRCode…</span>
   );
@@ -211,8 +215,6 @@ export default function BabycamWorkspace({
   const [scanCode, setScanCode] = useState(initialScanCode);
   const [scanBaby, setScanBaby] = useState("");
   const [labelImages, setLabelImages] = useState<string[]>([]);
-  const [relayUnlocked, setRelayUnlocked] = useState(false);
-  const [testColor, setTestColor] = useState("白");
   const [zone, setZone] = useState("全部");
   const [reportChoice, setReport] = useState("照護");
   const [keyword, setKeyword] = useState("");
@@ -450,7 +452,7 @@ export default function BabycamWorkspace({
                       <Button size="sm" onClick={() => run(() => babycamActions.kick(binding.id), "已踢除親友展示登入。")}>
                         踢除親友登入
                       </Button>
-                      <Button size="sm" onClick={() => run(() => babycamActions.passcode(binding.id, `DEMO-${Date.now().toString().slice(-6)}`))}>
+                      <Button size="sm" onClick={() => run(() => babycamActions.passcode(binding.id, String(Math.floor(100000 + Math.random() * 900000))))}>
                         重設展示密碼
                       </Button>
                       <Button size="sm" variant="danger" onClick={() => run(() => babycamActions.revoke(binding.id), "已作廢觀看授權，寶寶原指派保留。")}>
@@ -486,6 +488,8 @@ export default function BabycamWorkspace({
                     <p className="text-sm">
                       <strong className="text-stone-800">{binding.room || "托嬰"} 房</strong> · {binding.motherName}
                     </p>
+                    {/* 兩張卡並排：櫃台交付時是「一次看兩個連結」，上下排會逼人捲動比對。 */}
+                    <div className="grid grid-cols-2 gap-3">
                     {(["internal", "family"] as const).map((audience) => {
                       const href = `/view/${audience === "internal" ? "mama" : "family"}/?ticket=${encodeURIComponent(
                         audience === "internal" ? binding.internalTicket : binding.familyTicket,
@@ -501,13 +505,14 @@ export default function BabycamWorkspace({
                             {audience === "internal" ? "院內" : "親友"}
                           </span>
                           <h4 className="text-sm font-bold text-stone-800">{audience === "internal" ? "媽媽即時畫面" : "親友觀看畫面"}</h4>
-                          <TicketQr href={href} size={150} />
+                          <TicketQr href={href} />
                           <Link href={href} className="block break-all text-xs text-brand-600 underline underline-offset-4">
                             開啟觀看頁
                           </Link>
                         </article>
                       );
                     })}
+                    </div>
                     <section className="space-y-1 rounded-xl border border-border-subtle bg-surface-raised p-3 text-sm">
                       <strong className="block text-stone-800">家屬登入資料</strong>
                       <span className="block text-stone-600">登入帳號：{binding.phone}</span>
@@ -719,74 +724,30 @@ export default function BabycamWorkspace({
         {/* ── 04 後臺管理 ── */}
         {active.id === "schedule" && (
           <div className="space-y-4 p-4 sm:p-5">
-            <SectionHeading no={1} title="全院、受眾與同房人數" description="每筆入住自行關閉的時段仍會擋住畫面；未勾選「擋住畫面」時只影響觀看燈號。" />
-            {(["houseWindow", "internalWindow", "familyWindow"] as const).map((key) => (
-              <WindowEditor
-                key={key}
-                label={{ houseWindow: "全院總時段", internalWindow: "院內受眾時段", familyWindow: "親友受眾時段" }[key]}
-                value={data[key]}
-                onChange={(rule) => run(() => babycamActions.settings({ [key]: rule }))}
-              />
-            ))}
-            <div className="flex flex-wrap gap-4">
-              {(["enforceInternal", "enforceFamily"] as const).map((key) => (
-                <label key={key} className="flex min-h-11 items-center gap-2 text-sm">
-                  <input type="checkbox" checked={data[key]} onChange={(event) => run(() => babycamActions.settings({ [key]: event.target.checked }))} />
-                  {key === "enforceInternal" ? "院內" : "親友"}時段外擋住畫面
-                </label>
-              ))}
-            </div>
-            <label className="flex min-h-11 items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={data.concurrencyEnforced}
-                onChange={(event) => run(() => babycamActions.settings({ concurrencyEnforced: event.target.checked }))}
-              />
-              模擬同房觀看人數限制
-            </label>
-            <label className="block max-w-xs space-y-1.5 text-sm">
-              同房親友觀看上限（0＝不限）
-              <input className={input} type="number" min={0} value={data.familyLimit} onChange={(event) => run(() => babycamActions.settings({ familyLimit: Number(event.target.value) }))} />
-            </label>
+            <SectionHeading
+              no={1}
+              title="開放時段"
+              description="先設定全院總時段，再分別調整院內與親友可觀看的時間；每筆入住自行關閉的時段仍會擋住畫面。"
+            />
+            <SchedulePanel data={data} run={run} />
           </div>
         )}
 
         {active.id === "rooms" && (
           <div className="space-y-4 p-4 sm:p-5">
-            <RoomTypeSettings data={data} />
-            <RoomSettings data={data} />
+            <SectionHeading no={1} title="房間清單" description="調整後會立即反映在「入住登記」的房號下拉與院務端的房況總覽。" />
+            <RoomListPanel data={data} run={run} />
           </div>
         )}
 
         {active.id === "states" && (
           <div className="space-y-4 p-4 sm:p-5">
-            <SectionHeading no={1} title="顯示狀態維護" description="名稱可改；是否遮蔽畫面由狀態本身決定，背景圖在「狀態背景圖」頁籤設定。" />
-            {data.displayStates.map((state) => (
-              <div key={state.key} className="flex flex-wrap items-center gap-3">
-                <input
-                  aria-label={`${state.name}名稱`}
-                  className={`${input} sm:w-64`}
-                  defaultValue={state.name}
-                  onBlur={(event) => {
-                    if (event.target.value !== state.name) run(() => babycamActions.display(state.key, event.target.value));
-                  }}
-                />
-                <span
-                  className={
-                    "inline-flex rounded-full px-2.5 py-1 text-xs font-semibold " +
-                    (state.masked ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800")
-                  }
-                >
-                  {state.masked ? "遮蔽畫面" : "正常顯示"}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {active.id === "backgrounds" && (
-          <div className="p-4 sm:p-5">
-            <BackgroundSettings data={data} />
+            <SectionHeading
+              no={1}
+              title="顯示狀態與背景"
+              description="改成院內習慣的叫法即可，寶寶／監視器的狀態下拉會跟著換；卡片底圖就是家屬與院內在該狀態下看到的畫面。"
+            />
+            <StateMaintenance data={data} />
           </div>
         )}
 
@@ -1011,82 +972,34 @@ export default function BabycamWorkspace({
 
         {active.id === "ringlight" && (
           <div className="space-y-4 p-4 sm:p-5">
-            <SectionHeading no={1} title="環狀燈號看板" description="燈色由顯示狀態推導；佈線對照缺漏的監視器會標示略過。" />
-            <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-5">
-              {data.cameras.map((item) => {
-                const state = deriveDemoLight(data, item);
-                return (
-                  <div key={item.id} className="rounded-xl border border-border-subtle bg-surface-raised p-3 text-sm">
-                    <strong className="text-stone-800">{item.code}</strong>
-                    <br />
-                    {data.lightLabels[state] ?? state}
-                    <br />
-                    <span className="text-stone-500">模擬燈色：{data.lightColors[state]}</span>
-                    <br />
-                    <span className="text-xs text-stone-500">
-                      {lightChannels(item.code, data.lightColors[state])
-                        .map((channel) => `${channel.channel} ${channel.color} ${channel.enabled ? "開" : "關"}`)
-                        .join("／") || "尚無佈線對照，略過通道"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            <SectionHeading
+              no={1}
+              title="環狀燈號看板"
+              description="燈色由顯示狀態推導，顯示的就是現場燈具實際會亮的顏色；佈線對照缺漏的監視器會標示略過。"
+            />
+            <RingLightBoard data={data} />
           </div>
         )}
 
         {active.id === "relay" && (
           <div className="space-y-4 p-4 sm:p-5">
-            <SectionHeading no={1} title="繼電器通道點測（僅本機模擬）" description="不會連線院內繼電器板；請先勾選確認後才解鎖通道操作。" />
-            <label className="flex min-h-11 items-center gap-2 text-sm">
-              <input type="checkbox" checked={relayUnlocked} onChange={(event) => setRelayUnlocked(event.target.checked)} />
-              確認僅模擬，解鎖通道操作
-            </label>
-            <fieldset disabled={!relayUnlocked} className="space-y-3">
-              <div className="flex flex-wrap items-center gap-3">
-                <select aria-label="點測監視器" className={`${input} sm:w-44`} value={camera?.id ?? ""} onChange={(event) => setCameraId(event.target.value)}>
-                  {data.cameras.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.code}
-                    </option>
-                  ))}
-                </select>
-                <select aria-label="RGB 點測燈色" className={`${input} sm:w-40`} value={testColor} onChange={(event) => setTestColor(event.target.value)}>
-                  {["熄滅", "紅", "綠", "藍", "黃", "洋紅", "青", "白"].map((item) => (
-                    <option key={item}>{item}</option>
-                  ))}
-                </select>
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    run(() => {
-                      const channels = lightChannels(camera?.code ?? "", testColor);
-                      if (!channels.length) throw new Error("此監視器沒有佈線對照，略過點測。");
-                      channels.forEach((channel) => babycamActions.relay(channel.channel, channel.enabled));
-                    })
-                  }
-                >
-                  套用 RGB 點測
-                </Button>
-                <ZoneFilter zones={["全部", "A", "B"]} active={zone} onSelect={setZone} />
-              </div>
-              <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
-                {["A", "B"]
-                  .filter((item) => zone === "全部" || zone === item)
-                  .flatMap((area) => Array.from({ length: 48 }, (_, index) => `${area}-Y${index + 1}`))
-                  .map((channel) => (
-                    <Button key={channel} size="sm" selected={!!data.relayChannels[channel]} onClick={() => run(() => babycamActions.relay(channel, !data.relayChannels[channel]))}>
-                      {channel}
-                    </Button>
-                  ))}
-              </div>
-            </fieldset>
+            <SectionHeading
+              no={1}
+              title="繼電器通道點測"
+              description="逐台逐通道點測環狀燈的紅／綠／藍。本原型只寫進瀏覽器記憶體，不會連線院內繼電器板。"
+            />
+            <RelayBoard data={data} onToggle={(channel, next) => run(() => babycamActions.relay(channel, next), `已切換 ${channel}（僅本機模擬）。`)} />
           </div>
         )}
 
         {active.id === "lightstates" && (
-          <div className="p-4 sm:p-5">
-            <LightSettings data={data} />
+          <div className="space-y-4 p-4 sm:p-5">
+            <SectionHeading
+              no={1}
+              title="院方燈號狀態"
+              description="這份設定就是全站的燈號語意：環狀燈號看板顯示的顏色、繼電器板的對照圖例，都讀這一份。"
+            />
+            <LightStatePanel data={data} />
           </div>
         )}
       </Panel>

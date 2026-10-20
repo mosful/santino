@@ -1,4 +1,5 @@
 import { makeRng, makeUniqueNameGenerator } from "./genUtil";
+import { ROOM_NOS } from "./roomMaster";
 
 export type RoomStatus = "入住" | "空房" | "親子同室" | "打掃" | "報修" | "已退房";
 
@@ -31,18 +32,20 @@ const CURATED: MamaRoom[] = [
   },
   { room: "302", status: "親子同室", motherName: "林o臻", chartNo: "M20260820", stayRange: "08/20~09/17", stayDay: 8, babyCount: 1 },
   { room: "303", status: "空房" },
-  { room: "304", status: "打掃" },
   { room: "305", status: "入住", motherName: "張o雅", chartNo: "M20260825", stayRange: "08/25~09/22", stayDay: 3, babyCount: 1 },
-  { room: "306", status: "報修" },
+  { room: "306", status: "打掃" },
+  { room: "307", status: "報修" },
 ];
 
-const EXTRA_ROOM_NOS = [
-  "307", "308", "309", "310",
-  "401", "402", "403", "404", "405", "406", "407", "408", "409", "410",
-  "501", "502", "503", "504", "505", "506", "507", "508", "509", "510",
-  "601", "602", "603", "604", "605", "606", "607", "608", "609", "610",
-  "701", "702", "703", "704", "705", "706", "707", "708", "709", "710",
-];
+/*
+  其餘房號一律由房號主檔推導，不再手寫。
+
+  ⚠️ 原本這裡寫死 301–710 共 50 間，是虛構的；實際只有 27 間且各樓層跳過 04
+  （見 roomMaster.ts）。手寫清單與主檔不同步時，寶寶視訊綁定的房號會對不上
+  院務系統的房號，而且不會有任何錯誤訊息。
+*/
+const CURATED_ROOMS = new Set(CURATED.map((item) => item.room));
+const EXTRA_ROOM_NOS = ROOM_NOS.filter((room) => !CURATED_ROOMS.has(room));
 
 const STATUS_WEIGHTED: RoomStatus[] = [
   "入住", "入住", "入住", "入住", "入住",
@@ -97,8 +100,8 @@ export const DISCHARGED_MAMA_RECORDS: MamaRoom[] = [
     historical: true,
   },
   {
-    caseId: "discharged-M20260820405",
-    room: "405",
+    caseId: "discharged-M20260820505",
+    room: "505",
     status: "已退房",
     motherName: "郭o涵",
     chartNo: "M20260820",

@@ -23,6 +23,24 @@ import LocalMedia from "../babycam/LocalMedia";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 
 
+/**
+ * 對象識別列後半段的狀態摘要。
+ *
+ * ⚠️ 不要把 `subject.motherName` 無條件放進來：對媽媽而言它就等於 `subject.name`，
+ * 而 `identity()` 已經印過一次，畫面上會看到同一個名字連出現兩次（客戶回報）。
+ * 只有寶寶（母嬰姓名不同）才需要標出媽媽是誰。
+ */
+function subjectSummary(subject: CareSubject) {
+  return [
+    subject.motherName && subject.motherName !== subject.name ? `媽媽 ${subject.motherName}` : null,
+    subject.status,
+    `入住第 ${subject.stayDay} 天`,
+    subject.gender ? `${subject.gender}寶寶` : null,
+  ]
+    .filter(Boolean)
+    .join("｜");
+}
+
 function identity(subject: CareSubject) { const location = subject.room ? `房號 ${subject.room}${subject.carNo ? `｜車號 ${subject.carNo}` : ""}` : `車號 ${subject.carNo || "待指派"}`; return `${location}｜${subject.name}｜${subject.chartNo}`; }
 const signatureRoles: { key: CareSignatureRole; label: string }[] = [{ key: "recipient", label: "媽媽／家屬簽名" }, { key: "executor", label: "執行者簽名" }, { key: "evaluator", label: "評值者簽名" }];
 const hydrationSubscribe = () => () => {};
@@ -55,6 +73,23 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   const permitted = !!subject && !!document && canEditCare(role, kind, document.formKey);
   const editable = permitted && data.unlockedCase === subject?.caseId && !expired && !document?.signedAt;
   const openDocuments = data.open.map((key) => data.documents[key]).filter((item) => subjectFor(item.subjectId)?.kind === kind);
+  /*
+    表單列依「照護對象」分組。
+
+    同時開六、七張表單時，每顆按鈕都前綴一次房號（301｜301｜301…）既佔空間
+    又看不出哪幾張屬於同一間房。改成一間房一個群組：房號只出現一次當群組標籤，
+    群組內只留表單名。客戶回報「同時開啟多個房間表單要能一眼區分」。
+    用 Map 而不是先排序，維持使用者實際開啟的先後順序。
+  */
+  const trayGroups = Array.from(
+    openDocuments.reduce((groups, item) => {
+      const target = subjectFor(item.subjectId)!;
+      const group = groups.get(item.subjectId);
+      if (group) group.items.push(item);
+      else groups.set(item.subjectId, { target, items: [item] });
+      return groups;
+    }, new Map<string, { target: NonNullable<ReturnType<typeof subjectFor>>; items: typeof openDocuments }>()).values(),
+  );
   const drafts = Object.values(data.documents).filter((item) => !item.signedAt && (item.savedAt || item.dirty) && subjectFor(item.subjectId)?.kind === kind && forms.some((available) => available.key === item.formKey));
   const history = data.entries.filter((entry) => entry.subjectId === subject?.id && entry.formKey === document?.formKey);
   const searchedSubjects = domain.subjects.filter((item) => item.kind === kind).filter((item) => [item.name, item.motherName, item.room, item.carNo, item.chartNo].join(" ").toLowerCase().includes(query.toLowerCase()));
@@ -114,8 +149,9 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
 
   if (!hydrated) return <div className="page-frame"><div className="h-16 animate-pulse rounded-xl bg-white/70" aria-label="照護工作區載入中" /></div>;
 
-  // 有表單列時側欄 sticky 要再往下讓，否則會被固定在上方的那一列蓋住。
-  return <div className={`${styles.workspace} page-frame`} style={{ "--care-tray-h": openDocuments.length ? "4rem" : "0rem" } as React.CSSProperties}>
+  // 側欄 sticky 要讓過固定在上方的表單列（約 4rem）與對象識別列（約 2.5rem）。
+  const stickyToolbarHeight = openDocuments.length ? (hasActive ? "6.5rem" : "4rem") : "0rem";
+  return <div className={`${styles.workspace} page-frame`} style={{ "--care-tray-h": stickyToolbarHeight } as React.CSSProperties}>
     <RequireAccess moduleNo={kind === "mama" ? "2" : "3"}>
       <PageHeader title={kind === "mama" ? "媽媽照護" : "寶寶照護"} moduleNo={kind === "mama" ? "2" : "3"} />
       {storageError && <p role="alert" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{storageError}</p>}
@@ -127,15 +163,6 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
         呈現方式」，2026-10-21 移除清單，保留房卡——顏色與房號是現場既有語彙。
       */}
       {hasActive ? <>
-        <header className="mb-6 flex flex-wrap items-start justify-between gap-4 rounded-xl border border-stone-300 bg-white p-4">
-          <div><h2 className="text-xl font-semibold">{identity(subject)}</h2><p className="mt-2 text-sm text-stone-600">{subject.motherName}｜{subject.status}｜入住第 {subject.stayDay} 天{subject.gender ? `｜${subject.gender}寶寶` : ""}</p>
-            {subject.historical && <p className="mt-2 text-sm text-amber-900">退房回補｜退房 {taipeiTimestamp(subject.dischargedAt!)}｜可補至 {taipeiTimestamp(backfillDeadline(subject, data.backfillDays)!)}{expired ? "｜已逾期" : ""}</p>}
-          </div>
-          <div className="flex flex-wrap gap-2" data-no-print><span className="flex min-h-12 items-center gap-2 rounded-lg bg-stone-100 px-3 text-sm">{editable ? <UnlockKeyhole size={16} /> : <LockKeyhole size={16} />}{document.signedAt ? "已完成簽出" : editable ? "編輯中" : "唯讀"}</span>
-            {permitted && !document.signedAt && data.unlockedCase !== subject.caseId && <button type="button" className={buttonClass} onClick={() => setPending("unlock")}>解鎖此對象</button>}
-            {expired && canAuthorizeCare(role) && <button type="button" className={buttonClass} onClick={() => setPending("authorize")}>授權回補</button>}
-          </div>
-        </header>
         {pending && <section ref={confirmation} className="mb-6 space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4" aria-label="頁內操作確認" data-no-print>
           <h3 className="font-semibold">{({ complete: "確認完成簽出", close: "關閉此表單", all: "保留草稿並關閉全部表單", unlock: "切換編輯對象", authorize: "逾期回補授權", workorder: "建立示範工單" })[pending]}</h3>
           <p className="text-sm">{pending === "complete" ? `請確認 ${identity(subject)} 的資料無誤。簽出後保留本筆紀錄，後續請新增一筆。` : pending === "unlock" ? "切換後其他對象改為唯讀，原有草稿會保留。" : pending === "close" ? "可保留草稿後關閉，或捨棄目前尚未簽出的草稿。" : "這項操作會保留目前操作者與時間。"}</p>
@@ -219,19 +246,48 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
               <button type="button" title="關閉此表單" className={buttonStyles({ size: "sm" })} onClick={() => setPending("close")}><X size={14} />關閉</button>
               <span className={styles.trayDivider} aria-hidden="true" />
             </>}
-            {/* 分頁只顯示「房號 | 表單」：一列要塞下好幾張，帶上姓名會長到看不完。
+            {/* 一間房一個群組：房號當群組標籤只出現一次，群組內只留表單名。
                 完整的房號、姓名與表單名放在 title，滑過去仍看得到。 */}
-            {openDocuments.map((item) => {
-              const target = subjectFor(item.subjectId)!;
-              const formLabel = forms.find((available) => available.key === item.formKey)?.label ?? item.formKey;
+            {trayGroups.map(({ target, items }) => {
               const place = target.room || target.carNo || target.name;
-              const state = item.signedAt ? " ✓" : item.dirty ? " · 草稿" : "";
-              return <button type="button" key={item.key} title={`${place} ${target.name}｜${formLabel}`} aria-pressed={item.key === activeKey && !listVisible} className={buttonStyles({ size: "sm", selected: item.key === activeKey && !listVisible })} onClick={() => { run(() => careActions.activate(item.key)); setListVisible(false); setSigning(false); }}>{place} | {formLabel}{state}</button>;
+              const active = items.some((item) => item.key === activeKey) && !listVisible;
+              return (
+                <div key={target.id} data-active={active} className={styles.trayGroup}>
+                  <span className={styles.trayGroupLabel} title={`${place} ${target.name}`}>{place}</span>
+                  {items.map((item) => {
+                    const formLabel = forms.find((available) => available.key === item.formKey)?.label ?? item.formKey;
+                    const state = item.signedAt ? " ✓" : item.dirty ? " · 草稿" : "";
+                    return <button type="button" key={item.key} title={`${place} ${target.name}｜${formLabel}`} aria-pressed={item.key === activeKey && !listVisible} className={buttonStyles({ size: "sm", selected: item.key === activeKey && !listVisible })} onClick={() => { run(() => careActions.activate(item.key)); setListVisible(false); setSigning(false); }}>{formLabel}{state}</button>;
+                  })}
+                </div>
+              );
             })}
             <span className={styles.trayDivider} aria-hidden="true" />
             <button type="button" className={buttonStyles({ size: "sm" })} title="保留草稿並關閉全部表單" onClick={() => { if (hasActive) setPending("all"); else run(() => careActions.closeAll(kind), "已保留草稿並關閉全部表單。"); }}>關閉全部</button>
           </div>
         </nav>
+        {/*
+          目前對象的識別列。原本是頁面內一張卡片，會跟著內容捲走；改掛在表單列
+          底下一起固定，填到表單後半段仍看得到自己正在寫誰的紀錄（客戶要求往上移）。
+
+          ⚠️ 房號／姓名／病歷號與狀態壓成同一行。原本拆成兩行，而第二行開頭又是
+          一次 motherName——對媽媽而言跟第一行的姓名完全重複。寶寶才需要另外標出
+          媽媽是誰，所以只有名字不同時才補「媽媽 ○○○」。
+        */}
+        {hasActive && subject && document && (
+          <div className={styles.subjectBar}>
+            <p className={styles.subjectBarText}>
+              <strong className="font-semibold text-stone-800">{identity(subject)}</strong>
+              <span>｜{subjectSummary(subject)}</span>
+              {subject.historical && <span className="text-amber-800">｜退房回補 {taipeiTimestamp(subject.dischargedAt!)}｜可補至 {taipeiTimestamp(backfillDeadline(subject, data.backfillDays)!)}{expired ? "｜已逾期" : ""}</span>}
+            </p>
+            <div className={styles.subjectBarActions} data-no-print>
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-stone-100 px-2.5 py-1 text-xs text-stone-600">{editable ? <UnlockKeyhole size={14} /> : <LockKeyhole size={14} />}{document.signedAt ? "已完成簽出" : editable ? "編輯中" : "唯讀"}</span>
+              {permitted && !document.signedAt && data.unlockedCase !== subject.caseId && <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => setPending("unlock")}>解鎖此對象</button>}
+              {expired && canAuthorizeCare(role) && <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => setPending("authorize")}>授權回補</button>}
+            </div>
+          </div>
+        )}
       </HeaderSlot>}
     </RequireAccess>
   </div>;

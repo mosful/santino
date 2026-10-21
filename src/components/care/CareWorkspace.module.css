@@ -34,6 +34,17 @@
 .trayScroll > * { flex: 0 0 auto; }
 .trayScroll button { max-width: min(260px, 55vw); }
 .trayDivider { width: 1px; min-height: 24px; align-self: stretch; background: var(--border-subtle); }
+/* 一個群組＝一位照護對象。目前作用中的那一組上色，一眼知道人在哪間房。 */
+.trayGroup { display: flex; align-items: center; gap: 4px; border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--surface-muted); padding: 3px 5px; }
+.trayGroup[data-active="true"] { border-color: var(--brand-300); background: var(--brand-50); }
+/* 目前對象識別列：掛在表單列底下一起固定，所以要薄。 */
+.subjectBar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 6px 16px; border-top: 1px solid var(--border-subtle); }
+.subjectBarText { min-width: 0; font-size: 13px; color: var(--text-muted); }
+.subjectBarActions { display: flex; flex-shrink: 0; flex-wrap: wrap; align-items: center; gap: 8px; }
+@media (max-width: 1023px) {
+  .subjectBar { padding-inline: 12px; }
+}
+.trayGroupLabel { padding-inline: 5px 3px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--brand-700); }
 @media (max-width: 1023px) {
   .tray { padding-inline: 12px; }
 }

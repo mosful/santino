@@ -9,6 +9,21 @@ export type TabItem = {
   content: ReactNode;
 };
 
+/**
+ * 頁首第 3 層的頁籤樣式（全站共用，寶寶視訊的群組內頁籤也用這支）。
+ *
+ * ⚠️ 選取態是「白底＋描邊＋品牌色粗體」，不是深色漸層：這一列就貼在頁首底下，
+ * 深色塊會比頁面標題還搶眼。客戶看過兩種版本後指定這一種。
+ */
+export function headerTabClass(selected: boolean) {
+  return (
+    "shrink-0 rounded-lg border px-3 py-1.5 text-xs transition-colors sm:text-sm " +
+    (selected
+      ? "border-border-subtle bg-surface-raised font-bold text-brand-700 shadow-2xs"
+      : "border-transparent font-medium text-stone-500 hover:bg-surface-raised hover:text-brand-700")
+  );
+}
+
 export default function Tabs({
   tabs,
   defaultKey,
@@ -45,11 +60,12 @@ export default function Tabs({
           aria-selected={t.key === active}
           aria-controls={`tab-panel-${t.key}`}
           className={
-            "shrink-0 rounded-lg font-medium transition-[color,background-color,box-shadow] " +
-            (inHeader ? "px-3 py-1.5 text-xs sm:text-sm " : "px-3.5 py-1.5 text-sm sm:px-4 ") +
-            (t.key === active
-              ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm shadow-brand-200"
-              : "text-stone-600 hover:bg-surface-raised hover:text-brand-700 hover:shadow-2xs")
+            inHeader
+              ? headerTabClass(t.key === active)
+              : "shrink-0 rounded-lg px-3.5 py-1.5 text-sm font-medium transition-[color,background-color,box-shadow] sm:px-4 " +
+                (t.key === active
+                  ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm shadow-brand-200"
+                  : "text-stone-600 hover:bg-surface-raised hover:text-brand-700 hover:shadow-2xs")
           }
         >
           {t.label}

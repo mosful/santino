@@ -102,8 +102,9 @@ export const MODULES: ModuleInfo[] = [
     subItems: [
       { key: "babycam-01", label: "入住登記", href: "/babycam/?section=registration", babycamSection: "01", iconKey: "babycam-01" },
       { key: "babycam-02", label: "寶寶登錄", href: "/babycam/?section=assign", babycamSection: "02", iconKey: "babycam-02" },
-      { key: "babycam-04", label: "後臺管理", href: "/babycam/?section=schedule", babycamSection: "04", iconKey: "babycam-04" },
-      { key: "babycam-08", label: "系統設定", href: "/babycam/?section=lights", babycamSection: "08", iconKey: "babycam-08" },
+      // 「系統設定」已併進這一項（2026-10-21 客戶要求）；改名避免與主選單的
+      // 「後台管理」（模組 15，只差臺／台）認錯。燈號三頁仍各吃 06／07／08 權限。
+      { key: "babycam-04", label: "設定與維運", href: "/babycam/?section=schedule", babycamSection: "04", iconKey: "babycam-04" },
     ],
   },
   /*
@@ -114,7 +115,7 @@ export const MODULES: ModuleInfo[] = [
     兩條規則在護理角色身上互斥，他們會完全沒有入口。抽成獨立頁後一份資料、一個位置、
     一個入口，權限直接吃模組 4 的矩陣。櫃台首頁改放一條可點的房況摘要。
   */
-  { no: "4", label: "房況總覽", href: "/rooms", phase: 1 },
+  { no: "4", label: "房間動態", href: "/rooms", phase: 1 },
   // 客戶資料與媽媽關懷是「櫃台服務」的第二層（見模組 1 的 subItems），不另列第一層。
   { no: "5", label: "客戶資料", href: "/customer", phase: 1, showInSidebar: false },
   {

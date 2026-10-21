@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import WorkspaceEntry from "@/components/babycam/WorkspaceEntry";
 
@@ -8,7 +7,7 @@ export default function BabycamWorkspacePage() {
   return (
     <div className="page-frame">
       <RequireAccess moduleNo="17">
-        <PageHeader title="寶寶視訊" moduleNo="17" />
+        {/* 頁首標題由 WorkspaceEntry 下（要跟著 ?section= 的群組變），這裡不要再放一個。 */}
         <Suspense fallback={<p className="p-4 text-sm text-stone-500">載入視訊工作區…</p>}>
           <WorkspaceEntry />
         </Suspense>

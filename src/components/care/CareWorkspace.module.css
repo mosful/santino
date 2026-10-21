@@ -48,9 +48,20 @@
 @media (max-width: 1023px) {
   .subjectBar { border-top: 1px solid var(--border-subtle); padding-top: 5px; }
 }
-/* 尚未開啟的表單：虛線、淡色，和已開啟的實心鈕一眼分得出來。 */
-.trayPending { border-style: dashed !important; border-color: var(--border-subtle) !important; color: var(--text-muted) !important; }
-.trayPending:hover { border-color: var(--brand-300) !important; color: var(--brand-700) !important; }
+/*
+  第二行：開啟中的房間（參考 santinov1 的工作列）。
+  一間房一個晶片，左半切換、右半關閉整間；目前這間上色。
+*/
+.roomBar { order: 2; display: flex; max-width: 100%; flex: 1 1 100%; align-items: center; gap: 8px; border-top: 1px solid var(--border-subtle); padding-top: 6px; }
+.roomBarLabel { flex: 0 0 auto; font-size: 11px; font-weight: 700; color: var(--text-muted); }
+.roomChip { display: inline-flex; flex: 0 0 auto; align-items: stretch; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: 10px; background: var(--surface-raised); }
+.roomChip[data-active="true"] { border-color: var(--brand-400); background: var(--brand-50); }
+.roomChipMain { display: inline-flex; min-height: 32px; align-items: center; gap: 5px; padding: 0 10px; font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.roomChip[data-active="true"] .roomChipMain { color: var(--brand-700); }
+.roomChipMain:hover { background: var(--brand-50); color: var(--brand-700); }
+.roomChipDraft { width: 6px; height: 6px; border-radius: 50%; background: #d97706; }
+.roomChipClose { display: inline-flex; min-height: 32px; width: 26px; align-items: center; justify-content: center; border-left: 1px solid var(--border-subtle); color: var(--text-muted); }
+.roomChipClose:hover { background: #fee2e2; color: #b91c1c; }
 .trayGroupLabel { padding-inline: 5px 3px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--brand-700); }
 
 .subjectCard { border-color: var(--border-subtle); background: var(--surface-raised); }

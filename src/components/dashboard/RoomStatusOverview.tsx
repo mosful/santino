@@ -102,7 +102,7 @@ export default function RoomStatusOverview() {
   return (
     <CollapsibleSection
       id="room-status"
-      title={<span id="room-status-title">房況總覽</span>}
+      title={<span id="room-status-title">房間動態</span>}
       summary={`館內 ${mothers.length} 位　寶寶 ${babies.length} 位　今日入住 ${admissionsToday}　今日退房 ${dischargesToday}`}
       className="scroll-mt-20"
       bodyClassName="space-y-3"

@@ -135,6 +135,30 @@ export const careActions = {
       if (!state.open.some((item) => careSubject(state.documents[item]?.subjectId)?.caseId === state.unlockedCase)) state.unlockedCase = null;
     });
   },
+  /**
+   * 關閉某位照護對象的**所有**表單（房間層級的關閉）。
+   *
+   * 表單列是「一間房一組頁籤」，關閉的單位是房間而不是單張表單，
+   * 所以一次處理完再重算 active，避免逐張 close 時 active 連續跳好幾次。
+   */
+  closeSubject(subjectId: string, discard = false) {
+    careStore.update((state) => {
+      const subject = careSubject(subjectId);
+      if (!subject) return;
+      const keys = state.open.filter((key) => state.documents[key]?.subjectId === subjectId);
+      for (const key of keys) {
+        if (discard && !state.documents[key]?.signedAt) delete state.documents[key];
+      }
+      state.open = state.open.filter((key) => !keys.includes(key));
+      if (state.active[subject.kind] && keys.includes(state.active[subject.kind]!)) {
+        state.active[subject.kind] =
+          state.open.findLast((key) => careSubject(state.documents[key]?.subjectId)?.kind === subject.kind) ?? null;
+      }
+      if (!state.open.some((key) => careSubject(state.documents[key]?.subjectId)?.caseId === state.unlockedCase)) {
+        state.unlockedCase = null;
+      }
+    });
+  },
   closeAll(kind: CareKind) {
     careStore.update((state) => { state.open = state.open.filter((key) => careSubject(state.documents[key]?.subjectId)?.kind !== kind); state.active[kind] = null; state.unlockedCase = null; });
   },

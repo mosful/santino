@@ -14,7 +14,7 @@ import { careSubject } from "@/lib/care/subjects";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { careActions, careStore, useCareStore } from "@/lib/care/store";
 import { useAssessmentFields } from "@/lib/assessmentConfigStore";
-import { backfillDeadline, canAuthorizeCare, canEditCare, canViewCare, isBackfillExpired, moodNeedsAttention, needsFeedingReassessment, taipeiTimestamp } from "@/lib/care/rules";
+import { backfillDeadline, canAuthorizeCare, canEditCare, canViewCare, documentKey, isBackfillExpired, moodNeedsAttention, needsFeedingReassessment, taipeiTimestamp } from "@/lib/care/rules";
 import type { CareKind, CareSignatureRole, CareSubject } from "@/lib/care/types";
 import CareFieldInput, { GrowthChart, buttonClass, inputClass, valueText } from "./CareFields";
 import CareSignature from "./CareSignature";
@@ -53,7 +53,17 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("在館");
   const [message, setMessage] = useState("");
-  const [pending, setPending] = useState<"complete" | "close" | "all" | "unlock" | "authorize" | "workorder" | null>(null);
+  /*
+    頁內確認面板的待辦動作。
+    ⚠️ 關閉的單位是「房間」（close-subject）不是單張表單：表單是這間房的頁籤，
+    關掉其中一張沒有意義。帶 subjectId 是因為使用者可以關閉非作用中的那一間。
+  */
+  type PendingAction =
+    | "complete" | "all" | "unlock" | "authorize" | "workorder"
+    | { kind: "close-subject"; subjectId: string };
+  const [pending, setPending] = useState<PendingAction | null>(null);
+  /** 每位對象上次看的表單，切回這間房時回到原處。 */
+  const [lastFormBySubject, setLastFormBySubject] = useState<Record<string, string>>({});
   const [reason, setReason] = useState("");
   const [signing, setSigning] = useState(false);
   const [signingRole, setSigningRole] = useState<CareSignatureRole>("recipient");
@@ -149,6 +159,11 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
 
   if (!hydrated) return <div className="page-frame"><div className="h-16 animate-pulse rounded-xl bg-white/70" aria-label="照護工作區載入中" /></div>;
 
+  /** 確認面板要關閉的那一間房怎麼稱呼（可能不是目前作用中的那一間）。 */
+  const closingSubject = pending && typeof pending === "object" ? subjectFor(pending.subjectId) : undefined;
+  const closingLabel = closingSubject
+    ? `${closingSubject.room || closingSubject.carNo || ""} ${closingSubject.name}`.trim()
+    : "";
   // 側欄 sticky 只需讓過固定在上方的表單列；對象識別列已併進頁首列本身。
   const stickyToolbarHeight = openDocuments.length ? "4rem" : "0rem";
   return <div className={`${styles.workspace} page-frame`} style={{ "--care-tray-h": stickyToolbarHeight } as React.CSSProperties}>
@@ -164,19 +179,19 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
       */}
       {hasActive ? <>
         {pending && <section ref={confirmation} className="mb-6 space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4" aria-label="頁內操作確認" data-no-print>
-          <h3 className="font-semibold">{({ complete: "確認完成簽出", close: "關閉此表單", all: "保留草稿並關閉全部表單", unlock: "切換編輯對象", authorize: "逾期回補授權", workorder: "建立示範工單" })[pending]}</h3>
-          <p className="text-sm">{pending === "complete" ? `請確認 ${identity(subject)} 的資料無誤。簽出後保留本筆紀錄，後續請新增一筆。` : pending === "unlock" ? "切換後其他對象改為唯讀，原有草稿會保留。" : pending === "close" ? "可保留草稿後關閉，或捨棄目前尚未簽出的草稿。" : "這項操作會保留目前操作者與時間。"}</p>
-          {["authorize", "workorder"].includes(pending) && <label className="block text-sm">{pending === "authorize" ? "授權原因（必填）" : "工單內容（必填）"}<textarea className={`${inputClass} mt-2`} value={reason} onChange={(event) => setReason(event.target.value)} /></label>}
+          <h3 className="font-semibold">{pending && typeof pending === "object" ? `關閉 ${closingLabel}的所有表單` : ({ complete: "確認完成簽出", all: "保留草稿並關閉全部表單", unlock: "切換編輯對象", authorize: "逾期回補授權", workorder: "建立示範工單" })[pending]}</h3>
+          <p className="text-sm">{pending === "complete" ? `請確認 ${identity(subject)} 的資料無誤。簽出後保留本筆紀錄，後續請新增一筆。` : pending === "unlock" ? "切換後其他對象改為唯讀，原有草稿會保留。" : pending && typeof pending === "object" ? "可保留草稿後關閉這一間，或捨棄這間尚未簽出的草稿。" : "這項操作會保留目前操作者與時間。"}</p>
+          {typeof pending === "string" && ["authorize", "workorder"].includes(pending) && <label className="block text-sm">{pending === "authorize" ? "授權原因（必填）" : "工單內容（必填）"}<textarea className={`${inputClass} mt-2`} value={reason} onChange={(event) => setReason(event.target.value)} /></label>}
           <div className="flex flex-wrap gap-2"><button type="button" className={buttonClass} onClick={() => setPending(null)}>取消</button>
-            {pending === "close" && !document.signedAt && <button type="button" className={buttonClass} onClick={() => run(() => careActions.close(document.key, true), "已捨棄本筆草稿並關閉。")}>捨棄並關閉</button>}
+            {pending && typeof pending === "object" && <button type="button" className={buttonClass} onClick={() => run(() => careActions.closeSubject(pending.subjectId, true), "已捨棄這間的草稿並關閉。")}>捨棄並關閉</button>}
             <button type="button" className={buttonClass} onClick={() => run(() => {
               if (pending === "complete") careActions.complete(document.key);
-              if (pending === "close") { if (editable && !document.signedAt) careActions.save(document.key); careActions.close(document.key); }
+              if (pending && typeof pending === "object") { if (editable && !document.signedAt) careActions.save(document.key); careActions.closeSubject(pending.subjectId); }
               if (pending === "all") careActions.closeAll(kind);
               if (pending === "unlock") careActions.unlock(document.key);
               if (pending === "authorize") careActions.authorize(subject.id, reason);
               if (pending === "workorder") careActions.workOrder(document.key, reason);
-            }, "操作完成，資料與歷程已更新。")}>{pending === "close" ? "保留草稿並關閉" : "確認"}</button>
+            }, "操作完成，資料與歷程已更新。")}>{pending && typeof pending === "object" ? "保留草稿並關閉" : "確認"}</button>
           </div>
         </section>}
         <div className={styles.layout}>
@@ -233,63 +248,88 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
         {!subjects.length && <p className="rounded-lg border border-dashed border-stone-300 p-8 text-center text-sm text-stone-600">沒有符合條件的照護對象，請調整搜尋或篩選。</p>}
       </>}
       {/*
-        開啟中的表單列：送進 AppShell 頁首下方的固定插槽（HeaderSlot），
-        與「回照護列表／關閉此表單」併成同一列。
+        導覽第 3 層，兩行（依客戶指定，參考 santinov1 的視窗式工作列）：
 
-        ⚠️ 不要把它搬回頁面底部。原本它 sticky 在頁尾，填表時完全看不到，
-        要切換表單得先捲到最底——客戶實際回報「很容易被忽略也不好切換」。
+          行 1：目前這位對象的**全部**表單頁籤——六張（寶寶八張）固定都在，
+                沒開過的點一下就開，不再分「已開／未開」兩種樣子。
+          行 2：開啟中的房間，切房間、單間關閉、全部關閉。
+
+        ⚠️ 關閉的單位是**房間**不是單張表單：表單是這間房的頁籤，
+        關掉其中一張沒有意義（santinov1 也沒有這個動作）。
+        ⚠️ 兩行都留在頁首，不要搬回頁面底部：客戶回報過「放最下面很容易被忽略」。
+        鎖定／解鎖在頁首列本身（對象識別列），不在這裡。
       */}
-      {openDocuments.length > 0 && <HeaderSlot>
-        <nav aria-label="開啟中的照護表單" className={styles.tray} data-no-print>
-          <div className={styles.trayScroll}>
-            {hasActive && <>
+      {hasActive && subject && (
+        <HeaderSlot>
+          <nav aria-label="此對象的照護表單" className={styles.tray} data-no-print>
+            <div className={styles.trayScroll}>
               <button type="button" title="回照護列表" className={buttonStyles({ size: "sm" })} onClick={() => { setListVisible(true); setSigning(false); }}><ArrowLeft size={14} />回列表</button>
-              <button type="button" title="關閉此表單" className={buttonStyles({ size: "sm" })} onClick={() => setPending("close")}><X size={14} />關閉</button>
               <span className={styles.trayDivider} aria-hidden="true" />
-            </>}
-            {/* 一間房一個群組：房號當群組標籤只出現一次，群組內只留表單名。
-                完整的房號、姓名與表單名放在 title，滑過去仍看得到。 */}
-            {trayGroups.map(({ target, items }) => {
-              const place = target.room || target.carNo || target.name;
-              const active = items.some((item) => item.key === activeKey) && !listVisible;
-              /*
-                目前作用中的那一組，額外列出這位對象「還沒開」的表單，點一下就開。
-
-                ⚠️ 這取代了右側欄原本的「此對象的其他表單」。不要把那一區加回來，
-                也不要另外拉一列放表單切換：那會和這條分組列顯示同一批東西（301 的
-                入住評估同時出現在兩處），而且右側欄在長表單捲到一半時根本看不到。
-                ⚠️ 只有作用中的那一組展開，其他組維持只顯示已開啟的——否則同時開五間房
-                時這一列會長到無法掃視，也失去「我現在在哪一間」的焦點。
-              */
-              const openedKeys = new Set(items.map((item) => item.formKey));
-              const unopened = active ? forms.filter((item) => !openedKeys.has(item.key)) : [];
-              return (
-                <div key={target.id} data-active={active} className={styles.trayGroup}>
-                  <span className={styles.trayGroupLabel} title={`${place} ${target.name}`}>{place}</span>
-                  {items.map((item) => {
-                    const formLabel = forms.find((available) => available.key === item.formKey)?.label ?? item.formKey;
-                    const state = item.signedAt ? " ✓" : item.dirty ? " · 草稿" : "";
-                    return <button type="button" key={item.key} title={`${place} ${target.name}｜${formLabel}`} aria-pressed={item.key === activeKey && !listVisible} className={buttonStyles({ size: "sm", selected: item.key === activeKey && !listVisible })} onClick={() => { run(() => careActions.activate(item.key)); setListVisible(false); setSigning(false); }}>{formLabel}{state}</button>;
-                  })}
-                  {unopened.map((item) => (
+              {forms.map((item) => {
+                const key = documentKey(subject.id, item.key);
+                const opened = openDocuments.find((entry) => entry.key === key);
+                const state = opened?.signedAt ? " ✓" : opened?.dirty ? " · 草稿" : "";
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    aria-pressed={key === activeKey && !listVisible}
+                    title={`${identity(subject)}｜${item.label}`}
+                    className={buttonStyles({ size: "sm", selected: key === activeKey && !listVisible })}
+                    onClick={() => { setSigning(false); setLastFormBySubject((current) => ({ ...current, [subject.id]: key })); if (opened) run(() => careActions.activate(key)); else open(subject.id, item.key); }}
+                  >
+                    {item.label}{state}
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+        </HeaderSlot>
+      )}
+      {openDocuments.length > 0 && (
+        <HeaderSlot>
+          <nav aria-label="開啟中的照護對象" className={styles.roomBar} data-no-print>
+            <span className={styles.roomBarLabel}>開啟中 {trayGroups.length}</span>
+            <div className={styles.trayScroll}>
+              {trayGroups.map(({ target, items }) => {
+                const place = target.room || target.carNo || target.name;
+                const current = items.some((item) => item.key === activeKey) && !listVisible;
+                const draft = items.some((item) => item.dirty && !item.signedAt);
+                return (
+                  <span key={target.id} data-active={current} className={styles.roomChip}>
                     <button
-                      key={item.key}
                       type="button"
-                      title={`開啟 ${place} ${target.name}｜${item.label}`}
-                      onClick={() => open(target.id, item.key)}
-                      className={`${styles.trayPending} ${buttonStyles({ size: "sm", variant: "ghost" })}`}
+                      aria-pressed={current}
+                      title={`切換到 ${place} ${target.name}（開啟 ${items.length} 張）`}
+                      className={styles.roomChipMain}
+                      onClick={() => {
+                        setSigning(false);
+                        setListVisible(false);
+                        // 回到這間房上次看的那張表單；沒記錄就用最近開的那張。
+                        const back = items.find((item) => item.key === lastFormBySubject[target.id]) ?? items[items.length - 1];
+                        run(() => careActions.activate(back.key));
+                      }}
                     >
-                      ＋{item.label}
+                      {place}｜{target.name}
+                      {draft && <em className={styles.roomChipDraft} title="有未簽出的草稿" aria-label="有未簽出的草稿" />}
                     </button>
-                  ))}
-                </div>
-              );
-            })}
-            <span className={styles.trayDivider} aria-hidden="true" />
-            <button type="button" className={buttonStyles({ size: "sm" })} title="保留草稿並關閉全部表單" onClick={() => { if (hasActive) setPending("all"); else run(() => careActions.closeAll(kind), "已保留草稿並關閉全部表單。"); }}>關閉全部</button>
-          </div>
-        </nav>
-      </HeaderSlot>}
+                    <button
+                      type="button"
+                      title={`關閉 ${place} ${target.name} 的所有表單`}
+                      aria-label={`關閉 ${place} ${target.name}`}
+                      className={styles.roomChipClose}
+                      onClick={() => setPending({ kind: "close-subject", subjectId: target.id })}
+                    >
+                      <X size={13} />
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+            <button type="button" className={buttonStyles({ size: "sm" })} title="保留草稿並關閉全部" onClick={() => { if (hasActive) setPending("all"); else run(() => careActions.closeAll(kind), "已保留草稿並關閉全部表單。"); }}>全部關閉</button>
+          </nav>
+        </HeaderSlot>
+      )}
       {/*
         目前對象的識別列，放進頁首列本身（標題與角色切換之間）。
 

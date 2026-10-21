@@ -1,7 +1,8 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import BabycamWorkspace from "./BabycamWorkspace";
+import BabycamWorkspace, { babycamGroupLabel } from "./BabycamWorkspace";
+import PageHeader from "@/components/ui/PageHeader";
 
 /**
  * 工作區進入點。
@@ -15,5 +16,15 @@ export default function WorkspaceEntry() {
   const params = useSearchParams();
   const bindingId = params.get("binding") ?? "";
   const section = params.get("section") ?? "registration";
-  return <BabycamWorkspace key={bindingId} initialBindingId={bindingId} initialSection={section} />;
+  /*
+    ⚠️ 頁首標題在這裡下，不在 page.tsx：標題要跟著左側第 2 層選單（?section=）變，
+    而只有這裡讀得到 section。page.tsx 若也放一個 PageHeader，兩個會互相覆蓋。
+  */
+  const group = babycamGroupLabel(section);
+  return (
+    <>
+      <PageHeader title={group ? `寶寶視訊・${group}` : "寶寶視訊"} moduleNo="17" />
+      <BabycamWorkspace key={bindingId} initialBindingId={bindingId} initialSection={section} />
+    </>
+  );
 }

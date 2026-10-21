@@ -17,12 +17,24 @@ export function createPersistentStore<T>(key: string, initial: T, validate: (val
     loaded = true;
     try {
       const raw = window.localStorage.getItem(key);
-      if (raw) {
-        const parsed: unknown = JSON.parse(raw);
-        if (!validate(parsed)) throw new Error("示範資料已更新為新版內容（房號主檔、展示帳密與權限皆已重設），原本在這台瀏覽器上的操作紀錄不保留。");
-        snapshot = { data: parsed, storageError: null };
+      if (!raw) return;
+      const parsed: unknown = JSON.parse(raw);
+      if (!validate(parsed)) {
+        /*
+          結構不符＝示範資料改版，直接重設成新版初始值。
+
+          ⚠️ 不要把這件事當成 storageError 丟出去：那是給使用者看的警告橫幅，
+          而改版是預期行為、使用者也無從處理。更糟的是舊值沒被覆寫回 localStorage，
+          於是每次重新整理都再判一次，那行「示範資料已更新為新版內容…」會出現在
+          每一頁、永遠不會消失（客戶實際回報）。寫回去才會只發生一次。
+        */
+        window.localStorage.setItem(key, JSON.stringify(initial));
+        snapshot = { data: structuredClone(initial), storageError: null };
+        return;
       }
+      snapshot = { data: parsed, storageError: null };
     } catch (error) {
+      // 真正的異常才提示：JSON 壞掉、localStorage 被停用或寫滿。
       snapshot = { data: initial, storageError: error instanceof Error ? error.message : "無法讀取本機展示資料。" };
     }
   }

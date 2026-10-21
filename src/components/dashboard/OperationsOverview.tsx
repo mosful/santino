@@ -140,7 +140,7 @@ export default function OperationsOverview({
     >
       <span className="flex items-center gap-2 text-sm font-bold text-stone-700">
         <BedDouble className="h-[18px] w-[18px] shrink-0 text-brand-500" aria-hidden="true" />
-        房況總覽
+        房間動態
       </span>
       <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-500">
         <span>館內 <strong className="text-sm tabular-nums text-stone-700">{rooms.mothers.length}</strong> 位</span>

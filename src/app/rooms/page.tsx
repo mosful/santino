@@ -19,7 +19,7 @@ export default function RoomsPage() {
   return (
     <div className="page-frame">
       <RequireAccess moduleNo="4">
-        <PageHeader title="房況總覽" moduleNo="4" />
+        <PageHeader title="房間動態" moduleNo="4" />
         <RoomStatusOverview />
       </RequireAccess>
     </div>

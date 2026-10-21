@@ -12,6 +12,7 @@ import Button, { ButtonLink } from "@/components/ui/Button";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { useCurrentRole } from "@/lib/roleStore";
 import HeaderSlot from "@/components/layout/HeaderSlot";
+import { headerTabClass } from "@/components/ui/Tabs";
 import { canUseCaseFlow, ROLES, type Role } from "@/lib/permissions";
 import { babycamActions, canBabycamSection } from "@/lib/babycam/actions";
 import { effectiveViewingWindow } from "@/lib/babycam/viewing";
@@ -56,7 +57,7 @@ import {
 const input = "min-h-11 w-full rounded-lg border border-border-subtle bg-surface-raised px-3 py-2 text-sm";
 const subPanel = "space-y-4 rounded-xl border border-border-subtle bg-surface-raised p-4";
 
-type GroupId = "01" | "02" | "04" | "08";
+type GroupId = "01" | "02" | "04";
 type TabDef = {
   id: string;
   label: string;
@@ -95,26 +96,26 @@ const GROUPS: { id: GroupId; label: string; heading: string; description: string
   },
   {
     id: "04",
-    label: "後臺管理",
-    heading: "後臺管理",
-    description: "開放時段、房型房號、顯示狀態與背景圖，以及監視器主檔。",
+    /*
+      「系統設定」群組（環狀燈號／繼電器板／燈號狀態）2026-10-21 依客戶要求併進來，
+      群組從四個收成三個。名稱改為「設定與維運」：
+        ・原本的「後臺管理」和主選單的「後台管理」（模組 15）只差一個臺／台，
+          併入燈號設定後範圍更大，繼續沿用只會更容易認錯。
+        ・燈號三頁的 access 仍是 06／07／08，非管理者本來就看不到，
+          併群組不會讓任何人多拿到權限。
+    */
+    label: "設定與維運",
+    heading: "設定與維運",
+    description: "開放時段、房型房號、顯示狀態與背景圖、監視器主檔，以及環狀燈號與繼電器。",
     tabs: [
       { id: "schedule", label: "開放時段", access: "04" },
       { id: "rooms", label: "房間清單", access: "04" },
       // 名稱與背景圖已合併成同一頁（見 StateMaintenance 的說明）；上傳底圖另吃 05 權限。
       { id: "states", label: "狀態維護", access: "04" },
-      // 監視器主檔與健康狀態屬營運維護，不是系統設定；放這裡護理長才不必為了
-      // 看一支鏡頭的健康狀態就被塞進「系統設定」群組（與 BabyCam 的差異，刻意）。
+      // 監視器主檔與健康狀態屬營運維護；護理長不必為了看一支鏡頭的健康狀態
+      // 就被塞進只有管理者看得到的燈號設定裡（與 BabyCam 的差異，刻意）。
       { id: "cameras", label: "監視器狀態", access: "03" },
       { id: "demo", label: "展示控制台", access: "04" },
-    ],
-  },
-  {
-    id: "08",
-    label: "系統設定",
-    heading: "系統設定",
-    description: "環狀燈號、繼電器點測與院方燈號語意；三頁讀同一份燈色設定。",
-    tabs: [
       { id: "ringlight", label: "環狀燈號", access: "06" },
       { id: "relay", label: "繼電器板", access: "07" },
       { id: "lightstates", label: "燈號狀態", access: "08" },
@@ -122,8 +123,19 @@ const GROUPS: { id: GroupId; label: string; heading: string; description: string
   },
 ];
 
+/**
+ * `?section=` 對應的群組名稱，給頁首標題用。
+ *
+ * ⚠️ 標題要跟著左側第 2 層選單變（客戶要求）：切到「寶寶登錄」時頁首就該寫
+ * 「寶寶視訊・寶寶登錄」，否則四個群組的標題長得一模一樣，看不出自己在哪。
+ */
+export function babycamGroupLabel(section: string) {
+  const group = (LEGACY_SECTION[section] ?? LEGACY_SECTION.registration).group;
+  return GROUPS.find((item) => item.id === group)?.label ?? "";
+}
+
 /** 每個群組預設停在哪個頁籤（對齊 BabyCam 的 DEFAULT_TABS）。 */
-const DEFAULT_TAB: Record<GroupId, string> = { "01": "desk", "02": "assign", "04": "schedule", "08": "ringlight" };
+const DEFAULT_TAB: Record<GroupId, string> = { "01": "desk", "02": "assign", "04": "schedule" };
 
 /** 舊版 `?section=` 深連結 → 新的群組／頁籤，既有書籤與測試連結不會壞掉。 */
 const LEGACY_SECTION: Record<string, { group: GroupId; tab: string }> = {
@@ -136,7 +148,8 @@ const LEGACY_SECTION: Record<string, { group: GroupId; tab: string }> = {
   backgrounds: { group: "04", tab: "states" },
   reports: { group: "01", tab: "report" },
   cameras: { group: "04", tab: "cameras" },
-  lights: { group: "08", tab: "ringlight" },
+  // 「系統設定」群組已併入 04，舊的 ?section=lights 仍指向環狀燈號。
+  lights: { group: "04", tab: "ringlight" },
 };
 
 
@@ -380,22 +393,10 @@ export default function BabycamWorkspace({
       */}
       <HeaderSlot slot="below">
         <div className="header-tablist flex items-center gap-2 overflow-x-auto">
-          <span className="shrink-0 rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700">{activeGroup.label}</span>
           {groupTabs.length > 1 ? (
             <div role="group" aria-label={`${activeGroup.label}工作區`} className="flex gap-1">
               {groupTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  aria-pressed={active.id === tab.id}
-                  onClick={() => selectTab(tab.id)}
-                  className={
-                    "shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors sm:text-sm " +
-                    (active.id === tab.id
-                      ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm shadow-brand-200"
-                      : "text-stone-600 hover:bg-surface-raised hover:text-brand-700")
-                  }
-                >
+                <button key={tab.id} type="button" aria-pressed={active.id === tab.id} onClick={() => selectTab(tab.id)} className={headerTabClass(active.id === tab.id)}>
                   {tab.label}
                 </button>
               ))}
@@ -403,7 +404,8 @@ export default function BabycamWorkspace({
           ) : (
             <span className="shrink-0 text-sm font-semibold text-stone-700">{active.label}</span>
           )}
-          <span className="hidden max-w-[48ch] truncate text-xs text-stone-500 xl:block" title={activeGroup.description}>
+          {/* 群組說明靠右（客戶指定）；群組名已在頁首標題，這裡不重複。 */}
+          <span className="ml-auto hidden max-w-[48ch] shrink-0 truncate pl-4 text-xs text-stone-500 xl:block" title={activeGroup.description}>
             {activeGroup.description}
           </span>
         </div>

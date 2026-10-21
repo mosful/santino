@@ -20,7 +20,6 @@ import {
   Bed,
   Tags,
   SlidersHorizontal,
-  Settings2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -56,5 +55,4 @@ export const SUB_ICONS: Record<string, LucideIcon> = {
   "babycam-01": Bed,
   "babycam-02": Tags,
   "babycam-04": SlidersHorizontal,
-  "babycam-08": Settings2,
 };

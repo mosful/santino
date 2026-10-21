@@ -44,13 +44,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <body className="min-h-full bg-stone-50 text-stone-900">
-        <script
-          // 在hydrate前先套用已儲存的主題，避免畫面先閃預設暖色再跳成使用者選的主題
-          dangerouslySetInnerHTML={{
-            __html:
-              "try{var t=localStorage.getItem('santino_theme_v1');if(t==='warm'||t==='green'||t==='blue'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}",
-          }}
-        />
+        {/*
+          ⚠️ 這裡原本有一段「套用已儲存主題」的 script，搭配頁首右上角的三顆配色圓點。
+          客戶（老闆）表示「同樣的資料不需要太多種呈現方式」，2026-10-21 移除配色切換，
+          全站固定專業藍（globals.css 的預設 :root）。三套配色的 CSS 變數仍保留在
+          globals.css，日後要換主色改那裡即可，不要把切換器加回畫面。
+        */}
         <script
           // 靜態畫面稿的登入導頁：未登入且非登入/忘記密碼頁時導向/login，
           // 已登入卻停在/login或/forgot-password時導回首頁。純client端模擬，無真實驗證。

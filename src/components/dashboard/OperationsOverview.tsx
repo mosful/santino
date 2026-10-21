@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BellRing, CalendarClock, ClipboardList, PhoneCall, UserRoundSearch, Video, type LucideIcon } from "lucide-react";
+import { BellRing, ClipboardList, PhoneCall, UserRoundSearch, Video, type LucideIcon } from "lucide-react";
 import { useCareStore } from "@/lib/care/store";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { roleTaskCategories, taskEvents } from "@/lib/domain/tasks";
@@ -9,7 +9,6 @@ import { ANNOUNCEMENTS } from "@/lib/mock/dashboard";
 import { useCurrentRole } from "@/lib/roleStore";
 import RoomStatusOverview from "./RoomStatusOverview";
 import { canUseCaseFlow, getAccess } from "@/lib/permissions";
-import { buttonStyles } from "@/components/ui/buttonStyles";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
 
 /** 由首頁漏斗傳進來的跨階段數字；點擊會切換漏斗的快速檢視。 */
@@ -104,11 +103,6 @@ export default function OperationsOverview({
         title="今日工作台"
         summary={urgent.length ? `${urgent.length} 件到期事項` : "今天沒有到期事項"}
         icon={<BellRing className="h-[18px] w-[18px] shrink-0 text-rose-500" aria-hidden="true" />}
-        action={
-          <Link href="/todo/" className={buttonStyles({ size: "sm", className: "rounded-xl" })}>
-            <CalendarClock className="h-4 w-4" /> 開啟待辦事項
-          </Link>
-        }
       >
 
         {/* 跨階段數字由漏斗傳入，點擊即切換下方漏斗的快速檢視。

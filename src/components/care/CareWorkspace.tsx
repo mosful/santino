@@ -4,12 +4,10 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, FileText, LayoutGrid, List, LockKeyhole, Printer, Save, UnlockKeyhole, X } from "lucide-react";
+import { ArrowLeft, Check, FileText, LockKeyhole, Printer, Save, UnlockKeyhole, X } from "lucide-react";
 import RequireAccess from "@/components/ui/RequireAccess";
 import PageHeader from "@/components/ui/PageHeader";
-import SegmentedControl from "@/components/ui/SegmentedControl";
-import CareSubjectTable from "./CareSubjectTable";
-import { setCareView, useCareView } from "@/lib/careViewStore";
+import HeaderSlot from "@/components/layout/HeaderSlot";
 import { useCurrentRole } from "@/lib/roleStore";
 import { careForms } from "@/lib/care/forms";
 import { careSubject } from "@/lib/care/subjects";
@@ -24,10 +22,6 @@ import styles from "./CareWorkspace.module.css";
 import LocalMedia from "../babycam/LocalMedia";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 
-const CARE_VIEW_OPTIONS = [
-  { value: "card" as const, label: "卡片", icon: LayoutGrid, help: "以房卡形式顯示，一眼看到每位對象的所有表單" },
-  { value: "list" as const, label: "清單", icon: List, help: "以表格形式顯示，欄位對齊便於一次掃過整館" },
-];
 
 function identity(subject: CareSubject) { const location = subject.room ? `房號 ${subject.room}${subject.carNo ? `｜車號 ${subject.carNo}` : ""}` : `車號 ${subject.carNo || "待指派"}`; return `${location}｜${subject.name}｜${subject.chartNo}`; }
 const signatureRoles: { key: CareSignatureRole; label: string }[] = [{ key: "recipient", label: "媽媽／家屬簽名" }, { key: "executor", label: "執行者簽名" }, { key: "evaluator", label: "評值者簽名" }];
@@ -46,7 +40,6 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   const [signing, setSigning] = useState(false);
   const [signingRole, setSigningRole] = useState<CareSignatureRole>("recipient");
   const [listVisible, setListVisible] = useState(false);
-  const careView = useCareView();
   const hydrated = useSyncExternalStore(hydrationSubscribe, () => true, () => false);
   const confirmation = useRef<HTMLElement>(null);
   const configured = useAssessmentFields();
@@ -123,16 +116,19 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
 
   if (!hydrated) return <div className="page-frame"><div className="h-16 animate-pulse rounded-xl bg-white/70" aria-label="照護工作區載入中" /></div>;
 
-  return <div className={`${styles.workspace} page-frame`}>
+  // 有表單列時側欄 sticky 要再往下讓，否則會被固定在上方的那一列蓋住。
+  return <div className={`${styles.workspace} page-frame`} style={{ "--care-tray-h": openDocuments.length ? "4rem" : "0rem" } as React.CSSProperties}>
     <RequireAccess moduleNo={kind === "mama" ? "2" : "3"}>
       <PageHeader title={kind === "mama" ? "媽媽照護" : "寶寶照護"} moduleNo={kind === "mama" ? "2" : "3"} />
       {storageError && <p role="alert" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{storageError}</p>}
       {message && <div role="status" className="mb-4 whitespace-pre-line rounded-lg border border-stone-300 bg-stone-50 p-3 text-sm">{message}</div>}
+      {/*
+        照護對象只有房卡一種呈現。
+        ⚠️ 原本有「卡片／清單」切換（careViewStore＋CareSubjectTable），同一份資料
+        兩種版面、兩段 JSX 要同步維護。客戶（老闆）表示「同樣的資料不需要太多種
+        呈現方式」，2026-10-21 移除清單，保留房卡——顏色與房號是現場既有語彙。
+      */}
       {hasActive ? <>
-        <div className="mb-4 flex flex-wrap gap-2" data-no-print>
-          <button type="button" className={buttonClass} onClick={() => { setListVisible(true); setSigning(false); }}><ArrowLeft size={16} />回照護列表</button>
-          <button type="button" className={buttonClass} onClick={() => setPending("close")}><X size={16} />關閉此表單</button>
-        </div>
         <header className="mb-6 flex flex-wrap items-start justify-between gap-4 rounded-xl border border-stone-300 bg-white p-4">
           <div><h2 className="text-xl font-semibold">{identity(subject)}</h2><p className="mt-2 text-sm text-stone-600">{subject.motherName}｜{subject.status}｜入住第 {subject.stayDay} 天{subject.gender ? `｜${subject.gender}寶寶` : ""}</p>
             {subject.historical && <p className="mt-2 text-sm text-amber-900">退房回補｜退房 {taipeiTimestamp(subject.dischargedAt!)}｜可補至 {taipeiTimestamp(backfillDeadline(subject, data.backfillDays)!)}{expired ? "｜已逾期" : ""}</p>}
@@ -202,15 +198,40 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
         <div className="mb-5 flex flex-wrap gap-3" data-no-print><label className="min-w-0 flex-1"><span className="sr-only">搜尋照護對象</span><input className={inputClass} placeholder="搜尋房號、車號、姓名、病歷號" value={query} onChange={(event) => setQuery(event.target.value)} /></label><div className="flex flex-wrap gap-2">{["在館", "托嬰", "退房回補"].map((status) => <button type="button" key={status} aria-pressed={filter === status} className={buttonStyles({ selected: filter === status })} onClick={() => setFilter(status)}>{status}</button>)}</div></div>
         {drafts.length > 0 && <section className="mb-6 rounded-xl border border-stone-200 p-4"><h2 className="mb-3 flex items-center gap-2 font-semibold"><FileText size={18} />暫存中表單（{drafts.length}）</h2><div className="flex flex-wrap gap-2">{drafts.map((item) => { const target = subjectFor(item.subjectId)!; return <button type="button" key={item.key} className={buttonClass} onClick={() => open(target.id, item.formKey)}>{target.name}｜{forms.find((available) => available.key === item.formKey)?.label ?? item.formKey}</button>; })}</div></section>}
         {canAuthorizeCare(role) && <label className="mb-4 flex flex-wrap items-center gap-3 text-sm" data-no-print>退房回補天數（示範設定）<input aria-label="退房回補天數" type="number" min={0} max={30} className={`${inputClass} !w-24`} value={data.backfillDays} onChange={(event) => run(() => careActions.backfillDays(Number(event.target.value)), "已更新回補期限，所有照護對象同步。")} /></label>}
-        <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-stone-600"><span>綠色：入住</span><span>粉色：親子同室</span><span>托嬰以車號識別</span><span>退房回補 {data.backfillDays} 天（示範設定）</span><span className="ml-auto">{subjects.length} 位</span><div data-no-print><SegmentedControl ariaLabel="照護對象檢視方式" value={careView} onChange={setCareView} options={CARE_VIEW_OPTIONS} /></div></div>
-        {careView === "list" ? <CareSubjectTable subjects={subjects} kind={kind} forms={forms} backfillDays={data.backfillDays} onOpen={open} caption={`${kind === "mama" ? "媽媽" : "寶寶"}照護對象清單`} /> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{subjects.map((item) => <section key={item.id} data-status={item.historical ? "退房回補" : item.status} className={`${styles.subjectCard} min-w-0 rounded-xl border p-4`}>
+        <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-stone-600"><span>綠色：入住</span><span>粉色：親子同室</span><span>托嬰以車號識別</span><span>退房回補 {data.backfillDays} 天（示範設定）</span><span className="ml-auto">{subjects.length} 位</span></div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{subjects.map((item) => <section key={item.id} data-status={item.historical ? "退房回補" : item.status} className={`${styles.subjectCard} min-w-0 rounded-xl border p-4`}>
           <div className="flex items-center justify-between gap-2"><h2 className="text-lg font-semibold">{item.room ? `房 ${item.room}` : `車 ${item.carNo || "待指派"}`}</h2><span className={`${styles.status} text-xs`}>{item.status}</span></div><p className="mt-2 font-medium">{item.name}</p>{kind === "baby" && <p className="mt-1 break-words text-xs text-stone-600">{item.motherName}{item.room && item.carNo ? `｜車號 ${item.carNo}` : ""}</p>}<p className="mt-1 break-words text-xs text-stone-600">{item.chartNo}｜第 {item.stayDay} 天</p>{item.historical && <p className="mt-2 text-xs text-amber-900">可補至 {taipeiTimestamp(backfillDeadline(item, data.backfillDays)!)}{isBackfillExpired(item, data.backfillDays) ? "（逾期需主管授權）" : ""}</p>}
           <div className="mt-4 grid grid-cols-2 gap-2">{forms.map((itemForm) => <button type="button" key={itemForm.key} onClick={() => open(item.id, itemForm.key)} className={buttonStyles({ size: "sm" })}>{itemForm.label}</button>)}</div>
-        </section>)}</div>}
-        {backfillSubjects.length > 0 && <section className="mt-9"><div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h2 className="text-xl font-semibold">退房回補</h2><span className="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-900">期限 {data.backfillDays} 天，逾期需主管授權</span></div>{careView === "list" ? <CareSubjectTable subjects={backfillSubjects} kind={kind} forms={forms} backfillDays={data.backfillDays} onOpen={open} caption="退房回補對象清單" /> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{backfillSubjects.map((item) => <section key={item.id} data-status="退房回補" className={`${styles.subjectCard} min-w-0 rounded-xl border p-4`}><div className="flex items-center justify-between gap-2"><h3 className="font-semibold">房 {item.room}</h3><span className={`${styles.status} text-xs`}>退房回補</span></div><p className="mt-2 font-medium">{item.name}</p><p className="mt-1 text-xs text-stone-600">{item.chartNo}｜退房 {taipeiTimestamp(item.dischargedAt!)}</p><p className="mt-2 text-xs text-amber-900">可補至 {taipeiTimestamp(backfillDeadline(item, data.backfillDays)!)}{isBackfillExpired(item, data.backfillDays) ? "（逾期需授權）" : ""}</p><div className="mt-4 grid grid-cols-2 gap-2">{forms.map((itemForm) => <button type="button" key={itemForm.key} onClick={() => open(item.id, itemForm.key)} className={buttonStyles({ size: "sm" })}>{itemForm.label}</button>)}</div></section>)}</div>}</section>}
+        </section>)}</div>
+        {backfillSubjects.length > 0 && <section className="mt-9"><div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h2 className="text-xl font-semibold">退房回補</h2><span className="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-900">期限 {data.backfillDays} 天，逾期需主管授權</span></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{backfillSubjects.map((item) => <section key={item.id} data-status="退房回補" className={`${styles.subjectCard} min-w-0 rounded-xl border p-4`}><div className="flex items-center justify-between gap-2"><h3 className="font-semibold">房 {item.room}</h3><span className={`${styles.status} text-xs`}>退房回補</span></div><p className="mt-2 font-medium">{item.name}</p><p className="mt-1 text-xs text-stone-600">{item.chartNo}｜退房 {taipeiTimestamp(item.dischargedAt!)}</p><p className="mt-2 text-xs text-amber-900">可補至 {taipeiTimestamp(backfillDeadline(item, data.backfillDays)!)}{isBackfillExpired(item, data.backfillDays) ? "（逾期需授權）" : ""}</p><div className="mt-4 grid grid-cols-2 gap-2">{forms.map((itemForm) => <button type="button" key={itemForm.key} onClick={() => open(item.id, itemForm.key)} className={buttonStyles({ size: "sm" })}>{itemForm.label}</button>)}</div></section>)}</div></section>}
         {!subjects.length && <p className="rounded-lg border border-dashed border-stone-300 p-8 text-center text-sm text-stone-600">沒有符合條件的照護對象，請調整搜尋或篩選。</p>}
       </>}
-      {openDocuments.length > 0 && <nav aria-label="開啟中的照護表單" className={styles.tray} data-no-print><div className="mb-2 flex flex-wrap items-center gap-3 text-xs text-stone-600"><span>全部開啟 {data.open.length}</span><span>草稿 {allDrafts}</span><span>{lockedSubject ? `編輯鎖：${lockedSubject.room || lockedSubject.carNo} ${lockedSubject.name}` : "尚未鎖定對象"}</span><Link href="/" className="ml-auto underline">回首頁</Link></div><div className="flex flex-wrap items-center gap-2">{openDocuments.map((item) => { const target = subjectFor(item.subjectId)!; return <button type="button" key={item.key} aria-pressed={item.key === activeKey && !listVisible} className={buttonStyles({ selected: item.key === activeKey && !listVisible })} onClick={() => { run(() => careActions.activate(item.key)); setListVisible(false); setSigning(false); }}>{target.room || target.carNo} {target.name}｜{forms.find((available) => available.key === item.formKey)?.label ?? item.formKey}{item.signedAt ? " ✓" : item.dirty ? " · 草稿" : ""}</button>; })}<button type="button" className={buttonClass} onClick={() => { if (hasActive) setPending("all"); else run(() => careActions.closeAll(kind), "已保留草稿並關閉全部表單。"); }}>保留草稿，全部關閉</button></div></nav>}
+      {/*
+        開啟中的表單列：送進 AppShell 頁首下方的固定插槽（HeaderSlot），
+        與「回照護列表／關閉此表單」併成同一列。
+
+        ⚠️ 不要把它搬回頁面底部。原本它 sticky 在頁尾，填表時完全看不到，
+        要切換表單得先捲到最底——客戶實際回報「很容易被忽略也不好切換」。
+      */}
+      {openDocuments.length > 0 && <HeaderSlot>
+        <nav aria-label="開啟中的照護表單" className={styles.tray} data-no-print>
+          <div className={styles.trayScroll}>
+            {hasActive && <>
+              <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { setListVisible(true); setSigning(false); }}><ArrowLeft size={14} />回照護列表</button>
+              <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => setPending("close")}><X size={14} />關閉此表單</button>
+              <span className={styles.trayDivider} aria-hidden="true" />
+            </>}
+            {openDocuments.map((item) => { const target = subjectFor(item.subjectId)!; return <button type="button" key={item.key} aria-pressed={item.key === activeKey && !listVisible} className={buttonStyles({ size: "sm", selected: item.key === activeKey && !listVisible })} onClick={() => { run(() => careActions.activate(item.key)); setListVisible(false); setSigning(false); }}>{target.room || target.carNo} {target.name}｜{forms.find((available) => available.key === item.formKey)?.label ?? item.formKey}{item.signedAt ? " ✓" : item.dirty ? " · 草稿" : ""}</button>; })}
+            <span className={styles.trayDivider} aria-hidden="true" />
+            <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { if (hasActive) setPending("all"); else run(() => careActions.closeAll(kind), "已保留草稿並關閉全部表單。"); }}>保留草稿，全部關閉</button>
+          </div>
+          <p className={styles.trayMeta}>
+            <span>開啟 {data.open.length}</span>
+            <span>草稿 {allDrafts}</span>
+            <span>{lockedSubject ? `編輯鎖 ${lockedSubject.room || lockedSubject.carNo} ${lockedSubject.name}` : "未鎖定對象"}</span>
+          </p>
+        </nav>
+      </HeaderSlot>}
     </RequireAccess>
   </div>;
 }

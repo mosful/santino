@@ -18,11 +18,28 @@
 .workspace input, .workspace textarea { caret-color: var(--brand); }
 .workspace ::selection { background: var(--brand-200); color: var(--brand-900); }
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; align-items: start; }
-.sidebar { position: sticky; top: 24px; }
+/* 頁首與「開啟中的表單」列都固定在畫面上方，側欄要讓過它們才不會被蓋住。
+   --care-tray-h 由 CareWorkspace 依是否有開啟中的表單設定。 */
+.sidebar { position: sticky; top: calc(var(--app-header-h) + var(--care-tray-h, 0rem) + 1rem); }
 .form fieldset:disabled { opacity: .75; }
-.tray { position: sticky; bottom: 0; z-index: 20; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; background: color-mix(in srgb, var(--surface-raised) 94%, transparent); border-top: 1px solid var(--border-subtle); padding: 12px; margin-top: 24px; scrollbar-color: var(--brand-300) var(--surface-muted); scrollbar-width: thin; backdrop-filter: blur(12px); }
-.tray > div { flex-wrap: nowrap; width: max-content; min-width: 100%; }
-.tray button { flex: 0 0 auto; max-width: min(320px, 80vw); }
+/*
+  「開啟中的表單」列。
+
+  ⚠️ 這一列是 portal 到 AppShell 頁首插槽裡的（見 components/layout/HeaderSlot），
+  不再 sticky 於頁尾，也不在 .workspace 容器內——所以不要在這裡依賴 .workspace
+  的任何樣式，底色與邊框也交給頁首容器，這裡只畫分隔線。
+*/
+.tray { display: flex; align-items: center; gap: 12px; max-width: 100%; padding: 6px 16px; border-top: 1px solid var(--border-subtle); }
+.trayScroll { display: flex; min-width: 0; flex: 1 1 auto; align-items: center; gap: 8px; overflow-x: auto; overscroll-behavior-inline: contain; padding-block: 4px; scrollbar-color: var(--brand-300) var(--surface-muted); scrollbar-width: thin; }
+.trayScroll > * { flex: 0 0 auto; }
+.trayScroll button { max-width: min(260px, 55vw); }
+.trayDivider { width: 1px; min-height: 24px; align-self: stretch; background: var(--border-subtle); }
+.trayMeta { display: flex; flex: 0 0 auto; gap: 12px; white-space: nowrap; font-size: 12px; color: var(--text-muted); }
+/* 窄螢幕先捨棄統計文字，優先保留可切換的表單分頁 */
+@media (max-width: 1023px) {
+  .tray { padding-inline: 12px; }
+  .trayMeta { display: none; }
+}
 .subjectCard { border-color: var(--border-subtle); background: var(--surface-raised); }
 .subjectCard[data-status="入住"] { border-color: #bdd8c6; background: #f0f8f3; }
 .subjectCard[data-status="親子同室"] { border-color: #edc6d2; background: #fff2f5; }

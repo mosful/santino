@@ -234,11 +234,30 @@ main#main-content > :where(div) {
   transform: translateY(0);
 }
 
+/*
+  頁首列高度。AppShell 的頁首是 sticky，頁面若要把自己的工具列黏在它下面
+  （例如護理工作區「開啟中的表單」那一列），sticky 的 top 要以這個值為基準。
+  改頁首內距或按鈕尺寸時記得一起對。
+*/
+html { --app-header-h: 3.5rem; }
+
+/* 頁首下方的插槽：頁面透過 components/layout/HeaderSlot 注入的第二列。 */
+#app-header-slot:empty { display: none; }
+
 .page-frame {
   width: 100%;
   max-width: 100rem;
   margin-inline: auto;
   padding: 1rem;
+}
+
+/*
+  列印時一律略過操作用元素。
+  ⚠️ 這條要放在全域：護理工作區的工具列會 portal 到頁首插槽，
+  已不在 .workspace 容器內，只靠 CareWorkspace.module.css 的規則蓋不到。
+*/
+@media print {
+  [data-no-print] { display: none !important; }
 }
 
 @media (min-width: 640px) {

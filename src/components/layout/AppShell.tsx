@@ -6,11 +6,11 @@ import { usePathname } from "next/navigation";
 import { Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import SidebarNav from "./SidebarNav";
 import RoleSwitcher from "./RoleSwitcher";
-import ThemeSwitcher from "./ThemeSwitcher";
 import SidebarIllustration from "./SidebarIllustration";
 import { useSidebarCollapsed, setSidebarCollapsed } from "@/lib/sidebarStore";
 import { usePageHeading } from "@/lib/pageHeadingStore";
 import { MODULE_ICONS } from "./icons";
+import { HEADER_SLOT_ID } from "./HeaderSlot";
 
 const AUTH_ROUTE_PREFIXES = ["/login", "/forgot-password"];
 // 對外觀看頁（寶寶視訊的媽媽端／親友端）給手機開，不套院務側邊欄與角色切換
@@ -137,19 +137,27 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       )}
 
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-        <header className="safe-top sticky top-0 z-30 flex items-center gap-3 border-b border-brand-900/10 bg-white/85 px-4 py-2.5 backdrop-blur supports-[backdrop-filter]:bg-white/70 sm:px-6 md:max-lg:gap-2 md:max-lg:px-4">
-          <button
-            onClick={() => setDrawerOpen(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 md:hidden"
-            aria-label="開啟選單"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <PageHeading />
-          <div className="flex-1" />
-          <ThemeSwitcher />
-          <RoleSwitcher />
-        </header>
+        {/* 頁首與頁面注入的第二列同屬一個 sticky 容器，一起固定在畫面上方。 */}
+        <div className="safe-top sticky top-0 z-30 border-b border-brand-900/10 bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+          <header className="flex min-h-[var(--app-header-h)] items-center gap-3 px-4 py-2.5 sm:px-6 md:max-lg:gap-2 md:max-lg:px-4">
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 md:hidden"
+              aria-label="開啟選單"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <PageHeading />
+            <div className="flex-1" />
+            <RoleSwitcher />
+          </header>
+          {/*
+            頁面可注入的第二列工具列（見 components/layout/HeaderSlot）。
+            目前用於護理工作區「開啟中的表單」分頁列——它原本擺在頁面最底下，
+            填表時看不到也不會想到要捲下去切換。
+          */}
+          <div id={HEADER_SLOT_ID} />
+        </div>
         <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
       </div>
     </div>

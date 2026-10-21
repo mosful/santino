@@ -1,9 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Baby } from "lucide-react";
-import Button from "@/components/ui/Button";
 import { caseBalance, caseNextAction } from "@/lib/domain/rules";
 import { CASE_STAGES } from "@/lib/domain/types";
 import Modal from "@/components/ui/Modal";
@@ -36,8 +35,12 @@ export default function RoomStatusOverview() {
   const role = useCurrentRole();
   const router = useRouter();
   const [statusRoom, setStatusRoom] = useState<string | null>(null);
-  // 卡片／清單：卡片適合一眼掃狀態，清單適合逐欄比對住房天數與應收。
-  const [view, setView] = useState<"卡片" | "清單">("卡片");
+  /*
+    房況只有房卡一種呈現。
+    ⚠️ 原本還有一個「卡片／清單」切換，同一份資料兩種版面、兩段 JSX 要同步維護。
+    客戶（老闆）明確表示「同樣的資料不需要太多種呈現方式」，2026-10-21 移除清單，
+    保留房卡——房卡是舊系統既有語彙，現場人員認的是顏色與房號。
+  */
   const [message, setMessage] = useState("");
 
   const today = data.demoAt.slice(0, 10);
@@ -118,13 +121,6 @@ export default function RoomStatusOverview() {
               </li>
             ))}
           </ul>
-          <div role="group" aria-label="房況顯示方式" className="flex gap-1.5">
-            {(["卡片", "清單"] as const).map((item) => (
-              <Button key={item} size="sm" selected={view === item} onClick={() => setView(item)}>
-                {item}
-              </Button>
-            ))}
-          </div>
         </div>
       }
     >
@@ -141,91 +137,45 @@ export default function RoomStatusOverview() {
                 {floor}F
                 <span className="font-normal tabular-nums text-stone-400">{used}／{floorRooms.length} 間使用中</span>
               </div>
-              {view === "卡片" ? (
-                // auto-fill 讓房卡撐滿整列；原本是固定 5.5rem 的小卡，右半整片空白。
-                <div className="grid grid-cols-[repeat(auto-fill,minmax(216px,1fr))] gap-2">
-                  {floorRooms.map((room) => {
-                    const status = roomCardStatus(data, room.room);
-                    const info = roomInfo(room.room);
-                    return (
-                      <button
-                        key={room.room}
-                        type="button"
-                        data-status={status}
-                        onClick={() => openRoom(room.room, status)}
-                        title={`房 ${room.room}｜${status}${info ? `｜${info.mother.name}` : ""}`}
-                        className={`${styles.roomCard} relative flex min-h-[5.25rem] flex-col items-stretch justify-start gap-1 overflow-hidden rounded-xl border py-2 pl-3.5 pr-2.5 text-left transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-sm`}
-                      >
-                        <span data-status={status} className={`${styles.statusBar} absolute inset-y-0 left-0 w-1.5`} aria-hidden="true" />
-                        <span className="flex items-baseline gap-2">
-                          <strong className="text-base font-bold tabular-nums text-stone-800">{room.room}</strong>
-                          <span className="ml-auto text-[11px] font-semibold text-stone-500">{status}</span>
-                        </span>
-                        {info ? (
-                          <>
-                            <span className="truncate text-sm font-medium text-stone-700">
-                              {info.mother.name}
-                              <span className="ml-1.5 text-[11px] font-normal text-stone-500">寶寶 {info.babyCount}</span>
-                            </span>
-                            <span className="flex flex-wrap items-baseline gap-x-2 text-[11px] text-stone-500">
-                              <span className="tabular-nums">{info.stay}</span>
-                              <span>{info.stage}</span>
-                              {info.balance > 0 && <span className="text-rose-600">待收 {info.balance.toLocaleString("zh-TW")}</span>}
-                            </span>
-                            <span className="truncate text-[11px] text-stone-500">下一步：{info.next}</span>
-                          </>
-                        ) : (
-                          <span className="text-[11px] text-stone-500">{status === "空房" ? "可排房；點此更新房況" : "點此更新房況"}</span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[720px] text-left text-sm">
-                    <thead className="text-xs text-stone-500">
-                      <tr>
-                        {["房號", "狀態", "媽媽／寶寶", "住房天數", "階段", "下一步", "應收"].map((label) => (
-                          <th key={label} scope="col" className="px-2 py-1.5 font-medium">{label}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {floorRooms.map((room) => {
-                        const status = roomCardStatus(data, room.room);
-                        const info = roomInfo(room.room);
-                        return (
-                          <tr key={room.room} className="border-t border-border-subtle">
-                            <th scope="row" className="px-2 py-2 text-left">
-                              <button
-                                type="button"
-                                onClick={() => openRoom(room.room, status)}
-                                className="font-bold tabular-nums text-brand-700 underline-offset-4 hover:underline"
-                              >
-                                {room.room}
-                              </button>
-                            </th>
-                            <td className="px-2 py-2">
-                              <span className="inline-flex items-center gap-1.5 text-xs text-stone-600">
-                                <span data-status={status} className={`${styles.legendSwatch} h-2.5 w-2.5 shrink-0 rounded-sm`} aria-hidden="true" />
-                                {status}
-                              </span>
-                            </td>
-                            <td className="px-2 py-2">{info ? `${info.mother.name}／寶寶 ${info.babyCount}` : "—"}</td>
-                            <td className="px-2 py-2 tabular-nums text-stone-600">{info?.stay ?? "—"}</td>
-                            <td className="px-2 py-2 text-stone-600">{info?.stage ?? "—"}</td>
-                            <td className="px-2 py-2 text-stone-600">{info?.next ?? "—"}</td>
-                            <td className="px-2 py-2 tabular-nums">
-                              {info && info.balance > 0 ? <span className="text-rose-600">{info.balance.toLocaleString("zh-TW")}</span> : "—"}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              {/* auto-fill 讓房卡撐滿整列；原本是固定 5.5rem 的小卡，右半整片空白。 */}
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(216px,1fr))] gap-2">
+                {floorRooms.map((room) => {
+                  const status = roomCardStatus(data, room.room);
+                  const info = roomInfo(room.room);
+                  return (
+                    <button
+                      key={room.room}
+                      type="button"
+                      data-status={status}
+                      onClick={() => openRoom(room.room, status)}
+                      title={`房 ${room.room}｜${status}${info ? `｜${info.mother.name}` : ""}`}
+                      className={`${styles.roomCard} relative flex min-h-[5.25rem] flex-col items-stretch justify-start gap-1 overflow-hidden rounded-xl border py-2 pl-3.5 pr-2.5 text-left transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-sm`}
+                    >
+                      <span data-status={status} className={`${styles.statusBar} absolute inset-y-0 left-0 w-1.5`} aria-hidden="true" />
+                      <span className="flex items-baseline gap-2">
+                        <strong className="text-base font-bold tabular-nums text-stone-800">{room.room}</strong>
+                        <span className="ml-auto text-[11px] font-semibold text-stone-500">{status}</span>
+                      </span>
+                      {info ? (
+                        <>
+                          <span className="truncate text-sm font-medium text-stone-700">
+                            {info.mother.name}
+                            <span className="ml-1.5 text-[11px] font-normal text-stone-500">寶寶 {info.babyCount}</span>
+                          </span>
+                          <span className="flex flex-wrap items-baseline gap-x-2 text-[11px] text-stone-500">
+                            <span className="tabular-nums">{info.stay}</span>
+                            <span>{info.stage}</span>
+                            {info.balance > 0 && <span className="text-rose-600">待收 {info.balance.toLocaleString("zh-TW")}</span>}
+                          </span>
+                          <span className="truncate text-[11px] text-stone-500">下一步：{info.next}</span>
+                        </>
+                      ) : (
+                        <span className="text-[11px] text-stone-500">{status === "空房" ? "可排房；點此更新房況" : "點此更新房況"}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           );
         })}

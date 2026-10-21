@@ -48,6 +48,9 @@
 @media (max-width: 1023px) {
   .subjectBar { border-top: 1px solid var(--border-subtle); padding-top: 5px; }
 }
+/* 尚未開啟的表單：虛線、淡色，和已開啟的實心鈕一眼分得出來。 */
+.trayPending { border-style: dashed !important; border-color: var(--border-subtle) !important; color: var(--text-muted) !important; }
+.trayPending:hover { border-color: var(--brand-300) !important; color: var(--brand-700) !important; }
 .trayGroupLabel { padding-inline: 5px 3px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--brand-700); }
 
 .subjectCard { border-color: var(--border-subtle); background: var(--surface-raised); }

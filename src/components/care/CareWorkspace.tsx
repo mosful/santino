@@ -213,7 +213,8 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
             <section className="mt-8 border-t border-stone-200 pt-5"><h3 className="mb-3 font-semibold">已簽出紀錄（{history.length}）</h3>{!history.length && <div className="rounded-lg border border-dashed border-stone-300 bg-stone-50 p-4"><p className="text-sm font-medium">匿名示範歷程</p><p className="mt-1 text-xs text-stone-500">正式簽出後會改列實際操作者、日期、內容與簽名。</p><div className="mt-3 overflow-x-auto"><table className="w-full min-w-[440px] text-left text-sm"><thead><tr><th className="p-2">日期</th><th className="p-2">狀態</th><th className="p-2">摘要</th><th className="p-2">記錄人</th></tr></thead><tbody><tr className="border-t border-stone-200"><td className="p-2">2026-10-16</td><td className="p-2">已完成</td><td className="p-2">例行紀錄正常</td><td className="p-2">示範護理師</td></tr><tr className="border-t border-stone-200"><td className="p-2">2026-10-15</td><td className="p-2">已完成</td><td className="p-2">持續觀察，無異常</td><td className="p-2">示範護理師</td></tr></tbody></table></div></div>}{history.map((entry) => <details key={entry.id} className="border-b border-stone-200 py-3"><summary className="min-h-12 cursor-pointer text-sm">{taipeiTimestamp(entry.at)}｜{entry.author}{entry.historical ? "｜退房回補" : ""}</summary><dl className="mt-3 grid gap-3 sm:grid-cols-2">{Object.entries(entry.values).filter(([key, value]) => key !== "photo" && valueText(value)).map(([key, value]) => <div key={key}><dt className="text-xs text-stone-500">{form.sections.flatMap((section) => section.fields).find((field) => field.key === key)?.label ?? (key === "reassessmentNote" ? "媽媽護理紀錄（再評估）" : key)}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-sm">{valueText(value)}</dd></div>)}</dl>{valueText(entry.values.photo) && <LocalMedia key={valueText(entry.values.photo)} id={valueText(entry.values.photo)} alt="此筆歷史紀錄的本機照片" className="mt-3 max-h-64 max-w-full object-contain" />}{entry.signatures && Object.entries(entry.signatures).map(([roleKey, image]) => <div key={roleKey} className="mt-3"><p className="text-xs text-stone-500">{signatureRoles.find((item) => item.key === roleKey)?.label}</p><img src={image} alt={signatureRoles.find((item) => item.key === roleKey)?.label ?? "此筆簽名"} className={styles.signedImage} /></div>)}{entry.signature && !entry.signatures?.recipient && <img src={entry.signature} alt="此筆歷史媽媽簽名" className={styles.signedImage} />}{entry.staffStamp && <p className="mt-3 text-sm">員工印章：{entry.staffStamp.author}｜{taipeiTimestamp(entry.staffStamp.at)}</p>}</details>)}</section>
           </article>
           <aside className={`${styles.sidebar} space-y-6`} data-no-print>
-            <section><h3 className="mb-3 font-semibold">此對象的其他表單</h3><div className="grid gap-2">{forms.map((item) => <button type="button" key={item.key} className={buttonStyles({ selected: form.key === item.key, className: "justify-start" })} onClick={() => open(subject.id, item.key)}>{item.label}</button>)}</div></section>
+            {/* ⚠️「此對象的其他表單」已移到頁首的分組列（作用中那一組會列出未開啟的表單）。
+                不要加回來：同一批東西出現兩次，而且右側欄在長表單捲到一半時看不到。 */}
             <section><h3 className="mb-3 font-semibold">同案件媽媽／寶寶</h3><div className="space-y-3">{domain.subjects.filter((item) => item.caseId === subject.caseId && item.id !== subject.id && !item.historical).map((item) => <div key={item.id} className="rounded-lg border border-stone-200 p-3"><p className="text-sm font-medium">{item.kind === "mama" ? "媽媽" : "寶寶"}：{item.name}</p><div className="mt-2 flex flex-wrap gap-2">{careForms(item.kind, configured).filter((itemForm) => canViewCare(role, item.kind, itemForm.key)).map((itemForm) => item.kind === kind ? <button type="button" key={itemForm.key} className={buttonStyles({ size: "sm" })} onClick={() => open(item.id, itemForm.key)}>{itemForm.label}</button> : <Link key={itemForm.key} className={buttonStyles({ size: "sm" })} href={`/${item.kind}/?subject=${encodeURIComponent(item.id)}&form=${encodeURIComponent(itemForm.key)}`}>{itemForm.label}</Link>)}</div></div>)}</div></section>
             <section><h3 className="mb-3 font-semibold">最近操作歷程</h3><ol className="space-y-3 text-sm">{data.events.filter((event) => event.subjectId === subject.id).slice(0, 6).map((event) => <li key={event.id}><p>{event.action}</p><p className="mt-1 text-xs text-stone-600">{taipeiTimestamp(event.at)}<br />{event.author}</p></li>)}</ol></section>
           </aside>
@@ -251,6 +252,17 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
             {trayGroups.map(({ target, items }) => {
               const place = target.room || target.carNo || target.name;
               const active = items.some((item) => item.key === activeKey) && !listVisible;
+              /*
+                目前作用中的那一組，額外列出這位對象「還沒開」的表單，點一下就開。
+
+                ⚠️ 這取代了右側欄原本的「此對象的其他表單」。不要把那一區加回來，
+                也不要另外拉一列放表單切換：那會和這條分組列顯示同一批東西（301 的
+                入住評估同時出現在兩處），而且右側欄在長表單捲到一半時根本看不到。
+                ⚠️ 只有作用中的那一組展開，其他組維持只顯示已開啟的——否則同時開五間房
+                時這一列會長到無法掃視，也失去「我現在在哪一間」的焦點。
+              */
+              const openedKeys = new Set(items.map((item) => item.formKey));
+              const unopened = active ? forms.filter((item) => !openedKeys.has(item.key)) : [];
               return (
                 <div key={target.id} data-active={active} className={styles.trayGroup}>
                   <span className={styles.trayGroupLabel} title={`${place} ${target.name}`}>{place}</span>
@@ -259,6 +271,17 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
                     const state = item.signedAt ? " ✓" : item.dirty ? " · 草稿" : "";
                     return <button type="button" key={item.key} title={`${place} ${target.name}｜${formLabel}`} aria-pressed={item.key === activeKey && !listVisible} className={buttonStyles({ size: "sm", selected: item.key === activeKey && !listVisible })} onClick={() => { run(() => careActions.activate(item.key)); setListVisible(false); setSigning(false); }}>{formLabel}{state}</button>;
                   })}
+                  {unopened.map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      title={`開啟 ${place} ${target.name}｜${item.label}`}
+                      onClick={() => open(target.id, item.key)}
+                      className={`${styles.trayPending} ${buttonStyles({ size: "sm", variant: "ghost" })}`}
+                    >
+                      ＋{item.label}
+                    </button>
+                  ))}
                 </div>
               );
             })}

@@ -11,6 +11,7 @@ import { BASE_PATH } from "@/lib/basePath";
 import Button, { ButtonLink } from "@/components/ui/Button";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { useCurrentRole } from "@/lib/roleStore";
+import HeaderSlot from "@/components/layout/HeaderSlot";
 import { canUseCaseFlow, ROLES, type Role } from "@/lib/permissions";
 import { babycamActions, canBabycamSection } from "@/lib/babycam/actions";
 import { effectiveViewingWindow } from "@/lib/babycam/viewing";
@@ -31,12 +32,9 @@ import StateMaintenance from "./StateMaintenance";
 import { LightStatePanel, RelayBoard, RingLightBoard } from "./RingLightPanels";
 import { RoomListPanel, SchedulePanel } from "./RoomSchedulePanels";
 import {
-  AreaTabs,
   AsideEmpty,
   AsideHeading,
   CameraChipGrid,
-  GROUP_ICONS,
-  GroupNav,
   Panel,
   SectionHeading,
   SplitWorkspace,
@@ -209,9 +207,18 @@ export default function BabycamWorkspace({
   const { data, storageError } = useDomainStore();
   const role = useCurrentRole();
 
+  /*
+    群組直接由網址的 `?section=` 推導，**不存 state**。
+
+    ⚠️ 這裡以前是 useState＋由 WorkspaceEntry 用 key 強制 remount。改成左側選單
+    切群組之後那樣會把整個工作區重建，使用者在「入住登記」選好的案件（bindingId）
+    會被丟掉，切到「寶寶登錄」時指派到的是另一筆——e2e 立刻抓到這個迴歸。
+    頁籤選擇用 overrides 記住，切回同一個群組時還在原來那一頁。
+  */
   const legacy = LEGACY_SECTION[initialSection] ?? LEGACY_SECTION.registration;
-  const [group, setGroup] = useState<GroupId>(legacy.group);
-  const [tabs, setTabs] = useState<Record<GroupId, string>>({ ...DEFAULT_TAB, [legacy.group]: legacy.tab });
+  const group = legacy.group;
+  const [tabOverrides, setTabOverrides] = useState<Partial<Record<GroupId, string>>>({});
+  const tabs: Record<GroupId, string> = { ...DEFAULT_TAB, [group]: legacy.tab, ...tabOverrides };
   const [bindingId, setBindingId] = useState(initialBindingId);
   const [cameraId, setCameraId] = useState("");
   const [message, setMessage] = useState("");
@@ -258,14 +265,14 @@ export default function BabycamWorkspace({
       setMessage(error instanceof Error ? error.message : "操作失敗。");
     }
   }
-  function selectGroup(id: GroupId) {
-    setGroup(id);
-    setMessage("");
-    setLabelImages([]);
-  }
+  /*
+    ⚠️ 不再有「切換群組」這個動作：群組改由左側主選單第 2 層決定，
+    每個項目是 `/babycam/?section=xxx`，WorkspaceEntry 會依 section 重新掛載工作區。
+    `group` state 只用來記住初始群組，不要再加回群組列或 setGroup 的呼叫端。
+  */
   function selectTab(id: string) {
     if (!activeGroup) return;
-    setTabs((current) => ({ ...current, [activeGroup.id]: id }));
+    setTabOverrides((current) => ({ ...current, [activeGroup.id]: id }));
     setMessage("");
     setLabelImages([]);
   }
@@ -364,46 +371,61 @@ export default function BabycamWorkspace({
       )}
 
       {/*
-        導覽全部收在同一張卡裡：群組列（多於一個群組時才出現）→ 頁籤 → 內容。
-        以前是「說明一段＋群組列一張卡＋大標題一塊＋頁籤」四層，開畫面第一屏看不到資料。
+        導覽全部走頁首下方那一列（第 3 層）：群組名 → 群組內頁籤 → 右側外部連結。
+
+        ⚠️ 工作區內**不要再畫群組列**：四個功能群組（入住登記／寶寶登錄／後臺管理／
+        系統設定）2026-10-21 已移到左側主選單第 2 層（lib/modules.ts 模組 17 的
+        subItems，href 走 `?section=`）。客戶要求「導覽統一在左邊與上面」。
+        群組名留在這一列，因為選單第 2 層不做選取高亮（見 SidebarNav 的說明）。
       */}
+      <HeaderSlot slot="below">
+        <div className="header-tablist flex items-center gap-2 overflow-x-auto">
+          <span className="shrink-0 rounded-lg bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700">{activeGroup.label}</span>
+          {groupTabs.length > 1 ? (
+            <div role="group" aria-label={`${activeGroup.label}工作區`} className="flex gap-1">
+              {groupTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  aria-pressed={active.id === tab.id}
+                  onClick={() => selectTab(tab.id)}
+                  className={
+                    "shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors sm:text-sm " +
+                    (active.id === tab.id
+                      ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm shadow-brand-200"
+                      : "text-stone-600 hover:bg-surface-raised hover:text-brand-700")
+                  }
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <span className="shrink-0 text-sm font-semibold text-stone-700">{active.label}</span>
+          )}
+          <span className="hidden max-w-[48ch] truncate text-xs text-stone-500 xl:block" title={activeGroup.description}>
+            {activeGroup.description}
+          </span>
+        </div>
+      </HeaderSlot>
+      <HeaderSlot slot="below">
+        <div className="header-page-actions flex flex-wrap items-center gap-2">
+          <ButtonLink href="/babycam/scan/" size="sm">
+            <QrCode className="h-3.5 w-3.5" aria-hidden="true" />
+            QR 掃描
+          </ButtonLink>
+          <ButtonLink href="/view/mama" size="sm">
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            媽媽端畫面
+          </ButtonLink>
+          <ButtonLink href="/view/family" size="sm">
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+            親友端畫面
+          </ButtonLink>
+        </div>
+      </HeaderSlot>
+
       <Panel flush>
-        <GroupNav
-          groups={visibleGroups.map((item) => ({ id: item.id, label: item.label, icon: GROUP_ICONS[item.id] }))}
-          active={activeGroup.id}
-          onSelect={selectGroup}
-          action={
-            <>
-              <ButtonLink href="/babycam/scan/" size="sm">
-                <QrCode className="h-3.5 w-3.5" aria-hidden="true" />
-                QR 掃描
-              </ButtonLink>
-              <ButtonLink href="/view/mama" size="sm">
-                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                媽媽端畫面
-              </ButtonLink>
-              <ButtonLink href="/view/family" size="sm">
-                <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                親友端畫面
-              </ButtonLink>
-            </>
-          }
-        />
-        {groupTabs.length > 1 ? (
-          <AreaTabs
-            tabs={groupTabs.map((tab) => ({ id: tab.id, label: tab.label }))}
-            active={active.id}
-            onSelect={selectTab}
-            label={`${activeGroup.label}工作區`}
-            hint={activeGroup.description}
-          />
-        ) : (
-          // 群組內只有一個頁籤時，用一行標題代替空蕩蕩的頁籤列。
-          <div className="border-b border-border-subtle px-4 py-3 sm:px-5">
-            <h2 className="text-sm font-bold text-stone-800">{active.label}</h2>
-            <p className="mt-0.5 text-xs leading-5 text-stone-500">{activeGroup.description}</p>
-          </div>
-        )}
 
         {/* ── 01 入住登記 ── */}
         {active.id === "desk" && (

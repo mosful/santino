@@ -7,7 +7,7 @@ import { validTime } from "../domain/rules";
 import { normalizeCartNo } from "./cart-no";
 import { closeViewingHistory } from "./history";
 import { normalizePrintSettings } from "./wristband-print";
-import { getAccess, ROLES, type AccessLevel } from "../permissions";
+import { getAccess, ROLES, type AccessLevel, type Role } from "../permissions";
 import { initialDemoScenario, reduceDemoScenario, type DemoScenarioAction } from "./demo-scenario";
 
 /**
@@ -17,12 +17,23 @@ import { initialDemoScenario, reduceDemoScenario, type DemoScenarioAction } from
  * 不要再出現「進得去但整頁停用」的唯讀分頁（護理長原本就是這樣）。
  * 看得到哪幾格由 data.sectionPermissions 決定；"08" 系統格固定只給管理者。
  */
+/**
+ * 分段權限的**純函式**版本：角色由呼叫端傳入。
+ *
+ * ⚠️ 需要在 render 期間判斷權限的元件（例如側邊欄要決定寶寶視訊四個群組顯示哪些）
+ * 一律用這支，不要用下面那個會自己呼叫 `getCurrentRole()` 的版本——那會在 hydration
+ * 當下讀到 localStorage 的角色，和元件用 `useCurrentRole()`（hydration 期間回預設值）
+ * 拿到的不一樣，兩邊算出不同的畫面就會 hydration failed（React #418，實際發生過）。
+ */
+export function babycamSectionAllowed(data: DemoDomain, role: Role, section: string) {
+  if (getAccess(role, "17") === "none") return false;
+  if (role === "管理者") return true;
+  if (section === "08") return false;
+  return (data.sectionPermissions[role] ?? []).includes(section);
+}
+
 export function getBabycamSectionAccess(data: DemoDomain, section: string): AccessLevel {
-  const role = getCurrentRole();
-  if (getAccess(role, "17") === "none") return "none";
-  if (role === "管理者") return "edit";
-  if (section === "08" || !(data.sectionPermissions[role] ?? []).includes(section)) return "none";
-  return "edit";
+  return babycamSectionAllowed(data, getCurrentRole(), section) ? "edit" : "none";
 }
 export function canBabycamSection(data: DemoDomain, section: string) { return getBabycamSectionAccess(data, section) !== "none"; }
 export function canEditBabycamSection(data: DemoDomain, section: string) { return getBabycamSectionAccess(data, section) === "edit"; }

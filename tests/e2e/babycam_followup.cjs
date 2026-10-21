@@ -13,8 +13,8 @@ const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-res
   const page = await context.newPage(); const errors = []; const requests = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("request", (request) => { if (/\/api\//.test(request.url()) || /^https?:/.test(request.url()) && !request.url().startsWith(base + "")) requests.push(request.url().replace(/\?.*$/, "")); });
-  await page.goto(base + "/babycam/workspace/");
-  await page.getByRole("button", { name: "寶寶登錄", exact: true }).click(); await page.getByRole("button", { name: "寶寶登錄與標籤", exact: true }).click();
+  await page.goto(base + "/babycam/");
+  await page.getByRole("link", { name: "寶寶登錄", exact: true }).click(); await page.getByRole("button", { name: "寶寶登錄與標籤", exact: true }).click();
 
   // 首次未寫入時，從畫面觸發共用資料保存。
   await page.getByLabel("新增或編輯寶寶", { exact: true }).selectOption({ index: 1 });
@@ -52,7 +52,7 @@ const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-res
   const removed = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1")));
   assert.ok(removed.subjects.some((subject) => subject.id === first.babyId));
   assert.equal(removed.bindings[0].babies.length, 1);
-  await page.getByRole("button", { name: "後臺管理", exact: true }).click(); await page.getByRole("button", { name: "狀態維護", exact: true }).click();
+  await page.getByRole("link", { name: "後臺管理", exact: true }).click(); await page.getByRole("button", { name: "狀態維護", exact: true }).click();
   await page.getByLabel("上傳親子同室背景圖", { exact: true }).setInputFiles({ name: "匿名測試.png", mimeType: "image/png", buffer: Buffer.from(await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = 100; canvas.height = 60; canvas.getContext("2d").fillRect(0, 0, 100, 60); return canvas.toDataURL().split(",")[1]; }), "base64") });
   // 背景圖改成卡片底圖（CSS background-image），不再是獨立的 <img> 預覽。
   await page.waitForFunction(() => {
@@ -61,14 +61,14 @@ const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-res
     return !!card && /^url\("?blob:/.test(card.style.backgroundImage);
   });
   await page.reload();
-  await page.getByRole("button", { name: "後臺管理", exact: true }).click(); await page.getByRole("button", { name: "狀態維護", exact: true }).click();
+  await page.getByRole("link", { name: "後臺管理", exact: true }).click(); await page.getByRole("button", { name: "狀態維護", exact: true }).click();
   // 背景圖改成卡片底圖（CSS background-image），不再是獨立的 <img> 預覽。
   await page.waitForFunction(() => {
     const input = document.querySelector('input[aria-label="親子同室 狀態名稱"]');
     const card = input?.closest("article");
     return !!card && /^url\("?blob:/.test(card.style.backgroundImage);
   });
-  await page.getByRole("button", { name: "入住登記", exact: true }).click(); await page.getByRole("button", { name: "紀錄與報表", exact: true }).click();
+  await page.getByRole("link", { name: "入住登記", exact: true }).click(); await page.getByRole("button", { name: "紀錄與報表", exact: true }).click();
   await page.getByRole("button", { name: "操作", exact: true }).click();
   await page.getByLabel("報表開始日期", { exact: true }).fill("2099-01-01");
   assert.equal(await page.locator("tbody tr").count(), 0);

@@ -24,6 +24,10 @@ export type SubItem = {
   moduleNo?: string;
   /** 另外要求「櫃台案件作業」權限，見 permissions.canUseCaseFlow。 */
   requiresCaseFlow?: boolean;
+  /** 另外要求寶寶視訊的分段權限（01／02／04／08），見 lib/babycam/actions。 */
+  babycamSection?: string;
+  /** 側邊欄第二層的圖示，對應 components/layout/icons.ts 的 SUB_ICONS。 */
+  iconKey?: string;
 };
 
 export type ModuleInfo = {
@@ -64,9 +68,9 @@ export const MODULES: ModuleInfo[] = [
       每一項都接真正的權限判定，沒權限的角色連項目都不會出現。
     */
     subItems: [
-      { key: "cases", label: "案件流程", href: "/cases/", requiresCaseFlow: true },
-      { key: "customer", label: "客戶資料", href: "/customer/", moduleNo: "5" },
-      { key: "care", label: "媽媽關懷", href: "/care/", moduleNo: "7" },
+      { key: "cases", label: "案件流程", href: "/cases/", requiresCaseFlow: true, iconKey: "cases" },
+      { key: "customer", label: "客戶資料", href: "/customer/", moduleNo: "5", iconKey: "customer" },
+      { key: "care", label: "媽媽關懷", href: "/care/", moduleNo: "7", iconKey: "care" },
     ],
   },
   { no: "2", label: "媽媽照護", href: "/mama", phase: 1 },
@@ -87,10 +91,31 @@ export const MODULES: ModuleInfo[] = [
     label: "寶寶視訊",
     href: "/babycam",
     phase: 1,
+    /*
+      四個功能群組改掛在側邊欄第二層（2026-10-21 客戶要求），工作區內不再畫群組列。
+      ⚠️ href 走既有的 `?section=`：`WorkspaceEntry` 會依它 remount 工作區，
+      `BabycamWorkspace` 的 LEGACY_SECTION 再把 section 對回群組與預設頁籤，
+      不需要另發明一個 group 參數。
+      ⚠️ `babycamSection` 是分段權限（護理師看不到 08 系統設定），要跟著判，
+      不能只看模組 17 有沒有權限——否則選單列得出來、點進去是空的。
+    */
+    subItems: [
+      { key: "babycam-01", label: "入住登記", href: "/babycam/?section=registration", babycamSection: "01", iconKey: "babycam-01" },
+      { key: "babycam-02", label: "寶寶登錄", href: "/babycam/?section=assign", babycamSection: "02", iconKey: "babycam-02" },
+      { key: "babycam-04", label: "後臺管理", href: "/babycam/?section=schedule", babycamSection: "04", iconKey: "babycam-04" },
+      { key: "babycam-08", label: "系統設定", href: "/babycam/?section=lights", babycamSection: "08", iconKey: "babycam-08" },
+    ],
   },
-  // 房況、客戶、關懷與合約屬 Phase 1，但已整併到「櫃台服務」首頁，不再顯示獨立側邊欄入口。
-  // 房況依 v24 §3 收回「櫃台服務」首頁的房況總覽，不再有獨立路由；權限代號保留給房況操作判斷。
-  { no: "4", label: "房況總覽", href: "/#room-status-title", phase: 1, showInSidebar: false },
+  /*
+    房況總覽：有獨立路由、在第一層選單。
+
+    ⚠️ v24 §3 原本把它收進「櫃台服務」首頁當一個區塊，沒有獨立路由。但 2026-10-21
+    客戶要求衛教師與護理師看不到櫃台服務，而 v24 §1 又寫三個現場角色都能操作房況——
+    兩條規則在護理角色身上互斥，他們會完全沒有入口。抽成獨立頁後一份資料、一個位置、
+    一個入口，權限直接吃模組 4 的矩陣。櫃台首頁改放一條可點的房況摘要。
+  */
+  { no: "4", label: "房況總覽", href: "/rooms", phase: 1 },
+  // 客戶資料與媽媽關懷是「櫃台服務」的第二層（見模組 1 的 subItems），不另列第一層。
   { no: "5", label: "客戶資料", href: "/customer", phase: 1, showInSidebar: false },
   {
     no: "6",

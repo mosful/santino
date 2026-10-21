@@ -53,10 +53,10 @@ async function decodeQr(locator, label = false) {
   await page.locator("#case-stage-3").getByRole("button", { name: "5. 產生合約", exact: true }).click();
   await page.getByText("檢視原簽署快照 v1", { exact: true }).click();
   await page.screenshot({ path: `${output}/case-desktop.png`, fullPage: true });
-  await page.goto(base + "/babycam/workspace/");
+  await page.goto(base + "/babycam/");
   const binding = await page.evaluate((id) => JSON.parse(localStorage.getItem("santino_domain_v1")).bindings.find((item) => item.caseId === id), caseRecord.id);
   await page.getByLabel("選擇入住案件", { exact: true }).selectOption(binding.id);
-  await page.getByRole("button", { name: "寶寶登錄", exact: true }).click(); await page.getByRole("button", { name: "寶寶登錄與標籤", exact: true }).click();
+  await page.getByRole("link", { name: "寶寶登錄", exact: true }).click(); await page.getByRole("button", { name: "寶寶登錄與標籤", exact: true }).click();
   await page.getByLabel("寶寶姓名", { exact: true }).fill("整合測試寶寶");
   await page.getByLabel("車號", { exact: true }).fill("DEMO-99");
   // 監視器改以晶片網格挑選（原本是下拉）；挑一支未指派的。
@@ -69,8 +69,8 @@ async function decodeQr(locator, label = false) {
   await page.getByAltText("寶寶 1 標籤預覽", { exact: true }).waitFor();
   const labelQr = await decodeQr(page.getByAltText("寶寶 1 標籤預覽", { exact: true }), true); assert.equal(labelQr.pathname, new URL(`${base}/babycam/scan/`).pathname); assert.equal(labelQr.searchParams.get("code"), assigned.babies[0].identityCode); assert.equal(labelQr.searchParams.has("ticket"), false);
   await page.screenshot({ path: `${output}/labels-desktop.png`, fullPage: true });
-  await page.getByRole("button", { name: "入住登記", exact: true }).click(); await page.getByRole("button", { name: "櫃檯入住與交付", exact: true }).click(); const ticketQr = await decodeQr(page.getByAltText("可掃描的展示 QRCode", { exact: true }).first()); assert.equal(ticketQr.pathname, new URL(`${base}/view/mama/`).pathname); assert.equal(ticketQr.searchParams.get("ticket"), assigned.internalTicket);
-  await page.getByRole("button", { name: "入住登記", exact: true }).click(); await page.getByRole("button", { name: "紀錄與報表", exact: true }).click();
+  await page.getByRole("link", { name: "入住登記", exact: true }).click(); await page.getByRole("button", { name: "櫃檯入住與交付", exact: true }).click(); const ticketQr = await decodeQr(page.getByAltText("可掃描的展示 QRCode", { exact: true }).first()); assert.equal(ticketQr.pathname, new URL(`${base}/view/mama/`).pathname); assert.equal(ticketQr.searchParams.get("ticket"), assigned.internalTicket);
+  await page.getByRole("link", { name: "入住登記", exact: true }).click(); await page.getByRole("button", { name: "紀錄與報表", exact: true }).click();
   await page.getByRole("button", { name: "操作", exact: true }).click();
   const downloadWait = page.waitForEvent("download"); await page.getByRole("button", { name: "匯出 Excel", exact: true }).click();
   const download = await downloadWait; await download.saveAs(`${output}/report.xlsx`);

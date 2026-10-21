@@ -8,7 +8,7 @@ import { CASE_STAGES } from "@/lib/domain/types";
 import Modal from "@/components/ui/Modal";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
-import { roomActions, ROOM_SERVICE_STATUSES, roomCardStatus, type RoomCardStatus } from "@/lib/domain/roomStatus";
+import { roomActions, roomOccupancySummary, ROOM_SERVICE_STATUSES, roomCardStatus, type RoomCardStatus } from "@/lib/domain/roomStatus";
 import type { RoomServiceStatus } from "@/lib/domain/types";
 import { useCurrentRole } from "@/lib/roleStore";
 import styles from "./RoomStatusOverview.module.css";
@@ -43,13 +43,8 @@ export default function RoomStatusOverview() {
   */
   const [message, setMessage] = useState("");
 
-  const today = data.demoAt.slice(0, 10);
-  const rooms = data.rooms.filter((room) => room.enabled);
-  const mothers = data.subjects.filter((subject) => subject.kind === "mama" && !subject.historical);
-  const babies = data.subjects.filter((subject) => subject.kind === "baby" && !subject.historical);
-  const childcare = data.cases.filter((record) => record.childcare && !record.childcareEnded);
-  const admissionsToday = data.cases.filter((record) => record.actualAdmission?.slice(0, 10) === today).length;
-  const dischargesToday = data.cases.filter((record) => record.dischargedAt?.slice(0, 10) === today).length;
+  // 彙總數字與首頁的房況摘要條共用同一支，避免兩邊算法分岔（見 domain/roomStatus）。
+  const { rooms, mothers, babies, childcare, admissionsToday, dischargesToday } = roomOccupancySummary(data);
   const floors = [...new Set(rooms.map((room) => room.room.slice(0, 1)))].sort();
   const isNursing = NURSING_ROLES.includes(role);
 

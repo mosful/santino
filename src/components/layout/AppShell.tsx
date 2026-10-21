@@ -10,7 +10,7 @@ import SidebarIllustration from "./SidebarIllustration";
 import { useSidebarCollapsed, setSidebarCollapsed } from "@/lib/sidebarStore";
 import { usePageHeading } from "@/lib/pageHeadingStore";
 import { MODULE_ICONS } from "./icons";
-import { HEADER_SLOT_ID } from "./HeaderSlot";
+import { HEADER_INLINE_SLOT_ID, HEADER_SLOT_ID } from "./HeaderSlot";
 
 const AUTH_ROUTE_PREFIXES = ["/login", "/forgot-password"];
 // 對外觀看頁（寶寶視訊的媽媽端／親友端）給手機開，不套院務側邊欄與角色切換
@@ -139,7 +139,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         {/* 頁首與頁面注入的第二列同屬一個 sticky 容器，一起固定在畫面上方。 */}
         <div className="safe-top sticky top-0 z-30 border-b border-brand-900/10 bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70">
-          <header className="flex min-h-[var(--app-header-h)] items-center gap-3 px-4 py-2.5 sm:px-6 md:max-lg:gap-2 md:max-lg:px-4">
+          <header className="flex min-h-[var(--app-header-h)] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 sm:px-6 md:max-lg:gap-x-2 md:max-lg:px-4">
             <button
               onClick={() => setDrawerOpen(true)}
               className="flex h-9 w-9 items-center justify-center rounded-lg text-stone-500 hover:bg-stone-100 md:hidden"
@@ -148,7 +148,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <Menu className="h-5 w-5" />
             </button>
             <PageHeading />
-            <div className="flex-1" />
+            {/*
+              頁首列內的插槽：給頁面放一行情境資訊（目前是護理工作區「正在填誰的
+              表單」）。桌寬時佔住標題與角色切換之間的空白；窄螢幕 w-full＋order-last
+              會讓它自動掉到第二行，不會把標題與角色切換擠爆。
+              空的時候由 globals.css 的 :empty 規則收掉，其他頁面不受影響。
+            */}
+            <div id={HEADER_INLINE_SLOT_ID} className="order-last flex w-full min-w-0 items-center lg:order-none lg:w-auto lg:flex-1" />
+            <div className="flex-1 lg:hidden" />
             <RoleSwitcher />
           </header>
           {/*

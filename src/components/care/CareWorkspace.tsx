@@ -149,8 +149,8 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
 
   if (!hydrated) return <div className="page-frame"><div className="h-16 animate-pulse rounded-xl bg-white/70" aria-label="照護工作區載入中" /></div>;
 
-  // 側欄 sticky 要讓過固定在上方的表單列（約 4rem）與對象識別列（約 2.5rem）。
-  const stickyToolbarHeight = openDocuments.length ? (hasActive ? "6.5rem" : "4rem") : "0rem";
+  // 側欄 sticky 只需讓過固定在上方的表單列；對象識別列已併進頁首列本身。
+  const stickyToolbarHeight = openDocuments.length ? "4rem" : "0rem";
   return <div className={`${styles.workspace} page-frame`} style={{ "--care-tray-h": stickyToolbarHeight } as React.CSSProperties}>
     <RequireAccess moduleNo={kind === "mama" ? "2" : "3"}>
       <PageHeader title={kind === "mama" ? "媽媽照護" : "寶寶照護"} moduleNo={kind === "mama" ? "2" : "3"} />
@@ -266,15 +266,20 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
             <button type="button" className={buttonStyles({ size: "sm" })} title="保留草稿並關閉全部表單" onClick={() => { if (hasActive) setPending("all"); else run(() => careActions.closeAll(kind), "已保留草稿並關閉全部表單。"); }}>關閉全部</button>
           </div>
         </nav>
-        {/*
-          目前對象的識別列。原本是頁面內一張卡片，會跟著內容捲走；改掛在表單列
-          底下一起固定，填到表單後半段仍看得到自己正在寫誰的紀錄（客戶要求往上移）。
+      </HeaderSlot>}
+      {/*
+        目前對象的識別列，放進頁首列本身（標題與角色切換之間）。
 
-          ⚠️ 房號／姓名／病歷號與狀態壓成同一行。原本拆成兩行，而第二行開頭又是
-          一次 motherName——對媽媽而言跟第一行的姓名完全重複。寶寶才需要另外標出
-          媽媽是誰，所以只有名字不同時才補「媽媽 ○○○」。
-        */}
-        {hasActive && subject && document && (
+        原本是頁面內一張卡片會跟著內容捲走，先搬到表單列下方自成一列，客戶再要求
+        併進頁首——省掉一整列固定高度，表單可視範圍多出約 40px。
+        窄螢幕放不下時，AppShell 的插槽會讓它自動掉到頁首第二行。
+
+        ⚠️ 房號／姓名／病歷號與狀態壓成同一行。原本拆成兩行，而第二行開頭又是
+        一次 motherName——對媽媽而言跟第一行的姓名完全重複。寶寶才需要另外標出
+        媽媽是誰，所以只有名字不同時才補「媽媽 ○○○」。
+      */}
+      {hasActive && subject && document && (
+        <HeaderSlot slot="inline">
           <div className={styles.subjectBar}>
             <p className={styles.subjectBarText}>
               <strong className="font-semibold text-stone-800">{identity(subject)}</strong>
@@ -287,8 +292,8 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
               {expired && canAuthorizeCare(role) && <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => setPending("authorize")}>授權回補</button>}
             </div>
           </div>
-        )}
-      </HeaderSlot>}
+        </HeaderSlot>
+      )}
     </RequireAccess>
   </div>;
 }

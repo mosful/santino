@@ -37,12 +37,13 @@
 /* 一個群組＝一位照護對象。目前作用中的那一組上色，一眼知道人在哪間房。 */
 .trayGroup { display: flex; align-items: center; gap: 4px; border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--surface-muted); padding: 3px 5px; }
 .trayGroup[data-active="true"] { border-color: var(--brand-300); background: var(--brand-50); }
-/* 目前對象識別列：掛在表單列底下一起固定，所以要薄。 */
-.subjectBar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 6px 16px; border-top: 1px solid var(--border-subtle); }
-.subjectBarText { min-width: 0; font-size: 13px; color: var(--text-muted); }
-.subjectBarActions { display: flex; flex-shrink: 0; flex-wrap: wrap; align-items: center; gap: 8px; }
+/* 目前對象識別列：住在頁首列裡，所以不能再帶自己的外框與內距，文字過長就截斷。 */
+.subjectBar { display: flex; min-width: 0; flex: 1; align-items: center; justify-content: space-between; gap: 12px; }
+.subjectBarText { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; color: var(--text-muted); }
+.subjectBarActions { display: flex; flex-shrink: 0; align-items: center; gap: 8px; }
+/* 窄螢幕時插槽整塊掉到頁首第二行，補一條分隔線免得和標題黏在一起。 */
 @media (max-width: 1023px) {
-  .subjectBar { padding-inline: 12px; }
+  .subjectBar { border-top: 1px solid var(--border-subtle); padding-top: 5px; }
 }
 .trayGroupLabel { padding-inline: 5px 3px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--brand-700); }
 @media (max-width: 1023px) {

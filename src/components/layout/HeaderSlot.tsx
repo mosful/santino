@@ -3,7 +3,12 @@
 import { useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
+/** 頁首列「之下」的整列插槽。 */
 export const HEADER_SLOT_ID = "app-header-slot";
+/** 頁首列「之內」的插槽：標題與角色切換之間那塊空白。 */
+export const HEADER_INLINE_SLOT_ID = "app-header-inline-slot";
+
+export type HeaderSlotName = "inline" | "below";
 
 /*
   頁首插槽的目標節點。
@@ -17,9 +22,10 @@ function subscribe() {
   return () => {};
 }
 
-function getSnapshot() {
-  return document.getElementById(HEADER_SLOT_ID);
-}
+const SNAPSHOT: Record<HeaderSlotName, () => HTMLElement | null> = {
+  inline: () => document.getElementById(HEADER_INLINE_SLOT_ID),
+  below: () => document.getElementById(HEADER_SLOT_ID),
+};
 
 function getServerSnapshot(): HTMLElement | null {
   return null;
@@ -35,8 +41,19 @@ function getServerSnapshot(): HTMLElement | null {
  * 插槽在頁首的 sticky 容器內，所以會跟著頁首一起固定在畫面上方。
  * 沒有內容時 `#app-header-slot:empty` 會把它收成 0 高度，不影響其他頁面。
  */
-export default function HeaderSlot({ children }: { children: React.ReactNode }) {
-  const target = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+export default function HeaderSlot({
+  children,
+  slot = "below",
+}: {
+  children: React.ReactNode;
+  /**
+   * "inline"：放進頁首列本身（標題與角色切換之間的空白），適合一行就講完的
+   * 情境資訊，例如目前正在填誰的表單。窄螢幕放不下時會自動掉到第二行。
+   * "below"：另成一整列掛在頁首下方，適合需要整排按鈕的工具列。
+   */
+  slot?: HeaderSlotName;
+}) {
+  const target = useSyncExternalStore(subscribe, SNAPSHOT[slot], getServerSnapshot);
   if (!target) return null;
   return createPortal(children, target);
 }

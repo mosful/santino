@@ -241,8 +241,9 @@ main#main-content > :where(div) {
 */
 html { --app-header-h: 3.5rem; }
 
-/* 頁首下方的插槽：頁面透過 components/layout/HeaderSlot 注入的第二列。 */
-#app-header-slot:empty { display: none; }
+/* 頁首的兩個插槽：頁面透過 components/layout/HeaderSlot 注入。空的時候完全收掉。 */
+#app-header-slot:empty,
+#app-header-inline-slot:empty { display: none; }
 
 .page-frame {
   width: 100%;

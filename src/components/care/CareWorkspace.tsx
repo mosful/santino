@@ -60,8 +60,6 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   const searchedSubjects = domain.subjects.filter((item) => item.kind === kind).filter((item) => [item.name, item.motherName, item.room, item.carNo, item.chartNo].join(" ").toLowerCase().includes(query.toLowerCase()));
   const subjects = searchedSubjects.filter((item) => filter === "退房回補" ? item.historical : filter === "托嬰" ? !item.historical && item.status === "托嬰" : !item.historical);
   const backfillSubjects = filter === "在館" ? searchedSubjects.filter((item) => item.historical) : [];
-  const allDrafts = Object.values(data.documents).filter((item) => !item.signedAt && (item.savedAt || item.dirty)).length;
-  const lockedSubject = domain.subjects.find((item) => item.caseId === data.unlockedCase);
 
   function run(action: () => void, success = "") {
     try { action(); setMessage(success); setPending(null); setReason(""); return true; }
@@ -217,19 +215,22 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
         <nav aria-label="開啟中的照護表單" className={styles.tray} data-no-print>
           <div className={styles.trayScroll}>
             {hasActive && <>
-              <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { setListVisible(true); setSigning(false); }}><ArrowLeft size={14} />回照護列表</button>
-              <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => setPending("close")}><X size={14} />關閉此表單</button>
+              <button type="button" title="回照護列表" className={buttonStyles({ size: "sm" })} onClick={() => { setListVisible(true); setSigning(false); }}><ArrowLeft size={14} />回列表</button>
+              <button type="button" title="關閉此表單" className={buttonStyles({ size: "sm" })} onClick={() => setPending("close")}><X size={14} />關閉</button>
               <span className={styles.trayDivider} aria-hidden="true" />
             </>}
-            {openDocuments.map((item) => { const target = subjectFor(item.subjectId)!; return <button type="button" key={item.key} aria-pressed={item.key === activeKey && !listVisible} className={buttonStyles({ size: "sm", selected: item.key === activeKey && !listVisible })} onClick={() => { run(() => careActions.activate(item.key)); setListVisible(false); setSigning(false); }}>{target.room || target.carNo} {target.name}｜{forms.find((available) => available.key === item.formKey)?.label ?? item.formKey}{item.signedAt ? " ✓" : item.dirty ? " · 草稿" : ""}</button>; })}
+            {/* 分頁只顯示「房號 | 表單」：一列要塞下好幾張，帶上姓名會長到看不完。
+                完整的房號、姓名與表單名放在 title，滑過去仍看得到。 */}
+            {openDocuments.map((item) => {
+              const target = subjectFor(item.subjectId)!;
+              const formLabel = forms.find((available) => available.key === item.formKey)?.label ?? item.formKey;
+              const place = target.room || target.carNo || target.name;
+              const state = item.signedAt ? " ✓" : item.dirty ? " · 草稿" : "";
+              return <button type="button" key={item.key} title={`${place} ${target.name}｜${formLabel}`} aria-pressed={item.key === activeKey && !listVisible} className={buttonStyles({ size: "sm", selected: item.key === activeKey && !listVisible })} onClick={() => { run(() => careActions.activate(item.key)); setListVisible(false); setSigning(false); }}>{place} | {formLabel}{state}</button>;
+            })}
             <span className={styles.trayDivider} aria-hidden="true" />
-            <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { if (hasActive) setPending("all"); else run(() => careActions.closeAll(kind), "已保留草稿並關閉全部表單。"); }}>保留草稿，全部關閉</button>
+            <button type="button" className={buttonStyles({ size: "sm" })} title="保留草稿並關閉全部表單" onClick={() => { if (hasActive) setPending("all"); else run(() => careActions.closeAll(kind), "已保留草稿並關閉全部表單。"); }}>關閉全部</button>
           </div>
-          <p className={styles.trayMeta}>
-            <span>開啟 {data.open.length}</span>
-            <span>草稿 {allDrafts}</span>
-            <span>{lockedSubject ? `編輯鎖 ${lockedSubject.room || lockedSubject.carNo} ${lockedSubject.name}` : "未鎖定對象"}</span>
-          </p>
         </nav>
       </HeaderSlot>}
     </RequireAccess>

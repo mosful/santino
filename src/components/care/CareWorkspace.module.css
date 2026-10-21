@@ -34,11 +34,8 @@
 .trayScroll > * { flex: 0 0 auto; }
 .trayScroll button { max-width: min(260px, 55vw); }
 .trayDivider { width: 1px; min-height: 24px; align-self: stretch; background: var(--border-subtle); }
-.trayMeta { display: flex; flex: 0 0 auto; gap: 12px; white-space: nowrap; font-size: 12px; color: var(--text-muted); }
-/* 窄螢幕先捨棄統計文字，優先保留可切換的表單分頁 */
 @media (max-width: 1023px) {
   .tray { padding-inline: 12px; }
-  .trayMeta { display: none; }
 }
 .subjectCard { border-color: var(--border-subtle); background: var(--surface-raised); }
 .subjectCard[data-status="入住"] { border-color: #bdd8c6; background: #f0f8f3; }

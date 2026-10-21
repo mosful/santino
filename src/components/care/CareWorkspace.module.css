@@ -39,7 +39,10 @@
 .trayGroup[data-active="true"] { border-color: var(--brand-300); background: var(--brand-50); }
 /* 目前對象識別列：住在頁首列裡，所以不能再帶自己的外框與內距，文字過長就截斷。 */
 .subjectBar { display: flex; min-width: 0; flex: 1; align-items: center; justify-content: space-between; gap: 12px; }
-.subjectBarText { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; color: var(--text-muted); }
+/* 字級比一般內文小一階、但比原本的 13px 大一點：和頁首標題同列時才不會像註腳。
+   房號／姓名／病歷號那段再大一號，狀態與天數是次要資訊維持小一級。 */
+.subjectBarText { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14px; color: var(--text-muted); }
+.subjectBarText strong { font-size: 15px; }
 .subjectBarActions { display: flex; flex-shrink: 0; align-items: center; gap: 8px; }
 /* 窄螢幕時插槽整塊掉到頁首第二行，補一條分隔線免得和標題黏在一起。 */
 @media (max-width: 1023px) {

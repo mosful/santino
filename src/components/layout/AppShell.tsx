@@ -155,8 +155,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               空的時候由 globals.css 的 :empty 規則收掉，其他頁面不受影響。
             */}
             <div id={HEADER_INLINE_SLOT_ID} className="order-last flex w-full min-w-0 items-center lg:order-none lg:w-auto lg:flex-1" />
-            <div className="flex-1 lg:hidden" />
-            <RoleSwitcher />
+            {/*
+              ⚠️ 登入者資訊靠 `ml-auto` 推到最右，不要改回「一個有斷點條件的 flex-1 spacer」：
+              插槽沒內容時會被 `:empty` 收成 display:none，spacer 又在桌寬被隱藏，
+              於是沒有任何元素撐開空間，登入者資訊會黏到標題旁邊（實際發生過）。
+              ml-auto 在「插槽有內容」「插槽為空」「窄螢幕插槽換到第二行」三種情況都正確。
+            */}
+            <div className="ml-auto flex shrink-0 items-center">
+              <RoleSwitcher />
+            </div>
           </header>
           {/*
             頁面可注入的第二列工具列（見 components/layout/HeaderSlot）。

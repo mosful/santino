@@ -101,7 +101,7 @@ export default function CoursePage() {
   return (
     <div className="page-frame">
       <RequireAccess moduleNo="13">
-      <PageHeader title="13. 課程管理" moduleNo="13" />
+      <PageHeader title="課程管理" moduleNo="13" />
       <TabsFromUrl
         tabs={[
           {

@@ -8,7 +8,7 @@ export default function BabycamWorkspacePage() {
   return (
     <div className="page-frame">
       <RequireAccess moduleNo="17">
-        <PageHeader title="17. 寶寶視訊（WebCam）" moduleNo="17" />
+        <PageHeader title="寶寶視訊" moduleNo="17" />
         <Suspense fallback={<p className="p-4 text-sm text-stone-500">載入視訊工作區…</p>}>
           <WorkspaceEntry />
         </Suspense>

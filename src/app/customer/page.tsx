@@ -246,7 +246,7 @@ export default function CustomerPage() {
     <div className="page-frame">
       <RequireAccess moduleNo="5">
       <PageHeader
-        title="櫃台服務・客戶資料"
+        title="客戶資料"
         moduleNo="5"
         action={
           <div className="flex gap-2 text-xs">

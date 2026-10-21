@@ -20,6 +20,7 @@ import PhraseLibrarySettings from "./tabs/PhraseLibrarySettings";
 import AssessmentFormSettings from "./tabs/AssessmentFormSettings";
 import KpiRuleSettings from "./tabs/KpiRuleSettings";
 import { canEditAdminSetting } from "@/lib/permissions";
+import { MODULES, type SubItem } from "@/lib/modules";
 import { useCurrentRole } from "@/lib/roleStore";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 
@@ -59,7 +60,7 @@ const announcementFields: FieldSchema[] = [
 function BoardSettingsTab({ canEdit }: { canEdit: boolean }) {
   return (
     <div className="space-y-2">
-      <p className="text-xs text-stone-400">此處維護的公告會同步顯示於「1.櫃台服務＞公佈欄」。</p>
+      <p className="text-xs text-stone-400">此處維護的公告會同步顯示於首頁的「最新公告」區塊。</p>
       <EditableList moduleNo="15" editAllowed={canEdit} fields={announcementFields} initialRows={ANNOUNCEMENTS} searchPlaceholder="公告標題" />
     </div>
   );
@@ -111,37 +112,83 @@ function PendingEntry({ title, detail, href, hrefLabel }: { title: string; detai
   );
 }
 
+/**
+ * key → 頁籤內容。
+ *
+ * ⚠️ 頁籤的「有哪些、叫什麼、排什麼順序、誰看得到」一律以 `lib/modules.ts`
+ * 的模組 15 subItems 為準，這裡只回答「這個 key 要渲染什麼」。
+ * 以前兩邊各寫一份，選單改了頁面沒改（或反過來）就會對不上。
+ */
+function adminTabContent(key: string, canEditSystem: boolean, canEditOperations: boolean) {
+  switch (key) {
+    case "master":
+      return <MasterDataTab canEdit={canEditSystem} />;
+    case "staff":
+      return <StaffPermissionSettings />;
+    case "forms":
+      return <AssessmentFormSettings />;
+    case "qrcode":
+      return <QrCardPanel />;
+    case "package":
+      return (
+        <PendingEntry
+          title="套餐與贈品規則"
+          detail="房型 × 天數 × 生產院所 × 價格身分的定價表、贈天數與贈課程門檻，目前寫在程式內的示範值。待取得客戶實際定價 Excel 後改為此處維護。"
+          href="/cases/"
+          hrefLabel="先到案件流程看套餐快速試算"
+        />
+      );
+    case "contract-version":
+      return (
+        <PendingEntry
+          title="合約版本管理"
+          detail="合約條文版本（啟用中／停用）與合約範本的維護入口。改條文一律開新版，不影響已簽署合約。目前可於合約模組內檢視。"
+          href="/contract/?tab=terms"
+          hrefLabel="前往合約條款檢視"
+        />
+      );
+    case "phrases":
+      return <PhraseLibrarySettings />;
+    case "backfill":
+      return <BackfillSettings />;
+    case "kpi-rules":
+      return <KpiRuleSettings />;
+    case "report":
+      return <ReportTab />;
+    case "board":
+      return <BoardSettingsTab canEdit={canEditOperations} />;
+    case "system":
+      return <SystemSettings />;
+    default:
+      return null;
+  }
+}
+
 export default function AdminPage() {
   const role = useCurrentRole();
   const canEditOperations = canEditAdminSetting(role, "operations");
   const canEditSystem = canEditAdminSetting(role, "system");
+
+  // 權限過濾：不屬於該角色的項目直接不存在（不是顯示後改唯讀）。
+  const allowed = (MODULES.find((m) => m.no === "15")?.subItems ?? []).filter(
+    (item) => !item.adminGroup || canEditAdminSetting(role, item.adminGroup),
+  );
+  const toTab = (item: SubItem) => ({
+    key: item.key,
+    label: item.label,
+    content: adminTabContent(item.key, canEditSystem, canEditOperations),
+  });
+
   return (
     <div className="page-frame">
       <RequireAccess moduleNo="15">
-      <PageHeader title="15. 後台管理" moduleNo="15" />
-      <TabsFromUrl
-        // 依客戶要求：沒有權限的後台項目直接不顯示（不是顯示後改唯讀）。
-        // 前四項為 v24 §10 的「系統設定」類，只有管理者看得到；
-        // 標題不加鎖頭圖示——看得到就是能改，再掛鎖只會造成「被鎖住」的誤解。
-        tabs={[
-          ...(canEditSystem
-            ? [
-                { key: "master", label: "基礎主檔設定", content: <MasterDataTab canEdit={canEditSystem} /> },
-                { key: "staff", label: "人員與權限", content: <StaffPermissionSettings /> },
-                { key: "forms", label: "表單與欄位設定", content: <AssessmentFormSettings /> },
-                { key: "qrcode", label: "QR Code 管理", content: <QrCardPanel /> },
-              ]
-            : []),
-          { key: "package", label: "套餐與贈品規則", content: <PendingEntry title="套餐與贈品規則" detail="房型 × 天數 × 生產院所 × 價格身分的定價表、贈天數與贈課程門檻，目前寫在程式內的示範值。待取得客戶實際定價 Excel 後改為此處維護。" href="/cases/" hrefLabel="先到案件流程看套餐快速試算" /> },
-          { key: "contract-version", label: "合約版本管理", content: <PendingEntry title="合約版本管理" detail="合約條文版本（啟用中／停用）與合約範本的維護入口。改條文一律開新版，不影響已簽署合約。目前可於合約模組內檢視。" href="/contract/?tab=terms" hrefLabel="前往合約條款檢視" /> },
-          { key: "phrases", label: "片語庫管理", content: <PhraseLibrarySettings /> },
-          { key: "backfill", label: "資料回補與例外處理", content: <BackfillSettings /> },
-          { key: "kpi-rules", label: "評鑑指標設定", content: <KpiRuleSettings /> },
-          { key: "report", label: "報表查詢", content: <ReportTab /> },
-          { key: "board", label: "公佈欄設定", content: <BoardSettingsTab canEdit={canEditOperations} /> },
-          { key: "system", label: "系統參數設定", content: <SystemSettings /> },
-        ]}
-      />
+        <PageHeader title="後台管理" moduleNo="15" />
+        <TabsFromUrl
+          tabs={allowed.filter((item) => !item.hidden).map(toTab)}
+          // 客戶要求下架的項目（modules.ts 的 hidden）不列在頁籤列，
+          // 但保留 /admin/?tab=xxx 直達——DEMO 要靠「系統參數設定」切換功能分期。
+          deepLinkTabs={allowed.filter((item) => item.hidden).map(toTab)}
+        />
       </RequireAccess>
     </div>
   );

@@ -1,6 +1,7 @@
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import TabsFromUrl from "@/components/ui/TabsFromUrl";
+import { MODULES, type SubItem } from "@/lib/modules";
 import ContractList from "./tabs/ContractList";
 import NewContract from "./tabs/NewContract";
 import ContractTerms from "./tabs/ContractTerms";
@@ -11,34 +12,62 @@ import SignStatusDashboard from "./tabs/SignStatusDashboard";
 import ContractChangeOrder from "./tabs/ContractChangeOrder";
 import ChildcareContract from "./tabs/ChildcareContract";
 
+/**
+ * key → 頁籤內容。
+ *
+ * ⚠️ 「有哪些頁籤、叫什麼、哪些已下架」一律以 `lib/modules.ts` 的模組 12
+ * subItems 為準，這裡只回答「這個 key 要渲染什麼」。
+ */
+function contractTabContent(key: string) {
+  switch (key) {
+    case "list":
+      return <ContractList />;
+    case "terms":
+      return <ContractTerms />;
+    case "childcare":
+      return <ChildcareContract />;
+    case "new":
+      return <NewContract />;
+    case "templates":
+      return <ContractTemplates />;
+    case "renewal":
+      return <RenewalManagement />;
+    case "termination":
+      return <TerminationManagement />;
+    case "sign-status":
+      return <SignStatusDashboard />;
+    case "change-order":
+      return <ContractChangeOrder />;
+    default:
+      return null;
+  }
+}
+
+const SUB_ITEMS = MODULES.find((m) => m.no === "12")?.subItems ?? [];
+const toTab = (item: SubItem) => ({ key: item.key, label: item.label, content: contractTabContent(item.key) });
+
+/**
+ * 合約與付款。
+ *
+ * ⚠️ 這一頁**不是簽約的地方**，簽約在案件流程。這裡只做案件做不到的事：
+ * 查歷史合約、看條款版本、托嬰另立合約。
+ * 原本頁首有一張大卡寫著「合約作業已整合進案件流程」、底下卻仍排著九個頁籤
+ * （含「新增合約」），自己打自己的臉——客戶回報「合約管理太多入口」正是指這個。
+ */
 export default function ContractPage() {
   return (
     <div className="page-frame">
       <RequireAccess moduleNo="12">
-      <PageHeader title="櫃台服務・合約與付款" moduleNo="12" />
-      <section className="mb-5 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-stone-300 bg-white p-4">
-        <div><h2 className="font-semibold">合約作業已整合進案件流程</h2><p className="mt-1 text-sm text-stone-600">新增預約、試算、下訂、審閱、簽名、付款、變更與入住 v2 請由同一案件接續，避免重複建檔。</p></div>
-        <Link href="/cases/" className={buttonStyles({ variant: "primary", size: "lg" })}>前往案件流程</Link>
-      </section>
-      <TabsFromUrl
-        tabs={[
-          { key: "list", label: "合約查詢與列表", content: <ContractList /> },
-          { key: "new", label: "新增合約", content: <NewContract /> },
-          { key: "terms", label: "合約條款檢視", content: <ContractTerms /> },
-          { key: "templates", label: "合約範本管理", content: <ContractTemplates /> },
-          { key: "renewal", label: "續約管理", content: <RenewalManagement /> },
-          { key: "termination", label: "退約／作廢管理", content: <TerminationManagement /> },
-          { key: "sign-status", label: "合約簽署狀態總覽", content: <SignStatusDashboard /> },
-          { key: "change-order", label: "合約變更單", content: <ContractChangeOrder /> },
-          { key: "childcare", label: "寶寶留房／托嬰合約", content: <ChildcareContract /> },
-        ]}
-      />
-      <div className="mt-6 rounded border border-dashed border-stone-300 p-3 text-xs text-stone-400">
-        本頁保留既有合約查詢與管理工具；入住指導單、繳費通知單的紙本列印及完成狀態已移至案件「入住前」，電子簽核流程仍不在本次靜態原型範圍。
-      </div>
+        <PageHeader title="合約與付款" moduleNo="12" />
+        <p className="mb-4 text-sm text-stone-500">
+          簽約、收款、變更與入住請由「案件流程」同一案件接續辦理，避免重複建檔；本頁用於查詢既有合約與條款。
+        </p>
+        <TabsFromUrl
+          tabs={SUB_ITEMS.filter((item) => !item.hidden).map(toTab)}
+          // 下架的頁籤不列，但保留 /contract/?tab=xxx 直達，供舊連結與內部查閱使用。
+          deepLinkTabs={SUB_ITEMS.filter((item) => item.hidden).map(toTab)}
+        />
       </RequireAccess>
     </div>
   );
 }
-import Link from "next/link";
-import { buttonStyles } from "@/components/ui/buttonStyles";

@@ -1,27 +1,15 @@
 "use client";
 
-import { LayoutDashboard, Route } from "lucide-react";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import { setEnabledPhase, useEnabledPhase, type EnabledPhase } from "@/lib/phaseStore";
-import {
-  setDashboardLayout,
-  useDashboardLayout,
-  type DashboardLayout,
-} from "@/lib/dashboardLayoutStore";
 
 const PHASE_OPTIONS = [
   { value: 1 as EnabledPhase, label: "Phase 1", help: "只顯示第一階段核心功能選單" },
   { value: 2 as EnabledPhase, label: "Phase 1＋2", help: "顯示第一、二階段功能選單" },
 ];
 
-const LAYOUT_OPTIONS = [
-  { value: "journey" as DashboardLayout, label: "流程中控", icon: Route, help: "以案件流程為主的中控版型" },
-  { value: "classic" as DashboardLayout, label: "原中控", icon: LayoutDashboard, help: "沿用舊系統配置的中控版型" },
-];
-
 export default function SystemSettings() {
   const enabledPhase = useEnabledPhase();
-  const dashboardLayout = useDashboardLayout();
 
   return (
     <div className="max-w-3xl space-y-4 text-sm">
@@ -39,17 +27,6 @@ export default function SystemSettings() {
               value={enabledPhase}
               onChange={setEnabledPhase}
               options={PHASE_OPTIONS}
-            />
-          </SettingRow>
-          <SettingRow
-            term="櫃台服務中控版型"
-            description="設定「1. 櫃台服務」首頁採流程中控或原中控配置。"
-          >
-            <SegmentedControl
-              ariaLabel="櫃台服務中控版型"
-              value={dashboardLayout}
-              onChange={setDashboardLayout}
-              options={LAYOUT_OPTIONS}
             />
           </SettingRow>
         </dl>

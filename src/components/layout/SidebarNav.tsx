@@ -2,15 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { ChevronDown } from "lucide-react";
 import { MODULES } from "@/lib/modules";
 import { MODULE_ICONS } from "./icons";
 import { useCurrentRole } from "@/lib/roleStore";
-import { canEditAdminSetting, canUseCaseFlow, getAccess } from "@/lib/permissions";
+import { canUseCaseFlow, getAccess } from "@/lib/permissions";
 import { useEnabledPhase } from "@/lib/phaseStore";
-import { useDashboardLayout } from "@/lib/dashboardLayoutStore";
 
+/**
+ * 主選單。
+ *
+ * ⚠️ **只有一層，沒有子項下拉**（2026-10-21）。
+ * 原本每個模組都能展開 2～12 個子項，子項點下去只是切換該頁面的頁籤——
+ * 同一個畫面於是同時存在「選單子項」和「頁內頁籤」兩套入口，整個選單樹膨脹到
+ * 約 40 個項目。客戶明確回報「入口太多、選單太複雜」，因此收斂為：
+ * 選單一層＝一個模組，進頁後用頁籤切換。`{href}?tab={key}` 深連結仍然有效。
+ *
+ * 要改選單內容請改 `lib/modules.ts`，不要在這裡另寫一份清單。
+ */
 export default function SidebarNav({
   collapsed = false,
   onNavigate,
@@ -21,12 +29,14 @@ export default function SidebarNav({
   const pathname = usePathname();
   const role = useCurrentRole();
   const enabledPhase = useEnabledPhase();
-  const dashboardLayout = useDashboardLayout();
-  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const visibleModules = MODULES.filter(
+    (m) => m.showInSidebar !== false && m.phase <= enabledPhase && getAccess(role, m.no) !== "none",
+  );
 
   return (
     <nav className="flex flex-col gap-0.5 px-2 py-2">
-      {MODULES.filter((m) => m.showInSidebar !== false && m.phase <= enabledPhase && getAccess(role, m.no) !== "none").map((m) => {
+      {visibleModules.map((m) => {
         const Icon = MODULE_ICONS[m.no];
         // 模組 1 對沒有櫃台案件作業權限的角色改用別名（見 modules.ts 的 altLabel）。
         const label = m.no === "1" && m.altLabel && !canUseCaseFlow(role) ? m.altLabel : m.label;
@@ -36,67 +46,23 @@ export default function SidebarNav({
           m.href === "/"
             ? pathname === "/"
             : pathname === m.href || pathname.startsWith(m.href + "/");
-        const isExpanded = expanded === m.no;
-        // 子項過濾：未開放的分期不列；後台「系統設定」類（🔒）只有管理者看得到——
-        // 依客戶要求，沒有權限的項目直接不出現在選單，不做「看得到但不能改」。
-        const visibleSubItems = m.no === "1" && dashboardLayout === "journey"
-          ? []
-          : m.subItems?.filter(
-              (item) =>
-                (item.phase ?? m.phase) <= enabledPhase &&
-                (!item.adminGroup || canEditAdminSetting(role, item.adminGroup)),
-            );
 
         return (
-          <div key={m.no}>
-            <div className="flex items-stretch">
-              <Link
-                href={m.href}
-                onClick={(e) => {
-                  if (visibleSubItems?.length && !collapsed) {
-                    e.preventDefault();
-                    setExpanded(isExpanded ? null : m.no);
-                  } else {
-                    onNavigate?.();
-                  }
-                }}
-                title={collapsed ? label : undefined}
-                className={
-                  "group flex flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors md:max-lg:min-h-12 md:max-lg:justify-center md:max-lg:px-2 " +
-                  (active
-                    ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm shadow-brand-200"
-                    : "text-stone-600 hover:bg-brand-50")
-                }
-              >
-                <Icon className="h-[18px] w-[18px] shrink-0" />
-                {!collapsed && (
-                  <>
-                    <span className="flex-1 truncate">{label}</span>
-                    {!!visibleSubItems?.length && (
-                      <ChevronDown
-                        className={"h-3.5 w-3.5 shrink-0 transition-transform " + (isExpanded ? "rotate-180" : "")}
-                      />
-                    )}
-                  </>
-                )}
-              </Link>
-            </div>
-
-            {!collapsed && !!visibleSubItems?.length && isExpanded && (
-              <div className="ml-6 flex flex-col gap-0.5 border-l border-brand-900/10 py-1 pl-3">
-                {visibleSubItems.map((s) => (
-                  <Link
-                    key={s.key}
-                    href={`${m.href}?tab=${s.key}`}
-                    onClick={() => onNavigate?.()}
-                    className="truncate rounded-lg px-2 py-1.5 text-xs text-stone-500 hover:bg-brand-50 hover:text-brand-600"
-                  >
-                    {s.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
+          <Link
+            key={m.no}
+            href={m.href}
+            onClick={() => onNavigate?.()}
+            title={collapsed ? label : undefined}
+            className={
+              "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors md:max-lg:min-h-12 md:max-lg:justify-center md:max-lg:px-2 " +
+              (active
+                ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm shadow-brand-200"
+                : "text-stone-600 hover:bg-brand-50")
+            }
+          >
+            <Icon className="h-[18px] w-[18px] shrink-0" />
+            {!collapsed && <span className="flex-1 truncate">{label}</span>}
+          </Link>
         );
       })}
     </nav>

@@ -125,7 +125,7 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
 
   return <div className={`${styles.workspace} page-frame`}>
     <RequireAccess moduleNo={kind === "mama" ? "2" : "3"}>
-      <PageHeader title={kind === "mama" ? "2. 媽媽照護" : "3. 寶寶照護"} moduleNo={kind === "mama" ? "2" : "3"} />
+      <PageHeader title={kind === "mama" ? "媽媽照護" : "寶寶照護"} moduleNo={kind === "mama" ? "2" : "3"} />
       {storageError && <p role="alert" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{storageError}</p>}
       {message && <div role="status" className="mb-4 whitespace-pre-line rounded-lg border border-stone-300 bg-stone-50 p-3 text-sm">{message}</div>}
       {hasActive ? <>

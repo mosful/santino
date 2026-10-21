@@ -142,7 +142,7 @@ export default function MealPage() {
   return (
     <div className="page-frame">
       <RequireAccess moduleNo="9">
-      <PageHeader title="9. 月子餐" moduleNo="9" />
+      <PageHeader title="月子餐" moduleNo="9" />
       <TabsFromUrl
         tabs={[
           { key: "order", label: "訂餐管理系統", content: <OrderTab /> },

@@ -31,8 +31,15 @@ export type StageDefinition = {
   color: StageTone;
   /** 這個階段該完成什麼（首頁漏斗的檢核清單）。 */
   checklist: string[];
-  links: { label: string; href: string; hint: string }[];
 };
+
+/*
+  ⚠️ 這裡以前每個階段還掛一組 `links`（3～4 個通往其他模組的捷徑），由首頁漏斗
+  右側的「○○階段相關功能」渲染，八個階段合計 26 個連結。客戶回報「入口太多」，
+  2026-10-21 連同那個區塊一起移除——那些模組在側邊欄或首頁常用功能列都進得去，
+  而且其中 `/admin?tab=visit` 根本不存在，點了只會落到後台第一個頁籤。
+  要再加捷徑前請先確認：這個入口在別處是不是已經有了。
+*/
 
 export const JOURNEY_STAGES: StageDefinition[] = [
   {
@@ -42,11 +49,6 @@ export const JOURNEY_STAGES: StageDefinition[] = [
     icon: CalendarCheck,
     color: "sky",
     checklist: ["已建立客戶基本資料", "已記錄預產期與需求", "已約定參觀日期與時段"],
-    links: [
-      { label: "建立客戶資料", href: "/customer", hint: "基本資料與需求紀錄" },
-      { label: "參觀排程", href: "/admin?tab=visit", hint: "新增與調整預約" },
-      { label: "參觀提醒", href: "/care?tab=visit", hint: "行前提醒與未到追蹤" },
-    ],
   },
   {
     key: "參觀",
@@ -55,11 +57,6 @@ export const JOURNEY_STAGES: StageDefinition[] = [
     icon: DoorOpen,
     color: "violet",
     checklist: ["已完成參觀出席登記", "已出具套餐試算單", "試吃收據已開立（可折抵尾款）"],
-    links: [
-      { label: "參觀提醒", href: "/care?tab=visit", hint: "行前提醒與未到追蹤" },
-      { label: "簽約提醒", href: "/care?tab=contract-reminder", hint: "參觀後意願追蹤" },
-      { label: "客戶資料", href: "/customer", hint: "參觀紀錄與需求更新" },
-    ],
   },
   {
     key: "下訂",
@@ -68,11 +65,6 @@ export const JOURNEY_STAGES: StageDefinition[] = [
     icon: HandCoins,
     color: "amber",
     checklist: ["收字號已建立（即合約編號）", "房型與入住天數已確認", "訂金已收取並入帳"],
-    links: [
-      { label: "合約查詢", href: "/contract?tab=list", hint: "訂金、天數與房型" },
-      { label: "房況總覽", href: "/#room-status-title", hint: "確認可排房型與檔期" },
-      { label: "客戶資料", href: "/customer", hint: "下訂內容與聯絡紀錄" },
-    ],
   },
   {
     key: "合約",
@@ -81,11 +73,6 @@ export const JOURNEY_STAGES: StageDefinition[] = [
     icon: FileSignature,
     color: "emerald",
     checklist: ["攜回審閱日與簽約日符合審閱期", "合約書已完成簽署", "母乳哺育意願書與哺餵方式已確認"],
-    links: [
-      { label: "新增合約", href: "/contract?tab=new", hint: "建立合約與電子簽名" },
-      { label: "合約條款檢視", href: "/contract?tab=terms", hint: "條款版本與簽名" },
-      { label: "簽約提醒", href: "/care?tab=contract-reminder", hint: "審閱期與回訪提醒" },
-    ],
   },
   {
     key: "入住前",
@@ -94,11 +81,6 @@ export const JOURNEY_STAGES: StageDefinition[] = [
     icon: ClipboardCheck,
     color: "orange",
     checklist: ["產前關懷電話已完成", "已取得實際入住日並完成排房", "入住指導單與繳款通知單已備妥"],
-    links: [
-      { label: "入住前關懷", href: "/care?tab=pre-admission", hint: "生產與報到時間確認" },
-      { label: "房況總覽", href: "/#room-status-title", hint: "排房、清潔與床位準備" },
-      { label: "月子餐設定", href: "/meal?tab=order", hint: "禁忌與首日餐點" },
-    ],
   },
   {
     key: "入住中",
@@ -107,12 +89,6 @@ export const JOURNEY_STAGES: StageDefinition[] = [
     icon: BedDouble,
     color: "rose",
     checklist: ["母嬰基本評估已完成", "每日照護與餐食狀態正常", "合約變更與自費項目已登錄"],
-    links: [
-      { label: "媽媽照護", href: "/mama", hint: "媽媽評估與護理紀錄" },
-      { label: "寶寶照護", href: "/baby", hint: "寶寶動態與照護紀錄" },
-      { label: "合約變更", href: "/contract?tab=change-order", hint: "續住、換房與加購" },
-      { label: "醫師巡診", href: "/doctor", hint: "巡診排程與結果" },
-    ],
   },
   {
     key: "退房",
@@ -121,11 +97,6 @@ export const JOURNEY_STAGES: StageDefinition[] = [
     icon: House,
     color: "slate",
     checklist: ["尾款與自費項目已結清", "返家檢查表已完成點交", "返家照片已留存並寄出"],
-    links: [
-      { label: "合約到期", href: "/contract?tab=renewal", hint: "到期、續住或提前退房" },
-      { label: "房況總覽", href: "/#room-status-title", hint: "退房、清潔與物品點交" },
-      { label: "返家關懷", href: "/care?tab=home-return", hint: "建立返家追蹤排程" },
-    ],
   },
   {
     key: "已結案",
@@ -134,12 +105,6 @@ export const JOURNEY_STAGES: StageDefinition[] = [
     icon: Archive,
     color: "teal",
     checklist: ["已建立返家關懷排程", "寶寶續留時已另立托嬰合約", "本次入住歷程已封存"],
-    links: [
-      { label: "托嬰合約", href: "/contract?tab=childcare", hint: "另立合約、車號與接回安排" },
-      { label: "寶寶照護", href: "/baby", hint: "續留期間照護與健康紀錄" },
-      { label: "返家關懷", href: "/care?tab=home-return", hint: "電話關懷與異常轉介" },
-      { label: "客戶資料", href: "/customer", hint: "封存本次入住完整歷程" },
-    ],
   },
 ];
 

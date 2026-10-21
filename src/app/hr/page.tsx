@@ -126,7 +126,7 @@ export default function HrPage() {
   return (
     <div className="page-frame">
       <RequireAccess moduleNo="10">
-      <PageHeader title="10. 人事考勤" moduleNo="10" />
+      <PageHeader title="人事考勤" moduleNo="10" />
       <TabsFromUrl
         tabs={[
           { key: "staff", label: "員工資料", content: <StaffTab /> },

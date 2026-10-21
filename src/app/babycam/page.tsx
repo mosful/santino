@@ -9,7 +9,7 @@ export default function BabyCamPage() {
       <RequireAccess moduleNo="17">
         {/* ⚠️ QR 掃描／媽媽端／親友端三個連結已移進工作區卡片的導覽列，角色提示也一併移除。
             原本掛在頁首 action 的那一塊會多佔整整一個 band，客戶指著它說「重複資訊，整塊拿掉」。 */}
-        <PageHeader title="17. 寶寶視訊（WebCam）" moduleNo="17" />
+        <PageHeader title="寶寶視訊" moduleNo="17" />
 
         <Suspense fallback={<p className="p-4 text-sm text-stone-500">載入視訊工作區…</p>}>
           <WorkspaceEntry />

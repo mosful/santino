@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BedDouble, BellRing, CalendarClock, ClipboardList, FileText, PhoneCall, UserRoundSearch, Video, type LucideIcon } from "lucide-react";
+import { BellRing, CalendarClock, ClipboardList, PhoneCall, UserRoundSearch, Video, type LucideIcon } from "lucide-react";
 import { useCareStore } from "@/lib/care/store";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { roleTaskCategories, taskEvents } from "@/lib/domain/tasks";
@@ -72,16 +72,21 @@ export default function OperationsOverview({
         ? "主檔、設備與權限設定"
         : "依角色開啟可用功能";
   const caseFlow = canUseCaseFlow(role);
+  /*
+    常用功能只放「這一頁到不了、側邊欄也沒有」的入口。
+
+    ⚠️ 不要再把下列東西加回來（2026-10-21 客戶回報「入口太多」後逐一移除）：
+      ・今日工作台／房況總覽 —— 就在同一頁下面，點了只是捲動幾百 px。
+      ・待辦事項 —— 側邊欄第一項。
+      ・合約與付款 —— 合約作業已整併進案件流程，再開一個平行入口只會讓人
+        不確定該從哪邊簽約；需要查舊約仍可由案件或網址 /contract 進入。
+    ⚠️ visible 一律接真正的權限判定，不要寫死 true：寫死會讓沒權限的角色
+    看得到入口、點進去才被擋頁（客戶回報過「衛教師點了說沒權限」）。
+  */
   const serviceLinks = [
-    // ⚠️ 不要再把「今日工作台」放進來：它就在下面同一頁，點了只是捲動 200px。
-    // ⚠️ visible 一律接真正的權限判定，不要寫死 true：寫死會讓沒權限的角色
-    // 看得到入口、點進去才被擋頁（客戶回報過「衛教師點了說沒權限」）。
     { href: "/cases/", icon: ClipboardList, label: "案件流程", value: "從預約到退房結案", visible: caseFlow },
     { href: "/customer/", icon: UserRoundSearch, label: "客戶資料", value: "查詢客戶與聯繫紀錄", visible: getAccess(role, "5") !== "none" },
-    { href: "/#room-status-title", icon: BedDouble, label: "房況總覽", value: "依樓層查看房況與托嬰", visible: getAccess(role, "4") !== "none" },
-    { href: "/contract/", icon: FileText, label: "合約與付款", value: "簽約、變更與收款", visible: getAccess(role, "12") !== "none" },
     { href: "/care/", icon: PhoneCall, label: "媽媽關懷", value: "跨階段關懷與追蹤", visible: getAccess(role, "7") !== "none" },
-    { href: "/todo/", icon: CalendarClock, label: "待辦事項", value: "月、週、日工作排程", visible: getAccess(role, "0") !== "none" },
     { href: "/babycam/", icon: Video, label: "寶寶視訊管理", value: babycamSummary, visible: babycamAccess !== "none" },
   ].filter((item) => item.visible);
 
@@ -125,28 +130,30 @@ export default function OperationsOverview({
           {!urgent.length && <p className="col-span-full rounded-2xl border border-dashed border-stone-200 p-6 text-center text-sm text-stone-500">今天沒有逾期或到期待辦。</p>}
         </div>
 
-        {/* 合約與付款、寶寶視訊管理已在上方常用功能列，這裡不重複；只留這一頁獨有的案件計數。 */}
+        {/* 只留數字，不再連去 /cases/：上方常用功能列已經有「案件流程」，
+            同一頁出現三個通往同一個地方的連結正是客戶說的「入口太多」。 */}
         {caseFlow && (
           <p className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-stone-500">
-            <Link href="/cases/" className="hover:text-brand-600">案件進行中 <strong className="text-stone-700">{domain.cases.filter((record) => !record.closed).length}</strong> 件</Link>
-            <Link href="/cases/" className="hover:text-brand-600">未完成草稿 <strong className="text-amber-700">{drafts.length}</strong> 件待續作</Link>
+            <span>案件進行中 <strong className="text-stone-700">{domain.cases.filter((record) => !record.closed).length}</strong> 件</span>
+            <span>未完成草稿 <strong className="text-amber-700">{drafts.length}</strong> 件待續作</span>
           </p>
         )}
       </CollapsibleSection>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+        {/* 公告是純資訊，不要連到後台「公佈欄設定」：那是維護畫面，而且依客戶
+            2026-10-21 的要求已下架；讓每一則公告都變成後台連結只是製造死路。 */}
         <CollapsibleSection
           id="announcements"
           title="最新公告"
           summary={`${announcements.length} 則`}
-          action={<Link href="/admin/?tab=board" className="text-xs font-semibold text-brand-600">公告管理</Link>}
         >
           <div className="divide-y divide-stone-100">
             {announcements.map((announcement) => (
-              <Link key={announcement.id} href="/admin/?tab=board" className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2 py-2 text-xs hover:text-brand-600">
+              <div key={announcement.id} className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2 py-2 text-xs">
                 <span className="text-stone-400">{announcement.date.slice(5)}</span>
                 <span className="truncate font-medium text-stone-700">{announcement.title}</span>
-              </Link>
+              </div>
             ))}
           </div>
         </CollapsibleSection>

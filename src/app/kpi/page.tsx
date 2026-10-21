@@ -184,7 +184,7 @@ export default function KpiPage() {
   return (
     <div className="page-frame">
       <RequireAccess moduleNo="8">
-        <PageHeader title="8. 評鑑指標" moduleNo="8" />
+        <PageHeader title="評鑑指標" moduleNo="8" />
         <TabsFromUrl tabs={[
           { key: "care", label: "照護指標", content: <IndicatorTab indicators={CARE_INDICATORS} /> },
           { key: "infection", label: "感染指標", content: <IndicatorTab indicators={INFECTION_INDICATORS} /> },

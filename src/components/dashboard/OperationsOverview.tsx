@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { BellRing, ClipboardList, PhoneCall, UserRoundSearch, Video, type LucideIcon } from "lucide-react";
+import { BellRing } from "lucide-react";
 import { useCareStore } from "@/lib/care/store";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { roleTaskCategories, taskEvents } from "@/lib/domain/tasks";
 import { ANNOUNCEMENTS } from "@/lib/mock/dashboard";
 import { useCurrentRole } from "@/lib/roleStore";
 import RoomStatusOverview from "./RoomStatusOverview";
-import { canUseCaseFlow, getAccess } from "@/lib/permissions";
+import { canUseCaseFlow } from "@/lib/permissions";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
 
 /** 由首頁漏斗傳進來的跨階段數字；點擊會切換漏斗的快速檢視。 */
@@ -62,41 +62,15 @@ export default function OperationsOverview({
   const announcements = [...ANNOUNCEMENTS]
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 3);
-  const babycamAccess = getAccess(role, "17");
-  const babycamSummary = role === "櫃台"
-    ? "入住交付、標籤與日常操作"
-    : role === "護理長 婉真"
-      ? "查看狀態與報表"
-      : role === "管理者"
-        ? "主檔、設備與權限設定"
-        : "依角色開啟可用功能";
   const caseFlow = canUseCaseFlow(role);
-  /*
-    常用功能只放「這一頁到不了、側邊欄也沒有」的入口。
-
-    ⚠️ 不要再把下列東西加回來（2026-10-21 客戶回報「入口太多」後逐一移除）：
-      ・今日工作台／房況總覽 —— 就在同一頁下面，點了只是捲動幾百 px。
-      ・待辦事項 —— 側邊欄第一項。
-      ・合約與付款 —— 合約作業已整併進案件流程，再開一個平行入口只會讓人
-        不確定該從哪邊簽約；需要查舊約仍可由案件或網址 /contract 進入。
-    ⚠️ visible 一律接真正的權限判定，不要寫死 true：寫死會讓沒權限的角色
-    看得到入口、點進去才被擋頁（客戶回報過「衛教師點了說沒權限」）。
-  */
-  const serviceLinks = [
-    { href: "/cases/", icon: ClipboardList, label: "案件流程", value: "從預約到退房結案", visible: caseFlow },
-    { href: "/customer/", icon: UserRoundSearch, label: "客戶資料", value: "查詢客戶與聯繫紀錄", visible: getAccess(role, "5") !== "none" },
-    { href: "/care/", icon: PhoneCall, label: "媽媽關懷", value: "跨階段關懷與追蹤", visible: getAccess(role, "7") !== "none" },
-    { href: "/babycam/", icon: Video, label: "寶寶視訊管理", value: babycamSummary, visible: babycamAccess !== "none" },
-  ].filter((item) => item.visible);
 
   return (
     <div className="space-y-4">
-      {/* 常用功能壓成一排膠囊：原本是 8 張 96px 高的大卡，佔掉整個第一屏卻只是連結。 */}
-      <section aria-labelledby="counter-services-title" className="flex flex-wrap items-center gap-2">
-        <h2 id="counter-services-title" className="mr-1 text-xs font-bold text-stone-500">{caseFlow ? "櫃台常用功能" : "常用功能"}</h2>
-        {serviceLinks.map((item) => <ServiceLink key={item.label} {...item} />)}
-      </section>
-
+      {/*
+        ⚠️ 這裡原本有一排「櫃台常用功能」膠囊（案件流程／客戶資料／媽媽關懷／寶寶視訊）。
+        2026-10-21 客戶要求把導覽統一收到左側主選單，這四項已成為「櫃台服務」的
+        第二層選單（見 lib/modules.ts 模組 1 的 subItems）。不要在頁面裡再放一份。
+      */}
     <div id="today-workspace" className="grid scroll-mt-20 gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.75fr)]">
       <CollapsibleSection
         id="today-workspace"
@@ -160,17 +134,6 @@ export default function OperationsOverview({
   );
 }
 
-function ServiceLink({ href, icon: Icon, label }: { href: string; icon: LucideIcon; label: string; value: string }) {
-  return (
-    <Link
-      href={href}
-      className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border-subtle bg-surface-raised px-3 text-xs font-semibold text-stone-600 shadow-2xs transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
-    >
-      <Icon className="h-3.5 w-3.5 shrink-0 text-brand-500" aria-hidden="true" />
-      {label}
-    </Link>
-  );
-}
 
 const STAT_TONE = {
   rose: "border-rose-200 bg-rose-50 text-rose-700",

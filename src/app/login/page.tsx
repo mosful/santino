@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { login } from "@/lib/authStore";
+import { getCurrentRole } from "@/lib/roleStore";
+import { landingPath } from "@/lib/permissions";
 import { pageTitle } from "@/lib/usePageTitle";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 
@@ -21,7 +23,8 @@ export default function LoginPage() {
     }
     setError("");
     login();
-    router.push("/");
+    // 依角色落地：衛教師與護理師對模組 1 沒權限，推去 "/" 只會看到擋頁。
+    router.push(landingPath(getCurrentRole()));
   }
 
   return (

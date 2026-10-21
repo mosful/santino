@@ -245,6 +245,28 @@ html { --app-header-h: 3.5rem; }
 #app-header-slot:empty,
 #app-header-inline-slot:empty { display: none; }
 
+/*
+  導覽第 3 層：頁首下方那一列。
+  同時容納三種東西，彼此用 order 排好，不要各自再加外框或內距：
+    ・主頁籤（.header-tablist）—— 靠左，過長就自己橫向捲
+    ・頁面動作按鈕（.header-page-actions）—— 靠右
+    ・護理工作區的「開啟中的表單」列 —— 獨佔一整行
+*/
+#app-header-slot:not(:empty) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 6px 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+.header-tablist { order: 1; min-width: 0; flex: 1 1 auto; }
+.header-page-actions { order: 2; margin-left: auto; flex: 0 0 auto; }
+
+@media (max-width: 1023px) {
+  #app-header-slot:not(:empty) { padding-inline: 12px; }
+}
+
 .page-frame {
   width: 100%;
   max-width: 100rem;

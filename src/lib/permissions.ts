@@ -56,9 +56,15 @@ export type AccessLevel = "edit" | "none";
   未列出的角色一律 none；管理者與護理長另於 getAccess 以規則處理。
 */
 const MATRIX: Record<string, Partial<Record<Role, AccessLevel>>> = {
-  // 1 櫃台服務＝系統首頁。各角色都要進得來（v24 §3 的房況總覽與需立即處理事項在這裡），
-  // 首頁內容本身再依角色分流，不以模組權限擋。
-  "1": { 櫃台: "edit", "衛教師 琳雅": "edit", "護理師 陳護理師": "edit" },
+  /*
+    1 櫃台服務＝系統首頁（含房況總覽與案件漏斗）。
+
+    ⚠️ 2026-10-21 客戶要求：衛教師與護理師**看不到櫃台服務**，他們的工作起點是
+    「待辦事項」。因此這兩個角色在這裡是 none，選單不列、直接打網址也會被擋，
+    並由 `landingPath()` 把他們送到 /todo/。
+    護理長與管理者看得到（護理長同時有櫃台全部與護理全部）。
+  */
+  "1": { 櫃台: "edit", "衛教師 琳雅": "none", "護理師 陳護理師": "none" },
   "2": { 櫃台: "none", "衛教師 琳雅": "edit", "護理師 陳護理師": "edit" },
   "3": { 櫃台: "none", "衛教師 琳雅": "edit", "護理師 陳護理師": "edit" },
   // 4 房況：v24 §1 三個現場角色都可操作（狀態切換的實際授權待客戶確認，見 §13-1）。
@@ -104,6 +110,16 @@ export function canUseCaseFlow(role: Role) {
 
 /** 給使用者看的提示：誰可以做這件事。 */
 export const CASE_FLOW_ROLE_HINT = CASE_FLOW_ROLES.join("、");
+
+/**
+ * 該角色登入後（或被擋頁後）該落在哪一頁。
+ *
+ * ⚠️ 不要寫死 "/"：衛教師與護理師對模組 1 沒有權限，送他們回首頁只會再被擋一次，
+ * 「回到首頁」按鈕還會變成無限循環。
+ */
+export function landingPath(role: Role) {
+  return getAccess(role, "1") === "none" ? "/todo/" : "/";
+}
 
 export type AdminSettingGroup = "system" | "operations";
 

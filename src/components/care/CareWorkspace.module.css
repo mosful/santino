@@ -29,7 +29,7 @@
   不再 sticky 於頁尾，也不在 .workspace 容器內——所以不要在這裡依賴 .workspace
   的任何樣式，底色與邊框也交給頁首容器，這裡只畫分隔線。
 */
-.tray { display: flex; align-items: center; gap: 12px; max-width: 100%; padding: 6px 16px; border-top: 1px solid var(--border-subtle); }
+.tray { order: 1; display: flex; max-width: 100%; flex: 1 1 100%; align-items: center; gap: 12px; }
 .trayScroll { display: flex; min-width: 0; flex: 1 1 auto; align-items: center; gap: 8px; overflow-x: auto; overscroll-behavior-inline: contain; padding-block: 4px; scrollbar-color: var(--brand-300) var(--surface-muted); scrollbar-width: thin; }
 .trayScroll > * { flex: 0 0 auto; }
 .trayScroll button { max-width: min(260px, 55vw); }
@@ -49,9 +49,7 @@
   .subjectBar { border-top: 1px solid var(--border-subtle); padding-top: 5px; }
 }
 .trayGroupLabel { padding-inline: 5px 3px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--brand-700); }
-@media (max-width: 1023px) {
-  .tray { padding-inline: 12px; }
-}
+
 .subjectCard { border-color: var(--border-subtle); background: var(--surface-raised); }
 .subjectCard[data-status="入住"] { border-color: #bdd8c6; background: #f0f8f3; }
 .subjectCard[data-status="親子同室"] { border-color: #edc6d2; background: #fff2f5; }

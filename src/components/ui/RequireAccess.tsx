@@ -4,6 +4,7 @@ import { Lock } from "lucide-react";
 import { ButtonLink } from "./Button";
 import { useAccess } from "@/lib/roleStore";
 import { useCurrentRole } from "@/lib/roleStore";
+import { landingPath } from "@/lib/permissions";
 
 /**
  * 頁面層級的權限防呆。
@@ -33,7 +34,8 @@ export default function RequireAccess({
           <br />
           需要使用請洽管理者調整權限，或由右上角切換模擬身分。
         </p>
-        <ButtonLink href="/" variant="secondary" size="sm">回到首頁</ButtonLink>
+        {/* ⚠️ 不要寫死 "/"：衛教師與護理師對模組 1 沒權限，導回首頁只會再被擋一次。 */}
+        <ButtonLink href={landingPath(role)} variant="secondary" size="sm">回到可用頁面</ButtonLink>
       </div>
     );
   }

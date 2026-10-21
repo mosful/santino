@@ -14,17 +14,21 @@ export type SubItem = {
    * 不屬於該角色的子項**直接不顯示**（不是顯示後改唯讀），選單與頁籤同步過濾。
    */
   adminGroup?: "system" | "operations";
+  /**
+   * 獨立頁面的路徑。**有這個欄位的子項才會出現在側邊欄第二層**；
+   * 沒有的（絕大多數）只是該頁面的頁籤，由 `{模組 href}?tab={key}` 深連結到達，
+   * 不佔選單——同一個畫面同時掛在選單與頁籤曾讓選單膨脹到約 40 項。
+   */
+  href?: string;
+  /** 側邊欄第二層的權限判定依據（模組編號）。沒有權限就不顯示。 */
+  moduleNo?: string;
+  /** 另外要求「櫃台案件作業」權限，見 permissions.canUseCaseFlow。 */
+  requiresCaseFlow?: boolean;
 };
 
 export type ModuleInfo = {
   no: string;
   label: string;
-  /**
-   * 沒有該模組主要作業權限時改用的名稱。
-   * 模組 1 對櫃台是「櫃台服務」，對護理人員實際上只有房況與待辦，
-   * 仍叫櫃台服務會讓人以為點錯地方。
-   */
-  altLabel?: string;
   href: string;
   /** 功能所屬階段；只控制「後台管理＞系統參數設定＞功能分期顯示」的選單分類。 */
   phase: 1 | 2 | 3;
@@ -34,6 +38,9 @@ export type ModuleInfo = {
 };
 
 // 15 大模組導覽（不含11更多功能歷史指標與16第二階段擴充功能，兩者不列入本階段）
+//
+// ⚠️ **陣列順序＝選單順序，不等於模組編號**：待辦（0）在最前、寶寶視訊（17）緊接
+// 寶寶照護（3），都是依實際使用邏輯排的。要照編號找模組請用 no 欄位搜尋。
 //
 // subItems 對應各模組頁面內 Tabs 的 key/label。
 // ⚠️ 2026-10-21 起**側邊欄不再展開子項**：客戶回報「入口太多、選單太複雜」，
@@ -47,15 +54,40 @@ export const MODULES: ModuleInfo[] = [
   {
     no: "1",
     label: "櫃台服務",
-    altLabel: "首頁・房況",
     href: "/",
     phase: 1,
-    // 原本這裡有「公佈欄／媽媽行事曆／內部行事曆／課程管理／加值服務」五個子項，
-    // 但它們只在已移除的 classic（原中控）版型底下存在，等於第二套首頁。
-    // 公告已在首頁「最新公告」區塊、行事曆已由「待辦事項」承接、課程有獨立模組。
+    /*
+      側邊欄第二層＝原本首頁上方那排「櫃台常用功能」膠囊（2026-10-21 客戶要求移到選單）。
+
+      這些都是**獨立路由**，不是頁內頁籤，所以才放進選單；房況總覽不列，
+      它就在櫃台服務首頁下半部，點了只是捲動。
+      每一項都接真正的權限判定，沒權限的角色連項目都不會出現。
+    */
+    subItems: [
+      { key: "cases", label: "案件流程", href: "/cases/", requiresCaseFlow: true },
+      { key: "customer", label: "客戶資料", href: "/customer/", moduleNo: "5" },
+      { key: "care", label: "媽媽關懷", href: "/care/", moduleNo: "7" },
+    ],
   },
   { no: "2", label: "媽媽照護", href: "/mama", phase: 1 },
   { no: "3", label: "寶寶照護", href: "/baby", phase: 1 },
+  /*
+    寶寶視訊（WebCam）：客戶指定優先開發的獨立範圍。
+
+    ⚠️ 是**第一層**選單，不要塞進「櫃台服務」底下：它同時服務櫃台（入住交付、發卡）
+    與護理師（寶寶登錄、掃碼歸位），而護理師看不到櫃台服務（模組 1 對他是 none），
+    掛在那底下等於讓護理師沒有入口。掛兩個地方又會讓護理長看到兩次。
+    ⚠️ phase 原本是 3，純粹用來把它藏出選單（它的入口當時在首頁常用功能膠囊上）。
+    膠囊已移除，這裡必須是 1 才有入口可走。分期歸類以規格文件為準，這個欄位只管選單。
+    媽媽端與親友端在 /view/mama、/view/family，屬對外頁面不列入院務選單。
+    工作區各區段以 ?section= 深連結，不是 ?tab=；QR Code 資訊卡依 v24 §10 移至後台管理。
+  */
+  {
+    no: "17",
+    label: "寶寶視訊",
+    href: "/babycam",
+    phase: 1,
+  },
   // 房況、客戶、關懷與合約屬 Phase 1，但已整併到「櫃台服務」首頁，不再顯示獨立側邊欄入口。
   // 房況依 v24 §3 收回「櫃台服務」首頁的房況總覽，不再有獨立路由；權限代號保留給房況操作判斷。
   { no: "4", label: "房況總覽", href: "/#room-status-title", phase: 1, showInSidebar: false },
@@ -203,17 +235,5 @@ export const MODULES: ModuleInfo[] = [
       { adminGroup: "operations", key: "board", label: "公佈欄設定", hidden: true },
       { adminGroup: "operations", key: "system", label: "系統參數設定", hidden: true },
     ],
-  },
-  // 寶寶視訊（WebCam）：客戶指定優先開發的獨立範圍，不屬於 Phase 1／Phase 2。
-  // 頁面仍可用 /babycam 網址直達。媽媽端與親友端在 /view/mama、/view/family，
-  // 屬對外頁面不列入院務選單。
-  {
-    no: "17",
-    label: "寶寶視訊",
-    href: "/babycam",
-    phase: 3,
-    showInSidebar: false,
-    // 工作區各區段以 ?section= 深連結，不是 ?tab=；QR Code 資訊卡依 v24 §10 移至後台管理。
-    subItems: [],
   },
 ];

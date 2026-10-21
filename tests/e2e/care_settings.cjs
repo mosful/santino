@@ -30,7 +30,7 @@ const fs = require("node:fs/promises");
   const care = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_care_workspace_v1")));
   assert.equal(care.backfillDays, 7); assert.match(care.entries[0].staffStamp.author, /管理者/);
   assert.equal(care.entries[0].values["configured-qa-custom"], "自訂題目保存");
-  await page.getByRole("button", { name: "回照護列表", exact: true }).click();
+  await page.getByRole("button", { name: "回列表", exact: true }).click();
   await page.getByRole("button", { name: "持續護理", exact: true }).first().click();
   await page.getByRole("button", { name: "暫存", exact: true }).click();
   await page.evaluate(() => scrollTo(0, 650)); await page.waitForTimeout(350);

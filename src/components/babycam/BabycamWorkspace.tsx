@@ -131,6 +131,9 @@ const DEFAULT_TAB: Record<GroupId, string> = { "01": "desk", "02": "assign", "04
 const LEGACY_SECTION: Record<string, { group: GroupId; tab: string }> = {
   registration: { group: "01", tab: "desk" },
   assign: { group: "02", tab: "assign" },
+  // 掃標籤進來的落地分頁。缺了這一筆時 ScanEntry 會掉回 registration，
+  // 護理人員掃完碼還得自己找到核對頁籤。
+  scan: { group: "02", tab: "scan" },
   schedule: { group: "04", tab: "schedule" },
   backgrounds: { group: "04", tab: "states" },
   reports: { group: "01", tab: "report" },

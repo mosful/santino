@@ -157,11 +157,24 @@ test("最後管理員與八格固定權限不可被修改", () => {
   assert.throws(() => babycamActions.permission("護理師 陳護理師", "08", true), /不可調整/);
   setCurrentRole("護理師 陳護理師"); assert.throws(() => babycamActions.relay("A-Y1", true), /權限/);
 });
-test("寶寶視訊依櫃台、護理長與管理員區分操作權限", () => {
+/*
+  ⚠️ 寶寶視訊的分段權限只有 edit／none 兩階（2026-10-20 客戶要求移除唯讀），
+  所以不會再出現「看得到但不能改」：canBabycamSection 與 canEditBabycamSection
+  對同一個 section 一定給同樣的答案。本測試原本斷言護理長對 03 可看不可改，
+  那是舊的三階規格。
+
+  ⚠️ 另記一筆待客戶確認的落差：護理長的 sectionPermissions 種子是 01/02/04/05，
+  沒有 03（監視器狀態），所以他連看都看不到。但 CLAUDE.md 記的設計意圖是
+  「監視器狀態放在 04 後臺管理，護理長才不用為了看鏡頭健康狀態被塞進系統設定」，
+  前提就是護理長看得到。要改請改 domainSeed 的 sectionPermissions，不要改這裡。
+*/
+test("寶寶視訊的分段權限只有 edit／none 兩階，依角色各自授權", () => {
   reset(); const data = domainStore.get(); const camera = data.cameras[0];
   setCurrentRole("櫃台"); assert.equal(canEditBabycamSection(data, "01"), true);
-  setCurrentRole("護理長 婉真"); assert.equal(canBabycamSection(data, "03"), true); assert.equal(canEditBabycamSection(data, "03"), false);
-  assert.throws(() => babycamActions.camera(camera.id, { health: "等待" }), /僅可檢視/);
+  setCurrentRole("護理長 婉真");
+  assert.equal(canBabycamSection(data, "04"), true); assert.equal(canEditBabycamSection(data, "04"), true);
+  assert.equal(canBabycamSection(data, "03"), false); assert.equal(canEditBabycamSection(data, "03"), false);
+  assert.throws(() => babycamActions.camera(camera.id, { health: "等待" }), /沒有此視訊功能權限/);
   setCurrentRole("管理者"); assert.equal(canEditBabycamSection(data, "08"), true);
 });
 test("退房續留的車號與期限同步，接回後終止，重開補登不重做退房", () => {

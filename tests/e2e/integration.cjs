@@ -20,7 +20,7 @@ async function decodeQr(locator, label = false) {
   page.on("pageerror", (error) => { console.error(`頁面錯誤 ${page.url()}: ${error.message}`); errors.push(error.message); });
   page.on("request", (request) => { if (/\/api\//.test(request.url()) || /^https?:/.test(request.url()) && !request.url().startsWith(base + "")) unexpected.push(request.url().replace(/\?.*$/, "")); });
   await page.goto(base + "/cases/");
-  await page.getByRole("button", { name: "＋ 新增預約（新案件）", exact: true }).click();
+  await page.getByRole("button", { name: "＋ 新增預約", exact: true }).click();
   await page.getByLabel("媽媽姓名", { exact: true }).fill("整合測試媽媽");
   await page.getByLabel("聯絡電話（展示資料）", { exact: true }).fill("DEMO-INTEGRATION");
   await page.getByLabel("預產期", { exact: true }).fill("2026-11-20");
@@ -56,10 +56,12 @@ async function decodeQr(locator, label = false) {
   await page.goto(base + "/babycam/workspace/");
   const binding = await page.evaluate((id) => JSON.parse(localStorage.getItem("santino_domain_v1")).bindings.find((item) => item.caseId === id), caseRecord.id);
   await page.getByLabel("選擇入住案件", { exact: true }).selectOption(binding.id);
-  await page.getByRole("button", { name: "寶寶登錄與標籤", exact: true }).click();
+  await page.getByRole("button", { name: "寶寶登錄", exact: true }).click(); await page.getByRole("button", { name: "寶寶登錄與標籤", exact: true }).click();
   await page.getByLabel("寶寶姓名", { exact: true }).fill("整合測試寶寶");
   await page.getByLabel("車號", { exact: true }).fill("DEMO-99");
-  await page.getByLabel("監視器", { exact: true }).selectOption("camera-33");
+  // 監視器改以晶片網格挑選（原本是下拉）；挑一支未指派的。
+  // 已指派的晶片 aria-label 會帶「（已指派）」，用 $ 結尾挑第一支還沒人用的。
+  await page.getByRole("checkbox", { name: /^監視器 [AB]\d+$/ }).first().check();
   await page.getByRole("button", { name: "指派新寶寶", exact: true }).click();
   const assigned = await page.evaluate((id) => JSON.parse(localStorage.getItem("santino_domain_v1")).bindings.find((item) => item.id === id), binding.id);
   assert.equal(assigned.babies.length, 1);
@@ -67,8 +69,8 @@ async function decodeQr(locator, label = false) {
   await page.getByAltText("寶寶 1 標籤預覽", { exact: true }).waitFor();
   const labelQr = await decodeQr(page.getByAltText("寶寶 1 標籤預覽", { exact: true }), true); assert.equal(labelQr.pathname, new URL(`${base}/babycam/scan/`).pathname); assert.equal(labelQr.searchParams.get("code"), assigned.babies[0].identityCode); assert.equal(labelQr.searchParams.has("ticket"), false);
   await page.screenshot({ path: `${output}/labels-desktop.png`, fullPage: true });
-  await page.getByRole("button", { name: "入住與交付", exact: true }).click(); const ticketQr = await decodeQr(page.getByAltText("可掃描的展示 QRCode", { exact: true }).first()); assert.equal(ticketQr.pathname, new URL(`${base}/view/mama/`).pathname); assert.equal(ticketQr.searchParams.get("ticket"), assigned.internalTicket);
-  await page.getByRole("button", { name: "紀錄與報表", exact: true }).click();
+  await page.getByRole("button", { name: "入住登記", exact: true }).click(); await page.getByRole("button", { name: "櫃檯入住與交付", exact: true }).click(); const ticketQr = await decodeQr(page.getByAltText("可掃描的展示 QRCode", { exact: true }).first()); assert.equal(ticketQr.pathname, new URL(`${base}/view/mama/`).pathname); assert.equal(ticketQr.searchParams.get("ticket"), assigned.internalTicket);
+  await page.getByRole("button", { name: "入住登記", exact: true }).click(); await page.getByRole("button", { name: "紀錄與報表", exact: true }).click();
   await page.getByRole("button", { name: "操作", exact: true }).click();
   const downloadWait = page.waitForEvent("download"); await page.getByRole("button", { name: "匯出 Excel", exact: true }).click();
   const download = await downloadWait; await download.saveAs(`${output}/report.xlsx`);

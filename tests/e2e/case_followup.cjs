@@ -9,7 +9,7 @@ const assert = require("node:assert/strict"); const fs = require("node:fs/promis
   await context.addInitScript(() => { localStorage.setItem("santino_auth_v1", "1"); if (!localStorage.getItem("santino_current_role_v1")) localStorage.setItem("santino_current_role_v1", "管理者"); });
   const page = await context.newPage(); const errors = []; const requests = [];
   page.on("pageerror", (error) => errors.push(error.message)); page.on("request", (request) => { if (/\/api\//.test(request.url()) || /^https?:/.test(request.url()) && !request.url().startsWith(base + "")) requests.push(request.url()); });
-  await page.goto(base + "/cases/"); await page.getByRole("button", { name: "入住後", exact: true }).click(); await page.getByRole("button", { name: "開啟案件", exact: true }).first().click();
+  await page.goto(base + "/cases/"); await page.getByRole("button", { name: /^入住後/ }).click(); await page.getByRole("button", { name: "開啟案件", exact: true }).first().click();
   await page.getByRole("button", { name: "合約變更單", exact: true }).click();
   await page.getByLabel("變更後天數", { exact: true }).fill("25"); await page.getByLabel("換房至（選填）", { exact: true }).selectOption("303"); await page.getByLabel("原因（必填）", { exact: true }).fill("展示換房與續住");
   await page.getByLabel("案件操作確認").getByRole("button", { name: "確認", exact: true }).click();
@@ -29,9 +29,9 @@ const assert = require("node:assert/strict"); const fs = require("node:fs/promis
   data = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1"))); assert.equal(data.cases.find((item) => item.id === record.id).childcareCar, "CT98");
   await page.goto(`${base}/cases/detail/?id=${record.id}`); await page.getByRole("button", { name: "確認已接回，結束托嬰", exact: true }).click(); await page.getByLabel("案件操作確認").getByRole("button", { name: "確認", exact: true }).click();
   data = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1"))); assert.equal(data.bindings.find((item) => item.caseId === record.id).ended, true);
-  await page.goto(base + "/cases/calendar/"); await page.getByLabel("待辦內容", { exact: true }).fill("整合待辦測試"); await page.getByRole("button", { name: "新增待辦", exact: true }).click(); await page.getByText(/入住｜整合待辦測試/).waitFor();
+  await page.goto(base + "/cases/calendar/"); await page.getByLabel("新增待辦事項類別", { exact: true }).selectOption("入住"); await page.getByLabel("待辦事項內容", { exact: true }).fill("整合待辦測試"); await page.getByRole("button", { name: "新增待辦事項", exact: true }).click(); await page.getByText(/入住｜整合待辦測試/).waitFor();
   await page.getByTitle("切換模擬角色，選單會依該角色權限立即隱藏或顯示", { exact: true }).click(); await page.getByRole("button", { name: /^護理師/ }).click();
-  assert.equal(await page.getByRole("button", { name: "醫師巡診", exact: true }).getAttribute("aria-pressed"), "true"); assert.equal(await page.getByRole("button", { name: "入住（檢視）", exact: true }).getAttribute("aria-pressed"), "false");
+  assert.equal(await page.getByRole("button", { name: "醫師巡診", exact: true }).getAttribute("aria-pressed"), "true"); assert.equal(await page.getByRole("button", { name: "入住", exact: true }).getAttribute("aria-pressed"), "false");
   await page.screenshot({ path: `${output}/calendar-role.png`, fullPage: true }); assert.deepEqual(errors, []); assert.deepEqual(requests, []);
   const result = { checks: ["換房與變更單", "過去費用主管例外", "逐日明細", "返家照片與寄送示意", "退房轉托嬰車號同步", "舊入口修改托嬰條件", "接回終止觀看", "十類待辦與角色預設"], errors, requests }; await fs.writeFile(`${output}/result.json`, JSON.stringify(result, null, 2)); console.log(JSON.stringify(result)); await browser.close();
 })().catch(async (error) => { console.error(error); await activeBrowser?.close(); process.exitCode = 1; });

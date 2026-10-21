@@ -146,8 +146,11 @@ export function RingLightBoard({ data }: { data: DemoDomain }) {
 export function RelayBoard({ data, onToggle }: { data: DemoDomain; onToggle: (channel: string, next: boolean) => void }) {
   const [zone, setZone] = useState<RelayZone>("A");
   const [unlocked, setUnlocked] = useState(false);
-  // 清單／卡片：33 支機器時卡片要捲很久，現場對照佈線通常用清單（沿用 BabyCam 的 viewMode）。
-  const [view, setView] = useState<"cards" | "list">("cards");
+  /*
+    ⚠️ 固定走清單排版，不要加回「卡片／清單」切換。
+    一塊板 33 支機器 × 3 通道，卡片版要捲很久，現場對照佈線本來就是看清單；
+    客戶（老闆）另有「同樣的資料不需要太多種呈現方式」的要求，2026-10-21 移除切換。
+  */
   const prefix = data.networkPrefix || DEFAULT_NETWORK_PREFIX;
   const lights = ringLightsInZone(zone).filter((light) => data.cameras.some((camera) => camera.code === light.cameraCode));
 
@@ -216,21 +219,8 @@ export function RelayBoard({ data, onToggle }: { data: DemoDomain; onToggle: (ch
               {zone} 區板　{lights.length} 台 × 3 通道 = {lights.length * 3}
             </small>
           </h4>
-          <div role="group" aria-label="監視器顯示方式" className="inline-flex gap-1 rounded-lg border border-[#2b3542] bg-[#161d27] p-1">
-            {([["cards", "卡片"], ["list", "清單"]] as const).map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                aria-pressed={view === key}
-                onClick={() => setView(key)}
-                className={"rounded-md px-3 py-1 text-xs font-bold " + (view === key ? "bg-[#2f6feb] text-white" : "text-[#8b98a8] hover:text-[#e6edf3]")}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
         </div>
-        <div className={view === "list" ? "grid gap-1.5" : "grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3"}>
+        <div className="grid gap-1.5">
           {lights.map((light) => {
             const on = (color: "red" | "green" | "blue") => {
               const channel = light.channels.find((item) => item.color === color);
@@ -243,10 +233,10 @@ export function RelayBoard({ data, onToggle }: { data: DemoDomain; onToggle: (ch
                 key={light.cameraCode}
                 className={
                   "rounded-xl border border-[#2b3542] bg-[#141b24] p-3 " +
-                  (view === "list" ? "flex flex-wrap items-center gap-x-3 gap-y-2" : "")
+                  "flex flex-wrap items-center gap-x-3 gap-y-2"
                 }
               >
-                <div className={"flex items-center gap-2.5 " + (view === "list" ? "min-w-0 flex-1" : "mb-2.5")}>
+                <div className={"flex items-center gap-2.5 " + "min-w-0 flex-1"}>
                   <LightDot mix={mix} size={22} />
                   <strong className="text-base font-bold tracking-wide">{light.cameraCode}</strong>
                   <b className="font-mono text-[11px] font-normal text-[#8b98a8]" translate="no">{cameraHost(prefix, light.cameraCode) ?? "位址未設定"}</b>
@@ -257,7 +247,7 @@ export function RelayBoard({ data, onToggle }: { data: DemoDomain; onToggle: (ch
                     </em>
                   </span>
                 </div>
-                <div className={"flex gap-1.5 " + (view === "list" ? "w-full sm:w-[300px]" : "")}>
+                <div className={"flex gap-1.5 " + "w-full sm:w-[300px]"}>
                   {light.channels.map((channel) => {
                     const key = channelKey(light.zone, channel.yNumber);
                     const active = !!data.relayChannels[key];

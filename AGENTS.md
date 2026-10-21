@@ -49,11 +49,15 @@ Next.js 16 與訓練資料中的版本有破壞性差異 —— **寫任何程�
 每次變更至少通過：
 
 ```powershell
-npm run lint     # Next.js ESLint 規則
-npm run build    # 型別檢查並靜態輸出至 out/
+npm run lint      # Next.js ESLint 規則
+npm run build     # 型別檢查並靜態輸出至 out/
+npm test          # 31 項 node:test 單元測試
+npm run test:e2e  # Playwright 走 out/，8 支場景
 ```
 
-再人工檢查受影響路由、角色權限、**桌面與 iPad／手機版面**（雙平台為開發總則之一）。本專案無單元測試套件。
+再人工檢查受影響路由、角色權限、**桌面與 iPad／手機版面**（雙平台為開發總則之一）。
+
+`test:e2e` 驗的是 `out/`，所以**改完要先 `npm run build`**，否則跑的是舊版；`SANTINO_E2E_SCENARIOS=<名稱>`（逗號分隔）可只跑其中幾支。這套腳本曾有 5 支長期失效，2026-10-21 全部修好——改 UI 文字或結構時請一併更新，不要讓它再長草。
 
 ## 部署
 

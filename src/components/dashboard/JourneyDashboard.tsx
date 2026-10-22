@@ -8,10 +8,8 @@ import {
   ArrowRight,
   CalendarClock,
   Check,
-  ChevronRight,
   CircleCheckBig,
   Search,
-  Sparkles,
   UserRound,
 } from "lucide-react";
 import Badge from "@/components/ui/Badge";
@@ -26,6 +24,7 @@ import { canUseCaseFlow } from "@/lib/permissions";
 import { useCurrentRole } from "@/lib/roleStore";
 import OperationsOverview from "./OperationsOverview";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
+import Pagination from "@/components/ui/Pagination";
 
 /**
  * 首頁右下「○○・階段完成條件」區塊先隱藏（客戶 2026-10-22）。
@@ -81,6 +80,8 @@ export default function JourneyDashboard() {
   const [selectedStage, setSelectedStage] = useState<JourneyStageKey>("入住中");
   const [quickView, setQuickView] = useState<QuickView | null>(null);
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const selected = JOURNEY_STAGES.find((stage) => stage.key === selectedStage) ?? JOURNEY_STAGES[0];
   const quickInfo = quickView ? QUICK_VIEW_INFO[quickView] : null;
@@ -104,15 +105,24 @@ export default function JourneyDashboard() {
     const priority = { overdue: 0, today: 1, upcoming: 2, normal: 3 };
     return priority[a.urgency] - priority[b.urgency];
   });
-  const visibleStageMothers = keyword ? stageMothers : stageMothers.slice(0, 8);
+  /*
+    分頁（客戶 2026-10-22，預設每頁 10 筆）。
+    原本是「只顯示前 8 筆＋一條查看其餘」，筆數一多就得跳去案件清單才看得完。
+    ⚠️ 階段、快捷檢視或關鍵字一變就要回到第 1 頁，否則會停在一個空白的第 3 頁。
+  */
+  const totalPages = Math.max(1, Math.ceil(stageMothers.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const visibleStageMothers = stageMothers.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   function selectStage(stage: JourneyStageKey) {
+    setPage(1);
     setSelectedStage(stage);
     setQuickView(null);
     setQuery("");
   }
 
   function selectQuickView(view: QuickView) {
+    setPage(1);
     setQuickView(view);
     setQuery("");
   }
@@ -138,122 +148,145 @@ export default function JourneyDashboard() {
       {/* ⚠️ 這裡以前還有一整條「從第一次詢問，到母嬰安心返家」標題帶＋四個數字，
           但那四個數字與上方今日工作台完全相同——客戶回報的「重複資訊」就是它。
           數字已移進今日工作台，這裡只留漏斗本身。 */}
+      {/*
+        案件流程＝「階段頁籤＋該階段的案件清單」一個區塊。
+
+        ⚠️ 原本是兩塊：上面一條漏斗圖示、下面一塊卡片清單。客戶 2026-10-22 指出
+        那是同一件事被拆成兩個框，而且卡片中間留一大塊空白。現在階段改成頁籤、
+        結果改成清單，一個區塊收完。
+      */}
       <CollapsibleSection
         id="case-funnel"
         title="案件流程"
-        summary="點階段可聚焦該階段的案件"
-        icon={<Sparkles className="h-4 w-4 shrink-0 text-brand-500" aria-hidden="true" />}
-        bodyClassName="!px-0"
+        summary={`${quickInfo?.label ?? selected.label}　${stageMothers.length} 件`}
+        icon={
+          <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ring-1 ${quickInfo ? "bg-brand-50 text-brand-600 ring-brand-200" : STAGE_STYLE[selected.color]}`}>
+            <ContextIcon className="h-4 w-4" />
+          </span>
+        }
+        action={
+          <label className="relative block w-full sm:w-56">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+            <input
+              value={query}
+              onChange={(event) => { setQuery(event.target.value); setPage(1); }}
+              placeholder="搜尋姓名、房號、待辦"
+              className="w-full rounded-xl border border-stone-200 bg-stone-50 py-2 pl-9 pr-3 text-sm transition-[border-color,background-color,box-shadow] focus:border-brand-300 focus:bg-white"
+            />
+          </label>
+        }
       >
-        <div className="scroll-fade overflow-x-auto px-3 pb-1 sm:px-5">
-          <div className="flex min-w-max items-start sm:min-w-0 sm:justify-center">
-            {JOURNEY_STAGES.map((stage, index) => {
-              const Icon = stage.icon;
+        <div className="scroll-fade -mx-1 mb-3 overflow-x-auto px-1 pb-1">
+          <div role="tablist" aria-label="案件階段" className="flex min-w-max gap-1.5">
+            {JOURNEY_STAGES.map((stage) => {
               const count = mothers.filter((mother) => mother.stage === stage.key).length;
               const active = !quickView && stage.key === selectedStage;
               return (
-                <div key={stage.key} className="flex items-start">
-                  <button
-                    type="button"
-                    onClick={() => selectStage(stage.key)}
-                    aria-pressed={active}
-                    className={
-                      "group flex w-[108px] flex-col items-center rounded-2xl px-2 py-2 text-center transition-[transform,background-color,box-shadow] " +
-                      (active ? "bg-stone-50 shadow-sm ring-1 ring-stone-200" : "hover:bg-stone-50")
-                    }
-                  >
-                    <span className={`relative flex h-11 w-11 items-center justify-center rounded-2xl ring-1 ${STAGE_STYLE[stage.color]} ${active ? "scale-105 shadow-sm" : ""}`}>
-                      <Icon className="h-5 w-5" />
-                      <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-stone-800 px-1 text-[10px] font-bold text-white ring-2 ring-white">{count}</span>
-                    </span>
-                    <span className={`mt-2 text-xs font-semibold ${active ? "text-stone-800" : "text-stone-500"}`}>{stage.label}</span>
-                  </button>
-                  {index < JOURNEY_STAGES.length - 1 && <ChevronRight className="mt-5 h-4 w-4 shrink-0 text-stone-300" />}
-                </div>
+                <button
+                  key={stage.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => selectStage(stage.key)}
+                  className={
+                    "flex min-h-10 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold transition-colors " +
+                    (active
+                      ? "border-brand-300 bg-brand-50 text-brand-700"
+                      : "border-stone-200 bg-white text-stone-600 hover:border-brand-200 hover:bg-brand-50/60")
+                  }
+                >
+                  {stage.label}
+                  <span className={"flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold tabular-nums " + (active ? "bg-brand-600 text-white" : "bg-stone-200 text-stone-700")}>
+                    {count}
+                  </span>
+                </button>
               );
             })}
           </div>
         </div>
-      </CollapsibleSection>
 
-      {/* 右側的「階段完成條件」隱藏後就不再分欄，案件流程滿版（客戶 2026-10-22）。 */}
-      <section className={SHOW_STAGE_CHECKLIST ? "grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.7fr)]" : "grid gap-4"}>
-        {/* 篩選結果整塊也可收合：護理站只想看房況時，這一長串案件清單可以先收起來。
-            id 固定不隨階段變，否則每切一個階段就是一個新的收合偏好。 */}
-        <CollapsibleSection
-          id="stage-cases"
-          title={quickInfo?.label ?? selected.label}
-          summary={`${visibleStageMothers.length} 件`}
-          icon={
-            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ring-1 ${quickInfo ? "bg-brand-50 text-brand-600 ring-brand-200" : STAGE_STYLE[selected.color]}`}>
-              <ContextIcon className="h-4 w-4" />
-            </span>
-          }
-          action={
-            <label className="relative block w-full sm:w-56">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="搜尋姓名、房號、待辦"
-                className="w-full rounded-xl border border-stone-200 bg-stone-50 py-2 pl-9 pr-3 text-sm transition-[border-color,background-color,box-shadow] focus:border-brand-300 focus:bg-white"
-              />
-            </label>
-          }
-        >
-          <p className="mb-3 text-xs text-stone-500">{quickInfo?.description ?? selected.description}</p>
+        <p className="mb-3 text-xs text-stone-500">{quickInfo?.description ?? selected.description}</p>
 
-          <div className="space-y-2.5">
-            {visibleStageMothers.map((mother) => {
-              const urgency = URGENCY[mother.urgency];
-              const motherStage = JOURNEY_STAGES.find((stage) => stage.key === mother.stage);
-              return (
-                <article key={mother.id} className={`group rounded-xl border border-stone-200 ${urgency.border} bg-white p-3 transition-[border-color,box-shadow] hover:border-brand-300 hover:shadow-md sm:p-4`}>
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                    <div className="flex min-w-0 flex-1 items-start gap-3">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-bold text-brand-600">{mother.name.slice(0, 1)}</span>
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-bold text-stone-800">{mother.name}</h3>
-                          <Badge color={urgency.badge}>{urgency.label}</Badge>
-                          {quickView && <Badge color="purple">{motherStage?.label}</Badge>}
-                          <span className="text-xs font-medium text-stone-500">{mother.status}</span>
-                        </div>
-                        <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-stone-500">
-                          {mother.room && <span>房位：<strong className="text-stone-700">{mother.room}</strong></span>}
-                          {mother.stayDay && <span>{mother.stayDay}</span>}
-                          {mother.dueDate && <span>預產期：{mother.dueDate}</span>}
-                          <span>負責：{mother.owner}</span>
-                        </div>
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {mother.tags.map((tag) => <span key={tag} className="rounded-md bg-stone-100 px-2 py-0.5 text-[11px] text-stone-500">{tag}</span>)}
+        {/* 清單式呈現：原本一人一張卡，中間大段留白；改成表格後一眼掃完一整個階段。 */}
+        <div className="overflow-x-auto rounded-xl border border-stone-200">
+          <table className="w-full min-w-[820px] text-left text-sm">
+            <thead className="bg-stone-50 text-xs text-stone-500">
+              <tr>
+                <th className="whitespace-nowrap px-3 py-2.5 font-medium">媽媽</th>
+                <th className="whitespace-nowrap px-3 py-2.5 font-medium">房位／預產期</th>
+                <th className="whitespace-nowrap px-3 py-2.5 font-medium">狀態</th>
+                <th className="whitespace-nowrap px-3 py-2.5 font-medium">下一步</th>
+                <th className="whitespace-nowrap px-3 py-2.5 font-medium">負責</th>
+                <th className="px-3 py-2.5 font-medium"><span className="sr-only">開啟案件</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleStageMothers.map((mother) => {
+                const urgency = URGENCY[mother.urgency];
+                const motherStage = JOURNEY_STAGES.find((stage) => stage.key === mother.stage);
+                return (
+                  <tr key={mother.id} className="border-t border-stone-100 transition-colors hover:bg-brand-50/40">
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-xs font-bold text-brand-600">{mother.name.slice(0, 1)}</span>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-bold text-stone-800">{mother.name}</span>
+                            <Badge color={urgency.badge}>{urgency.label}</Badge>
+                            {quickView && <Badge color="purple">{motherStage?.label}</Badge>}
+                          </div>
+                          {mother.tags.length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {mother.tags.map((tag) => <span key={tag} className="rounded bg-stone-100 px-1.5 py-0.5 text-[11px] text-stone-500">{tag}</span>)}
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                    <div className="rounded-xl bg-amber-50/70 px-3 py-2 lg:w-[230px]">
-                      <div className="text-[11px] font-medium text-amber-700">下一步・{mother.actionDate}</div>
-                      <div className="mt-0.5 text-sm font-semibold text-stone-700">{mother.nextAction}</div>
-                    </div>
-                    {/* 一步到位：直接進該案件的流程頁，中間不再隔一層摘要視窗。 */}
-                    <Link
-                      href={caseHref(mother.id)}
-                      className="flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-xl border border-stone-200 px-3 text-xs font-semibold text-stone-600 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600"
-                    >
-                      開啟案件 <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
-                  </div>
-                </article>
-              );
-            })}
-            {stageMothers.length === 0 && <div className="rounded-2xl border border-dashed border-stone-200 py-10 text-center text-sm text-stone-500">找不到符合條件的媽媽</div>}
-            {!keyword && stageMothers.length > visibleStageMothers.length && (
-              <Link href="/cases/" className="flex min-h-11 items-center justify-center rounded-2xl border border-dashed border-stone-200 text-sm font-semibold text-stone-500 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-600">
-                查看其餘 {stageMothers.length - visibleStageMothers.length} 件案件
-              </Link>
-            )}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-stone-600">
+                      {mother.room ? <span className="font-semibold text-stone-700">{mother.room}</span> : mother.dueDate || "—"}
+                      {mother.stayDay && <div className="mt-0.5 text-stone-500">{mother.stayDay}</div>}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-stone-600">{mother.status}</td>
+                    <td className="px-3 py-2.5 text-xs">
+                      <div className="font-semibold text-stone-700">{mother.nextAction}</div>
+                      <div className="mt-0.5 text-amber-700">{mother.actionDate}</div>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2.5 text-xs text-stone-600">{mother.owner}</td>
+                    <td className="px-3 py-2.5">
+                      {/* 一步到位：直接進該案件的流程頁。按鈕只留箭頭（客戶 2026-10-22）。 */}
+                      <Link
+                        href={caseHref(mother.id)}
+                        aria-label={`開啟 ${mother.name} 的案件`}
+                        title={`開啟 ${mother.name} 的案件`}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-stone-200 text-stone-500 transition hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
+                      >
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+              {stageMothers.length === 0 && (
+                <tr><td colSpan={6} className="px-3 py-10 text-center text-sm text-stone-500">找不到符合條件的媽媽</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {stageMothers.length > 0 && (
+          <div className="mt-2.5">
+            <Pagination
+              page={safePage}
+              pageSize={pageSize}
+              total={stageMothers.length}
+              onPageChange={setPage}
+              onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+            />
           </div>
-        </CollapsibleSection>
+        )}
+      </CollapsibleSection>
 
+      <section className={SHOW_STAGE_CHECKLIST ? "grid gap-4" : "contents"}>
         {SHOW_STAGE_CHECKLIST && !quickInfo && (
           <aside>
             <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm sm:p-5">

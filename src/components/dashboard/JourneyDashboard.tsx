@@ -177,7 +177,8 @@ export default function JourneyDashboard() {
           </label>
         }
       >
-        <div className="scroll-fade -mx-1 mb-3 overflow-x-auto px-1 pb-1">
+        {/* ⚠️ 要留 pt-2：overflow-x-auto 會連帶裁掉垂直溢出，浮在按鈕右上角的筆數徽章會被切掉上緣。 */}
+        <div className="scroll-fade -mx-1 mb-3 overflow-x-auto px-1 pb-1 pt-2">
           {/*
             ⚠️ 用 role="group" 不是 tablist：按鈕之間夾了流程方向的 ">"，
             tablist 要求子元素都是 tab，夾了圖示就不合規；按下與否用 aria-pressed 表達。

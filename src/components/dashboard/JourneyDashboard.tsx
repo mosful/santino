@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
+  ChevronRight,
   AlertCircle,
   ArrowRight,
   CalendarClock,
@@ -177,29 +178,40 @@ export default function JourneyDashboard() {
         }
       >
         <div className="scroll-fade -mx-1 mb-3 overflow-x-auto px-1 pb-1">
-          <div role="tablist" aria-label="案件階段" className="flex min-w-max gap-1.5">
-            {JOURNEY_STAGES.map((stage) => {
+          {/*
+            ⚠️ 用 role="group" 不是 tablist：按鈕之間夾了流程方向的 ">"，
+            tablist 要求子元素都是 tab，夾了圖示就不合規；按下與否用 aria-pressed 表達。
+            筆數徽章浮在右上角，所以按鈕要 relative＋overflow-visible
+            （globals.css 把 button 設成 overflow hidden，不解除徽章會被切掉）。
+          */}
+          <div role="group" aria-label="案件階段" className="flex min-w-max items-center">
+            {JOURNEY_STAGES.map((stage, index) => {
               const count = mothers.filter((mother) => mother.stage === stage.key).length;
               const active = !quickView && stage.key === selectedStage;
               return (
-                <button
-                  key={stage.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => selectStage(stage.key)}
-                  className={
-                    "flex min-h-10 items-center gap-1.5 whitespace-nowrap rounded-xl border px-3 text-sm font-semibold transition-colors " +
-                    (active
-                      ? "border-brand-300 bg-brand-50 text-brand-700"
-                      : "border-stone-200 bg-white text-stone-600 hover:border-brand-200 hover:bg-brand-50/60")
-                  }
-                >
-                  {stage.label}
-                  <span className={"flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold tabular-nums " + (active ? "bg-brand-600 text-white" : "bg-stone-200 text-stone-700")}>
-                    {count}
-                  </span>
-                </button>
+                <div key={stage.key} className="flex items-center">
+                  <button
+                    type="button"
+                    aria-pressed={active}
+                    aria-label={`${stage.label}，共 ${count} 件`}
+                    onClick={() => selectStage(stage.key)}
+                    className={
+                      "relative flex min-h-10 items-center overflow-visible whitespace-nowrap rounded-xl border px-3 text-sm font-semibold transition-colors " +
+                      (active
+                        ? "border-brand-300 bg-brand-50 text-brand-700"
+                        : "border-stone-200 bg-white text-stone-600 hover:border-brand-200 hover:bg-brand-50/60")
+                    }
+                  >
+                    {stage.label}
+                    <span
+                      aria-hidden="true"
+                      className={"absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold tabular-nums ring-2 ring-white " + (active ? "bg-brand-600 text-white" : "bg-stone-200 text-stone-700")}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                  {index < JOURNEY_STAGES.length - 1 && <ChevronRight className="mx-1 h-4 w-4 shrink-0 text-stone-300" aria-hidden="true" />}
+                </div>
               );
             })}
           </div>

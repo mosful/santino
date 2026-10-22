@@ -26,6 +26,8 @@ export type CaseDoc = {
     CaseRecord,
     "prenatalContactDone" | "hospitalizationNoticeDone" | "dischargeNoticeDone" | "preAdmissionPapersDone" | "admissionGuidanceDone" | "admissionPaymentNoticeDone"
   >;
+  /** 沒有對應時間軸項目的單據，掛在案件第幾階段（CASE_STAGES 的索引）。 */
+  stage?: number;
   hint: string;
   sections: DocSection[];
   prefill: (record: CaseRecord) => Record<string, string>;
@@ -220,6 +222,7 @@ export const CASE_DOCS: CaseDoc[] = [
   {
     key: "tcm-survey",
     label: "中醫看診調查單",
+    stage: 2,
     hint: "下訂時填寫；入住前如有變更再填一張（手冊第 23 頁）。",
     sections: [
       {
@@ -254,6 +257,7 @@ export const CASE_DOCS: CaseDoc[] = [
   {
     key: "pediatric-consult",
     label: "兒科醫師諮詢單",
+    stage: 5,
     hint: "住戶填寫後由兒科醫師以書面或電話回覆（手冊第 32 頁）。",
     sections: [
       {
@@ -272,6 +276,11 @@ export const CASE_DOCS: CaseDoc[] = [
     prefill: (record) => ({ room: record.room, motherName: orDemo(record.name, DEMO_MOTHER_NAME) }),
   },
 ];
+
+/** 掛在某個時間軸項目底下的單據（可能不只一張，例如入住前 1 天有三張）。 */
+export const docsForTimeline = (keys: readonly string[]) => CASE_DOCS.filter((doc) => doc.timelineKey && keys.includes(doc.timelineKey));
+/** 掛在某個階段、但不屬於入住前時間軸的單據。 */
+export const docsForStage = (stage: number) => CASE_DOCS.filter((doc) => doc.stage === stage);
 
 export const caseDoc = (key: string) => CASE_DOCS.find((doc) => doc.key === key);
 

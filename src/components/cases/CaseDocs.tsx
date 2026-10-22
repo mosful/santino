@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { X } from "lucide-react";
 import { caseActions } from "@/lib/demo/domainStore";
-import { CASE_DOCS, docValues, type CaseDoc } from "@/lib/domain/caseDocs";
+import { docValues, type CaseDoc } from "@/lib/domain/caseDocs";
 import type { CaseRecord } from "@/lib/domain/types";
-import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { taipeiTimestamp } from "@/lib/care/rules";
 
@@ -12,13 +12,13 @@ const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 
 const button = buttonStyles();
 
 /**
- * 櫃台單據區（入住前關懷表單、入住餐飲／嬰兒室／保全三張通知單、繳款通知單）。
+ * 櫃台單據的填寫面板（入住前關懷表單、三張入住前通知單、繳款通知單、中醫調查單、兒科諮詢單）。
  *
- * ⚠️ 這些以前只是入住前時間軸上的一個勾選＋一顆印出空白頁的按鈕，
- * 現在是可填、可存、可印的單據；欄位定義在 lib/domain/caseDocs.ts，這裡只負責畫。
- * 存檔會自動把時間軸對應項目打勾，不要再讓櫃台手動勾一次。
+ * ⚠️ 不要再把七張單一字排開列在階段下方：客戶 2026-10-22 回報版面太長，
+ * 入口改掛在「入住前時間軸」每一列右邊的文字連結上，點了才就地展開這個面板。
+ * 欄位定義一律在 lib/domain/caseDocs.ts，這裡只負責畫與存。
  */
-function DocForm({ record, doc, editable }: { record: CaseRecord; doc: CaseDoc; editable: boolean }) {
+export function CaseDocPanel({ record, doc, editable, onClose }: { record: CaseRecord; doc: CaseDoc; editable: boolean; onClose: () => void }) {
   const saved = record.documents?.[doc.key];
   const [values, setValues] = useState<Record<string, string>>(() => docValues(record, doc));
   const [message, setMessage] = useState("");
@@ -29,16 +29,20 @@ function DocForm({ record, doc, editable }: { record: CaseRecord; doc: CaseDoc; 
     set(key, next.join("、"));
   }
   return (
-    <CollapsibleSection
-      id={`case-doc-${doc.key}`}
-      title={doc.label}
-      summary={saved ? `已填寫 ${taipeiTimestamp(saved.savedAt)}` : "尚未填寫"}
-      bodyClassName="space-y-4"
-    >
-      <p className="text-sm text-stone-600">{doc.hint}{saved ? `　最後儲存：${saved.actor}` : ""}</p>
+    <section className="mt-2 space-y-4 rounded-xl border border-brand-200 bg-brand-50/40 p-4" aria-label={doc.label}>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h4 className="font-semibold">{doc.label}</h4>
+          <p className="mt-1 text-sm text-stone-600">{doc.hint}{saved ? `　最後儲存：${taipeiTimestamp(saved.savedAt)}｜${saved.actor}` : ""}</p>
+        </div>
+        <button type="button" className={buttonStyles({ size: "sm" })} onClick={onClose} aria-label={`收起${doc.label}`}>
+          <X className="h-3.5 w-3.5" aria-hidden="true" />
+          收起
+        </button>
+      </div>
       {doc.sections.map((section) => (
         <section key={section.label} className="space-y-3">
-          <h4 className="font-medium">{section.label}</h4>
+          <h5 className="font-medium">{section.label}</h5>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {section.fields.map((field) => {
               const value = values[field.key] ?? "";
@@ -50,7 +54,7 @@ function DocForm({ record, doc, editable }: { record: CaseRecord; doc: CaseDoc; 
                     <legend>{field.label}</legend>
                     <div className="flex flex-wrap gap-2">
                       {(field.options ?? []).map((option) => (
-                        <label key={option} className="flex min-h-12 items-center gap-2 rounded-lg border border-stone-200 px-3">
+                        <label key={option} className="flex min-h-12 items-center gap-2 rounded-lg border border-stone-200 bg-white px-3">
                           <input type="checkbox" disabled={!editable} checked={picked.includes(option)} onChange={() => toggle(field.key, option)} />
                           {option}
                         </label>
@@ -84,7 +88,7 @@ function DocForm({ record, doc, editable }: { record: CaseRecord; doc: CaseDoc; 
             type="button"
             className={buttonStyles({ variant: "primary" })}
             onClick={() => {
-              try { caseActions.saveDocument(record.id, doc.key, values); setMessage("已儲存，並勾選入住前時間軸對應項目。"); }
+              try { caseActions.saveDocument(record.id, doc.key, values); setMessage("已儲存，並勾選對應的時間軸項目。"); }
               catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); }
             }}
           >
@@ -95,16 +99,31 @@ function DocForm({ record, doc, editable }: { record: CaseRecord; doc: CaseDoc; 
         {editable && <button type="button" className={button} onClick={() => { setValues(doc.prefill(record)); setMessage("已重新帶入案件資料。"); }}>重新帶入案件資料</button>}
         <p role="status" className="text-sm">{message}</p>
       </div>
-    </CollapsibleSection>
+    </section>
   );
 }
 
-export default function CaseDocs({ record, editable }: { record: CaseRecord; editable: boolean }) {
+/** 一列文字連結：點了就地展開單據，再點一次收起。 */
+export function CaseDocLinks({ record, docs, editable }: { record: CaseRecord; docs: CaseDoc[]; editable: boolean }) {
+  const [openKey, setOpenKey] = useState("");
+  const open = docs.find((doc) => doc.key === openKey);
+  if (!docs.length) return null;
   return (
-    <section className="space-y-3" aria-label="櫃台單據">
-      <h3 className="font-medium">櫃台單據</h3>
-      <p className="text-sm text-stone-600">欄位會從案件自動帶入（開發總則第 3 條），填完儲存即完成對應的時間軸項目。</p>
-      {CASE_DOCS.map((doc) => <DocForm key={`${record.id}-${doc.key}`} record={record} doc={doc} editable={editable} />)}
-    </section>
+    <>
+      <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        {docs.map((doc) => (
+          <button
+            key={doc.key}
+            type="button"
+            className={`text-sm underline underline-offset-2 ${openKey === doc.key ? "font-semibold text-brand-700" : "text-brand-600 hover:text-brand-700"}`}
+            onClick={() => setOpenKey(openKey === doc.key ? "" : doc.key)}
+          >
+            {doc.label}
+            {record.documents?.[doc.key] ? "（已填）" : ""}
+          </button>
+        ))}
+      </span>
+      {open && <CaseDocPanel key={`${record.id}-${open.key}`} record={record} doc={open} editable={editable} onClose={() => setOpenKey("")} />}
+    </>
   );
 }

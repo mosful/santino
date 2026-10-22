@@ -15,7 +15,7 @@ import { DEFAULT_SALE_ITEMS } from "../domain/sales";
 
 function valid(value: unknown): value is DemoDomain {
   const data = value as DemoDomain | null;
-  if (!data || data.version !== 4 || !Array.isArray(data.cases) || !Array.isArray(data.subjects) || !Array.isArray(data.cameras) || !Array.isArray(data.bindings) || !Array.isArray(data.audit)) return false;
+  if (!data || data.version !== 5 || !Array.isArray(data.cases) || !Array.isArray(data.subjects) || !Array.isArray(data.cameras) || !Array.isArray(data.bindings) || !Array.isArray(data.audit)) return false;
   if (!data.cameras.length || !Array.isArray(data.displayStates) || !data.houseWindow || !data.internalWindow || !data.familyWindow || !data.bindings.every((binding) => Array.isArray(binding.babies) && Array.isArray(binding.sessions))) return false;
   data.careEvents ??= []; data.staff ??= structuredClone(DOMAIN_SEED.staff); data.sectionPermissions ??= structuredClone(DOMAIN_SEED.sectionPermissions);
   data.rooms ??= structuredClone(DOMAIN_SEED.rooms); data.printSettings ??= structuredClone(DOMAIN_SEED.printSettings); data.viewingHistory ??= [];

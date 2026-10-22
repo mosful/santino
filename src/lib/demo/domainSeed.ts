@@ -80,7 +80,7 @@ export const DISPLAY_STATE_SEED: DemoDomain["displayStates"] = STATE_BACKGROUNDS
 }));
 
 export const DOMAIN_SEED: DemoDomain = {
-  version: 4, subjects: structuredClone(CARE_SUBJECTS), cases, checkoutItems: structuredClone(DEFAULT_CHECKOUT_ITEMS), saleItems: structuredClone(DEFAULT_SALE_ITEMS),
+  version: 5, subjects: structuredClone(CARE_SUBJECTS), cases, checkoutItems: structuredClone(DEFAULT_CHECKOUT_ITEMS), saleItems: structuredClone(DEFAULT_SALE_ITEMS),
   cameras: cameraCodes.map((code, index) => ({ id: `camera-${index + 1}`, code, zone: code[0] as "A" | "B", enabled: true, codec: cameraCodec(code) ?? "H.264", health: index === 12 ? "異常" : "正常", lastShotAt: "2026-10-16T12:00:00+08:00", scheduleInternal: inheritWindow(), scheduleFamily: inheritWindow(), baseline: false })),
   bindings: cases.filter((record) => record.stage === 5 || record.childcare && !record.childcareEnded).map((record, index) => ({
     id: `binding-${record.id}`, caseId: record.id, room: record.room, motherName: record.name, phone: record.phone,

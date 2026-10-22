@@ -18,9 +18,13 @@
 .workspace input, .workspace textarea { caret-color: var(--brand); }
 .workspace ::selection { background: var(--brand-200); color: var(--brand-900); }
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; align-items: start; }
-/* 頁首與「開啟中的表單」列都固定在畫面上方，側欄要讓過它們才不會被蓋住。
-   --app-header-total 由 AppShell 實測（頁首列＋頁籤列＋房間列），不要再用估算值。 */
-.sidebar { position: sticky; top: calc(var(--app-header-total, 8rem) + 1rem); }
+/*
+  右側欄**不要 sticky**（客戶兩次回報「右邊上方空一塊」）。
+  sticky 元素一旦被頁首推下去，就會在格線容器裡留下一段空白，而這一欄只有
+  「同案件媽媽／寶寶」和「最近操作歷程」兩小塊，釘住的價值遠小於那塊空白的突兀。
+  真正需要常駐的東西（對象識別列、表單與房間分頁）都已經在頁首了。
+*/
+.sidebar { position: static; }
 .form fieldset:disabled { opacity: .75; }
 /*
   「開啟中的表單」列。

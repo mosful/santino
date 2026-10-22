@@ -23,7 +23,7 @@ const assert = require("node:assert/strict"); const fs = require("node:fs/promis
   // 返家指導單：房卡發 2 還 1（未還 100 元）＋黃疸照光 100，合計寫入帳務。
   await page.getByLabel("房卡歸還數", { exact: true }).fill("1");
   await page.getByLabel("A：黃疸照光", { exact: true }).fill("100");
-  await page.getByRole("button", { name: "寫入帳務", exact: true }).click();
+  await page.getByRole("button", { name: "應收寫入帳務", exact: true }).click();
   await page.getByText("返家應收已寫入帳務。", { exact: true }).waitFor();
   // 返家檢查表 29 項：先標一項異常，其餘一次標正常。
   await page.getByLabel("免治馬桶 異常原因", { exact: true }).fill("沖水無力");

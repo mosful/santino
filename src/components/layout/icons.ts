@@ -1,4 +1,5 @@
 import {
+  Calculator,
   LayoutDashboard,
   HeartPulse,
   Baby,
@@ -49,6 +50,7 @@ export const MODULE_ICONS: Record<string, LucideIcon> = {
  * 用同一組圖示——同一個群組在選單與工作區內要長一樣，不要各挑各的。
  */
 export const SUB_ICONS: Record<string, LucideIcon> = {
+  quote: Calculator,
   cases: ClipboardList,
   customer: UserRoundSearch,
   care: PhoneCall,

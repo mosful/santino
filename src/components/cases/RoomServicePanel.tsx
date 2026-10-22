@@ -10,6 +10,7 @@ import {
   CompanionInfo,
   BabyVideoForm,
   IdPhoto,
+  CleaningLog,
 } from "@/components/room/forms/OpsForms";
 
 /**
@@ -31,7 +32,7 @@ export default function RoomServicePanel({ room }: { room: string }) {
       <div>
         <h3 className="font-semibold">房務作業（房 {room}）</h3>
         <p className="mt-1 text-sm text-stone-500">
-          入住準備、換房、外出、客訴、訪客與陪宿等房務表單；與護理紀錄分開，欄位互不共用。
+          入住準備、換房、外出、客訴、訪客、陪宿與清潔記錄等房務表單；與護理紀錄分開，欄位互不共用。
         </p>
       </div>
       <Tabs
@@ -44,6 +45,7 @@ export default function RoomServicePanel({ room }: { room: string }) {
           { key: "companion", label: "陪宿者資料", content: <CompanionInfo room={room} /> },
           { key: "baby-video", label: "寶寶視訊單", content: <BabyVideoForm room={room} /> },
           { key: "id-photo", label: "證件照片", content: <IdPhoto room={room} /> },
+          { key: "cleaning", label: "清潔記錄", content: <CleaningLog room={room} /> },
         ]}
       />
     </section>

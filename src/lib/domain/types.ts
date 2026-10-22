@@ -14,6 +14,7 @@ export type ReservationInput = {
 };
 export type CaseRecord = {
   id: string; legacyId: number; customerId: string; name: string; phone: string; dueDate: string; idNo: string;
+  /** 醫院病歷號（手冊第 3 頁標示要保留的欄位）。 */ hospitalChartNo?: string;
   stage: CaseStage; closed: boolean; forced: boolean; previousStage?: CaseStage;
   owner: string; room: string; roomType: "精緻" | "VIP" | "VILLA"; days: number;
   contractNo: string; deposit: number; tasting: boolean; visitDate: string; visitStatus: string;
@@ -39,10 +40,15 @@ export type CaseRecord = {
   checkoutNote: string; checkoutStartedAt?: string; checkoutCompletedAt?: string;
   childcare: boolean; childcareEnded: boolean; childcareCar: string; childcareDays: number; childcareFee: number; childcareContact: string;
   completed: number[]; draftAt?: string;
-  ledger: { id: string; date: string; label: string; amount: number; adjustsId?: string; before?: number; after?: number; actor?: string; at?: string; /** 指定為贈送日而產生的折讓，值＝該日日期。 */ giftDate?: string }[];
-  payments: { id: string; date: string; amount: number; method: string; note: string; actor: string; at: string }[];
+  ledger: { id: string; date: string; label: string; amount: number; adjustsId?: string; before?: number; after?: number; actor?: string; at?: string; /** 指定為贈送日而產生的折讓，值＝該日日期。 */ giftDate?: string;
+    /** 自費分類（sales.ts 的 SALE_CATEGORIES），用於帳務分類小計。 */ category?: string; qty?: number; unitPrice?: number }[];
+  payments: { id: string; date: string; amount: number; method: string; note: string; actor: string; at: string;
+    /** 收款科目（訂金／尾款／自費／其他），手冊第 25 頁。 */ subject?: string;
+    /** 發票或收據號碼。 */ invoice?: string;
+    /** 信用卡末四碼（刷卡時填）。 */ cardLast4?: string }[];
   log: { id: string; at: string; actor: string; text: string }[];
-  customerDetails?: { level: string; parity: string; birthday: string; referrer: string; mainNurse: string; lineBound: boolean; family: string; address?: string; emergencyContact?: string; emergencyRelation?: string; emergencyPhone?: string; companion?: string; roomingIn?: string; mealSummary?: string };
+  customerDetails?: { level: string; parity: string; birthday: string; referrer: string; mainNurse: string; lineBound: boolean; family: string; address?: string; emergencyContact?: string; emergencyRelation?: string; emergencyPhone?: string; companion?: string; roomingIn?: string; mealSummary?: string;
+    /** 固定訪客（上樓每房 1 位，下訂時登記，入住後可改）。 */ visitorName?: string; visitorRelation?: string };
   addOns?: string[]; bossGift?: string; milkConsent?: boolean; chineseConsent?: boolean;
   milkChoice?: string;
   contractV2Snapshot?: string;
@@ -50,7 +56,11 @@ export type CaseRecord = {
   returnPhotos?: string[]; returnEmail?: string; returnMailLog?: { at: string; actor: string; email: string }[];
   roomMoves?: { from: string; to: string; at: string; reason: string; actor: string }[];
   proxySigned?: boolean; proxyName?: string; contractStamp?: string;
+  /** 經辦人員（櫃台）簽名（手冊第 21 頁）。 */ staffSignature?: string;
+  /** 母乳哺育意願書上的護理人員印章（手冊第 10 頁）。 */ milkNurseStamp?: string;
 };
+/** 入住後消費（自費）品項主檔：分類、品項名、單價。 */
+export type SaleItem = { id: string; category: string; name: string; price: number };
 /** 返家歸還品項主檔：名稱、單位、單價、預設發出數。 */
 export type CheckoutItem = { id: string; name: string; unit: string; price: number; defaultQty: number };
 export type CameraRecord = { id: string; code: string; zone: "A" | "B"; enabled: boolean; health: "正常" | "等待" | "異常"; lastShotAt: string; scheduleInternal: WindowRule; scheduleFamily: WindowRule; baseline: boolean; codec?: string; sourceType?: string; sourceLabel?: string; resolution?: string };
@@ -95,6 +105,8 @@ export type DemoDomain = {
   tasks: { id: string; date: string; category: string; title: string; caseId?: string }[];
   /** 返家品項與單價主檔（後台「基礎主檔設定」維護，手冊第 38 頁）。 */
   checkoutItems?: CheckoutItem[];
+  /** 入住後消費品項主檔（後台「基礎主檔設定」維護，手冊第 37 頁）。 */
+  saleItems?: SaleItem[];
   handledTasks: string[];
   contractSettings: { reviewDays: number; templates: { id: number; name: string; version: string; active: boolean; createdDate: string; clauses: string }[] };
   demoScenarios: Record<string, DemoScenario>;

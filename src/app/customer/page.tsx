@@ -8,7 +8,6 @@ import { useAccess } from "@/lib/roleStore";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Modal from "@/components/ui/Modal";
 import Tabs from "@/components/ui/Tabs";
-import Badge from "@/components/ui/Badge";
 import { type Customer } from "@/lib/mock/customer";
 import { useCustomerRows } from "@/lib/domain/legacySelectors";
 import { HOSPITALS } from "@/lib/domain/options";
@@ -25,11 +24,6 @@ const columns: Column<Customer>[] = [
   { key: "referrer", label: "介紹人" },
   { key: "mainStaff", label: "主要客服" },
   { key: "mainNurse", label: "主要護理師" },
-  {
-    key: "lineBound",
-    label: "app使用權限",
-    render: (r) => <Badge color={r.lineBound ? "green" : "slate"}>{r.lineBound ? "已綁定" : "未綁定"}</Badge>,
-  },
   { key: "family", label: "關聯家屬人" },
 ];
 
@@ -108,11 +102,6 @@ function DetailTabs({
               <Field label="身分證號" value="（欄位範例，未填）" />
               <Field label="通訊地址" value="（欄位範例，未填）" />
               <Field label="LINE ID" value="（供14.會員綁定比對）" />
-              <div className="col-span-2">
-                <DemoActionButton feedback="WebApp 綁定邀請已建立（Demo 模式，未發送真實訊息）" variant="danger" size="sm">
-                  綁定WebApp登入帳號
-                </DemoActionButton>
-              </div>
             </div>
           ),
         },

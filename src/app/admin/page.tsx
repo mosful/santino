@@ -25,6 +25,7 @@ import { useCurrentRole } from "@/lib/roleStore";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
 import { DEFAULT_CHECKOUT_ITEMS } from "@/lib/domain/checkout";
+import { DEFAULT_SALE_ITEMS, SALE_CATEGORIES } from "@/lib/domain/sales";
 
 const simpleFields: FieldSchema[] = [
   { key: "name", label: "名稱" },
@@ -106,6 +107,39 @@ function CheckoutItemSettings({ canEdit }: { canEdit: boolean }) {
   );
 }
 
+
+const saleItemFields: FieldSchema[] = [
+  { key: "category", label: "分類", type: "select", options: [...SALE_CATEGORIES] },
+  { key: "name", label: "品項名稱" },
+  { key: "price", label: "單價", type: "number" },
+];
+
+/** 入住後消費（自費）品項主檔：案件「入住中」新增自費時的分類與單價來源。 */
+function SaleItemSettings({ canEdit }: { canEdit: boolean }) {
+  const { data } = useDomainStore();
+  const items = data.saleItems ?? DEFAULT_SALE_ITEMS;
+  const rows: Row[] = items.map((item, index) => ({ id: index + 1, category: item.category, name: item.name, price: item.price }));
+  return (
+    <section className="space-y-2">
+      <h3 className="text-sm font-semibold text-stone-700">自費品項與單價</h3>
+      <p className="text-xs text-stone-500">案件「入住中」新增自費時依分類選品項，金額＝數量 × 單價；帳務摘要會依分類小計。</p>
+      <EditableList
+        moduleNo="15"
+        editAllowed={canEdit}
+        fields={saleItemFields}
+        initialRows={rows}
+        rows={rows}
+        searchPlaceholder="分類或品項名稱"
+        onSave={(row) => {
+          const target = row.id === 0 ? undefined : items[row.id - 1];
+          caseActions.saveSaleItem({ id: target?.id, category: String(row.category ?? ""), name: String(row.name ?? ""), price: Number(row.price) });
+        }}
+        onDelete={(id) => caseActions.removeSaleItem(items[id - 1].id)}
+      />
+    </section>
+  );
+}
+
 /** 基礎主檔設定：房間與院內各式主檔，v24 §10 標示為僅管理者可修改。 */
 function MasterDataTab({ canEdit }: { canEdit: boolean }) {
   return (
@@ -120,6 +154,7 @@ function MasterDataTab({ canEdit }: { canEdit: boolean }) {
         <EditableList moduleNo="15" editAllowed={canEdit} fields={simpleFields} initialRows={ROOM_DATA_ROWS} searchPlaceholder="項目名稱" />
       </section>
       <CheckoutItemSettings canEdit={canEdit} />
+      <SaleItemSettings canEdit={canEdit} />
       <section className="space-y-2">
         <h3 className="text-sm font-semibold text-stone-700">產後其他主檔</h3>
         <EditableList moduleNo="15" editAllowed={canEdit} fields={simpleFields} initialRows={OTHER_SETTINGS_ROWS} searchPlaceholder="設定項目" />
@@ -176,7 +211,7 @@ function adminTabContent(key: string, canEditSystem: boolean, canEditOperations:
           title="套餐與贈品規則"
           detail="房型 × 天數 × 生產院所 × 價格身分的定價表、贈天數與贈課程門檻，目前寫在程式內的示範值。待取得客戶實際定價 Excel 後改為此處維護。"
           href="/cases/"
-          hrefLabel="先到案件流程看套餐快速試算"
+          hrefLabel="先到案件清單看套餐快速試算"
         />
       );
     case "contract-version":

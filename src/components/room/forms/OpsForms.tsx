@@ -136,3 +136,58 @@ export function IdPhoto({ room }: { room: string }) {
     </div>
   );
 }
+
+/**
+ * 清潔記錄（手冊第 30 頁「房務清潔工作月記錄表」）。
+ *
+ * 客戶在第 29 頁標註「清潔要有記錄」。原表是一個月 31 欄 × 22 個點檢項目的紙本，
+ * 這裡改成「一次一天、逐項打勾」，月份彙整留給報表——護理站當下只會填今天這一次。
+ */
+const CLEAN_ITEMS = [
+  "收垃圾",
+  "桌子、椅子",
+  "床單、被套",
+  "床組櫃、衣櫃",
+  "RO 水盒、洗手台",
+  "電話",
+  "水箱設備",
+  "地板",
+  "視聽音響設備",
+  "浴廁地板、洗手台",
+  "淋浴間",
+  "浴廁垃圾桶",
+  "浴廁通風口",
+  "浴廁天花板、牆壁",
+  "窗簾、隔簾、窗戶",
+  "空調出風口",
+  "壁掛（掛物）",
+  "天花板",
+];
+
+export function CleaningLog({ room }: { room: string }) {
+  return (
+    <div className="space-y-3 text-sm">
+      <div className="text-xs text-stone-400">房號 {room}｜清潔記錄（每 3 天清潔 1 次，退房另做漂白水擦拭）</div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="清潔日期" />
+        <Field label="清潔人員" />
+      </div>
+      <fieldset className="rounded border border-stone-200 p-3">
+        <legend className="px-1 text-xs font-medium text-stone-600">清潔項目</legend>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {CLEAN_ITEMS.map((item) => (
+            <label key={item} className="flex min-h-10 items-center gap-2 text-sm">
+              <input type="checkbox" />
+              {item}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="退房清潔（1000PPM 漂白水 100cc 加 5000cc 擦拭）" placeholder="已完成／不適用" />
+        <Field label="主管簽章" />
+      </div>
+      <SubmitBar />
+    </div>
+  );
+}

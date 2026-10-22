@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
+import { freeDays, roomDailyRate } from "@/lib/domain/rules";
 import {
   DEFAULT_CHECKOUT_ITEMS,
   INSPECTION_ITEMS,
@@ -132,8 +133,54 @@ export function ReturnGuide({ record, editable }: { record: CaseRecord; editable
       {record.returnChargeEntryId && <p className="mt-1 text-xs text-stone-500">已寫入帳務，再按一次會更新同一筆金額。</p>}
     </div>
     {editable && <div className="flex flex-wrap gap-2">
-      <button type="button" className={buttonStyles({ variant: "primary" })} onClick={() => run(() => caseActions.chargeReturnTotal(record.id), "返家應收已寫入帳務。")}>寫入帳務</button>
+      <button type="button" className={buttonStyles({ variant: "primary" })} onClick={() => run(() => caseActions.chargeReturnTotal(record.id), "返家應收已寫入帳務。")}>應收寫入帳務</button>
       <button type="button" className={button} onClick={() => window.print()}>列印返家指導單</button>
+    </div>}
+    {message && <p role="status" className="text-sm">{message}</p>}
+  </CollapsibleSection>;
+}
+
+/**
+ * 退費試算（手冊第 39 頁「早鳥活動－退費試算.xlsx」）。
+ *
+ * 提前返家時算要退多少：差異天數 × 每日房價，再加寶寶提前離院的一日退費。
+ * 算完可直接寫入帳務成為一筆負數，不必另外開自費調整。
+ */
+export function RefundCalculator({ record, editable }: { record: CaseRecord; editable: boolean }) {
+  const contractDays = record.days;
+  const gifted = freeDays(contractDays);
+  const daily = roomDailyRate(record.roomType, record.hospital);
+  const [stayedDays, setStayedDays] = useState(String(contractDays));
+  const [babyDays, setBabyDays] = useState(String(contractDays));
+  const [babyDailyRefund, setBabyDailyRefund] = useState("0");
+  const [message, setMessage] = useState("");
+
+  const diffDays = Math.max(0, contractDays - (Number(stayedDays) || 0));
+  const babyDiff = Math.max(0, contractDays - (Number(babyDays) || 0));
+  const refund = diffDays * daily + babyDiff * (Number(babyDailyRefund) || 0);
+
+  return <CollapsibleSection id="case-refund" title="退費試算" summary={`可退 ${refund.toLocaleString("zh-TW")} 元`} bodyClassName="space-y-4">
+    <p className="text-sm text-stone-600">提前返家時用；差異天數 × 每日房價，贈送天數不列入退費。實際退費仍以院方核定為準。</p>
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="space-y-2 text-sm"><span className="text-stone-500">合約天數（含贈 {gifted} 天）</span><p className="text-lg font-semibold tabular-nums">{contractDays} 天</p></div>
+      <div className="space-y-2 text-sm"><span className="text-stone-500">每日房價（{record.roomType}）</span><p className="text-lg font-semibold tabular-nums">{daily.toLocaleString("zh-TW")} 元</p></div>
+      <label className="space-y-2 text-sm">媽媽實際入住天數<input aria-label="媽媽實際入住天數" type="number" min={0} max={contractDays} disabled={!editable} className={input} value={stayedDays} onChange={(event) => setStayedDays(event.target.value)} /></label>
+      <label className="space-y-2 text-sm">寶寶實際入住天數<input aria-label="寶寶實際入住天數" type="number" min={0} max={contractDays} disabled={!editable} className={input} value={babyDays} onChange={(event) => setBabyDays(event.target.value)} /></label>
+      <label className="space-y-2 text-sm">寶寶一日退費<input aria-label="寶寶一日退費" type="number" min={0} disabled={!editable} className={input} value={babyDailyRefund} onChange={(event) => setBabyDailyRefund(event.target.value)} /></label>
+    </div>
+    <div className="rounded-xl bg-stone-50 p-4 text-sm">
+      <p>媽媽差異 {diffDays} 天 × {daily.toLocaleString("zh-TW")} 元　＋　寶寶差異 {babyDiff} 天 × {(Number(babyDailyRefund) || 0).toLocaleString("zh-TW")} 元</p>
+      <p className="mt-2 text-lg font-semibold">退費總額 {refund.toLocaleString("zh-TW")} 元</p>
+    </div>
+    {editable && <div className="flex flex-wrap gap-2">
+      <button type="button" className={buttonStyles({ variant: "primary" })} onClick={() => {
+        try {
+          if (refund <= 0) throw new Error("退費金額為 0，不需寫入帳務。");
+          caseActions.charge(record.id, `提前返家退費（媽媽 ${diffDays} 天、寶寶 ${babyDiff} 天）`, -refund, new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" }), "", { category: "其他備品" });
+          setMessage("退費已寫入帳務（負數）。");
+        } catch (error) { setMessage(error instanceof Error ? error.message : "操作失敗。"); }
+      }}>退費寫入帳務</button>
+      <button type="button" className={button} onClick={() => window.print()}>列印退費試算</button>
     </div>}
     {message && <p role="status" className="text-sm">{message}</p>}
   </CollapsibleSection>;

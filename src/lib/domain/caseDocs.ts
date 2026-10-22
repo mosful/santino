@@ -213,6 +213,60 @@ export const CASE_DOCS: CaseDoc[] = [
       butler: record.owner,
     }),
   },
+  {
+    key: "tcm-survey",
+    label: "中醫看診調查單",
+    hint: "下訂時填寫；入住前如有變更再填一張（手冊第 23 頁）。",
+    sections: [
+      {
+        label: "基本與病史",
+        fields: [
+          text("motherName", "姓名"),
+          text("parity", "第幾胎"),
+          multiple("gyn", "婦科相關疾病", ["子宮肌瘤", "子宮內膜異位", "多囊性卵巢", "巧克力囊腫", "尿道炎", "無"]),
+          multiple("obstetric", "產科相關疾病", ["妊娠糖尿病", "妊娠高血壓", "子癲前症", "產後大出血", "無"]),
+          multiple("internal", "內科相關疾病", ["心臟疾病", "高血壓", "低血壓", "糖尿病", "胃痛", "胃食道逆流", "氣喘", "痔瘡", "便祕", "經常性腹瀉", "無"]),
+          multiple("other", "其他", ["貧血", "蕁麻疹", "鼻過敏", "偏頭痛", "皮膚過敏", "無"]),
+        ],
+      },
+      {
+        label: "過敏與家族史",
+        fields: [
+          text("babyNote", "胎兒或前一胎寶寶特殊情況"),
+          text("genetic", "夫妻雙方遺傳性疾病"),
+          text("foodAllergy", "食物過敏"),
+          text("drugAllergy", "藥物過敏"),
+          text("religionDiet", "宗教性飲食禁忌"),
+          text("medicalDiet", "醫療性飲食禁忌（產檢醫師告知）"),
+          text("cancerSelf", "本人癌症病史"),
+          text("cancerFamily", "家族癌症病史與關係"),
+          text("diabetesFamily", "家族糖尿病病史"),
+        ],
+      },
+      { label: "填表", fields: [date("filledAt", "填表日期"), text("filledBy", "填表人")] },
+    ],
+    prefill: (record) => ({ motherName: record.name, parity: record.parity, filledBy: record.name }),
+  },
+  {
+    key: "pediatric-consult",
+    label: "兒科醫師諮詢單",
+    hint: "住戶填寫後由兒科醫師以書面或電話回覆（手冊第 32 頁）。",
+    sections: [
+      {
+        label: "諮詢內容",
+        fields: [
+          text("room", "房號"),
+          text("motherName", "姓名"),
+          date("askedAt", "日期"),
+          note("question", "想詢問兒科醫師的內容"),
+          select("replyBy", "回覆方式", ["書面", "電話"]),
+          note("reply", "回覆紀錄"),
+          text("doctor", "回覆醫師"),
+        ],
+      },
+    ],
+    prefill: (record) => ({ room: record.room, motherName: record.name }),
+  },
 ];
 
 export const caseDoc = (key: string) => CASE_DOCS.find((doc) => doc.key === key);

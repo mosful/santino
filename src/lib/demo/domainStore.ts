@@ -11,6 +11,7 @@ import { normalizeCartNo } from "../babycam/cart-no";
 import { DEFAULT_CHECKOUT_ITEMS, INSPECTION_ITEMS, abnormalInspection, pendingInspection, returnTotal } from "../domain/checkout";
 import { dailyCharges } from "../domain/rules";
 import { caseDoc } from "../domain/caseDocs";
+import { DEFAULT_SALE_ITEMS } from "../domain/sales";
 
 function valid(value: unknown): value is DemoDomain {
   const data = value as DemoDomain | null;
@@ -20,6 +21,7 @@ function valid(value: unknown): value is DemoDomain {
   data.rooms ??= structuredClone(DOMAIN_SEED.rooms); data.printSettings ??= structuredClone(DOMAIN_SEED.printSettings); data.viewingHistory ??= [];
   data.tasks ??= structuredClone(DOMAIN_SEED.tasks); data.handledTasks ??= [];
   data.checkoutItems ??= structuredClone(DEFAULT_CHECKOUT_ITEMS);
+  data.saleItems ??= structuredClone(DEFAULT_SALE_ITEMS);
   data.contractSettings ??= structuredClone(DOMAIN_SEED.contractSettings);
   data.demoScenarios ??= {}; data.detection ??= structuredClone(DOMAIN_SEED.detection);
   data.networkPrefix ??= DOMAIN_SEED.networkPrefix;
@@ -102,7 +104,7 @@ export const caseActions = {
   update(id: string, patch: Partial<CaseRecord>) {
     domainStore.update((data) => {
       const record = findCase(data, id);
-      const allowed = ["name", "phone", "dueDate", "idNo", "owner", "room", "roomType", "days", "contractNo", "deposit", "tasting", "visitDate", "visitStatus", "source", "hospital", "priceClass", "corporateCompany", "note", "category", "parity", "deliveryMethod", "visitTime", "receptionist", "visitIntent", "visitNote", "orderDate", "paymentMethod", "orderNote", "reviewStart", "signedDate", "actualAdmission", "settlementDone", "checkoutNote", "childcare", "childcareCar", "childcareDays", "childcareFee", "childcareContact", "customerDetails", "addOns", "bossGift", "milkConsent", "milkChoice", "chineseConsent", "proxySigned", "proxyName"];
+      const allowed = ["name", "phone", "dueDate", "idNo", "hospitalChartNo", "owner", "room", "roomType", "days", "contractNo", "deposit", "tasting", "visitDate", "visitStatus", "source", "hospital", "priceClass", "corporateCompany", "note", "category", "parity", "deliveryMethod", "visitTime", "receptionist", "visitIntent", "visitNote", "orderDate", "paymentMethod", "orderNote", "reviewStart", "signedDate", "actualAdmission", "settlementDone", "checkoutNote", "childcare", "childcareCar", "childcareDays", "childcareFee", "childcareContact", "customerDetails", "addOns", "bossGift", "milkConsent", "milkChoice", "chineseConsent", "proxySigned", "proxyName"];
       if (Object.keys(patch).some((key) => !allowed.includes(key))) throw new Error("此欄位須使用對應的案件操作。");
       if (record.signed && ["roomType", "days", "deposit", "contractNo", "hospital", "priceClass", "corporateCompany", "addOns", "bossGift"].some((key) => key in patch)) throw new Error("已簽合約的條件異動請使用合約變更單。");
       if (patch.days !== undefined && (!Number.isInteger(patch.days) || patch.days < 1 || patch.days > 365)) throw new Error("入住天數請填 1 至 365 的整數。");
@@ -124,23 +126,30 @@ export const caseActions = {
     const labels = { prenatalContactDone: "產前關懷電話", hospitalizationNoticeDone: "住院通知", dischargeNoticeDone: "出院通知", preAdmissionPapersDone: "入住前紙本準備", admissionGuidanceDone: "入住指導單", admissionPaymentNoticeDone: "入住繳款通知單" };
     domainStore.update((data) => { const record = findCase(data, id); record[key] = done; caseLog(record, `${labels[key]}：${done ? "已完成" : "改回待辦"}`); audit(data, "更新入住前時間軸", `${id}:${key}`); });
   },
-  payment(id: string, amount: number, method: string, date: string, note: string) {
+  payment(id: string, amount: number, method: string, date: string, note: string, extra: { subject?: string; invoice?: string; cardLast4?: string } = {}) {
     if (!Number.isFinite(amount) || amount <= 0 || !method || !date) throw new Error("請填寫付款金額、方式與日期。");
-    domainStore.update((data) => { const record = findCase(data, id); const at = new Date().toISOString(); record.payments.unshift({ id: crypto.randomUUID(), amount, method, date, note: note.trim(), actor: currentActor(), at }); caseLog(record, `收款 ${amount.toLocaleString("zh-TW")} 元（${method}）${note.trim() ? `；${note.trim()}` : ""}`); audit(data, "新增付款紀錄", id); });
+    if (extra.cardLast4 && !/^\d{4}$/.test(extra.cardLast4)) throw new Error("信用卡末四碼請填 4 位數字。");
+    domainStore.update((data) => {
+      const record = findCase(data, id); const at = new Date().toISOString();
+      record.payments.unshift({ id: crypto.randomUUID(), amount, method, date, note: note.trim(), actor: currentActor(), at, subject: extra.subject, invoice: extra.invoice?.trim(), cardLast4: extra.cardLast4 });
+      caseLog(record, `收款 ${amount.toLocaleString("zh-TW")} 元（${extra.subject ? `${extra.subject}・` : ""}${method}）${extra.invoice ? `；${extra.invoice}` : ""}${note.trim() ? `；${note.trim()}` : ""}`);
+      audit(data, "新增付款紀錄", id);
+    });
   },
   /**
    * 修改既有付款紀錄（客戶 2026-10-22：清單要能再次編輯儲存）。
    * 必填修改原因，原值與新值一起寫入案件歷程與稽核，帳面可追溯。
    */
-  updatePayment(id: string, paymentId: string, amount: number, method: string, date: string, note: string, reason: string) {
+  updatePayment(id: string, paymentId: string, amount: number, method: string, date: string, note: string, reason: string, extra: { subject?: string; invoice?: string; cardLast4?: string } = {}) {
     if (!Number.isFinite(amount) || amount <= 0 || !method || !date) throw new Error("請填寫付款金額、方式與日期。");
+    if (extra.cardLast4 && !/^\d{4}$/.test(extra.cardLast4)) throw new Error("信用卡末四碼請填 4 位數字。");
     if (!reason.trim()) throw new Error("請填寫修改原因。");
     domainStore.update((data) => {
       const record = findCase(data, id);
       const payment = record.payments.find((item) => item.id === paymentId);
       if (!payment) throw new Error("找不到這筆付款紀錄。");
       const before = `${payment.date}｜${payment.method}｜${payment.amount.toLocaleString("zh-TW")} 元`;
-      Object.assign(payment, { amount, method, date, note: note.trim(), actor: currentActor(), at: new Date().toISOString() });
+      Object.assign(payment, { amount, method, date, note: note.trim(), actor: currentActor(), at: new Date().toISOString(), ...(extra.subject !== undefined ? { subject: extra.subject } : {}), ...(extra.invoice !== undefined ? { invoice: extra.invoice.trim() } : {}), ...(extra.cardLast4 !== undefined ? { cardLast4: extra.cardLast4 } : {}) });
       caseLog(record, `修改付款紀錄：${before} → ${date}｜${method}｜${amount.toLocaleString("zh-TW")} 元；${reason.trim()}`);
       audit(data, "修改付款紀錄", id);
     });
@@ -193,6 +202,25 @@ export const caseActions = {
       if (doc.timelineKey) record[doc.timelineKey] = true;
       caseLog(record, `保存${doc.label}`);
       audit(data, "保存櫃台單據", `${id}:${docKey}`);
+    });
+  },
+  /** 經辦人員（櫃台）簽名；合約上「我經辦人員簽名」那一欄（手冊第 21 頁）。 */
+  signStaff(id: string, image: string) {
+    if (!image) throw new Error("請先完成簽名。");
+    domainStore.update((data) => {
+      const record = findCase(data, id);
+      record.staffSignature = image;
+      caseLog(record, `經辦人員簽名：${currentActor()}`);
+      audit(data, "經辦人員簽名", id);
+    });
+  },
+  /** 母乳哺育意願書帶入護理人員印章（手冊第 10 頁，評鑑時要有）。 */
+  stampMilkConsent(id: string) {
+    domainStore.update((data) => {
+      const record = findCase(data, id);
+      if (!record.milkConsent) throw new Error("請先確認母乳哺育意願書。");
+      record.milkNurseStamp = `${currentActor()}｜${new Date().toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false })}`;
+      caseLog(record, "母乳哺育意願書帶入護理人員印章");
     });
   },
   checkoutProgress(id: string, started: boolean) {
@@ -355,9 +383,42 @@ export const caseActions = {
     if (!reason.trim()) throw new Error("請填寫重開原因。");
     domainStore.update((data) => { const record = findCase(data, id, true); if (!record.closed) throw new Error("案件尚未結案。"); record.closed = false; record.stage = record.forced ? record.previousStage ?? record.stage : 6; record.forced = false; caseLog(record, `重新開啟；原因：${reason.trim()}；原視訊授權及房間不自動恢復`); audit(data, "重開案件", id); });
   },
-  charge(id: string, label: string, amount: number, date: string, exceptionReason = "") {
+  /**
+   * 新增自費／費用調整。
+   * 分類、數量、單價是手冊第 36、37 頁要求的「統合計價」：金額＝數量 × 單價，
+   * 帳務摘要再依分類小計；臨時項目仍可自訂品項名稱。
+   */
+  charge(id: string, label: string, amount: number, date: string, exceptionReason = "", extra: { category?: string; qty?: number; unitPrice?: number } = {}) {
     if (!label.trim() || !Number.isFinite(amount) || !date) throw new Error("請填寫項目、日期與有效金額。");
-    domainStore.update((data) => { const record = findCase(data, id); const today = data.demoAt.slice(0, 10); if (date < today && (!["護理長 婉真", "管理者"].includes(getCurrentRole()) || !exceptionReason.trim())) throw new Error("今日以前帳務須主管授權並填寫急診例外原因。"); record.ledger.push({ id: crypto.randomUUID(), date, label, amount }); caseLog(record, `新增費用：${label}，${amount} 元${exceptionReason ? `；主管例外：${exceptionReason}` : ""}`); audit(data, "新增自費費用", id); });
+    domainStore.update((data) => {
+      const record = findCase(data, id);
+      const today = data.demoAt.slice(0, 10);
+      if (date < today && (!["護理長 婉真", "管理者"].includes(getCurrentRole()) || !exceptionReason.trim())) throw new Error("今日以前帳務須主管授權並填寫急診例外原因。");
+      record.ledger.push({ id: crypto.randomUUID(), date, label, amount, ...(extra.category ? { category: extra.category } : {}), ...(Number.isFinite(extra.qty) ? { qty: extra.qty } : {}), ...(Number.isFinite(extra.unitPrice) ? { unitPrice: extra.unitPrice } : {}) });
+      caseLog(record, `新增費用：${extra.category ? `${extra.category}／` : ""}${label}${extra.qty ? ` ×${extra.qty}` : ""}，${amount.toLocaleString("zh-TW")} 元${exceptionReason ? `；主管例外：${exceptionReason}` : ""}`);
+      audit(data, "新增自費費用", id);
+    });
+  },
+  /** 自費品項主檔維護（後台「基礎主檔設定」）。 */
+  saveSaleItem(item: { id?: string; category: string; name: string; price: number }) {
+    if (!item.category.trim() || !item.name.trim()) throw new Error("請填寫分類與品項名稱。");
+    if (!Number.isFinite(item.price) || item.price < 0) throw new Error("單價請填 0 以上的數字。");
+    domainStore.update((data) => {
+      const items = (data.saleItems ??= structuredClone(DEFAULT_SALE_ITEMS));
+      const existing = item.id ? items.find((row) => row.id === item.id) : undefined;
+      if (existing) Object.assign(existing, { category: item.category.trim(), name: item.name.trim(), price: item.price });
+      else items.push({ id: crypto.randomUUID(), category: item.category.trim(), name: item.name.trim(), price: item.price });
+      audit(data, existing ? "修改自費品項" : "新增自費品項", item.name.trim());
+    });
+  },
+  removeSaleItem(itemId: string) {
+    domainStore.update((data) => {
+      const items = (data.saleItems ??= structuredClone(DEFAULT_SALE_ITEMS));
+      const target = items.find((row) => row.id === itemId);
+      if (!target) throw new Error("找不到這個自費品項。");
+      data.saleItems = items.filter((row) => row.id !== itemId);
+      audit(data, "刪除自費品項", target.name);
+    });
   },
   change(id: string, days: number, roomType: CaseRecord["roomType"], reason: string, room?: string) {
     if (!reason.trim() || !Number.isInteger(days) || days < 1 || days > 365 || !["精緻", "VIP", "VILLA"].includes(roomType)) throw new Error("請填寫變更原因、1 至 365 天與有效房型。");

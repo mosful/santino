@@ -72,7 +72,8 @@ export const MODULES: ModuleInfo[] = [
       { key: "quote", label: "套餐速算", href: "/quote/", requiresCaseFlow: true, iconKey: "quote", hidden: true },
       { key: "cases", label: "案件清單", href: "/cases/", requiresCaseFlow: true, iconKey: "cases" },
       { key: "customer", label: "客戶資料", href: "/customer/", moduleNo: "5", iconKey: "customer" },
-      { key: "care", label: "媽媽關懷", href: "/care/", moduleNo: "7", iconKey: "care" },
+      // ⚠️ 2026-10-22 客戶要求先隱藏；路由 /care/ 與模組 7 的權限都保留，拿掉 hidden 就回來。
+      { key: "care", label: "媽媽關懷", href: "/care/", moduleNo: "7", iconKey: "care", hidden: true },
     ],
   },
   { no: "2", label: "媽媽照護", href: "/mama", phase: 1 },

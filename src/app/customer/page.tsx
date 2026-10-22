@@ -28,6 +28,11 @@ const columns: Column<Customer>[] = [
   { key: "family", label: "關聯家屬人" },
 ];
 
+/**
+ * 右上角三顆空白表單列印鈕先隱藏（客戶 2026-10-22）。程式保留，要開回改成 true。
+ */
+const SHOW_BLANK_PRINTS = false;
+
 function blankCustomer(id: number): Customer {
   return {
     id,
@@ -241,9 +246,13 @@ export default function CustomerPage() {
         moduleNo="5"
         action={
           <div className="flex gap-2 text-xs">
-            <DemoActionButton feedback="空白基本資料列印預覽已開啟" onClick={() => window.print()} className="rounded bg-stone-100 px-3 py-1.5">空白基本資料</DemoActionButton>
-            <DemoActionButton feedback="空白預約參觀單列印預覽已開啟" onClick={() => window.print()} className="rounded bg-stone-100 px-3 py-1.5">空白預約參觀單</DemoActionButton>
-            <DemoActionButton feedback="空白契約書列印預覽已開啟" onClick={() => window.print()} className="rounded bg-stone-100 px-3 py-1.5">空白契約書</DemoActionButton>
+            {SHOW_BLANK_PRINTS && (
+              <>
+                <DemoActionButton feedback="空白基本資料列印預覽已開啟" onClick={() => window.print()}>空白基本資料</DemoActionButton>
+                <DemoActionButton feedback="空白預約參觀單列印預覽已開啟" onClick={() => window.print()}>空白預約參觀單</DemoActionButton>
+                <DemoActionButton feedback="空白契約書列印預覽已開啟" onClick={() => window.print()}>空白契約書</DemoActionButton>
+              </>
+            )}
             {canEdit && (
               <button onClick={openAdd} className={buttonStyles({ variant: "danger", size: "sm" })}>
                 ＋ 新增客戶

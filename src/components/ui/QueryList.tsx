@@ -49,10 +49,15 @@ export default function QueryList<T extends { id: string | number }>({
           placeholder={searchPlaceholder}
           className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm sm:w-64"
         />
+        {/*
+          ⚠️ 不要再自己寫 bg／text 類別：基底樣式帶 hover:bg-stone-100，
+          自訂的 bg-stone-700 text-white 一 hover 就變成白底白字，按鈕看起來是空的（客戶實際回報）。
+          一律交給 variant。
+        */}
         <DemoActionButton
           feedback={`查詢完成，共找到 ${filtered.length} 筆資料`}
           onClick={() => setPage(1)}
-          className="rounded-lg bg-stone-700 px-4 py-2 text-sm text-white hover:bg-stone-800"
+          variant="primary"
         >
           送出查詢
         </DemoActionButton>

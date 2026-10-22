@@ -68,7 +68,8 @@ export const MODULES: ModuleInfo[] = [
       每一項都接真正的權限判定，沒權限的角色連項目都不會出現。
     */
     subItems: [
-      { key: "quote", label: "套餐速算", href: "/quote/", requiresCaseFlow: true, iconKey: "quote" },
+      // ⚠️ 2026-10-22 客戶要求先隱藏；程式與路由都保留，網址 /quote/ 仍可直達，要開回只要拿掉 hidden。
+      { key: "quote", label: "套餐速算", href: "/quote/", requiresCaseFlow: true, iconKey: "quote", hidden: true },
       { key: "cases", label: "案件清單", href: "/cases/", requiresCaseFlow: true, iconKey: "cases" },
       { key: "customer", label: "客戶資料", href: "/customer/", moduleNo: "5", iconKey: "customer" },
       { key: "care", label: "媽媽關懷", href: "/care/", moduleNo: "7", iconKey: "care" },

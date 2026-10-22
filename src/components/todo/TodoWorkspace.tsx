@@ -170,33 +170,82 @@ function Workspace() {
       )}
 
       {/* 類別篩選：角色預設為實心可處理，其餘虛線＋👁 僅供檢視 */}
-      <CollapsibleSection id="todo-filters" title="顯示類別" summary={`${filters.length}／${TASK_CATEGORIES.length} 類`} bodyClassName="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          {TASK_CATEGORIES.map((item) => {
-            const own = defaults.includes(item);
-            const on = filters.includes(item);
-            return (
-              <Button
-                key={item}
-                size="sm"
-                selected={on}
-                className={own ? "" : "border-dashed"}
-                title={own ? `${item}：可處理` : `${item}：不在您的職掌，開啟後僅供檢視`}
-                onClick={() => setFilters(on ? filters.filter((old) => old !== item) : [...filters, item])}
+      {/*
+        顯示類別與新增待辦並排（客戶 2026-10-22）：欄寬沿用下方行事曆那一組，
+        左欄與行事曆同寬、右欄與當日明細同寬，兩列才對得齊。
+      */}
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
+        <CollapsibleSection id="todo-filters" title="顯示類別" summary={`${filters.length}／${TASK_CATEGORIES.length} 類`} bodyClassName="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {TASK_CATEGORIES.map((item) => {
+              const own = defaults.includes(item);
+              const on = filters.includes(item);
+              return (
+                <Button
+                  key={item}
+                  size="sm"
+                  selected={on}
+                  className={own ? "" : "border-dashed"}
+                  title={own ? `${item}：可處理` : `${item}：不在您的職掌，開啟後僅供檢視`}
+                  onClick={() => setFilters(on ? filters.filter((old) => old !== item) : [...filters, item])}
+                >
+                  <span className={`h-2 w-2 rounded-full ${on ? "bg-white/80" : tone(item).dot}`} aria-hidden="true" />
+                  {item}
+                  {!own && <Eye className="h-3 w-3 opacity-70" aria-hidden="true" />}
+                </Button>
+              );
+            })}
+            <Button size="sm" variant="ghost" onClick={() => setFilters(defaults)}>
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+              重設為{ROLE_PROFILE[role].name}預設
+            </Button>
+          </div>
+          <p className="text-xs text-stone-500">虛線＋👁 的類別不在您的職掌，開啟後只能「檢視」，不會出現「處理完成」。</p>
+        </CollapsibleSection>
+        {defaults.length > 0 && (
+          <CollapsibleSection id="todo-add" title={editingTaskId ? `修改 ${selected} 的待辦事項` : `新增 ${selected} 的待辦事項`} bodyClassName="space-y-3">
+            <div className="flex flex-wrap gap-3">
+              <select
+                aria-label="新增待辦事項類別"
+                className={input}
+                value={category}
+                onChange={(event) => setCategory(event.target.value)}
               >
-                <span className={`h-2 w-2 rounded-full ${on ? "bg-white/80" : tone(item).dot}`} aria-hidden="true" />
-                {item}
-                {!own && <Eye className="h-3 w-3 opacity-70" aria-hidden="true" />}
+                {defaults.map((item) => (
+                  <option key={item}>{item}</option>
+                ))}
+              </select>
+              <input
+                aria-label="待辦事項內容"
+                placeholder="例：302 房明早 10:00 產前關懷電話"
+                className={`${input} min-w-0 flex-1`}
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+              />
+              {editingTaskId && (
+                <Button onClick={() => { setEditingTaskId(""); setTitle(""); setMessage(""); }}>
+                  取消修改
+                </Button>
+              )}
+              <Button
+                variant="primary"
+                onClick={() =>
+                  run(() => {
+                    if (editingTaskId) taskActions.update(editingTaskId, selected, category, title);
+                    else taskActions.add(selected, category, title);
+                    setEditingTaskId("");
+                    setTitle("");
+                  })
+                }
+              >
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                {editingTaskId ? "儲存修改" : "新增待辦事項"}
               </Button>
-            );
-          })}
-          <Button size="sm" variant="ghost" onClick={() => setFilters(defaults)}>
-            <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-            重設為{ROLE_PROFILE[role].name}預設
-          </Button>
-        </div>
-        <p className="text-xs text-stone-500">虛線＋👁 的類別不在您的職掌，開啟後只能「檢視」，不會出現「處理完成」。</p>
-      </CollapsibleSection>
+            </div>
+            <p className="text-xs text-stone-500">只能新增您職掌內的類別；手動新增的待辦可在上方明細直接編輯或刪除，案件與照護自動產生的待辦請回來源頁面調整。原型存在瀏覽器記憶體，重新整理會回到示範資料。</p>
+          </CollapsibleSection>
+        )}
+      </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(300px,1fr)]">
         {/* 月份與檢視切換做成標題列的 action，收合時整條一起收起來。 */}
@@ -372,49 +421,6 @@ function Workspace() {
         </CollapsibleSection>
       </div>
 
-      {defaults.length > 0 && (
-        <CollapsibleSection id="todo-add" title={editingTaskId ? `修改 ${selected} 的待辦事項` : `新增 ${selected} 的待辦事項`} bodyClassName="space-y-3">
-          <div className="flex flex-wrap gap-3">
-            <select
-              aria-label="新增待辦事項類別"
-              className={input}
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-            >
-              {defaults.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
-            <input
-              aria-label="待辦事項內容"
-              placeholder="例：302 房明早 10:00 產前關懷電話"
-              className={`${input} min-w-0 flex-1`}
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-            />
-            {editingTaskId && (
-              <Button onClick={() => { setEditingTaskId(""); setTitle(""); setMessage(""); }}>
-                取消修改
-              </Button>
-            )}
-            <Button
-              variant="primary"
-              onClick={() =>
-                run(() => {
-                  if (editingTaskId) taskActions.update(editingTaskId, selected, category, title);
-                  else taskActions.add(selected, category, title);
-                  setEditingTaskId("");
-                  setTitle("");
-                })
-              }
-            >
-              <Plus className="h-4 w-4" aria-hidden="true" />
-              {editingTaskId ? "儲存修改" : "新增待辦事項"}
-            </Button>
-          </div>
-          <p className="text-xs text-stone-500">只能新增您職掌內的類別；手動新增的待辦可在上方明細直接編輯或刪除，案件與照護自動產生的待辦請回來源頁面調整。原型存在瀏覽器記憶體，重新整理會回到示範資料。</p>
-        </CollapsibleSection>
-      )}
     </div>
   );
 

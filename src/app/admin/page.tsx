@@ -23,6 +23,8 @@ import { canEditAdminSetting } from "@/lib/permissions";
 import { MODULES, type SubItem } from "@/lib/modules";
 import { useCurrentRole } from "@/lib/roleStore";
 import { buttonStyles } from "@/components/ui/buttonStyles";
+import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
+import { DEFAULT_CHECKOUT_ITEMS } from "@/lib/domain/checkout";
 
 const simpleFields: FieldSchema[] = [
   { key: "name", label: "名稱" },
@@ -66,6 +68,44 @@ function BoardSettingsTab({ canEdit }: { canEdit: boolean }) {
   );
 }
 
+
+const checkoutItemFields: FieldSchema[] = [
+  { key: "name", label: "品項名稱" },
+  { key: "unit", label: "單位" },
+  { key: "price", label: "單價", type: "number" },
+  { key: "defaultQty", label: "預設發出數", type: "number" },
+];
+
+/**
+ * 返家品項與單價（客戶手冊第 20、38 頁）。
+ * 退房時未歸還的品項依這裡的單價計價，所以單價要能由院方自己維護。
+ */
+function CheckoutItemSettings({ canEdit }: { canEdit: boolean }) {
+  const { data } = useDomainStore();
+  const items = data.checkoutItems ?? DEFAULT_CHECKOUT_ITEMS;
+  // EditableList 的列鍵值是數字，這裡用順序對應回主檔的真實 id。
+  const rows: Row[] = items.map((item, index) => ({ id: index + 1, name: item.name, unit: item.unit, price: item.price, defaultQty: item.defaultQty }));
+  return (
+    <section className="space-y-2">
+      <h3 className="text-sm font-semibold text-stone-700">返家品項與單價</h3>
+      <p className="text-xs text-stone-500">案件「退房」階段的返家指導單會讀這份主檔：未歸還數量 × 單價＝應收金額。</p>
+      <EditableList
+        moduleNo="15"
+        editAllowed={canEdit}
+        fields={checkoutItemFields}
+        initialRows={rows}
+        rows={rows}
+        searchPlaceholder="品項名稱"
+        onSave={(row) => {
+          const target = row.id === 0 ? undefined : items[row.id - 1];
+          caseActions.saveCheckoutItem({ id: target?.id, name: String(row.name ?? ""), unit: String(row.unit ?? ""), price: Number(row.price), defaultQty: Number(row.defaultQty) });
+        }}
+        onDelete={(id) => caseActions.removeCheckoutItem(items[id - 1].id)}
+      />
+    </section>
+  );
+}
+
 /** 基礎主檔設定：房間與院內各式主檔，v24 §10 標示為僅管理者可修改。 */
 function MasterDataTab({ canEdit }: { canEdit: boolean }) {
   return (
@@ -79,6 +119,7 @@ function MasterDataTab({ canEdit }: { canEdit: boolean }) {
         <h3 className="text-sm font-semibold text-stone-700">房型與房間資料</h3>
         <EditableList moduleNo="15" editAllowed={canEdit} fields={simpleFields} initialRows={ROOM_DATA_ROWS} searchPlaceholder="項目名稱" />
       </section>
+      <CheckoutItemSettings canEdit={canEdit} />
       <section className="space-y-2">
         <h3 className="text-sm font-semibold text-stone-700">產後其他主檔</h3>
         <EditableList moduleNo="15" editAllowed={canEdit} fields={simpleFields} initialRows={OTHER_SETTINGS_ROWS} searchPlaceholder="設定項目" />

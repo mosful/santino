@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { domainStore, caseActions } from "../src/lib/demo/domainStore";
 import { setCurrentRole } from "../src/lib/roleStore";
-import { caseBalance, dailyCharges } from "../src/lib/domain/rules";
+import { caseBalance, casePrice, dailyCharges, freeDays, roomDailyRate } from "../src/lib/domain/rules";
 import { babycamActions, canBabycamSection, canEditBabycamSection } from "../src/lib/babycam/actions";
 import { deriveDemoLight, effectiveViewingWindow, viewingBlock } from "../src/lib/babycam/viewing";
 import { enterViewer } from "../src/lib/babycam/viewerSession";
 import { toBrowserXlsx } from "../src/lib/babycam/exports";
 import { roleTaskCategories, taskActions } from "../src/lib/domain/tasks";
+import { caseDoc, docValues } from "../src/lib/domain/caseDocs";
 import { lightChannels } from "../src/lib/babycam/lights";
 import { contractSettingActions } from "../src/lib/domain/contractSettings";
 import { cameraTimeRows } from "../src/lib/babycam/cameraTime";
@@ -74,6 +75,30 @@ test("逐日帳加總一致，過去帳務須主管原因，重複修正不重�
   assert.equal(current.ledger.length, 2); assert.equal(current.ledger[0].amount, 500);
   assert.equal(dailyCharges(current).reduce((sum, item) => sum + item.amount, 0), current.quotedAmount + 700);
 });
+test("房價與贈送天數依客戶手冊價目表（櫃台 PDF 第 39、47 頁）", () => {
+  assert.equal(roomDailyRate("精緻", "璟馨婦幼醫院（院內）"), 7500);
+  assert.equal(roomDailyRate("精緻", "成大"), 7650);
+  assert.equal(roomDailyRate("精緻", "其他"), 7800);
+  assert.equal(roomDailyRate("VIP", "詠馨婦幼中心（院內）"), 8600);
+  assert.equal(roomDailyRate("VIP", "奇美"), 8750);
+  assert.equal(roomDailyRate("VIP", "其他"), 8900);
+  assert.equal(roomDailyRate("VILLA", "璟馨婦幼醫院（院內）"), 9600);
+  assert.equal(roomDailyRate("VILLA", "其他"), 10000);
+  // 舊 localStorage 與舊文件的寫法也要能歸到同一級距。
+  assert.equal(roomDailyRate("VIP", "園內"), 8600);
+  assert.equal(roomDailyRate("VIP", "成大／奇美"), 8750);
+
+  assert.equal(freeDays(20), 0);
+  assert.equal(freeDays(21), 1);
+  assert.equal(freeDays(27), 1);
+  assert.equal(freeDays(28), 2);
+  assert.equal(freeDays(30), 2);
+
+  // 21 天 VIP 院內：贈 1 天，付費 20 天。
+  assert.equal(casePrice({ roomType: "VIP", days: 21, hospital: "璟馨婦幼醫院（院內）", priceClass: "一般", addOns: [] }), 20 * 8600);
+  // 員工價九折。
+  assert.equal(casePrice({ roomType: "精緻", days: 21, hospital: "其他", priceClass: "員工價", addOns: [] }), Math.round(7800 * 20 * 0.9));
+});
 test("入住前時間軸、分次付款與返家檢查保留稽核", () => {
   reset(); const id = readyCase();
   caseActions.timeline(id, "prenatalContactDone", true);
@@ -86,7 +111,11 @@ test("入住前時間軸、分次付款與返家檢查保留稽核", () => {
   assert.match(paid.payments[0].actor, /管理者/);
   caseActions.advance(id);
   caseActions.checkoutProgress(id, true);
-  caseActions.update(id, { checkoutChecklist: ["房卡歸還"], checkoutNote: "其餘項目持續確認" });
+  caseActions.update(id, { checkoutNote: "其餘項目持續確認" });
+  // 29 項逐項檢查，少一項就不能完成。
+  assert.throws(() => caseActions.completeCheckout(id), /尚未檢查/);
+  caseActions.inspect(id, "吹風機", "異常", "風量變小，已報修");
+  caseActions.inspectAllNormal(id);
   caseActions.completeCheckout(id);
   const current = domainStore.get().cases.find((item) => item.id === id)!;
   assert.ok(current.checkoutCompletedAt);
@@ -125,6 +154,81 @@ test("付款紀錄可修改與刪除，必填原因且異動寫入案件歷程",
   const removed = domainStore.get().cases.find((item) => item.id === id)!;
   assert.equal(removed.payments.length, 0);
   assert.ok(removed.log.some((entry) => entry.text.includes("刪除付款紀錄") && entry.text.includes("重複登錄")));
+});
+test("返家指導單：未歸還品項與應付款項併入帳務，只寫一筆", () => {
+  reset(); const id = readyCase();
+  caseActions.update(id, { actualAdmission: "2026-10-21", room: "303" }); caseActions.advance(id); caseActions.advance(id);
+  const before = caseBalance(domainStore.get().cases.find((item) => item.id === id)!);
+
+  // 房卡發 2 張只還 1 張（100 元）＋黃疸照光 100、中醫 4,800。
+  caseActions.returnItem(id, "roomcard", 2, 1);
+  assert.throws(() => caseActions.returnItem(id, "roomcard", 2, 3), /歸還不可大於發出/);
+  caseActions.returnCharge(id, { jaundice: 100, chinese: 4800 });
+  assert.throws(() => caseActions.returnCharge(id, { hair: -1 }), /0 以上/);
+  caseActions.chargeReturnTotal(id);
+
+  const record = domainStore.get().cases.find((item) => item.id === id)!;
+  assert.equal(caseBalance(record), before + 100 + 100 + 4800);
+  assert.equal(record.ledger.filter((entry) => entry.id === record.returnChargeEntryId).length, 1);
+  assert.throws(() => caseActions.chargeReturnTotal(id), /不需重複寫入/);
+
+  // 金額改了就更新同一筆，不會累加第二筆。
+  caseActions.returnCharge(id, { hair: 450 });
+  caseActions.chargeReturnTotal(id);
+  const updated = domainStore.get().cases.find((item) => item.id === id)!;
+  assert.equal(updated.ledger.filter((entry) => entry.label.includes("返家指導單")).length, 1);
+  assert.equal(caseBalance(updated), before + 100 + 100 + 4800 + 450);
+});
+test("返家檢查表 29 項逐項確認，異常必填原因並寫進歷程", () => {
+  reset(); const id = readyCase();
+  caseActions.update(id, { actualAdmission: "2026-10-21", room: "303" }); caseActions.advance(id); caseActions.advance(id);
+  assert.throws(() => caseActions.inspect(id, "不存在的項目", "正常"), /不是返家檢查表的項目/);
+  assert.throws(() => caseActions.inspect(id, "免治馬桶", "異常", " "), /原因/);
+  caseActions.inspect(id, "免治馬桶", "異常", "沖水無力");
+  assert.throws(() => caseActions.completeCheckout(id), /尚未檢查/);
+  caseActions.inspectAllNormal(id);
+  caseActions.completeCheckout(id);
+  const record = domainStore.get().cases.find((item) => item.id === id)!;
+  assert.equal(record.roomInspection!["免治馬桶"].status, "異常");
+  assert.equal(record.roomInspection!["吹風機"].status, "正常");
+  assert.ok(record.log.some((entry) => entry.text.includes("免治馬桶（沖水無力）")));
+});
+test("櫃台單據自動帶入案件資料，存檔即完成入住前時間軸項目", () => {
+  reset(); const id = readyCase();
+  caseActions.update(id, { actualAdmission: "2026-10-21", room: "303" });
+  const record = () => domainStore.get().cases.find((item) => item.id === id)!;
+  const doc = caseDoc("security-notice")!;
+  const prefilled = docValues(record(), doc);
+  assert.equal(prefilled.room, "303");
+  assert.equal(prefilled.motherName, "示範媽媽");
+  assert.match(prefilled.stay, /^2026-10-21 ～ /);
+
+  assert.equal(record().preAdmissionPapersDone, false);
+  caseActions.saveDocument(id, "security-notice", { ...prefilled, fatherName: "示範爸爸", carNo: "ABC-1234" });
+  assert.equal(record().preAdmissionPapersDone, true);
+  assert.equal(record().documents!["security-notice"].values.carNo, "ABC-1234");
+  assert.ok(record().log.some((entry) => entry.text.includes("保存入住資訊－保全部")));
+  assert.throws(() => caseActions.saveDocument(id, "no-such-doc", {}), /找不到這張單據/);
+
+  // 繳款通知單的餘額直接帶案件應收，不用再算一次。
+  const payment = docValues(record(), caseDoc("payment-notice")!);
+  assert.equal(Number(payment.balance), Math.max(0, caseBalance(record())));
+});
+test("逐日明細可指定贈送日，折讓併入帳務且原房費保留", () => {
+  reset(); const id = readyCase();
+  caseActions.update(id, { actualAdmission: "2026-10-21", room: "303" }); caseActions.advance(id);
+  const record = () => domainStore.get().cases.find((item) => item.id === id)!;
+  const before = caseBalance(record());
+  const target = dailyCharges(record()).find((row) => row.amount > 0 && row.label.includes("原合約"))!;
+
+  caseActions.toggleGiftDay(id, target.date);
+  assert.equal(caseBalance(record()), before - target.amount);
+  assert.ok(dailyCharges(record()).some((row) => row.date === target.date && row.amount === target.amount), "原房費那列要保留");
+  assert.ok(record().ledger.some((entry) => entry.giftDate === target.date && entry.amount === -target.amount));
+
+  caseActions.toggleGiftDay(id, target.date);
+  assert.equal(caseBalance(record()), before);
+  assert.equal(record().ledger.filter((entry) => entry.giftDate === target.date).length, 0);
 });
 test("不同寶寶不得共用監視器／車號；單寶寶照護不遮蔽另一位", () => {
   reset(); const binding = domainStore.get().bindings[0]; const first = binding.babies[0];
@@ -213,7 +317,7 @@ test("寶寶視訊的分段權限只有 edit／none 兩階，依角色各自授�
 });
 test("退房續留的車號與期限同步，接回後終止，重開補登不重做退房", () => {
   reset(); const record = domainStore.get().cases.find((item) => item.stage === 5)!;
-  caseActions.advance(record.id); caseActions.update(record.id, { settlementDone: true, checkoutChecklist: ["房卡歸還", "遙控器／鑰匙", "客房備品點交", "設施無損壞", "垃圾已清空", "冰箱已清空"], childcare: true, childcareCar: "TC99", childcareContact: "示範家長", childcareDays: 2 });
+  caseActions.advance(record.id); caseActions.inspectAllNormal(record.id); caseActions.completeCheckout(record.id); caseActions.update(record.id, { settlementDone: true, childcare: true, childcareCar: "TC99", childcareContact: "示範家長", childcareDays: 2 });
   caseActions.advance(record.id); const data = domainStore.get(); const binding = data.bindings.find((item) => item.caseId === record.id)!;
   const baby = data.subjects.find((item) => item.caseId === record.id && item.kind === "baby")!;
   assert.equal(baby.room, ""); assert.equal(baby.status, "托嬰"); assert.equal(baby.carNo, "TC99"); assert.equal(binding.babies[0].cartNo, "TC99"); assert.equal(binding.validTo, "2026-10-18");

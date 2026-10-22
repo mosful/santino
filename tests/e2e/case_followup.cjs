@@ -20,11 +20,21 @@ const assert = require("node:assert/strict"); const fs = require("node:fs/promis
   await page.getByRole("button", { name: /^入住中完成/ }).click();
   const image = Buffer.from(await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = 100; canvas.height = 60; canvas.getContext("2d").fillRect(0, 0, 100, 60); return canvas.toDataURL().split(",")[1]; }), "base64");
   await page.getByLabel("返家照片", { exact: true }).setInputFiles({ name: "匿名返家.png", mimeType: "image/png", buffer: image }); await page.getByAltText("匿名返家照片").waitFor(); await page.getByRole("button", { name: "模擬寄送返家照片", exact: true }).click(); await page.getByText("寄送示意紀錄 1 次；不連線郵件服務。", { exact: true }).waitFor();
-  await page.getByRole("button", { name: "開始返家檢查表", exact: true }).click();
-  for (const name of ["房卡歸還", "遙控器／鑰匙", "客房備品點交", "設施無損壞", "垃圾已清空", "冰箱已清空", "已完成尾款結算"]) await page.getByRole("checkbox", { name, exact: true }).check();
+  // 返家指導單：房卡發 2 還 1（未還 100 元）＋黃疸照光 100，合計寫入帳務。
+  await page.getByLabel("房卡歸還數", { exact: true }).fill("1");
+  await page.getByLabel("A：黃疸照光", { exact: true }).fill("100");
+  await page.getByRole("button", { name: "寫入帳務", exact: true }).click();
+  await page.getByText("返家應收已寫入帳務。", { exact: true }).waitFor();
+  // 返家檢查表 29 項：先標一項異常，其餘一次標正常。
+  await page.getByLabel("免治馬桶 異常原因", { exact: true }).fill("沖水無力");
+  await page.getByRole("row", { name: /免治馬桶/ }).getByRole("button", { name: "異常", exact: true }).click();
+  await page.getByRole("button", { name: "未檢查的一次標正常", exact: true }).click();
   await page.getByRole("button", { name: "完成返家檢查表", exact: true }).click();
+  await page.getByRole("checkbox", { name: "已完成尾款結算", exact: true }).check();
   await page.getByRole("checkbox", { name: "寶寶需要續留托嬰（選填）", exact: true }).check(); await page.getByLabel("托嬰車號", { exact: true }).fill("CT99"); await page.getByLabel("接送人／聯絡方式", { exact: true }).fill("示範家長"); await page.getByRole("button", { name: /^退房完成/ }).click();
-  data = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1"))); const closed = data.cases.find((item) => item.id === record.id); assert.equal(closed.closed, true); const subject = data.subjects.find((item) => item.caseId === record.id && item.kind === "baby"); assert.equal(subject.status, "托嬰"); assert.equal(subject.carNo, "CT99");
+  data = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1"))); const closed = data.cases.find((item) => item.id === record.id); assert.equal(closed.closed, true);
+  assert.equal(closed.roomInspection["免治馬桶"].status, "異常");
+  assert.ok(closed.ledger.some((entry) => entry.label.includes("返家指導單") && entry.amount === 200)); const subject = data.subjects.find((item) => item.caseId === record.id && item.kind === "baby"); assert.equal(subject.status, "托嬰"); assert.equal(subject.carNo, "CT99");
   await page.getByRole("link", { name: "修改托嬰車號／期限", exact: true }).click(); await page.getByLabel("家長車號（無房號案件識別）", { exact: true }).fill("CT98"); await page.getByLabel("留房原因", { exact: true }).fill("展示延長托嬰"); await page.getByRole("button", { name: "儲存本案托嬰條件", exact: true }).click();
   data = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1"))); assert.equal(data.cases.find((item) => item.id === record.id).childcareCar, "CT98");
   await page.goto(`${base}/cases/detail/?id=${record.id}`); await page.getByRole("button", { name: "確認已接回，結束托嬰", exact: true }).click(); await page.getByLabel("案件操作確認").getByRole("button", { name: "確認", exact: true }).click();

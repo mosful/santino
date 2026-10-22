@@ -8,14 +8,18 @@ import { getCurrentRole } from "../roleStore";
 import { canUseCaseFlow, ROLE_PROFILE } from "../permissions";
 import { closeViewingHistory } from "../babycam/history";
 import { normalizeCartNo } from "../babycam/cart-no";
+import { DEFAULT_CHECKOUT_ITEMS, INSPECTION_ITEMS, abnormalInspection, pendingInspection, returnTotal } from "../domain/checkout";
+import { dailyCharges } from "../domain/rules";
+import { caseDoc } from "../domain/caseDocs";
 
 function valid(value: unknown): value is DemoDomain {
   const data = value as DemoDomain | null;
-  if (!data || data.version !== 3 || !Array.isArray(data.cases) || !Array.isArray(data.subjects) || !Array.isArray(data.cameras) || !Array.isArray(data.bindings) || !Array.isArray(data.audit)) return false;
+  if (!data || data.version !== 4 || !Array.isArray(data.cases) || !Array.isArray(data.subjects) || !Array.isArray(data.cameras) || !Array.isArray(data.bindings) || !Array.isArray(data.audit)) return false;
   if (!data.cameras.length || !Array.isArray(data.displayStates) || !data.houseWindow || !data.internalWindow || !data.familyWindow || !data.bindings.every((binding) => Array.isArray(binding.babies) && Array.isArray(binding.sessions))) return false;
   data.careEvents ??= []; data.staff ??= structuredClone(DOMAIN_SEED.staff); data.sectionPermissions ??= structuredClone(DOMAIN_SEED.sectionPermissions);
   data.rooms ??= structuredClone(DOMAIN_SEED.rooms); data.printSettings ??= structuredClone(DOMAIN_SEED.printSettings); data.viewingHistory ??= [];
   data.tasks ??= structuredClone(DOMAIN_SEED.tasks); data.handledTasks ??= [];
+  data.checkoutItems ??= structuredClone(DEFAULT_CHECKOUT_ITEMS);
   data.contractSettings ??= structuredClone(DOMAIN_SEED.contractSettings);
   data.demoScenarios ??= {}; data.detection ??= structuredClone(DOMAIN_SEED.detection);
   data.networkPrefix ??= DOMAIN_SEED.networkPrefix;
@@ -98,7 +102,7 @@ export const caseActions = {
   update(id: string, patch: Partial<CaseRecord>) {
     domainStore.update((data) => {
       const record = findCase(data, id);
-      const allowed = ["name", "phone", "dueDate", "idNo", "owner", "room", "roomType", "days", "contractNo", "deposit", "tasting", "visitDate", "visitStatus", "source", "hospital", "priceClass", "corporateCompany", "note", "category", "parity", "deliveryMethod", "visitTime", "receptionist", "visitIntent", "visitNote", "orderDate", "paymentMethod", "orderNote", "reviewStart", "signedDate", "actualAdmission", "checkoutChecklist", "settlementDone", "checkoutNote", "childcare", "childcareCar", "childcareDays", "childcareFee", "childcareContact", "customerDetails", "addOns", "bossGift", "milkConsent", "milkChoice", "chineseConsent", "proxySigned", "proxyName"];
+      const allowed = ["name", "phone", "dueDate", "idNo", "owner", "room", "roomType", "days", "contractNo", "deposit", "tasting", "visitDate", "visitStatus", "source", "hospital", "priceClass", "corporateCompany", "note", "category", "parity", "deliveryMethod", "visitTime", "receptionist", "visitIntent", "visitNote", "orderDate", "paymentMethod", "orderNote", "reviewStart", "signedDate", "actualAdmission", "settlementDone", "checkoutNote", "childcare", "childcareCar", "childcareDays", "childcareFee", "childcareContact", "customerDetails", "addOns", "bossGift", "milkConsent", "milkChoice", "chineseConsent", "proxySigned", "proxyName"];
       if (Object.keys(patch).some((key) => !allowed.includes(key))) throw new Error("此欄位須使用對應的案件操作。");
       if (record.signed && ["roomType", "days", "deposit", "contractNo", "hospital", "priceClass", "corporateCompany", "addOns", "bossGift"].some((key) => key in patch)) throw new Error("已簽合約的條件異動請使用合約變更單。");
       if (patch.days !== undefined && (!Number.isInteger(patch.days) || patch.days < 1 || patch.days > 365)) throw new Error("入住天數請填 1 至 365 的整數。");
@@ -153,11 +157,147 @@ export const caseActions = {
       audit(data, "刪除付款紀錄", id);
     });
   },
+  /**
+   * 把某一天切成贈送日（手冊第 36 頁「媽媽住房費明細」的正常計費／0 元贈送）。
+   *
+   * ⚠️ 不直接把那天的金額改成 0：逐日明細是由合約推導出來的，改了就跟合約對不上。
+   * 改成在帳務加一筆同額折讓（和主管例外調整同一套做法），原房費那列保留，帳面看得到前因後果。
+   */
+  toggleGiftDay(id: string, date: string) {
+    domainStore.update((data) => {
+      const record = findCase(data, id);
+      const existing = record.ledger.filter((entry) => entry.giftDate === date);
+      if (existing.length) {
+        record.ledger = record.ledger.filter((entry) => entry.giftDate !== date);
+        caseLog(record, `取消 ${date} 贈送日，恢復原房費`);
+      } else {
+        const row = dailyCharges(record).find((item) => item.date === date && item.amount > 0 && item.label.includes("原合約"));
+        if (!row) throw new Error("這一天沒有可轉為贈送的房費。");
+        record.ledger.push({ id: crypto.randomUUID(), date, label: `${date} 指定贈送日折讓`, amount: -row.amount, giftDate: date });
+        caseLog(record, `指定 ${date} 為贈送日，折讓 ${row.amount.toLocaleString("zh-TW")} 元`);
+      }
+      audit(data, "調整贈送日", `${id}:${date}`);
+    });
+  },
+  /**
+   * 保存櫃台單據（入住前關懷表單、三張入住前通知單、繳款通知單）。
+   * 存檔同時把入住前時間軸對應的那一項打勾——單據填完就是那件事做完了，
+   * 不要讓櫃台再回去手動勾一次。
+   */
+  saveDocument(id: string, docKey: string, values: Record<string, string>) {
+    const doc = caseDoc(docKey);
+    if (!doc) throw new Error("找不到這張單據。");
+    domainStore.update((data) => {
+      const record = findCase(data, id, true);
+      (record.documents ??= {})[docKey] = { values: { ...values }, savedAt: new Date().toISOString(), actor: currentActor() };
+      if (doc.timelineKey) record[doc.timelineKey] = true;
+      caseLog(record, `保存${doc.label}`);
+      audit(data, "保存櫃台單據", `${id}:${docKey}`);
+    });
+  },
   checkoutProgress(id: string, started: boolean) {
     domainStore.update((data) => { const record = findCase(data, id); const at = new Date().toISOString(); if (started && !record.checkoutStartedAt) record.checkoutStartedAt = at; if (!started) { record.checkoutStartedAt = undefined; record.checkoutCompletedAt = undefined; } caseLog(record, started ? "開始返家檢查表" : "重新開啟返家檢查表"); });
   },
   completeCheckout(id: string) {
-    domainStore.update((data) => { const record = findCase(data, id); if (record.checkoutChecklist.length < 1) throw new Error("請至少完成一項返家點交。"); record.checkoutStartedAt ??= new Date().toISOString(); record.checkoutCompletedAt = new Date().toISOString(); caseLog(record, `返家檢查表完成：${record.checkoutChecklist.join("、")}${record.checkoutNote ? `；備註：${record.checkoutNote}` : ""}`); audit(data, "完成返家檢查表", id); });
+    domainStore.update((data) => {
+      const record = findCase(data, id);
+      const pending = pendingInspection(record);
+      if (pending > 0) throw new Error(`還有 ${pending} 項尚未檢查，請逐項勾選正常或異常。`);
+      const abnormal = abnormalInspection(record);
+      record.checkoutStartedAt ??= new Date().toISOString();
+      record.checkoutCompletedAt = new Date().toISOString();
+      caseLog(record, `返家檢查表完成：${INSPECTION_ITEMS.length} 項已檢查${abnormal.length ? `，異常 ${abnormal.length} 項－${abnormal.join("、")}` : "，全部正常"}${record.checkoutNote ? `；備註：${record.checkoutNote}` : ""}`);
+      audit(data, "完成返家檢查表", id);
+    });
+  },
+  /** 返家檢查表逐項勾選；異常必須寫原因，現場才知道要跟誰追。 */
+  inspect(id: string, item: string, status: "正常" | "異常", reason = "") {
+    if (!INSPECTION_ITEMS.includes(item)) throw new Error("不是返家檢查表的項目。");
+    if (status === "異常" && !reason.trim()) throw new Error("異常項目請填寫原因。");
+    domainStore.update((data) => {
+      const record = findCase(data, id);
+      (record.roomInspection ??= {})[item] = { status, reason: reason.trim() };
+      record.checkoutStartedAt ??= new Date().toISOString();
+    });
+  },
+  /** 一次把尚未檢查的項目標成正常；逐項點 29 次在現場不切實際。 */
+  inspectAllNormal(id: string) {
+    domainStore.update((data) => {
+      const record = findCase(data, id);
+      record.roomInspection ??= {};
+      for (const item of INSPECTION_ITEMS) record.roomInspection[item] ??= { status: "正常", reason: "" };
+      record.checkoutStartedAt ??= new Date().toISOString();
+      caseLog(record, "返家檢查表：未檢查項目一次標記正常");
+    });
+  },
+  /** 返家指導單：某品項發出與歸還數量。 */
+  returnItem(id: string, itemId: string, issued: number, returned: number) {
+    if (!Number.isInteger(issued) || !Number.isInteger(returned) || issued < 0 || returned < 0 || returned > issued) throw new Error("請填寫有效的發出與歸還數量（歸還不可大於發出）。");
+    domainStore.update((data) => {
+      const record = findCase(data, id);
+      if (!(data.checkoutItems ?? DEFAULT_CHECKOUT_ITEMS).some((item) => item.id === itemId)) throw new Error("找不到這個返家品項。");
+      (record.returnItems ??= {})[itemId] = { issued, returned };
+    });
+  },
+  /** 返家指導單的應付款項 A–E。 */
+  returnCharge(id: string, patch: Partial<NonNullable<CaseRecord["returnCharges"]>>) {
+    domainStore.update((data) => {
+      const record = findCase(data, id);
+      const current = record.returnCharges ?? { jaundice: 0, childcare: 0, chinese: 0, hair: 0, other: 0, note: "" };
+      const next = { ...current, ...patch };
+      for (const key of ["jaundice", "childcare", "chinese", "hair", "other"] as const) {
+        const value = Number(next[key]);
+        if (!Number.isFinite(value) || value < 0) throw new Error("應付款項請填 0 以上的金額。");
+        next[key] = value;
+      }
+      record.returnCharges = next;
+    });
+  },
+  /**
+   * 把返家指導單的應收（未歸還品項＋應付款項）寫成帳務的一筆。
+   * 只寫一筆並記住 ledger id，重按就更新同一筆，避免帳面重複累加。
+   */
+  chargeReturnTotal(id: string) {
+    domainStore.update((data) => {
+      const record = findCase(data, id);
+      const total = returnTotal(record, data.checkoutItems ?? DEFAULT_CHECKOUT_ITEMS);
+      if (total <= 0) throw new Error("目前沒有應收金額，不需寫入帳務。");
+      const date = data.demoAt.slice(0, 10);
+      const label = "返家指導單應付款項與未歸還品項";
+      const existing = record.returnChargeEntryId ? record.ledger.find((item) => item.id === record.returnChargeEntryId) : undefined;
+      if (existing) {
+        if (existing.amount === total) throw new Error("金額與已寫入的帳務相同，不需重複寫入。");
+        caseLog(record, `返家應收更新：${existing.amount} → ${total} 元`);
+        existing.amount = total; existing.date = date;
+      } else {
+        const entry = { id: crypto.randomUUID(), date, label, amount: total };
+        record.ledger.push(entry); record.returnChargeEntryId = entry.id;
+        caseLog(record, `返家應收 ${total} 元已寫入帳務`);
+      }
+      audit(data, "返家指導單寫入帳務", id);
+    });
+  },
+  /** 返家品項主檔維護（後台「基礎主檔設定」，僅管理者）。 */
+  saveCheckoutItem(item: { id?: string; name: string; unit: string; price: number; defaultQty: number }) {
+    if (!item.name.trim() || !item.unit.trim()) throw new Error("請填寫品項名稱與單位。");
+    if (!Number.isFinite(item.price) || item.price < 0) throw new Error("單價請填 0 以上的數字。");
+    if (!Number.isInteger(item.defaultQty) || item.defaultQty < 0) throw new Error("預設發出數請填 0 以上的整數。");
+    domainStore.update((data) => {
+      const items = (data.checkoutItems ??= structuredClone(DEFAULT_CHECKOUT_ITEMS));
+      const existing = item.id ? items.find((row) => row.id === item.id) : undefined;
+      if (existing) Object.assign(existing, { name: item.name.trim(), unit: item.unit.trim(), price: item.price, defaultQty: item.defaultQty });
+      else items.push({ id: crypto.randomUUID(), name: item.name.trim(), unit: item.unit.trim(), price: item.price, defaultQty: item.defaultQty });
+      audit(data, existing ? "修改返家品項" : "新增返家品項", item.name.trim());
+    });
+  },
+  removeCheckoutItem(itemId: string) {
+    domainStore.update((data) => {
+      const items = (data.checkoutItems ??= structuredClone(DEFAULT_CHECKOUT_ITEMS));
+      const target = items.find((row) => row.id === itemId);
+      if (!target) throw new Error("找不到這個返家品項。");
+      data.checkoutItems = items.filter((row) => row.id !== itemId);
+      audit(data, "刪除返家品項", target.name);
+    });
   },
   note(id: string, text: string) { if (!text.trim()) throw new Error("請填寫追蹤內容。"); domainStore.update((data) => { const record = findCase(data, id, true); caseLog(record, text.trim()); audit(data, "新增案件追蹤", id); }); },
   removeDraft(id: string) { domainStore.update((data) => { const record = findCase(data, id); if (record.signed || record.stage >= 2) throw new Error("案件已有下訂或入住歷程，請使用強制結案保留紀錄。"); data.cases = data.cases.filter((item) => item.id !== id); audit(data, "移除尚未下訂的預約草稿", id); }); },

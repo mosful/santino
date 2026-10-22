@@ -1,5 +1,6 @@
 import type { CareField, CareForm, CareKind } from "./types";
 import { DEFAULT_ASSESSMENT_FIELDS, getAssessmentFields, type AssessmentField } from "../assessmentConfigStore";
+import { HOSPITALS_SHORT } from "../domain/options";
 
 const text = (key: string, label: string, required = false): CareField => ({ key, label, required });
 const note = (key: string, label: string, required = false): CareField => ({ key, label, type: "textarea", required });
@@ -30,7 +31,7 @@ const paper = (mood: boolean): CareForm => ({
 
 export const MAMA_FORMS: CareForm[] = [
   { key: "admission", label: "入住評估", sections: [
-    { label: "入住護理紀錄", fields: [date, time, { key: "birthDate", label: "生產日期", type: "date" }, select("delivery", "生產方式", ["NSD", "C/S", "VED"]), select("hospital", "生產醫院", ["園內", "成大", "奇美", "其他"]), select("parity", "胎次", ["G1P1", "G2P2", "G3P3", "其他"]), note("note", "入住護理紀錄", true)] },
+    { label: "入住護理紀錄", fields: [date, time, { key: "birthDate", label: "生產日期", type: "date" }, select("delivery", "生產方式", ["NSD", "C/S", "VED"]), select("hospital", "生產醫院", [...HOSPITALS_SHORT]), select("parity", "胎次", ["G1P1", "G2P2", "G3P3", "其他"]), note("note", "入住護理紀錄", true)] },
     { label: "病史", fields: [multiple("history", "過去病史", ["無", "高血壓", "糖尿病", "甲狀腺", "其他"]), text("allergy", "過敏史"), text("medicine", "用藥"), text("diet", "飲食禁忌"), { key: "vaccineDate", label: "疫苗日", type: "date" }] },
     { label: "身體評估", fields: [...vitals, select("consciousness", "意識", ["清醒", "嗜睡", "其他"]), select("breast", "乳房", ["柔軟", "脹", "硬塊"]), select("lochia", "惡露", ["少", "中", "多"]), select("wound", "會陰／腹部傷口", ["癒合良好", "紅腫", "滲液", "無傷口"])] },
     { label: "家庭評估", fields: [text("caregiver", "主要照顧者"), text("companion", "陪宿者"), select("familySupport", "家庭支持", ["良好", "一般", "需關注"]), note("familyNote", "家庭備註")] },

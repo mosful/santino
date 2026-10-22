@@ -187,9 +187,7 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   const closingLabel = closingSubject
     ? `${closingSubject.room || closingSubject.carNo || ""} ${closingSubject.name}`.trim()
     : "";
-  // 側欄 sticky 只需讓過固定在上方的表單列；對象識別列已併進頁首列本身。
-  const stickyToolbarHeight = openDocuments.length ? "4rem" : "0rem";
-  return <div className={`${styles.workspace} page-frame`} style={{ "--care-tray-h": stickyToolbarHeight } as React.CSSProperties}>
+  return <div className={`${styles.workspace} page-frame`}>
     <RequireAccess moduleNo={kind === "mama" ? "2" : "3"}>
       <PageHeader title={kind === "mama" ? "媽媽照護" : "寶寶照護"} moduleNo={kind === "mama" ? "2" : "3"} />
       {storageError && <p role="alert" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{storageError}</p>}
@@ -320,12 +318,14 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
                 const place = target.room || target.carNo || target.name;
                 const current = items.some((item) => item.key === activeKey) && !listVisible;
                 const draft = items.some((item) => item.dirty && !item.signedAt);
+                // 鎖頭在房號左邊（v24 的作法）：一眼看出同時開著的幾間裡，哪一間是可以編輯的。
+                const unlocked = data.unlockedCase === target.caseId;
                 return (
                   <span key={target.id} data-active={current} className={styles.roomChip}>
                     <button
                       type="button"
                       aria-pressed={current}
-                      title={`切換到 ${place} ${target.name}（開啟 ${items.length} 張）`}
+                      title={`切換到 ${place} ${target.name}（開啟 ${items.length} 張，${unlocked ? "編輯中" : "唯讀"}）`}
                       className={styles.roomChipMain}
                       onClick={() => {
                         setSigning(false);
@@ -335,6 +335,9 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
                         run(() => careActions.activate(back.key));
                       }}
                     >
+                      {unlocked
+                        ? <UnlockKeyhole className={styles.roomChipLock} data-state="open" size={14} strokeWidth={2.5} aria-label="編輯中" />
+                        : <LockKeyhole className={styles.roomChipLock} data-state="closed" size={14} strokeWidth={2.5} aria-label="唯讀" />}
                       {place}｜{target.name}
                       {draft && <em className={styles.roomChipDraft} title="有未簽出的草稿" aria-label="有未簽出的草稿" />}
                     </button>

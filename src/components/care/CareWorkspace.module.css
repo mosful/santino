@@ -19,8 +19,8 @@
 .workspace ::selection { background: var(--brand-200); color: var(--brand-900); }
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; align-items: start; }
 /* 頁首與「開啟中的表單」列都固定在畫面上方，側欄要讓過它們才不會被蓋住。
-   --care-tray-h 由 CareWorkspace 依是否有開啟中的表單設定。 */
-.sidebar { position: sticky; top: calc(var(--app-header-h) + var(--care-tray-h, 0rem) + 1rem); }
+   --app-header-total 由 AppShell 實測（頁首列＋頁籤列＋房間列），不要再用估算值。 */
+.sidebar { position: sticky; top: calc(var(--app-header-total, 8rem) + 1rem); }
 .form fieldset:disabled { opacity: .75; }
 /*
   「開啟中的表單」列。
@@ -92,4 +92,29 @@
   .workspace textarea { min-height: 80px; }
   .form { break-inside: auto; }
   .hiddenSection { display: block; margin-top: 24px; }
+}
+
+/*
+  房間分頁左側的鎖頭：解鎖（綠）＝這間正在編輯，鎖（灰）＝唯讀。
+  ⚠️ 單靠圖形分辨不出來（客戶實際回報），所以一定要配色：
+  編輯中那一間加淡綠底圈，同時開四五間時一眼就找得到。
+*/
+.roomChipLock {
+  flex: none;
+  border-radius: 999px;
+  box-sizing: content-box;
+}
+.roomChipLock[data-state="open"] {
+  color: #047857;
+  background: #d1fae5;
+  padding: 2px;
+  margin-right: 1px;
+}
+.roomChipLock[data-state="closed"] {
+  color: #a8a29e;
+  padding: 2px;
+  margin-right: 1px;
+}
+.roomChip[data-active="true"] .roomChipLock[data-state="closed"] {
+  color: #78716c;
 }

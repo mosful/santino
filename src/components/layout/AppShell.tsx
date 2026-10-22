@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import SidebarNav from "./SidebarNav";
@@ -57,6 +57,22 @@ function PageHeading() {
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  /*
+    頁首是「頁首列＋頁面注入的第二列（頁籤、房間列）」整組 sticky，高度會隨頁面變。
+    固定的 --app-header-h 只夠第一列用，頁面裡要讓位的 sticky 元素（照護工作區右欄）
+    會多讓或少讓一截——客戶看到的就是右欄上方空一塊。這裡量實際高度寫成
+    --app-header-total，讓需要讓位的人直接用。
+  */
+  const headerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = headerRef.current;
+    if (!node) return;
+    const apply = () => document.documentElement.style.setProperty("--app-header-total", `${node.offsetHeight}px`);
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
   const collapsed = useSidebarCollapsed();
   const pathname = usePathname();
   const isBareRoute = [...AUTH_ROUTE_PREFIXES, ...STANDALONE_ROUTE_PREFIXES].some((p) =>
@@ -138,7 +154,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         {/* 頁首與頁面注入的第二列同屬一個 sticky 容器，一起固定在畫面上方。 */}
-        <div className="safe-top sticky top-0 z-30 border-b border-brand-900/10 bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+        <div ref={headerRef} className="safe-top sticky top-0 z-30 border-b border-brand-900/10 bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70">
           <header className="flex min-h-[var(--app-header-h)] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 sm:px-6 md:max-lg:gap-x-2 md:max-lg:px-4">
             <button
               onClick={() => setDrawerOpen(true)}

@@ -11,6 +11,7 @@ import Tabs from "@/components/ui/Tabs";
 import Badge from "@/components/ui/Badge";
 import { type Customer } from "@/lib/mock/customer";
 import { useCustomerRows } from "@/lib/domain/legacySelectors";
+import { HOSPITALS } from "@/lib/domain/options";
 import { caseActions, domainStore } from "@/lib/demo/domainStore";
 import DemoActionButton from "@/components/ui/DemoActionButton";
 import { buttonStyles } from "@/components/ui/buttonStyles";
@@ -120,7 +121,7 @@ function DetailTabs({
           label: "生產與醫療資訊",
           content: (
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <Field label="預計生產醫院" value="景星婦幼醫院" />
+              <Field label="預計生產醫院" value={HOSPITALS[0]} />
               <Field label="主治醫師" value="陳O如醫師" />
               <Field label="預計生產方式" value="自然產" />
               <Field label="醫院端病歷號" value="H2026081234" />

@@ -1,8 +1,29 @@
 import type { CaseRecord, WindowRule } from "./types";
+import { hospitalTier, type HospitalTier } from "./options";
+
+/**
+ * 房型 × 生產院所的每日房價 —— 取自客戶手冊第 39 頁「早鳥活動－退費試算.xlsx」。
+ *
+ * 精緻房與 VIP 房三欄都有明列；VILLA 只列了院內 9,600 與院外 10,000，
+ * 中間的成大／奇美一欄原表沒有，先按其院內→院外加價 400 的一半估 9,800，**待客戶確認**。
+ *
+ * ⚠️ 不要再寫成「基價＋固定加價」：VILLA 的院外加價是 400，和精緻／VIP 的 300 不同，
+ * 用單一加價算出來的 VIP／VILLA 會整欄少 100 元（原本就是這樣錯的）。
+ */
+export const ROOM_RATES: Record<CaseRecord["roomType"], Record<HospitalTier, number>> = {
+  精緻: { 院內: 7500, 成大奇美: 7650, 院外: 7800 },
+  VIP: { 院內: 8600, 成大奇美: 8750, 院外: 8900 },
+  VILLA: { 院內: 9600, 成大奇美: 9800, 院外: 10000 },
+};
+
+/** 某房型在某院所級距的每日房價。 */
+export function roomDailyRate(roomType: CaseRecord["roomType"], hospital: string) {
+  return ROOM_RATES[roomType][hospitalTier(hospital)];
+}
 
 export function casePrice(record: Pick<CaseRecord, "roomType" | "days" | "hospital" | "priceClass" | "addOns">) {
-  const base = { 精緻: 7500, VIP: 8500, VILLA: 9500 }[record.roomType];
-  const hospital = record.hospital.includes("園內") || record.hospital === "園內" ? 0 : ["成大", "奇美", "成大／奇美"].includes(record.hospital) ? 150 : 300;
+  const base = ROOM_RATES[record.roomType].院內;
+  const hospital = roomDailyRate(record.roomType, record.hospital) - base;
   const multiplier = record.priceClass === "員工價" ? 0.9 : record.priceClass === "特約企業" ? 0.95 : 1;
   const paid = Math.max(0, record.days - freeDays(record.days));
   const addOns = record.addOns ?? [];
@@ -10,8 +31,8 @@ export function casePrice(record: Pick<CaseRecord, "roomType" | "days" | "hospit
   return Math.round((base + hospital) * paid * multiplier + (upgrade ? 1000 * paid : 0) + (upgrade && addOns.includes("餐點一併升等") ? 300 * paid : 0) + (addOns.includes("紅蟳火鍋") ? 1200 : 0));
 }
 export function casePriceBreakdown(record: Pick<CaseRecord, "roomType" | "days" | "hospital" | "priceClass" | "addOns">) {
-  const baseDaily = { 精緻: 7500, VIP: 8500, VILLA: 9500 }[record.roomType];
-  const hospitalDaily = record.hospital.includes("園內") || record.hospital === "園內" ? 0 : ["成大", "奇美", "成大／奇美"].includes(record.hospital) ? 150 : 300;
+  const baseDaily = ROOM_RATES[record.roomType].院內;
+  const hospitalDaily = roomDailyRate(record.roomType, record.hospital) - baseDaily;
   const multiplier = record.priceClass === "員工價" ? 0.9 : record.priceClass === "特約企業" ? 0.95 : 1;
   const giftedDays = freeDays(record.days); const paidDays = Math.max(0, record.days - giftedDays);
   const upgradeDaily = (record.addOns ?? []).includes("升等房間") && record.roomType !== "VILLA" ? 1000 : 0;
@@ -19,7 +40,12 @@ export function casePriceBreakdown(record: Pick<CaseRecord, "roomType" | "days" 
   const oneTime = (record.addOns ?? []).includes("紅蟳火鍋") ? 1200 : 0;
   return { baseDaily, hospitalDaily, multiplier, paidDays, giftedDays, upgradeDaily, mealUpgradeDaily, oneTime, total: casePrice(record) };
 }
-export function freeDays(days: number) { return days >= 29 ? 2 : days >= 24 ? 1 : 0; }
+/**
+ * 贈送天數：住 21 天贈 1 天、住 28 天贈 2 天。
+ * 依客戶手冊第 47 頁月統計表的天數級距（0-14／15-21／**21+1**／**28+2**／30／其他）回推，
+ * 原本寫的 24／29 門檻是錯的。
+ */
+export function freeDays(days: number) { return days >= 28 ? 2 : days >= 21 ? 1 : 0; }
 export function gifts(days: number) { return days >= 30 ? ["胸腺疏通", "維納斯身體雕塑"] : days >= 21 ? ["胸腺疏通"] : []; }
 export function caseNextAction(record: CaseRecord) {
   if (record.closed) return "案件已結案";
@@ -63,7 +89,8 @@ export function caseTransitionErrors(record: CaseRecord, reviewDays = 5): string
   if (record.reviewStart && record.signedDate && record.reviewStart > record.signedDate) errors.push("攜回審閱日不能晚於簽約日。");
   if (record.stage === 3 && record.reviewStart && record.signedDate && Date.parse(record.signedDate) - Date.parse(record.reviewStart) < reviewDays * 86_400_000) errors.push(`示範審閱期為 ${reviewDays} 天，攜回審閱日須再往前調整。`);
   if (record.stage === 4 && (!record.actualAdmission || !record.room)) errors.push("請填寫實際入住日並選擇房間。");
-  if (record.stage === 6 && (!record.settlementDone || record.checkoutChecklist.length < 6)) errors.push("請完成尾款結算與全部返家點交項目。");
+  if (record.stage === 6 && !record.settlementDone) errors.push("請完成尾款結算。");
+  if (record.stage === 6 && !record.checkoutCompletedAt) errors.push("請完成返家檢查表（29 項逐項確認）。");
   if (record.stage === 6 && record.childcare && (!record.childcareCar.trim() || !record.childcareContact.trim() || record.childcareDays < 1)) errors.push("續留托嬰須填車號、接送人與天數。");
   return errors;
 }

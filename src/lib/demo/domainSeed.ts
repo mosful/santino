@@ -14,12 +14,14 @@ export const DEMO_PHONE = "0912345678";
 export const DEMO_PASSCODE = "123456";
 
 import { DEFAULT_PRINT_SETTINGS } from "../babycam/wristband-print";
+import { HOSPITALS } from "../domain/options";
+import { DEFAULT_CHECKOUT_ITEMS } from "../domain/checkout";
 import type { CaseRecord, DemoDomain, WindowRule } from "../domain/types";
 import { casePrice } from "../domain/rules";
 
 export const inheritWindow = (): WindowRule => ({ mode: "inherit", start: "10:00", end: "20:00" });
 export function blankCase(id: string): CaseRecord {
-  return { id, legacyId: 0, customerId: `customer-${id}`, name: "", phone: "", dueDate: "", idNo: "", stage: 0, closed: false, forced: false, owner: "櫃台", room: "", roomType: "精緻", days: 24, contractNo: "", deposit: 0, tasting: false, visitDate: "", visitStatus: "未出席", source: "網路推薦", hospital: "景星（園內）", priceClass: "一般", corporateCompany: "", note: "", category: "懷孕", parity: "第 1 胎", deliveryMethod: "未定", visitTime: "14:00", receptionist: "林小姐", visitIntent: "考慮中", visitNote: "", orderDate: "", paymentMethod: "轉帳", orderNote: "", quotedAmount: 180000, overrideAmount: null, overrideReason: "", signed: false, contractVersion: 0, reviewStart: "", signedDate: "", actualAdmission: "", dischargedAt: "", checkoutChecklist: [], settlementDone: false, prenatalContactDone: false, hospitalizationNoticeDone: false, dischargeNoticeDone: false, preAdmissionPapersDone: false, admissionGuidanceDone: false, admissionPaymentNoticeDone: false, checkoutNote: "", childcare: false, childcareEnded: false, childcareCar: "", childcareDays: 2, childcareFee: 2500, childcareContact: "", completed: [], ledger: [], payments: [], log: [], milkChoice: "母乳" };
+  return { id, legacyId: 0, customerId: `customer-${id}`, name: "", phone: "", dueDate: "", idNo: "", stage: 0, closed: false, forced: false, owner: "櫃台", room: "", roomType: "精緻", days: 24, contractNo: "", deposit: 0, tasting: false, visitDate: "", visitStatus: "未出席", source: "網路推薦", hospital: HOSPITALS[0], priceClass: "一般", corporateCompany: "", note: "", category: "懷孕", parity: "第 1 胎", deliveryMethod: "未定", visitTime: "14:00", receptionist: "林小姐", visitIntent: "考慮中", visitNote: "", orderDate: "", paymentMethod: "轉帳", orderNote: "", quotedAmount: 180000, overrideAmount: null, overrideReason: "", signed: false, contractVersion: 0, reviewStart: "", signedDate: "", actualAdmission: "", dischargedAt: "", settlementDone: false, prenatalContactDone: false, hospitalizationNoticeDone: false, dischargeNoticeDone: false, preAdmissionPapersDone: false, admissionGuidanceDone: false, admissionPaymentNoticeDone: false, checkoutNote: "", childcare: false, childcareEnded: false, childcareCar: "", childcareDays: 2, childcareFee: 2500, childcareContact: "", completed: [], ledger: [], payments: [], log: [], milkChoice: "母乳" };
 }
 const occupied = MAMA_ROOMS.filter((room) => room.motherName);
 const cases: CaseRecord[] = occupied.map((room, index) => {
@@ -76,7 +78,7 @@ export const DISPLAY_STATE_SEED: DemoDomain["displayStates"] = STATE_BACKGROUNDS
 }));
 
 export const DOMAIN_SEED: DemoDomain = {
-  version: 3, subjects: structuredClone(CARE_SUBJECTS), cases,
+  version: 4, subjects: structuredClone(CARE_SUBJECTS), cases, checkoutItems: structuredClone(DEFAULT_CHECKOUT_ITEMS),
   cameras: cameraCodes.map((code, index) => ({ id: `camera-${index + 1}`, code, zone: code[0] as "A" | "B", enabled: true, codec: cameraCodec(code) ?? "H.264", health: index === 12 ? "異常" : "正常", lastShotAt: "2026-10-16T12:00:00+08:00", scheduleInternal: inheritWindow(), scheduleFamily: inheritWindow(), baseline: false })),
   bindings: cases.filter((record) => record.stage === 5 || record.childcare && !record.childcareEnded).map((record, index) => ({
     id: `binding-${record.id}`, caseId: record.id, room: record.room, motherName: record.name, phone: record.phone,

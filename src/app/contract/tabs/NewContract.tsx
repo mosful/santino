@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import LegacyCaseScope from "@/components/cases/LegacyCaseScope";
 import { caseActions } from "@/lib/demo/domainStore";
 import type { CaseRecord } from "@/lib/domain/types";
+import { HOSPITALS } from "@/lib/domain/options";
 import PrototypeFormActions from "@/components/ui/PrototypeFormActions";
 
 function Field({ label, placeholder, value, readOnly }: { label: string; placeholder?: string; value?: string | number; readOnly?: boolean }) {
@@ -25,7 +26,7 @@ function NewContractForm({ record }: { record: CaseRecord }) {
     if (!["精緻", "VIP", "VILLA"].includes(rawType)) throw new Error("房型請填精緻、VIP 或 VILLA。");
     const addOns = [fields.has("hotpot") ? "紅蟳火鍋" : "", fields.has("gift") ? "蒙娜麗莎之吻（當天下訂且需訂位）" : "", upgradeVip ? "升等房間" : "", upgradeVip && mealFollowsUpgrade ? "餐點一併升等" : ""].filter(Boolean);
     const hospital = String(fields.get("hospital")); const priceClass = String(fields.get("priceClass"));
-    caseActions.update(record.id, { roomType: rawType as CaseRecord["roomType"], days: Number(fields.get("住房天數")), addOns, tasting: fields.has("tasting"), bossGift: String(fields.get("bossGift") ?? ""), hospital: hospital.startsWith("園內") ? "園內" : hospital.startsWith("成大") ? "成大／奇美" : "其他", priceClass: priceClass === "一般價" ? "一般" : priceClass === "員工價" ? "員工價" : "特約企業" });
+    caseActions.update(record.id, { roomType: rawType as CaseRecord["roomType"], days: Number(fields.get("住房天數")), addOns, tasting: fields.has("tasting"), bossGift: String(fields.get("bossGift") ?? ""), hospital, priceClass: priceClass === "一般價" ? "一般" : priceClass === "員工價" ? "員工價" : "特約企業" });
     caseActions.save(record.id);
   }
 
@@ -92,10 +93,8 @@ function NewContractForm({ record }: { record: CaseRecord }) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="mb-1 block text-xs text-stone-500">生產院所分級</label>
-            <select name="hospital" defaultValue={record.hospital === "園內" ? "園內生產院所（最優惠）" : record.hospital === "成大／奇美" ? "成大/奇美（次之）" : "其他院所"} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm">
-              <option>園內生產院所（最優惠）</option>
-              <option>成大/奇美（次之）</option>
-              <option>其他院所</option>
+            <select name="hospital" defaultValue={HOSPITALS.find((item) => item === record.hospital) ?? HOSPITALS[0]} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm">
+              {HOSPITALS.map((item) => <option key={item}>{item}</option>)}
             </select>
           </div>
           <div>

@@ -11,22 +11,35 @@ import { ChevronDown } from "lucide-react";
 
   ⚠️ localStorage 是外部狀態，用 useSyncExternalStore 讀，不要在 effect 裡 setState：
   本專案是靜態匯出，伺服器端一律當「展開」，水合後才切到記住的值，否則會 hydration 失敗。
+
+  ⚠️ 儲存格式是 id → 收合與否的**對照表**，不是「收合中的 id 清單」：
+  有了 defaultCollapsed（預設收合的區塊，例如退房的三張單）之後，必須分得出
+  「使用者沒動過」和「使用者把它展開了」，用清單表達不了後者。
+  舊版的陣列格式會在讀取時自動轉過來。
 */
 
 const STORAGE_KEY = "santino_collapsed_sections_v1";
 const listeners = new Set<() => void>();
-let cache: string[] | null = null;
+type CollapsedMap = Record<string, boolean>;
+let cache: CollapsedMap | null = null;
 /** 伺服器端與水合首幀共用的空集合；必須是同一個物件，否則每次呼叫都會觸發重渲染。 */
-const EMPTY: string[] = [];
+const EMPTY: CollapsedMap = {};
 
-function read(): string[] {
+function read(): CollapsedMap {
   if (cache) return cache;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-    cache = Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+    const parsed: unknown = raw ? JSON.parse(raw) : {};
+    if (Array.isArray(parsed)) {
+      // 舊格式（收合中的 id 清單）→ 對照表。
+      cache = Object.fromEntries(parsed.filter((item): item is string => typeof item === "string").map((item) => [item, true]));
+    } else if (parsed && typeof parsed === "object") {
+      cache = Object.fromEntries(Object.entries(parsed as Record<string, unknown>).filter(([, value]) => typeof value === "boolean")) as CollapsedMap;
+    } else {
+      cache = {};
+    }
   } catch {
-    cache = [];
+    cache = {};
   }
   return cache;
 }
@@ -38,19 +51,18 @@ function subscribe(listener: () => void) {
   };
 }
 
-function toggle(id: string) {
-  const next = read().includes(id) ? read().filter((item) => item !== id) : [...read(), id];
-  cache = next;
+function setCollapsed(id: string, collapsed: boolean) {
+  cache = { ...read(), [id]: collapsed };
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cache));
   } catch {
     // 隱私模式讀寫會丟例外；記不住就算了，不影響操作。
   }
   listeners.forEach((item) => item());
 }
 
-/** 目前收合中的區塊代號集合。 */
-export function useCollapsed(): string[] {
+/** 目前各區塊的收合狀態；沒有記錄的區塊不在表內。 */
+export function useCollapsed(): CollapsedMap {
   return useSyncExternalStore(subscribe, read, () => EMPTY);
 }
 
@@ -63,6 +75,7 @@ export default function CollapsibleSection({
   children,
   className = "",
   bodyClassName = "",
+  defaultCollapsed = false,
 }: {
   /** 收合狀態的儲存代號；換掉等於重置使用者的收合偏好。 */
   id: string;
@@ -74,8 +87,10 @@ export default function CollapsibleSection({
   children: ReactNode;
   className?: string;
   bodyClassName?: string;
+  /** 使用者沒動過時的預設狀態；長表單（例如退房的三張單）預設收起來比較好找。 */
+  defaultCollapsed?: boolean;
 }) {
-  const collapsed = useCollapsed().includes(id);
+  const collapsed = useCollapsed()[id] ?? defaultCollapsed;
   const bodyId = `section-${id}`;
 
   return (
@@ -83,7 +98,7 @@ export default function CollapsibleSection({
       <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 sm:px-4">
         <button
           type="button"
-          onClick={() => toggle(id)}
+          onClick={() => setCollapsed(id, !collapsed)}
           aria-expanded={!collapsed}
           aria-controls={bodyId}
           // ⚠️ 要明寫 justify-start：globals.css 把所有 button 設成置中的 inline-flex，

@@ -58,7 +58,7 @@ export function ReturnInspection({ record, editable }: { record: CaseRecord; edi
     try { action(); setMessage(success); } catch (error) { setMessage(error instanceof Error ? error.message : "操作失敗。"); }
   }
   const reasonOf = (item: string) => reasons[item] ?? record.roomInspection?.[item]?.reason ?? "";
-  return <CollapsibleSection id="case-return-inspection" title="返家檢查表" summary={`${done}／${INSPECTION_ITEMS.length} 項`} bodyClassName="space-y-4">
+  return <CollapsibleSection id="case-return-inspection" title="返家檢查表" summary={`${done}／${INSPECTION_ITEMS.length} 項`} bodyClassName="space-y-4" defaultCollapsed>
     <p className="text-sm text-stone-600">退房當天逐項點交；標「異常」必須填原因，完成時會把異常項目寫進案件歷程。{record.checkoutCompletedAt ? "本表已完成。" : ""}</p>
     {editable && <div className="flex flex-wrap gap-2">
       <button type="button" className={button} onClick={() => run(() => caseActions.inspectAllNormal(record.id), "尚未檢查的項目已標記為正常。")}>未檢查的一次標正常</button>
@@ -104,7 +104,7 @@ export function ReturnGuide({ record, editable }: { record: CaseRecord; editable
   function run(action: () => void, success = "") {
     try { action(); setMessage(success); } catch (error) { setMessage(error instanceof Error ? error.message : "操作失敗。"); }
   }
-  return <CollapsibleSection id="case-return-guide" title="返家指導單" summary={`應收 ${total.toLocaleString("zh-TW")} 元`} bodyClassName="space-y-4">
+  return <CollapsibleSection id="case-return-guide" title="返家指導單" summary={`應收 ${total.toLocaleString("zh-TW")} 元`} bodyClassName="space-y-4" defaultCollapsed>
     <p className="text-sm text-stone-600">入住期間提供的品項請於退房歸還，未歸還依單價計價；單價於「後台管理 → 基礎主檔設定」維護。</p>
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left text-sm">
@@ -159,7 +159,7 @@ export function RefundCalculator({ record, editable }: { record: CaseRecord; edi
   const babyDiff = Math.max(0, contractDays - (Number(babyDays) || 0));
   const refund = diffDays * daily + babyDiff * (Number(babyDailyRefund) || 0);
 
-  return <CollapsibleSection id="case-refund" title="退費試算" summary={`可退 ${refund.toLocaleString("zh-TW")} 元`} bodyClassName="space-y-4">
+  return <CollapsibleSection id="case-refund" title="退費試算" summary={`可退 ${refund.toLocaleString("zh-TW")} 元`} bodyClassName="space-y-4" defaultCollapsed>
     <p className="text-sm text-stone-600">提前返家時用；差異天數 × 每日房價，贈送天數不列入退費。實際退費仍以院方核定為準。</p>
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       <div className="space-y-2 text-sm"><span className="text-stone-500">合約天數（含贈 {gifted} 天）</span><p className="text-lg font-semibold tabular-nums">{contractDays} 天</p></div>

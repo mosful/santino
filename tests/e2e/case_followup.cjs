@@ -21,11 +21,14 @@ const assert = require("node:assert/strict"); const fs = require("node:fs/promis
   const image = Buffer.from(await page.evaluate(() => { const canvas = document.createElement("canvas"); canvas.width = 100; canvas.height = 60; canvas.getContext("2d").fillRect(0, 0, 100, 60); return canvas.toDataURL().split(",")[1]; }), "base64");
   await page.getByLabel("返家照片", { exact: true }).setInputFiles({ name: "匿名返家.png", mimeType: "image/png", buffer: image }); await page.getByAltText("匿名返家照片").waitFor(); await page.getByRole("button", { name: "模擬寄送返家照片", exact: true }).click(); await page.getByText("寄送示意紀錄 1 次；不連線郵件服務。", { exact: true }).waitFor();
   // 返家指導單：房卡發 2 還 1（未還 100 元）＋黃疸照光 100，合計寫入帳務。
+  // 退房的三張單預設收合（客戶要求），操作前要先展開。
+  await page.getByRole("button", { name: /^返家指導單/ }).click();
   await page.getByLabel("房卡歸還數", { exact: true }).fill("1");
   await page.getByLabel("A：黃疸照光", { exact: true }).fill("100");
   await page.getByRole("button", { name: "應收寫入帳務", exact: true }).click();
   await page.getByText("返家應收已寫入帳務。", { exact: true }).waitFor();
   // 返家檢查表 29 項：先標一項異常，其餘一次標正常。
+  await page.getByRole("button", { name: /^返家檢查表/ }).click();
   await page.getByLabel("免治馬桶 異常原因", { exact: true }).fill("沖水無力");
   await page.getByRole("row", { name: /免治馬桶/ }).getByRole("button", { name: "異常", exact: true }).click();
   await page.getByRole("button", { name: "未檢查的一次標正常", exact: true }).click();

@@ -27,7 +27,6 @@ import BindingEditor from "./BindingEditor";
 import MaintenanceConsole from "./MaintenanceConsole";
 import DemoReset from "./DemoReset";
 import { cameraTimeRows } from "@/lib/babycam/cameraTime";
-import { toCsv } from "@/lib/babycam/csv";
 import { PrintSettingsEditor, CameraMetadata } from "./BabycamMasterPanels";
 import StateMaintenance from "./StateMaintenance";
 import { LightStatePanel, RelayBoard, RingLightBoard } from "./RingLightPanels";
@@ -879,9 +878,6 @@ export default function BabycamWorkspace({
                 }
               >
                 匯出 Excel
-              </Button>
-              <Button size="sm" onClick={() => downloadFile("寶寶視訊報表.csv", toCsv(reportHeaders, filteredRows), "text/csv;charset=utf-8")}>
-                匯出 CSV
               </Button>
             </div>
             <div className="overflow-x-auto rounded-xl border border-border-subtle">

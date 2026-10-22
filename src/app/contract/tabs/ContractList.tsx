@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ButtonLink } from "@/components/ui/Button";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Badge from "@/components/ui/Badge";
 import { type Contract } from "@/lib/mock/contract";
@@ -42,10 +43,14 @@ export default function ContractList() {
       <div className="rounded bg-stone-50 p-2 text-xs text-stone-500">
         共用案件共{CONTRACTS.length}筆合約；有效合約{CONTRACTS.length}筆；作廢合約0筆；已付訂金{CONTRACTS.length}筆；訂金總額${totalDeposit.toLocaleString()}
       </div>
-      <p className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-700">
-        ⚠ 合約金額一經簽約即鎖定，不提供直接編輯／刪除。新增、金額異動（留存變更 log）與退約作廢，
-        一律回到「案件流程」的同一件案子辦理；本頁僅供查詢（見訪談整理 v2 規則）。
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded border border-amber-200 bg-amber-50 p-2">
+        <p className="text-xs text-amber-700">
+          ⚠ 合約金額一經簽約即鎖定，本頁不提供直接編輯／刪除。新增合約、金額異動（留存變更 log）與退約作廢，
+          一律在「案件流程」的同一件案子辦理：新增＝建立預約後走到「合約」階段；修改＝在該案的合約與帳務區調整
+          （見訪談整理 v2 規則）。
+        </p>
+        <ButtonLink href="/cases/" size="sm">前往案件流程新增／異動</ButtonLink>
+      </div>
       <QueryList columns={columns} rows={CONTRACTS} searchPlaceholder="合約編號/姓名/手機/證號" />
     </div>
   );

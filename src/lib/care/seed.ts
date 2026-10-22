@@ -13,7 +13,7 @@ export const CARE_SUBJECTS: CareSubject[] = [
     const mother = MAMA_ROOMS.find((item) => item.room === room.room);
     return {
       id: `baby-${room.chartNo}`, caseId: mother ? `stay-${mother.chartNo}` : room.caseId!, kind: "baby" as const,
-      room: room.boarding ? "" : room.room, carNo: room.carNo, name: `${room.babyName!.slice(0, 1)}○寶`,
+      room: room.boarding ? "" : room.room, carNo: room.carNo, previousRoom: room.previousRoom, name: `${room.babyName!.slice(0, 1)}○寶`,
       motherName: mother?.motherName ?? "示範托嬰媽媽", chartNo: room.chartNo!, status: room.status,
       stayDay: mother?.stayDay ?? 1, birthDate: room.birthDate, gender: room.gender,
     };

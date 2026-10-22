@@ -43,10 +43,12 @@ test("心情門檻及回補期限端點", () => {
   assert.equal(moodNeedsAttention({ score: "12", question10: "1" }), false);
   assert.equal(moodNeedsAttention({ score: "13" }), true);
   assert.equal(moodNeedsAttention({ question10: "2" }), true);
+  // 退房日起算到第 3 天的 23:59:59.999（台北時區），與退房當下的時分無關。
   const historical = { ...first, historical: true, dischargedAt: "2026-10-15T09:00:00+08:00" };
-  assert.equal(backfillDeadline(historical, 3), "2026-10-18T01:00:00.000Z");
-  assert.equal(isBackfillExpired(historical, 3, new Date("2026-10-18T09:00:00+08:00")), false);
-  assert.equal(isBackfillExpired(historical, 3, new Date("2026-10-18T09:00:01+08:00")), true);
+  assert.equal(backfillDeadline(historical, 3), "2026-10-18T15:59:59.999Z");
+  assert.equal(backfillDeadline({ ...historical, dischargedAt: "2026-10-15T23:30:00+08:00" }, 3), "2026-10-18T15:59:59.999Z");
+  assert.equal(isBackfillExpired(historical, 3, new Date("2026-10-18T23:59:59+08:00")), false);
+  assert.equal(isBackfillExpired(historical, 3, new Date("2026-10-19T00:00:00+08:00")), true);
 });
 test("不同房只能一位編輯，解鎖後舊房無法寫入", () => {
   reset(); careActions.open(first.id, "record"); careActions.open(second.id, "record");
@@ -91,13 +93,43 @@ test("同房退房舊案與新住客的文件鍵不同，草稿關閉可恢復",
   careActions.change(key, { note: "待補內容" }); careActions.save(key); careActions.close(key); careActions.open(first.id, "record");
   assert.equal(careStore.get().documents[key].values.note, "待補內容");
 });
-test("逾期回補須主管與原因，完成紀錄以操作者署名", () => {
+test("已簽出紀錄可再次修改與刪除，修改不另開新筆並留下修改者", () => {
+  reset(); setCurrentRole("護理師 陳護理師");
+  careActions.open(first.id, "record"); const key = `${first.id}:record`;
+  careActions.change(key, { note: "第一版紀錄" }); careActions.complete(key);
+  const before = careStore.get().entries.length;
+  const entry = careStore.get().entries[0];
+  assert.equal(entry.values.note, "第一版紀錄");
+
+  careActions.editEntry(entry.id);
+  assert.equal(careStore.get().documents[key].editingEntryId, entry.id);
+  careActions.change(key, { note: "修正後紀錄" }); careActions.complete(key);
+  const revised = careStore.get().entries.find((item) => item.id === entry.id)!;
+  assert.equal(careStore.get().entries.length, before, "修改既有紀錄不應再新增一筆");
+  assert.equal(revised.values.note, "修正後紀錄");
+  assert.equal(revised.revisions?.length, 1);
+  assert.match(revised.revisions![0].author, /陳護理師/);
+  assert.equal(careStore.get().documents[key].editingEntryId, undefined);
+
+  assert.throws(() => careActions.deleteEntry(entry.id, "  "), /原因/);
+  careActions.deleteEntry(entry.id, "示範重複登錄");
+  assert.equal(careStore.get().entries.some((item) => item.id === entry.id), false);
+  assert.match(careStore.get().events[0].action, /刪除已簽出紀錄/);
+});
+test("逾期回補：主管可直接補，其餘角色須主管授權，完成紀錄以操作者署名", () => {
   reset(); const old = CARE_SUBJECTS.find((subject) => subject.kind === "mama" && subject.historical && subject.dischargedAt?.includes("10-10"))!;
   careActions.open(old.id, "record"); const key = `${old.id}:record`;
+  setCurrentRole("護理師 陳護理師");
   assert.throws(() => careActions.change(key, { note: "補登" }), /回補期限/);
-  setCurrentRole("護理師 陳護理師"); assert.throws(() => careActions.authorize(old.id, "補登"), /護理長/);
-  setCurrentRole("護理長 婉真"); assert.throws(() => careActions.authorize(old.id, ""), /原因/);
-  careActions.authorize(old.id, "示範主管授權"); careActions.change(key, { note: "授權後補登" }); careActions.complete(key);
+  assert.throws(() => careActions.authorize(old.id, "補登"), /護理長/);
+  // 逾期後護理長不需先授權自己就能補登（客戶 2026-10-22 指示）。
+  setCurrentRole("護理長 婉真"); careActions.change(key, { note: "主管直接補登" });
+  assert.equal(careStore.get().documents[key].values.note, "主管直接補登");
+  assert.throws(() => careActions.authorize(old.id, ""), /原因/);
+  careActions.authorize(old.id, "示範主管授權");
+  // 授權後，原本被擋的護理師也能補。
+  setCurrentRole("護理師 陳護理師"); careActions.change(key, { note: "授權後補登" });
+  setCurrentRole("護理長 婉真"); careActions.complete(key);
   assert.equal(careStore.get().entries[0].historical, true);
   assert.match(careStore.get().entries[0].author, /婉真/);
 });

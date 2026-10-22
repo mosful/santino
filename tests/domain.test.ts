@@ -92,6 +92,40 @@ test("入住前時間軸、分次付款與返家檢查保留稽核", () => {
   assert.ok(current.checkoutCompletedAt);
   assert.ok(current.log.some((entry) => entry.text.includes("返家檢查表完成")));
 });
+test("手動待辦可編輯與刪除，自動產生的待辦不可改", () => {
+  reset();
+  taskActions.add("2026-10-25", "關懷／提醒", "302 房產前關懷電話");
+  const task = domainStore.get().tasks.at(-1)!;
+  taskActions.update(task.id, "2026-10-26", "關懷／提醒", "改為 10/26 致電");
+  const updated = domainStore.get().tasks.find((item) => item.id === task.id)!;
+  assert.equal(updated.date, "2026-10-26");
+  assert.equal(updated.title, "改為 10/26 致電");
+  assert.throws(() => taskActions.update("case-demo-visit:參觀", "2026-10-26", "參觀", "亂改"), /只有手動新增/);
+  assert.throws(() => taskActions.remove("case-demo-visit:參觀"), /只有手動新增/);
+  taskActions.remove(task.id);
+  assert.equal(domainStore.get().tasks.some((item) => item.id === task.id), false);
+});
+test("付款紀錄可修改與刪除，必填原因且異動寫入案件歷程", () => {
+  reset(); const id = readyCase();
+  caseActions.update(id, { actualAdmission: "2026-10-21", room: "303" }); caseActions.advance(id);
+  caseActions.payment(id, 5000, "轉帳", "2026-10-21", "入住尾款第一筆");
+  const paymentId = domainStore.get().cases.find((item) => item.id === id)!.payments[0].id;
+  const balanceAfterPay = caseBalance(domainStore.get().cases.find((item) => item.id === id)!);
+
+  assert.throws(() => caseActions.updatePayment(id, paymentId, 8000, "現金", "2026-10-22", "改收現金", " "), /原因/);
+  caseActions.updatePayment(id, paymentId, 8000, "現金", "2026-10-22", "改收現金", "櫃台登錄金額有誤");
+  const edited = domainStore.get().cases.find((item) => item.id === id)!;
+  assert.equal(edited.payments.length, 1);
+  assert.equal(edited.payments[0].amount, 8000);
+  assert.equal(caseBalance(edited), balanceAfterPay - 3000);
+  assert.ok(edited.log.some((entry) => entry.text.includes("修改付款紀錄") && entry.text.includes("櫃台登錄金額有誤")));
+
+  assert.throws(() => caseActions.removePayment(id, paymentId, ""), /原因/);
+  caseActions.removePayment(id, paymentId, "重複登錄");
+  const removed = domainStore.get().cases.find((item) => item.id === id)!;
+  assert.equal(removed.payments.length, 0);
+  assert.ok(removed.log.some((entry) => entry.text.includes("刪除付款紀錄") && entry.text.includes("重複登錄")));
+});
 test("不同寶寶不得共用監視器／車號；單寶寶照護不遮蔽另一位", () => {
   reset(); const binding = domainStore.get().bindings[0]; const first = binding.babies[0];
   const firstSubject = domainStore.get().subjects.find((subject) => subject.id === first.babyId)!;

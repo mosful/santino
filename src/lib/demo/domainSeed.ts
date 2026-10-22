@@ -40,7 +40,7 @@ const next = blankCase("case-demo-appointment"); Object.assign(next, { legacyId:
 });
 for (const [index, baby] of CARE_SUBJECTS.filter((subject) => subject.kind === "baby" && subject.status === "托嬰" && !subject.historical).entries()) {
   const record = blankCase(baby.caseId);
-  Object.assign(record, { legacyId: Math.max(...cases.map((item) => item.legacyId)) + 1, name: baby.motherName, phone: DEMO_PHONE, stage: 6, closed: true, signed: true, actualAdmission: "2026-10-01", dischargedAt: "2026-10-15T09:00:00+08:00", childcare: true, childcareCar: baby.carNo ?? `T${index + 1}`, childcareDays: 7, childcareFee: 2500, childcareContact: "示範家長", days: 1, completed: [0, 1, 2, 3, 4, 5, 6] });
+  Object.assign(record, { legacyId: Math.max(...cases.map((item) => item.legacyId)) + 1, name: baby.motherName, phone: DEMO_PHONE, stage: 6, closed: true, signed: true, actualAdmission: "2026-10-01", dischargedAt: "2026-10-15T09:00:00+08:00", room: baby.previousRoom ?? "", childcare: true, childcareCar: baby.carNo ?? `T${index + 1}`, childcareDays: 7, childcareFee: 2500, childcareContact: "示範家長", days: 1, completed: [0, 1, 2, 3, 4, 5, 6] });
   record.quotedAmount = casePrice(record); cases.push(record);
 }
 const cameraCodes = ["A01", "A02", "A03", "A05", "A06", "A07", "A08", "A09", "A10", "A11", "A12", "A13", "A15", "A16", "A17", "A18", "A19", "A20", "A21", "A22", "A23", "B01", "B02", "B03", "B05", "B06", "B07", "B08", "B09", "B10", "B11", "B12", "B13"];
@@ -76,7 +76,7 @@ export const DISPLAY_STATE_SEED: DemoDomain["displayStates"] = STATE_BACKGROUNDS
 }));
 
 export const DOMAIN_SEED: DemoDomain = {
-  version: 2, subjects: structuredClone(CARE_SUBJECTS), cases,
+  version: 3, subjects: structuredClone(CARE_SUBJECTS), cases,
   cameras: cameraCodes.map((code, index) => ({ id: `camera-${index + 1}`, code, zone: code[0] as "A" | "B", enabled: true, codec: cameraCodec(code) ?? "H.264", health: index === 12 ? "異常" : "正常", lastShotAt: "2026-10-16T12:00:00+08:00", scheduleInternal: inheritWindow(), scheduleFamily: inheritWindow(), baseline: false })),
   bindings: cases.filter((record) => record.stage === 5 || record.childcare && !record.childcareEnded).map((record, index) => ({
     id: `binding-${record.id}`, caseId: record.id, room: record.room, motherName: record.name, phone: record.phone,

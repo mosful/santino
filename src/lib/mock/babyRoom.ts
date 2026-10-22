@@ -8,6 +8,8 @@ export type BabyRoom = {
   caseId?: string;
   room: string;
   carNo?: string;
+  /** 托嬰寶寶的媽媽退房前住的房號；托嬰沒有房號，靠這個回溯是哪一房的寶寶。 */
+  previousRoom?: string;
   boarding?: boolean;
   status: BabyStatus;
   gender?: BabyGender;
@@ -99,6 +101,7 @@ export const BOARDING_BABIES: BabyRoom[] = [
     caseId: "boarding-B20260818001",
     room: "",
     carNo: "07",
+    previousRoom: "502",
     boarding: true,
     status: "托嬰",
     gender: "男",
@@ -112,6 +115,7 @@ export const BOARDING_BABIES: BabyRoom[] = [
     caseId: "boarding-B20260822002",
     room: "",
     carNo: "12",
+    previousRoom: "506",
     boarding: true,
     status: "托嬰",
     gender: "女",

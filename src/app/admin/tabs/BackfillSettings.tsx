@@ -29,12 +29,18 @@ export default function BackfillSettings() {
           />
           天內開放回補資料
         </div>
+        <p className="mt-2 text-xs text-stone-600">
+          以<strong>退房當日</strong>起算到第 {care.backfillDays} 天的 23:59 截止。例：10/1 退房、期限 3 天 → 10/4 23:59 以前都可補，10/5 00:00 起算逾期。
+        </p>
+        <p className="mt-1 text-xs text-stone-600">
+          逾期後<strong>護理長與管理者可直接補登</strong>；其餘角色需由護理長或管理者填寫原因授權後才能補。
+        </p>
         <p className="mt-2 text-xs text-amber-700">
           ⚠ 客戶尚未定案此天數（訪談中提議「3 天」但本人加了問號），此為可調整參數示意，正式上線前需與客戶再確認。
         </p>
         {!canEditOperations && <p className="mt-1 text-xs font-medium text-stone-500">僅護理長及管理者可調整補登窗口。</p>}
         <p className="mt-1 text-xs text-stone-500">
-          逾期回補需主管授權並記錄原因；修改紀錄需正確歸屬實際登入員工，不可用共用帳號代填。
+          授權須記錄原因；修改紀錄需正確歸屬實際登入員工，不可用共用帳號代填。
         </p>
       </section>
 

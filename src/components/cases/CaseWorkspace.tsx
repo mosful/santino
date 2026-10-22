@@ -36,7 +36,66 @@ function PaymentRecords({ record, editable }: { record: CaseRecord; editable: bo
   const [date, setDate] = useState(new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" }));
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
-  return <CollapsibleSection id="case-payments" title="付款紀錄" summary={`${record.payments.length} 筆`} bodyClassName="space-y-4"><p className="text-sm text-stone-500">訂金另列於下訂階段；此處記錄後續分次付款並保留經手人。</p>{editable && <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Field label="付款金額" type="number" value={amount} onChange={setAmount} /><Field label="付款方式" value={method} options={["現金", "轉帳", "刷卡", "其他"]} onChange={setMethod} /><Field label="付款日期" type="date" value={date} onChange={setDate} /><Field label="備註" value={note} onChange={setNote} /><button type="button" className={buttonStyles({ variant: "primary", className: "xl:col-span-4 xl:justify-self-end" })} onClick={() => { try { caseActions.payment(record.id, Number(amount), method, date, note); setAmount(""); setNote(""); setMessage("付款紀錄已新增。"); } catch (error) { setMessage(error instanceof Error ? error.message : "新增付款失敗。"); } }}>新增付款</button></div>}<div className="overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead><tr className="border-b border-stone-200"><th className="p-2">日期</th><th className="p-2">方式</th><th className="p-2 text-right">金額</th><th className="p-2">經手／備註</th></tr></thead><tbody>{record.payments.map((item) => <tr key={item.id} className="border-b border-stone-100"><td className="p-2">{item.date}</td><td className="p-2">{item.method}</td><td className="p-2 text-right">{money(item.amount)}</td><td className="p-2">{item.actor}{item.note ? `｜${item.note}` : ""}</td></tr>)}</tbody></table>{!record.payments.length && <p className="py-4 text-center text-sm text-stone-400">尚無後續付款紀錄</p>}</div><div className="flex flex-wrap items-center justify-between gap-2"><p role="status" className="text-sm">{message}</p><button type="button" className={button} onClick={() => window.print()}>列印付款通知單</button></div></CollapsibleSection>;
+  /*
+    既有付款可以改、可以刪（客戶 2026-10-22：清單都要能再次編輯儲存），
+    但帳務異動一律要填原因，原值與新值都會寫進案件歷程，帳面才追得回來。
+  */
+  const [editingId, setEditingId] = useState("");
+  const [removingId, setRemovingId] = useState("");
+  const [reason, setReason] = useState("");
+  const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" });
+  function resetForm() { setEditingId(""); setRemovingId(""); setReason(""); setAmount(""); setNote(""); setMethod("轉帳"); setDate(today()); }
+  function run(action: () => void, success: string) {
+    try { action(); resetForm(); setMessage(success); }
+    catch (error) { setMessage(error instanceof Error ? error.message : "操作失敗。"); }
+  }
+  function startEdit(item: CaseRecord["payments"][number]) {
+    setEditingId(item.id); setRemovingId(""); setReason("");
+    setAmount(String(item.amount)); setMethod(item.method); setDate(item.date); setNote(item.note);
+  }
+  return <CollapsibleSection id="case-payments" title="付款紀錄" summary={`${record.payments.length} 筆`} bodyClassName="space-y-4">
+    <p className="text-sm text-stone-500">訂金另列於下訂階段；此處記錄後續分次付款並保留經手人。每一筆都可再次編輯或刪除，異動需填原因並寫入案件歷程。</p>
+    {editable && <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <Field label="付款金額" type="number" value={amount} onChange={setAmount} />
+      <Field label="付款方式" value={method} options={["現金", "轉帳", "刷卡", "其他"]} onChange={setMethod} />
+      <Field label="付款日期" type="date" value={date} onChange={setDate} />
+      <Field label="備註" value={note} onChange={setNote} />
+      {editingId && <div className="xl:col-span-4"><Field label="修改原因（必填）" value={reason} onChange={setReason} /></div>}
+      <div className="flex flex-wrap gap-2 xl:col-span-4 xl:justify-self-end">
+        {editingId && <button type="button" className={button} onClick={resetForm}>取消修改</button>}
+        <button type="button" className={buttonStyles({ variant: "primary" })} onClick={() => run(() => {
+          if (editingId) caseActions.updatePayment(record.id, editingId, Number(amount), method, date, note, reason);
+          else caseActions.payment(record.id, Number(amount), method, date, note);
+        }, editingId ? "付款紀錄已更新，異動寫入案件歷程。" : "付款紀錄已新增。")}>{editingId ? "儲存修改" : "新增付款"}</button>
+      </div>
+    </div>}
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[620px] text-left text-sm">
+        <thead><tr className="border-b border-stone-200"><th className="p-2">日期</th><th className="p-2">方式</th><th className="p-2 text-right">金額</th><th className="p-2">經手／備註</th>{editable && <th className="p-2">操作</th>}</tr></thead>
+        <tbody>{record.payments.map((item) => <tr key={item.id} className="border-b border-stone-100">
+          <td className="p-2">{item.date}</td>
+          <td className="p-2">{item.method}</td>
+          <td className="p-2 text-right">{money(item.amount)}</td>
+          <td className="p-2">{item.actor}{item.note ? `｜${item.note}` : ""}</td>
+          {editable && <td className="p-2"><div className="flex flex-wrap gap-2"><button type="button" className={buttonStyles({ size: "sm" })} onClick={() => startEdit(item)}>編輯</button><button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { setRemovingId(item.id); setEditingId(""); setReason(""); }}>刪除</button></div></td>}
+        </tr>)}</tbody>
+      </table>
+      {!record.payments.length && <p className="py-4 text-center text-sm text-stone-400">尚無後續付款紀錄</p>}
+    </div>
+    {removingId && editable && <div className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4">
+      <h3 className="font-semibold">刪除付款紀錄</h3>
+      <p className="text-sm">刪除後金額不再計入收款，原紀錄與原因會保留在案件歷程。</p>
+      <Field label="刪除原因（必填）" value={reason} onChange={setReason} />
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={button} onClick={resetForm}>取消</button>
+        <button type="button" className={buttonStyles({ variant: "danger" })} onClick={() => run(() => caseActions.removePayment(record.id, removingId, reason), "付款紀錄已刪除，異動寫入案件歷程。")}>確認刪除</button>
+      </div>
+    </div>}
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <p role="status" className="text-sm">{message}</p>
+      <button type="button" className={button} onClick={() => window.print()}>列印付款通知單</button>
+    </div>
+  </CollapsibleSection>;
 }
 
 function PricingCalculator({ onUse }: { onUse: (name: string, phone: string, preset: QuotePreset) => void }) {

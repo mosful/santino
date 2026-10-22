@@ -11,7 +11,7 @@ import { normalizeCartNo } from "../babycam/cart-no";
 
 function valid(value: unknown): value is DemoDomain {
   const data = value as DemoDomain | null;
-  if (!data || data.version !== 2 || !Array.isArray(data.cases) || !Array.isArray(data.subjects) || !Array.isArray(data.cameras) || !Array.isArray(data.bindings) || !Array.isArray(data.audit)) return false;
+  if (!data || data.version !== 3 || !Array.isArray(data.cases) || !Array.isArray(data.subjects) || !Array.isArray(data.cameras) || !Array.isArray(data.bindings) || !Array.isArray(data.audit)) return false;
   if (!data.cameras.length || !Array.isArray(data.displayStates) || !data.houseWindow || !data.internalWindow || !data.familyWindow || !data.bindings.every((binding) => Array.isArray(binding.babies) && Array.isArray(binding.sessions))) return false;
   data.careEvents ??= []; data.staff ??= structuredClone(DOMAIN_SEED.staff); data.sectionPermissions ??= structuredClone(DOMAIN_SEED.sectionPermissions);
   data.rooms ??= structuredClone(DOMAIN_SEED.rooms); data.printSettings ??= structuredClone(DOMAIN_SEED.printSettings); data.viewingHistory ??= [];
@@ -124,6 +124,35 @@ export const caseActions = {
     if (!Number.isFinite(amount) || amount <= 0 || !method || !date) throw new Error("請填寫付款金額、方式與日期。");
     domainStore.update((data) => { const record = findCase(data, id); const at = new Date().toISOString(); record.payments.unshift({ id: crypto.randomUUID(), amount, method, date, note: note.trim(), actor: currentActor(), at }); caseLog(record, `收款 ${amount.toLocaleString("zh-TW")} 元（${method}）${note.trim() ? `；${note.trim()}` : ""}`); audit(data, "新增付款紀錄", id); });
   },
+  /**
+   * 修改既有付款紀錄（客戶 2026-10-22：清單要能再次編輯儲存）。
+   * 必填修改原因，原值與新值一起寫入案件歷程與稽核，帳面可追溯。
+   */
+  updatePayment(id: string, paymentId: string, amount: number, method: string, date: string, note: string, reason: string) {
+    if (!Number.isFinite(amount) || amount <= 0 || !method || !date) throw new Error("請填寫付款金額、方式與日期。");
+    if (!reason.trim()) throw new Error("請填寫修改原因。");
+    domainStore.update((data) => {
+      const record = findCase(data, id);
+      const payment = record.payments.find((item) => item.id === paymentId);
+      if (!payment) throw new Error("找不到這筆付款紀錄。");
+      const before = `${payment.date}｜${payment.method}｜${payment.amount.toLocaleString("zh-TW")} 元`;
+      Object.assign(payment, { amount, method, date, note: note.trim(), actor: currentActor(), at: new Date().toISOString() });
+      caseLog(record, `修改付款紀錄：${before} → ${date}｜${method}｜${amount.toLocaleString("zh-TW")} 元；${reason.trim()}`);
+      audit(data, "修改付款紀錄", id);
+    });
+  },
+  /** 刪除既有付款紀錄；必填原因並保留在案件歷程。 */
+  removePayment(id: string, paymentId: string, reason: string) {
+    if (!reason.trim()) throw new Error("請填寫刪除原因。");
+    domainStore.update((data) => {
+      const record = findCase(data, id);
+      const payment = record.payments.find((item) => item.id === paymentId);
+      if (!payment) throw new Error("找不到這筆付款紀錄。");
+      record.payments = record.payments.filter((item) => item.id !== paymentId);
+      caseLog(record, `刪除付款紀錄：${payment.date}｜${payment.method}｜${payment.amount.toLocaleString("zh-TW")} 元；${reason.trim()}`);
+      audit(data, "刪除付款紀錄", id);
+    });
+  },
   checkoutProgress(id: string, started: boolean) {
     domainStore.update((data) => { const record = findCase(data, id); const at = new Date().toISOString(); if (started && !record.checkoutStartedAt) record.checkoutStartedAt = at; if (!started) { record.checkoutStartedAt = undefined; record.checkoutCompletedAt = undefined; } caseLog(record, started ? "開始返家檢查表" : "重新開啟返家檢查表"); });
   },
@@ -167,7 +196,8 @@ export const caseActions = {
         }
         record.dischargedAt = data.demoAt; record.closed = true;
         data.subjects.filter((subject) => subject.caseId === id).forEach((subject) => {
-          if (subject.kind === "baby" && record.childcare) { subject.room = ""; if (subject.id === babies[0]?.id) subject.carNo = record.childcareCar; subject.status = "托嬰"; }
+          // 托嬰沒有房號，但現場要知道是哪一房的寶寶：清掉 room 之前先把原房號留在 previousRoom。
+          if (subject.kind === "baby" && record.childcare) { subject.previousRoom = subject.room || record.room || subject.previousRoom; subject.room = ""; if (subject.id === babies[0]?.id) subject.carNo = record.childcareCar; subject.status = "托嬰"; }
           else { subject.status = "已退房"; subject.historical = true; subject.dischargedAt = record.dischargedAt; }
         });
         data.bindings.filter((binding) => binding.caseId === id).forEach((binding) => { binding.room = record.childcare ? "" : binding.room; if (!record.childcare) { data.cameraIntervals.filter((item) => item.bindingId === binding.id && !item.end).forEach((item) => { item.end = data.demoAt; }); binding.ended = true; data.careEvents.filter((event) => event.bindingId === binding.id && !event.end).forEach((event) => { event.end = data.demoAt; }); closeViewingHistory(data, binding.id, "退房或托嬰結束"); binding.sessions = []; } else if (!binding.ended) { const first = binding.babies.find((baby) => baby.babyId === babies[0]?.id); if (first) first.cartNo = record.childcareCar; binding.validTo = new Date(Date.parse(data.demoAt) + record.childcareDays * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" }); } });

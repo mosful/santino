@@ -14,7 +14,7 @@ import { careSubject } from "@/lib/care/subjects";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { careActions, careStore, useCareStore } from "@/lib/care/store";
 import { useAssessmentFields } from "@/lib/assessmentConfigStore";
-import { backfillDeadline, canAuthorizeCare, canEditCare, canViewCare, documentKey, isBackfillExpired, moodNeedsAttention, needsFeedingReassessment, taipeiTimestamp } from "@/lib/care/rules";
+import { backfillDeadline, canAuthorizeCare, canEditCare, canViewCare, documentKey, isBackfillBlocked, isBackfillExpired, moodNeedsAttention, needsFeedingReassessment, taipeiTimestamp } from "@/lib/care/rules";
 import type { CareKind, CareSignatureRole, CareSubject } from "@/lib/care/types";
 import CareFieldInput, { GrowthChart, buttonClass, inputClass, valueText } from "./CareFields";
 import CareSignature from "./CareSignature";
@@ -41,7 +41,13 @@ function subjectSummary(subject: CareSubject) {
     .join("｜");
 }
 
-function identity(subject: CareSubject) { const location = subject.room ? `房號 ${subject.room}${subject.carNo ? `｜車號 ${subject.carNo}` : ""}` : `車號 ${subject.carNo || "待指派"}`; return `${location}｜${subject.name}｜${subject.chartNo}`; }
+/** 托嬰沒有房號，識別改以車號為主，後面補上媽媽退房前的房號（v24 §4.6）。 */
+function identity(subject: CareSubject) {
+  const location = subject.room
+    ? `房號 ${subject.room}${subject.carNo ? `｜車號 ${subject.carNo}` : ""}`
+    : `車號 ${subject.carNo || "待指派"}${subject.previousRoom ? `｜原 ${subject.previousRoom} 房` : ""}`;
+  return `${location}｜${subject.name}｜${subject.chartNo}`;
+}
 const signatureRoles: { key: CareSignatureRole; label: string }[] = [{ key: "recipient", label: "媽媽／家屬簽名" }, { key: "executor", label: "執行者簽名" }, { key: "evaluator", label: "評值者簽名" }];
 const hydrationSubscribe = () => () => {};
 
@@ -60,7 +66,8 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   */
   type PendingAction =
     | "complete" | "all" | "unlock" | "authorize" | "workorder"
-    | { kind: "close-subject"; subjectId: string };
+    | { kind: "close-subject"; subjectId: string }
+    | { kind: "delete-entry"; entryId: string };
   const [pending, setPending] = useState<PendingAction | null>(null);
   /** 每位對象上次看的表單，切回這間房時回到原處。 */
   const [lastFormBySubject, setLastFormBySubject] = useState<Record<string, string>>({});
@@ -79,9 +86,14 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   const subject = document ? subjectFor(document.subjectId) : undefined;
   const form = forms.find((item) => item.key === document?.formKey);
   const hasActive = !!document && !!subject && !!form && !listVisible;
-  const expired = subject ? isBackfillExpired(subject, data.backfillDays) && !data.authorizations[subject.id] : false;
+  /*
+    「已逾期」與「不能編輯」是兩件事（客戶 2026-10-22）：逾期後護理長與管理者
+    仍可直接補登，其餘角色要先經授權。顯示用 expired，判斷編輯權一律用 blocked。
+  */
+  const expired = subject ? isBackfillExpired(subject, data.backfillDays) : false;
+  const blocked = subject ? isBackfillBlocked(role, subject, data.backfillDays, !!data.authorizations[subject.id]) : false;
   const permitted = !!subject && !!document && canEditCare(role, kind, document.formKey);
-  const editable = permitted && data.unlockedCase === subject?.caseId && !expired && !document?.signedAt;
+  const editable = permitted && data.unlockedCase === subject?.caseId && !blocked && !document?.signedAt;
   const openDocuments = data.open.map((key) => data.documents[key]).filter((item) => subjectFor(item.subjectId)?.kind === kind);
   /*
     表單列依「照護對象」分組。
@@ -105,6 +117,13 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   const searchedSubjects = domain.subjects.filter((item) => item.kind === kind).filter((item) => [item.name, item.motherName, item.room, item.carNo, item.chartNo].join(" ").toLowerCase().includes(query.toLowerCase()));
   const subjects = searchedSubjects.filter((item) => filter === "退房回補" ? item.historical : filter === "托嬰" ? !item.historical && item.status === "托嬰" : !item.historical);
   const backfillSubjects = filter === "在館" ? searchedSubjects.filter((item) => item.historical) : [];
+
+  /** 回補卡片上的逾期提示：主管看到的是「可直接補登」，其餘角色才是「需授權」。 */
+  function expiryHint(item: CareSubject) {
+    if (!isBackfillExpired(item, data.backfillDays)) return "";
+    if (data.authorizations[item.id]) return "（已授權回補）";
+    return canAuthorizeCare(role) ? "（已逾期，主管可直接補登）" : "（逾期需主管授權）";
+  }
 
   function run(action: () => void, success = "") {
     try { action(); setMessage(success); setPending(null); setReason(""); return true; }
@@ -159,8 +178,12 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
 
   if (!hydrated) return <div className="page-frame"><div className="h-16 animate-pulse rounded-xl bg-white/70" aria-label="照護工作區載入中" /></div>;
 
+  /** 確認面板目前針對的對象：關閉某一間房，或刪除某一筆已簽出紀錄。 */
+  const closeTarget = pending && typeof pending === "object" && pending.kind === "close-subject" ? pending : null;
+  const deleteTarget = pending && typeof pending === "object" && pending.kind === "delete-entry" ? pending : null;
+  const deletingEntry = deleteTarget ? data.entries.find((entry) => entry.id === deleteTarget.entryId) : undefined;
   /** 確認面板要關閉的那一間房怎麼稱呼（可能不是目前作用中的那一間）。 */
-  const closingSubject = pending && typeof pending === "object" ? subjectFor(pending.subjectId) : undefined;
+  const closingSubject = closeTarget ? subjectFor(closeTarget.subjectId) : undefined;
   const closingLabel = closingSubject
     ? `${closingSubject.room || closingSubject.carNo || ""} ${closingSubject.name}`.trim()
     : "";
@@ -179,25 +202,27 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
       */}
       {hasActive ? <>
         {pending && <section ref={confirmation} className="mb-6 space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4" aria-label="頁內操作確認" data-no-print>
-          <h3 className="font-semibold">{pending && typeof pending === "object" ? `關閉 ${closingLabel}的所有表單` : ({ complete: "確認完成簽出", all: "保留草稿並關閉全部表單", unlock: "切換編輯對象", authorize: "逾期回補授權", workorder: "建立示範工單" })[pending]}</h3>
-          <p className="text-sm">{pending === "complete" ? `請確認 ${identity(subject)} 的資料無誤。簽出後保留本筆紀錄，後續請新增一筆。` : pending === "unlock" ? "切換後其他對象改為唯讀，原有草稿會保留。" : pending && typeof pending === "object" ? "可保留草稿後關閉這一間，或捨棄這間尚未簽出的草稿。" : "這項操作會保留目前操作者與時間。"}</p>
-          {typeof pending === "string" && ["authorize", "workorder"].includes(pending) && <label className="block text-sm">{pending === "authorize" ? "授權原因（必填）" : "工單內容（必填）"}<textarea className={`${inputClass} mt-2`} value={reason} onChange={(event) => setReason(event.target.value)} /></label>}
+          <h3 className="font-semibold">{closeTarget ? `關閉 ${closingLabel}的所有表單` : deleteTarget ? "刪除已簽出紀錄" : ({ complete: "確認完成簽出", all: "保留草稿並關閉全部表單", unlock: "切換編輯對象", authorize: "逾期回補授權", workorder: "建立示範工單" })[pending as "complete" | "all" | "unlock" | "authorize" | "workorder"]}</h3>
+          <p className="text-sm">{pending === "complete" ? (document.editingEntryId ? `請確認 ${identity(subject)} 的修改內容。儲存後會覆蓋原紀錄，並在該筆留下修改者與時間。` : `請確認 ${identity(subject)} 的資料無誤。簽出後保留本筆紀錄，後續請新增一筆。`) : pending === "unlock" ? "切換後其他對象改為唯讀，原有草稿會保留。" : closeTarget ? "可保留草稿後關閉這一間，或捨棄這間尚未簽出的草稿。" : deleteTarget ? `將刪除 ${deletingEntry ? taipeiTimestamp(deletingEntry.at) : "這一筆"} 的紀錄，刪除原因會寫入操作歷程。` : "這項操作會保留目前操作者與時間。"}</p>
+          {(deleteTarget || (typeof pending === "string" && ["authorize", "workorder"].includes(pending))) && <label className="block text-sm">{pending === "authorize" ? "授權原因（必填）" : deleteTarget ? "刪除原因（必填）" : "工單內容（必填）"}<textarea className={`${inputClass} mt-2`} value={reason} onChange={(event) => setReason(event.target.value)} /></label>}
           <div className="flex flex-wrap gap-2"><button type="button" className={buttonClass} onClick={() => setPending(null)}>取消</button>
-            {pending && typeof pending === "object" && <button type="button" className={buttonClass} onClick={() => run(() => careActions.closeSubject(pending.subjectId, true), "已捨棄這間的草稿並關閉。")}>捨棄並關閉</button>}
+            {closeTarget && <button type="button" className={buttonClass} onClick={() => run(() => careActions.closeSubject(closeTarget.subjectId, true), "已捨棄這間的草稿並關閉。")}>捨棄並關閉</button>}
             <button type="button" className={buttonClass} onClick={() => run(() => {
               if (pending === "complete") careActions.complete(document.key);
-              if (pending && typeof pending === "object") { if (editable && !document.signedAt) careActions.save(document.key); careActions.closeSubject(pending.subjectId); }
+              if (closeTarget) { if (editable && !document.signedAt) careActions.save(document.key); careActions.closeSubject(closeTarget.subjectId); }
+              if (deleteTarget) careActions.deleteEntry(deleteTarget.entryId, reason);
               if (pending === "all") careActions.closeAll(kind);
               if (pending === "unlock") careActions.unlock(document.key);
               if (pending === "authorize") careActions.authorize(subject.id, reason);
               if (pending === "workorder") careActions.workOrder(document.key, reason);
-            }, "操作完成，資料與歷程已更新。")}>{pending && typeof pending === "object" ? "保留草稿並關閉" : "確認"}</button>
+            }, "操作完成，資料與歷程已更新。")}>{closeTarget ? "保留草稿並關閉" : deleteTarget ? "確認刪除" : "確認"}</button>
           </div>
         </section>}
         <div className={styles.layout}>
           <article className={`${styles.form} min-w-0 rounded-xl border border-stone-200 bg-white p-4 sm:p-6`}>
             <h2 className="mb-4 text-xl font-semibold">{form.label}</h2>
             <p className="mb-4 text-sm text-stone-600">{document.savedAt ? `${document.dirty ? "有未完成暫存的修改｜" : ""}儲存 ${taipeiTimestamp(document.savedAt)}｜${document.author}` : "尚未暫存；欄位變更會保留於本機草稿。"}</p>
+            {document.editingEntryId && <p role="status" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">正在修改一筆已簽出的紀錄：完成後請重新簽名並簽出，系統會覆蓋原紀錄並記下修改者與時間。想保留原紀錄請改用「新增一筆」。</p>}
             {form.sections.length > 1 && <nav aria-label="表單區段" className="mb-5 flex flex-wrap gap-2" data-no-print>{form.sections.map((section, index) => <button type="button" key={section.label} aria-pressed={index === sectionIndex} className={buttonStyles({ selected: index === sectionIndex })} onClick={() => setSectionIndex(index)}>{section.label}</button>)}</nav>}
             {form.key === "growth" && <div className="mb-6"><h3 className="mb-3 font-medium">體重趨勢</h3><GrowthChart points={history.filter((entry) => Number(entry.values.weight) > 0).slice(0, 8).reverse().map((entry) => ({ date: valueText(entry.values.date), weight: Number(entry.values.weight) }))} /></div>}
             {form.key === "mood" && moodNeedsAttention(document.values) && <p role="status" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">達 v24 示範關注門檻，請記錄後續處理。此為護理長提醒情境，未發送通知。</p>}
@@ -225,7 +250,7 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
               {kind === "mama" && form.key === "ongoing" && <button type="button" disabled={!editable} className={buttonClass} onClick={() => setPending("workorder")}>開立工單</button>}
               <button type="button" className={buttonClass} onClick={() => window.print()}><Printer size={16} />列印本頁</button>
             </div>
-            <section className="mt-8 border-t border-stone-200 pt-5"><h3 className="mb-3 font-semibold">已簽出紀錄（{history.length}）</h3>{!history.length && <div className="rounded-lg border border-dashed border-stone-300 bg-stone-50 p-4"><p className="text-sm font-medium">匿名示範歷程</p><p className="mt-1 text-xs text-stone-500">正式簽出後會改列實際操作者、日期、內容與簽名。</p><div className="mt-3 overflow-x-auto"><table className="w-full min-w-[440px] text-left text-sm"><thead><tr><th className="p-2">日期</th><th className="p-2">狀態</th><th className="p-2">摘要</th><th className="p-2">記錄人</th></tr></thead><tbody><tr className="border-t border-stone-200"><td className="p-2">2026-10-16</td><td className="p-2">已完成</td><td className="p-2">例行紀錄正常</td><td className="p-2">示範護理師</td></tr><tr className="border-t border-stone-200"><td className="p-2">2026-10-15</td><td className="p-2">已完成</td><td className="p-2">持續觀察，無異常</td><td className="p-2">示範護理師</td></tr></tbody></table></div></div>}{history.map((entry) => <details key={entry.id} className="border-b border-stone-200 py-3"><summary className="min-h-12 cursor-pointer text-sm">{taipeiTimestamp(entry.at)}｜{entry.author}{entry.historical ? "｜退房回補" : ""}</summary><dl className="mt-3 grid gap-3 sm:grid-cols-2">{Object.entries(entry.values).filter(([key, value]) => key !== "photo" && valueText(value)).map(([key, value]) => <div key={key}><dt className="text-xs text-stone-500">{form.sections.flatMap((section) => section.fields).find((field) => field.key === key)?.label ?? (key === "reassessmentNote" ? "媽媽護理紀錄（再評估）" : key)}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-sm">{valueText(value)}</dd></div>)}</dl>{valueText(entry.values.photo) && <LocalMedia key={valueText(entry.values.photo)} id={valueText(entry.values.photo)} alt="此筆歷史紀錄的本機照片" className="mt-3 max-h-64 max-w-full object-contain" />}{entry.signatures && Object.entries(entry.signatures).map(([roleKey, image]) => <div key={roleKey} className="mt-3"><p className="text-xs text-stone-500">{signatureRoles.find((item) => item.key === roleKey)?.label}</p><img src={image} alt={signatureRoles.find((item) => item.key === roleKey)?.label ?? "此筆簽名"} className={styles.signedImage} /></div>)}{entry.signature && !entry.signatures?.recipient && <img src={entry.signature} alt="此筆歷史媽媽簽名" className={styles.signedImage} />}{entry.staffStamp && <p className="mt-3 text-sm">員工印章：{entry.staffStamp.author}｜{taipeiTimestamp(entry.staffStamp.at)}</p>}</details>)}</section>
+            <section className="mt-8 border-t border-stone-200 pt-5"><h3 className="mb-3 font-semibold">已簽出紀錄（{history.length}）</h3>{permitted && !!history.length && <p className="mb-3 text-xs text-stone-600">每一筆都可以再次修改或刪除；修改後需重新簽名簽出，系統會記下修改者與時間。</p>}{!history.length && <div className="rounded-lg border border-dashed border-stone-300 bg-stone-50 p-4"><p className="text-sm font-medium">匿名示範歷程</p><p className="mt-1 text-xs text-stone-500">正式簽出後會改列實際操作者、日期、內容與簽名。</p><div className="mt-3 overflow-x-auto"><table className="w-full min-w-[440px] text-left text-sm"><thead><tr><th className="p-2">日期</th><th className="p-2">狀態</th><th className="p-2">摘要</th><th className="p-2">記錄人</th></tr></thead><tbody><tr className="border-t border-stone-200"><td className="p-2">2026-10-16</td><td className="p-2">已完成</td><td className="p-2">例行紀錄正常</td><td className="p-2">示範護理師</td></tr><tr className="border-t border-stone-200"><td className="p-2">2026-10-15</td><td className="p-2">已完成</td><td className="p-2">持續觀察，無異常</td><td className="p-2">示範護理師</td></tr></tbody></table></div></div>}{history.map((entry) => <details key={entry.id} className="border-b border-stone-200 py-3"><summary className="min-h-12 cursor-pointer text-sm">{taipeiTimestamp(entry.at)}｜{entry.author}{entry.historical ? "｜退房回補" : ""}</summary><dl className="mt-3 grid gap-3 sm:grid-cols-2">{Object.entries(entry.values).filter(([key, value]) => key !== "photo" && valueText(value)).map(([key, value]) => <div key={key}><dt className="text-xs text-stone-500">{form.sections.flatMap((section) => section.fields).find((field) => field.key === key)?.label ?? (key === "reassessmentNote" ? "媽媽護理紀錄（再評估）" : key)}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-sm">{valueText(value)}</dd></div>)}</dl>{valueText(entry.values.photo) && <LocalMedia key={valueText(entry.values.photo)} id={valueText(entry.values.photo)} alt="此筆歷史紀錄的本機照片" className="mt-3 max-h-64 max-w-full object-contain" />}{entry.signatures && Object.entries(entry.signatures).map(([roleKey, image]) => <div key={roleKey} className="mt-3"><p className="text-xs text-stone-500">{signatureRoles.find((item) => item.key === roleKey)?.label}</p><img src={image} alt={signatureRoles.find((item) => item.key === roleKey)?.label ?? "此筆簽名"} className={styles.signedImage} /></div>)}{entry.signature && !entry.signatures?.recipient && <img src={entry.signature} alt="此筆歷史媽媽簽名" className={styles.signedImage} />}{entry.staffStamp && <p className="mt-3 text-sm">員工印章：{entry.staffStamp.author}｜{taipeiTimestamp(entry.staffStamp.at)}</p>}{entry.revisions?.map((revision, index) => <p key={`${entry.id}-rev-${index}`} className="mt-2 text-xs text-amber-800">修改紀錄：{taipeiTimestamp(revision.at)}｜{revision.author}｜{revision.note}</p>)}{permitted && <div className="mt-3 flex flex-wrap gap-2" data-no-print><button type="button" className={buttonStyles({ size: "sm" })} onClick={() => run(() => careActions.editEntry(entry.id), "已載入這筆紀錄，修改後請重新簽名並簽出。")}>修改這筆</button><button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { setReason(""); setPending({ kind: "delete-entry", entryId: entry.id }); }}>刪除這筆</button></div>}</details>)}</section>
           </article>
           <aside className={`${styles.sidebar} space-y-6`} data-no-print>
             {/* ⚠️「此對象的其他表單」已移到頁首的分組列（作用中那一組會列出未開啟的表單）。
@@ -241,10 +266,10 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
         {canAuthorizeCare(role) && <label className="mb-4 flex flex-wrap items-center gap-3 text-sm" data-no-print>退房回補天數（示範設定）<input aria-label="退房回補天數" type="number" min={0} max={30} className={`${inputClass} !w-24`} value={data.backfillDays} onChange={(event) => run(() => careActions.backfillDays(Number(event.target.value)), "已更新回補期限，所有照護對象同步。")} /></label>}
         <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-stone-600"><span>綠色：入住</span><span>粉色：親子同室</span><span>托嬰以車號識別</span><span>退房回補 {data.backfillDays} 天（示範設定）</span><span className="ml-auto">{subjects.length} 位</span></div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{subjects.map((item) => <section key={item.id} data-status={item.historical ? "退房回補" : item.status} className={`${styles.subjectCard} min-w-0 rounded-xl border p-4`}>
-          <div className="flex items-center justify-between gap-2"><h2 className="text-lg font-semibold">{item.room ? `房 ${item.room}` : `車 ${item.carNo || "待指派"}`}</h2><span className={`${styles.status} text-xs`}>{item.status}</span></div><p className="mt-2 font-medium">{item.name}</p>{kind === "baby" && <p className="mt-1 break-words text-xs text-stone-600">{item.motherName}{item.room && item.carNo ? `｜車號 ${item.carNo}` : ""}</p>}<p className="mt-1 break-words text-xs text-stone-600">{item.chartNo}｜第 {item.stayDay} 天</p>{item.historical && <p className="mt-2 text-xs text-amber-900">可補至 {taipeiTimestamp(backfillDeadline(item, data.backfillDays)!)}{isBackfillExpired(item, data.backfillDays) ? "（逾期需主管授權）" : ""}</p>}
+          <div className="flex items-center justify-between gap-2"><h2 className="text-lg font-semibold">{item.room ? `房 ${item.room}` : `車 ${item.carNo || "待指派"}`}</h2><span className={`${styles.status} text-xs`}>{item.status}</span></div><p className="mt-2 font-medium">{item.name}</p>{kind === "baby" && <p className="mt-1 break-words text-xs text-stone-600">{item.motherName}{item.room && item.carNo ? `｜車號 ${item.carNo}` : ""}{!item.room && item.previousRoom ? `｜原 ${item.previousRoom} 房` : ""}</p>}<p className="mt-1 break-words text-xs text-stone-600">{item.chartNo}｜第 {item.stayDay} 天</p>{item.historical && <p className="mt-2 text-xs text-amber-900">可補至 {taipeiTimestamp(backfillDeadline(item, data.backfillDays)!)}{expiryHint(item)}</p>}
           <div className="mt-4 grid grid-cols-2 gap-2">{forms.map((itemForm) => <button type="button" key={itemForm.key} onClick={() => open(item.id, itemForm.key)} className={buttonStyles({ size: "sm" })}>{itemForm.label}</button>)}</div>
         </section>)}</div>
-        {backfillSubjects.length > 0 && <section className="mt-9"><div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h2 className="text-xl font-semibold">退房回補</h2><span className="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-900">期限 {data.backfillDays} 天，逾期需主管授權</span></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{backfillSubjects.map((item) => <section key={item.id} data-status="退房回補" className={`${styles.subjectCard} min-w-0 rounded-xl border p-4`}><div className="flex items-center justify-between gap-2"><h3 className="font-semibold">房 {item.room}</h3><span className={`${styles.status} text-xs`}>退房回補</span></div><p className="mt-2 font-medium">{item.name}</p><p className="mt-1 text-xs text-stone-600">{item.chartNo}｜退房 {taipeiTimestamp(item.dischargedAt!)}</p><p className="mt-2 text-xs text-amber-900">可補至 {taipeiTimestamp(backfillDeadline(item, data.backfillDays)!)}{isBackfillExpired(item, data.backfillDays) ? "（逾期需授權）" : ""}</p><div className="mt-4 grid grid-cols-2 gap-2">{forms.map((itemForm) => <button type="button" key={itemForm.key} onClick={() => open(item.id, itemForm.key)} className={buttonStyles({ size: "sm" })}>{itemForm.label}</button>)}</div></section>)}</div></section>}
+        {backfillSubjects.length > 0 && <section className="mt-9"><div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h2 className="text-xl font-semibold">退房回補</h2><span className="rounded-full bg-amber-100 px-3 py-1 text-xs text-amber-900">退房日起 {data.backfillDays} 天內（當日 23:59 截止），逾期僅護理長／管理者可補或授權</span></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{backfillSubjects.map((item) => <section key={item.id} data-status="退房回補" className={`${styles.subjectCard} min-w-0 rounded-xl border p-4`}><div className="flex items-center justify-between gap-2"><h3 className="font-semibold">房 {item.room}</h3><span className={`${styles.status} text-xs`}>退房回補</span></div><p className="mt-2 font-medium">{item.name}</p><p className="mt-1 text-xs text-stone-600">{item.chartNo}｜退房 {taipeiTimestamp(item.dischargedAt!)}</p><p className="mt-2 text-xs text-amber-900">可補至 {taipeiTimestamp(backfillDeadline(item, data.backfillDays)!)}{expiryHint(item)}</p><div className="mt-4 grid grid-cols-2 gap-2">{forms.map((itemForm) => <button type="button" key={itemForm.key} onClick={() => open(item.id, itemForm.key)} className={buttonStyles({ size: "sm" })}>{itemForm.label}</button>)}</div></section>)}</div></section>}
         {!subjects.length && <p className="rounded-lg border border-dashed border-stone-300 p-8 text-center text-sm text-stone-600">沒有符合條件的照護對象，請調整搜尋或篩選。</p>}
       </>}
       {/*
@@ -347,12 +372,12 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
             <p className={styles.subjectBarText}>
               <strong className="font-semibold text-stone-800">{identity(subject)}</strong>
               <span>｜{subjectSummary(subject)}</span>
-              {subject.historical && <span className="text-amber-800">｜退房回補 {taipeiTimestamp(subject.dischargedAt!)}｜可補至 {taipeiTimestamp(backfillDeadline(subject, data.backfillDays)!)}{expired ? "｜已逾期" : ""}</span>}
+              {subject.historical && <span className="text-amber-800">｜退房回補 {taipeiTimestamp(subject.dischargedAt!)}｜可補至 {taipeiTimestamp(backfillDeadline(subject, data.backfillDays)!)}{expired ? (blocked ? "｜已逾期，需主管授權" : "｜已逾期（主管補登）") : ""}</span>}
             </p>
             <div className={styles.subjectBarActions} data-no-print>
               <span className="inline-flex items-center gap-1.5 rounded-lg bg-stone-100 px-2.5 py-1 text-xs text-stone-600">{editable ? <UnlockKeyhole size={14} /> : <LockKeyhole size={14} />}{document.signedAt ? "已完成簽出" : editable ? "編輯中" : "唯讀"}</span>
               {permitted && !document.signedAt && data.unlockedCase !== subject.caseId && <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => setPending("unlock")}>解鎖此對象</button>}
-              {expired && canAuthorizeCare(role) && <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => setPending("authorize")}>授權回補</button>}
+              {expired && canAuthorizeCare(role) && !data.authorizations[subject.id] && <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => setPending("authorize")}>授權回補</button>}
             </div>
           </div>
         </HeaderSlot>

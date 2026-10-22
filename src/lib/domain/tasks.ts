@@ -10,7 +10,11 @@ import { backfillDeadline } from "../care/rules";
 import { caseBalance } from "./rules";
 
 export const TASK_CATEGORIES = ["入住", "退房", "參觀", "合約／猶豫期", "待收款", "醫師巡診", "課程", "關懷／提醒", "回補期限", "托嬰"];
-export type Task = { id: string; date: string; category: string; title: string; href: string; handled: boolean };
+export type Task = {
+  id: string; date: string; category: string; title: string; href: string; handled: boolean;
+  /** true＝手動新增的待辦，可直接編輯／刪除；其餘由案件與照護資料推導，要改請到來源頁面。 */
+  manual?: boolean;
+};
 export function roleTaskCategories(role: Role) {
   if (["管理者", "護理長 婉真"].includes(role)) return TASK_CATEGORIES;
   if (role === "櫃台") return TASK_CATEGORIES.filter((item) => !["醫師巡診", "回補期限"].includes(item));
@@ -20,7 +24,7 @@ export function roleTaskCategories(role: Role) {
 }
 const plusDays = (date: string, days: number) => new Date(Date.parse(date.length === 10 ? `${date}T00:00:00+08:00` : date) + days * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" });
 export function taskEvents(data: DemoDomain, care: CareState): Task[] {
-  const events: Omit<Task, "handled">[] = data.tasks.map((task) => ({ ...task, href: task.caseId ? `/cases/detail/?id=${encodeURIComponent(task.caseId)}` : task.category === "課程" ? "/course/" : "/mama/" }));
+  const events: Omit<Task, "handled">[] = data.tasks.map((task) => ({ ...task, manual: true, href: task.caseId ? `/cases/detail/?id=${encodeURIComponent(task.caseId)}` : task.category === "課程" ? "/course/" : "/mama/" }));
   for (const record of data.cases.filter((item) => !item.closed || item.childcare && !item.childcareEnded)) {
     const href = `/cases/detail/?id=${encodeURIComponent(record.id)}`;
     const add = (category: string, date: string, title: string) => { if (date) events.push({ id: `${record.id}:${category}`, date, category, title: `${record.name}｜${title}`, href }); };
@@ -38,5 +42,26 @@ export function taskEvents(data: DemoDomain, care: CareState): Task[] {
 }
 export const taskActions = {
   complete(id: string) { domainStore.update((data) => { const event = taskEvents(data, careStore.get()).find((item) => item.id === id); if (!event || !roleTaskCategories(getCurrentRole()).includes(event.category)) throw new Error("此類待辦僅可檢視，不能以目前角色處理。"); if (!data.handledTasks.includes(id)) { data.handledTasks.push(id); audit(data, "待辦已處理", id); } }); },
+  /** 修改手動新增的待辦；案件與照護自動產生的待辦要改請回來源頁面。 */
+  update(id: string, date: string, category: string, title: string) {
+    domainStore.update((data) => {
+      const task = data.tasks.find((item) => item.id === id);
+      if (!task) throw new Error("只有手動新增的待辦可以編輯；案件與照護自動產生的待辦，請到來源頁面調整。");
+      if (!roleTaskCategories(getCurrentRole()).includes(category) || !roleTaskCategories(getCurrentRole()).includes(task.category) || !TASK_CATEGORIES.includes(category) || !date || !title.trim()) throw new Error("請填日期、內容並選擇目前角色可處理的類別。");
+      Object.assign(task, { date, category, title: title.trim() });
+      audit(data, "修改本機待辦", id);
+    });
+  },
+  /** 刪除手動新增的待辦。 */
+  remove(id: string) {
+    domainStore.update((data) => {
+      const task = data.tasks.find((item) => item.id === id);
+      if (!task) throw new Error("只有手動新增的待辦可以刪除；案件與照護自動產生的待辦，請到來源頁面處理。");
+      if (!roleTaskCategories(getCurrentRole()).includes(task.category)) throw new Error("此類待辦不在您的職掌，不能刪除。");
+      data.tasks = data.tasks.filter((item) => item.id !== id);
+      data.handledTasks = data.handledTasks.filter((item) => item !== id);
+      audit(data, "刪除本機待辦", id);
+    });
+  },
   add(date: string, category: string, title: string) { domainStore.update((data) => { if (!roleTaskCategories(getCurrentRole()).includes(category) || !TASK_CATEGORIES.includes(category) || !date || !title.trim()) throw new Error("請填日期、內容並選擇目前角色可處理的類別。"); data.tasks.push({ id: crypto.randomUUID(), date, category, title: title.trim() }); audit(data, "新增本機待辦", category); }); },
 };

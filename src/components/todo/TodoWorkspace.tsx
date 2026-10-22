@@ -73,6 +73,8 @@ function Workspace() {
   const [view, setView] = useState<"月" | "週" | "日">("月");
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState(defaults[0] ?? "關懷／提醒");
+  // 手動新增的待辦可以再編輯；自動產生的（案件、照護）要改請回來源頁面。
+  const [editingTaskId, setEditingTaskId] = useState("");
   const [message, setMessage] = useState("");
 
   const all = useMemo(() => taskEvents(data, care), [data, care]);
@@ -339,6 +341,25 @@ function Workspace() {
                       {event.handled ? "已處理" : "處理完成"}
                     </Button>
                   )}
+                  {own && event.manual && (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setEditingTaskId(event.id);
+                          setCategory(event.category);
+                          setTitle(event.title);
+                          setPick(event.date);
+                          setMessage("已載入這筆待辦，於下方修改後儲存。");
+                        }}
+                      >
+                        編輯
+                      </Button>
+                      <Button size="sm" onClick={() => run(() => { taskActions.remove(event.id); if (editingTaskId === event.id) { setEditingTaskId(""); setTitle(""); } })}>
+                        刪除
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             );
@@ -348,7 +369,7 @@ function Workspace() {
       </div>
 
       {defaults.length > 0 && (
-        <CollapsibleSection id="todo-add" title={`新增 ${selected} 的待辦事項`} bodyClassName="space-y-3">
+        <CollapsibleSection id="todo-add" title={editingTaskId ? `修改 ${selected} 的待辦事項` : `新增 ${selected} 的待辦事項`} bodyClassName="space-y-3">
           <div className="flex flex-wrap gap-3">
             <select
               aria-label="新增待辦事項類別"
@@ -367,20 +388,27 @@ function Workspace() {
               value={title}
               onChange={(event) => setTitle(event.target.value)}
             />
+            {editingTaskId && (
+              <Button onClick={() => { setEditingTaskId(""); setTitle(""); setMessage(""); }}>
+                取消修改
+              </Button>
+            )}
             <Button
               variant="primary"
               onClick={() =>
                 run(() => {
-                  taskActions.add(selected, category, title);
+                  if (editingTaskId) taskActions.update(editingTaskId, selected, category, title);
+                  else taskActions.add(selected, category, title);
+                  setEditingTaskId("");
                   setTitle("");
                 })
               }
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
-              新增待辦事項
+              {editingTaskId ? "儲存修改" : "新增待辦事項"}
             </Button>
           </div>
-          <p className="text-xs text-stone-500">只能新增您職掌內的類別；原型存在瀏覽器記憶體，重新整理會回到示範資料。</p>
+          <p className="text-xs text-stone-500">只能新增您職掌內的類別；手動新增的待辦可在上方明細直接編輯或刪除，案件與照護自動產生的待辦請回來源頁面調整。原型存在瀏覽器記憶體，重新整理會回到示範資料。</p>
         </CollapsibleSection>
       )}
     </div>

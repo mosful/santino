@@ -26,7 +26,7 @@ function ChildcarePanel({ record }: { record: CaseRecord }) {
   return (
     <form ref={form} onSubmit={(event) => event.preventDefault()} className="space-y-4 text-sm">
       <div className="rounded-xl border border-teal-200 bg-teal-50 p-3 text-xs text-teal-800">
-        媽媽原住房合約於退房日結束；寶寶續留需另立托嬰合約。托嬰案件沒有房號時，以家長車號作為主要辨識資訊。
+        媽媽原住房合約於退房日結束；寶寶續留需另立托嬰合約。托嬰案件沒有房號時，以家長車號作為主要辨識資訊，並保留媽媽原住房號供回溯。
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -35,6 +35,7 @@ function ChildcarePanel({ record }: { record: CaseRecord }) {
         <Field label="媽媽退房日" value={record.dischargedAt.slice(0, 10) || "尚未退房"} />
         <Field label="寶寶姓名／病歷號" value={data.subjects.filter((subject) => subject.caseId === record.id && subject.kind === "baby").map((subject) => `${subject.name}／${subject.chartNo}`).join("、")} />
         <Field label="家長車號（無房號案件識別）" value={record.childcareCar} editable />
+        <Field label="媽媽原住房號" value={record.room || "未登錄"} />
         <Field label="留房原因" value={record.note} editable />
         <Field label="托嬰開始日" value={record.dischargedAt.slice(0, 10) || "依實際退房日"} />
         <Field label="預計接回日" value={record.dischargedAt ? new Date(Date.parse(record.dischargedAt) + days * 86400000).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" }) : "依實際退房日＋托嬰天數"} />

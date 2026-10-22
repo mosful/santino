@@ -188,7 +188,7 @@ export default function RoomStatusOverview() {
                   type="button"
                   data-status="托嬰"
                   onClick={() => router.push(`/cases/detail/?id=${encodeURIComponent(record.id)}`)}
-                  title={`${record.name}｜車號 ${record.childcareCar || "待指派"}`}
+                  title={`${record.name}｜車號 ${record.childcareCar || "待指派"}${record.room ? `｜原 ${record.room} 房` : ""}`}
                   className={`${styles.roomCard} relative flex min-h-[5.25rem] flex-col items-stretch justify-start gap-1 overflow-hidden rounded-xl border py-2 pl-3.5 pr-2.5 text-left transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-sm`}
                 >
                   <span data-status="托嬰" className={`${styles.statusBar} absolute inset-y-0 left-0 w-1.5`} aria-hidden="true" />
@@ -199,6 +199,7 @@ export default function RoomStatusOverview() {
                   <span className="truncate text-sm font-medium text-stone-700">{record.name}</span>
                   <span className="text-[11px] text-stone-500">
                     續留 {record.childcareDays} 天・{record.dischargedAt ? `${record.dischargedAt.slice(0, 10)} 退房` : "尚未退房"}
+                    {record.room ? `・原 ${record.room} 房` : ""}
                   </span>
                 </button>
               ))}

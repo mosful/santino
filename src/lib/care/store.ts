@@ -6,7 +6,7 @@ import { ROLE_PROFILE } from "../permissions";
 import { domainStore } from "../demo/domainStore";
 import { careForms } from "./forms";
 import { careSubject } from "./subjects";
-import { canAuthorizeCare, canEditCare, canViewCare, documentKey, isBackfillExpired, validateCareForm } from "./rules";
+import { canAuthorizeCare, canEditCare, canViewCare, documentKey, isBackfillBlocked, validateCareForm } from "./rules";
 import type { CareDocument, CareKind, CareSignatureRole, CareState, CareValues } from "./types";
 
 const initial: CareState = { version: 1, documents: {}, open: [], active: { mama: null, baby: null }, unlockedCase: null, entries: [], events: [], authorizations: {}, personalPhrases: {}, backfillDays: 3 };
@@ -28,7 +28,7 @@ function writable(state: CareState, key: string): CareDocument {
   const subject = document && careSubject(document.subjectId);
   if (!document || !subject || !canEditCare(getCurrentRole(), subject.kind, document.formKey)) throw new Error("目前角色不能編輯此表單。");
   if (state.unlockedCase !== subject.caseId) throw new Error("此對象目前為唯讀，請先解鎖編輯。");
-  if (isBackfillExpired(subject, state.backfillDays) && !state.authorizations[subject.id]) throw new Error("已超過回補期限，請由護理長或管理員填寫原因授權。");
+  if (isBackfillBlocked(getCurrentRole(), subject, state.backfillDays, !!state.authorizations[subject.id])) throw new Error("已超過回補期限，請由護理長或管理者補登，或請其填寫原因授權。");
   if (document.signedAt) throw new Error("此筆已完成簽出，請新增一筆紀錄。");
   return document;
 }
@@ -103,8 +103,62 @@ export const careActions = {
       document.values.time = new Date(at).toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5);
       document.signedAt = at; document.savedAt = at; document.author = author(); document.dirty = false;
       document.staffStamp = { author: author(), at };
-      state.entries.unshift({ id: crypto.randomUUID(), subjectId: subject.id, formKey: form.key, at, author: author(), values: structuredClone(document.values), signature: document.signature, signatures: structuredClone(document.signatures ?? {}), staffStamp: document.staffStamp, historical: !!subject.historical });
-      stamp(state, subject.id, `${form.label}完成簽出${subject.historical ? "（退房回補）" : ""}`);
+      const editing = document.editingEntryId ? state.entries.find((entry) => entry.id === document.editingEntryId) : undefined;
+      if (document.editingEntryId && !editing) throw new Error("原紀錄已被刪除，請改以新增一筆方式留存。");
+      if (editing) {
+        /*
+          修改既有紀錄：保留原紀錄時間 at（那是這筆照護實際發生的時間），
+          把「誰在何時改的」疊加到 revisions，客戶要求可改但要留痕。
+        */
+        editing.values = structuredClone(document.values);
+        editing.signature = document.signature;
+        editing.signatures = structuredClone(document.signatures ?? {});
+        editing.staffStamp = document.staffStamp;
+        editing.revisions = [...(editing.revisions ?? []), { at, author: author(), note: `修改並重新簽出${subject.historical ? "（退房回補）" : ""}` }];
+        delete document.editingEntryId;
+        stamp(state, subject.id, `${form.label}修改已簽出紀錄並重新簽出`);
+      } else {
+        state.entries.unshift({ id: crypto.randomUUID(), subjectId: subject.id, formKey: form.key, at, author: author(), values: structuredClone(document.values), signature: document.signature, signatures: structuredClone(document.signatures ?? {}), staffStamp: document.staffStamp, historical: !!subject.historical });
+        stamp(state, subject.id, `${form.label}完成簽出${subject.historical ? "（退房回補）" : ""}`);
+      }
+    });
+  },
+  /**
+   * 把已簽出的紀錄載回表單重新編輯（客戶 2026-10-22：清單與紀錄都要能再次編輯儲存）。
+   *
+   * ⚠️ 不帶回原簽名：客戶指定「原簽名失效需重簽」，所以改完要重新簽名才能再次簽出。
+   * 原紀錄在重新簽出前**維持原樣**，中途放棄不會弄丟資料。
+   */
+  editEntry(entryId: string) {
+    careStore.update((state) => {
+      const entry = state.entries.find((item) => item.id === entryId);
+      if (!entry) throw new Error("找不到這筆紀錄。");
+      const subject = careSubject(entry.subjectId);
+      if (!subject || !canEditCare(getCurrentRole(), subject.kind, entry.formKey)) throw new Error("目前角色不能編輯此表單。");
+      if (isBackfillBlocked(getCurrentRole(), subject, state.backfillDays, !!state.authorizations[subject.id])) throw new Error("已超過回補期限，請由護理長或管理者修改，或請其填寫原因授權。");
+      const key = documentKey(entry.subjectId, entry.formKey);
+      const current = state.documents[key];
+      if (current && !current.signedAt && (current.dirty || current.savedAt) && current.editingEntryId !== entryId) throw new Error("目前有尚未簽出的草稿，請先完成或捨棄草稿再修改既有紀錄。");
+      state.documents[key] = { key, subjectId: entry.subjectId, formKey: entry.formKey, values: structuredClone(entry.values), dirty: false, editingEntryId: entryId };
+      if (!state.open.includes(key)) state.open.push(key);
+      state.active[subject.kind] = key;
+      state.unlockedCase = subject.caseId;
+      stamp(state, subject.id, `開始修改已簽出紀錄（${new Date(entry.at).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" })}）`);
+    });
+  },
+  /** 刪除已簽出紀錄；必填原因並寫入操作歷程。 */
+  deleteEntry(entryId: string, reason: string) {
+    if (!reason.trim()) throw new Error("請填寫刪除原因。");
+    careStore.update((state) => {
+      const entry = state.entries.find((item) => item.id === entryId);
+      if (!entry) throw new Error("找不到這筆紀錄。");
+      const subject = careSubject(entry.subjectId);
+      if (!subject || !canEditCare(getCurrentRole(), subject.kind, entry.formKey)) throw new Error("目前角色不能刪除此表單的紀錄。");
+      if (isBackfillBlocked(getCurrentRole(), subject, state.backfillDays, !!state.authorizations[subject.id])) throw new Error("已超過回補期限，請由護理長或管理者處理，或請其填寫原因授權。");
+      state.entries = state.entries.filter((item) => item.id !== entryId);
+      const document = state.documents[documentKey(entry.subjectId, entry.formKey)];
+      if (document?.editingEntryId === entryId) delete document.editingEntryId;
+      stamp(state, subject.id, `刪除已簽出紀錄（${new Date(entry.at).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" })}）：${reason.trim()}`);
     });
   },
   newEntry(key: string) {

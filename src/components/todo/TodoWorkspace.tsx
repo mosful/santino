@@ -51,6 +51,9 @@ const ROLE_FOCUS: Record<Role, string> = {
   管理者: "全院十類待辦都可處理，並可檢視所有角色的待辦來源。",
 };
 
+/** 待辦頁上方三張摘要卡（已逾期／今天／未來 7 天）先隱藏（客戶 2026-10-22）。 */
+const SHOW_TODO_SUMMARY = false;
+
 const DAY = 86_400_000;
 const todayInTaipei = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" });
 
@@ -131,8 +134,9 @@ function Workspace() {
         <span className="font-medium text-stone-700">{ROLE_FOCUS[role]}</span>
       </p>
 
-      {/* 需立即處理事項：逾期最刺眼，今天其次，本週只作為預告 */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      {/* 需立即處理事項：逾期最刺眼，今天其次，本週只作為預告。
+          ⚠️ 2026-10-22 客戶要求先隱藏這三張卡；要開回把 SHOW_TODO_SUMMARY 改成 true。 */}
+      {SHOW_TODO_SUMMARY && <div className="grid gap-3 sm:grid-cols-3">
         <SummaryCard
           tone="danger"
           icon={AlertTriangle}
@@ -157,7 +161,7 @@ function Workspace() {
           hint={dueThisWeek[0] ? `最近：${dueThisWeek[0].date.slice(5)} ${dueThisWeek[0].title}` : "未來一週沒有待辦"}
           onClick={() => dueThisWeek[0] && setPick(dueThisWeek[0].date)}
         />
-      </div>
+      </div>}
 
       {message && (
         <p role="status" className="rounded-xl border border-border-subtle bg-surface-muted px-4 py-3 text-sm">

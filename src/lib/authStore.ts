@@ -6,11 +6,18 @@ const STORAGE_KEY = "santino_auth_v1";
 const listeners = new Set<() => void>();
 let cache: boolean | null = null;
 
+/*
+  DEMO 預設就是登入狀態（客戶 2026-10-22：展示時不要每次打帳密）。
+
+  ⚠️ 判斷式是「不等於 0」不是「等於 1」：沒有記錄＝沒登出過＝視為已登入。
+  登出要寫入 "0" 而不是 removeItem，否則下一次載入又會被當成沒登出過而自動登入。
+  這個旗標本來就只是畫面稿的模擬，沒有任何真實帳號驗證。
+*/
 function readAuth(): boolean {
   try {
-    return window.localStorage.getItem(STORAGE_KEY) === "1";
+    return window.localStorage.getItem(STORAGE_KEY) !== "0";
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -20,7 +27,7 @@ function getSnapshot(): boolean {
 }
 
 function getServerSnapshot(): boolean {
-  return false;
+  return true;
 }
 
 function subscribe(listener: () => void) {
@@ -42,7 +49,8 @@ export function login() {
 export function logout() {
   cache = false;
   try {
-    window.localStorage.removeItem(STORAGE_KEY);
+    // 寫 "0" 而不是刪掉：預設是已登入，刪掉等於沒登出過。
+    window.localStorage.setItem(STORAGE_KEY, "0");
   } catch {
     // 忽略
   }

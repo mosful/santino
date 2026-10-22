@@ -4,7 +4,8 @@ import { useSyncExternalStore } from "react";
 import { LEGACY_ROLE_ALIASES, ROLES, type Role, getAccess, type AccessLevel } from "./permissions";
 
 const STORAGE_KEY = "santino_current_role_v1";
-const DEFAULT_ROLE: Role = "管理者";
+/** DEMO 預設以櫃台身分登入（客戶 2026-10-22）；要看其他角色用頁首的角色切換。 */
+const DEFAULT_ROLE: Role = "櫃台";
 const listeners = new Set<() => void>();
 let cache: Role | null = null;
 

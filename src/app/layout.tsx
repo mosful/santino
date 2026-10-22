@@ -23,7 +23,8 @@ export const metadata: Metadata = {
 };
 
 const authGuardScript = `try{
-  var loggedIn = localStorage.getItem('santino_auth_v1') === '1';
+  // 預設已登入（客戶 2026-10-22）：只有明確登出寫入 '0' 時才導去登入頁。
+  var loggedIn = localStorage.getItem('santino_auth_v1') !== '0';
   var base = ${JSON.stringify(BASE_PATH)};
   var p = location.pathname;
   var isAuthRoute = p.indexOf('/login') !== -1 || p.indexOf('/forgot-password') !== -1;

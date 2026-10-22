@@ -126,36 +126,40 @@ export default function OperationsOverview({
             ))}
           </div>
         </CollapsibleSection>
+
+        {/*
+          房況摘要條先隱藏（客戶 2026-10-22）；完整房況在獨立頁 /rooms（第一層選單）。
+          ⚠️ 要開回把 SHOW_ROOM_SUMMARY 改成 true；數字一律走 roomOccupancySummary，
+          不要在這裡自己算，否則會跟點進去的對不上。
+        */}
+        {SHOW_ROOM_SUMMARY && <Link
+          href="/rooms/"
+          className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-border-subtle bg-surface-raised px-4 py-3 shadow-xs transition-colors hover:border-brand-300 hover:bg-brand-50"
+        >
+          <span className="flex items-center gap-2 text-sm font-bold text-stone-700">
+            <BedDouble className="h-[18px] w-[18px] shrink-0 text-brand-500" aria-hidden="true" />
+            房間動態
+          </span>
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-500">
+            <span>館內 <strong className="text-sm tabular-nums text-stone-700">{rooms.mothers.length}</strong> 位</span>
+            <span>寶寶 <strong className="text-sm tabular-nums text-stone-700">{rooms.babies.length}</strong> 位</span>
+            <span>空房 <strong className="text-sm tabular-nums text-stone-700">{rooms.vacant}</strong> 間</span>
+            <span>今日入住 <strong className="text-sm tabular-nums text-stone-700">{rooms.admissionsToday}</strong></span>
+            <span>今日退房 <strong className="text-sm tabular-nums text-stone-700">{rooms.dischargesToday}</strong></span>
+            {rooms.childcare.length > 0 && <span>托嬰 <strong className="text-sm tabular-nums text-stone-700">{rooms.childcare.length}</strong></span>}
+          </span>
+          <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-stone-400" aria-hidden="true" />
+        </Link>}
       </div>
     </div>
 
-    {/*
-      房況摘要條。完整的房況總覽已抽成獨立頁 /rooms（第一層選單），
-      這裡只留關鍵數字＋一個入口：首頁原本內嵌整面 27 張房卡，桌機要捲 3300px。
-      ⚠️ 數字一律走 roomOccupancySummary，不要在這裡自己算，否則會跟點進去的對不上。
-    */}
-    <Link
-      href="/rooms/"
-      className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-border-subtle bg-surface-raised px-4 py-3 shadow-xs transition-colors hover:border-brand-300 hover:bg-brand-50"
-    >
-      <span className="flex items-center gap-2 text-sm font-bold text-stone-700">
-        <BedDouble className="h-[18px] w-[18px] shrink-0 text-brand-500" aria-hidden="true" />
-        房間動態
-      </span>
-      <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-stone-500">
-        <span>館內 <strong className="text-sm tabular-nums text-stone-700">{rooms.mothers.length}</strong> 位</span>
-        <span>寶寶 <strong className="text-sm tabular-nums text-stone-700">{rooms.babies.length}</strong> 位</span>
-        <span>空房 <strong className="text-sm tabular-nums text-stone-700">{rooms.vacant}</strong> 間</span>
-        <span>今日入住 <strong className="text-sm tabular-nums text-stone-700">{rooms.admissionsToday}</strong></span>
-        <span>今日退房 <strong className="text-sm tabular-nums text-stone-700">{rooms.dischargesToday}</strong></span>
-        {rooms.childcare.length > 0 && <span>托嬰 <strong className="text-sm tabular-nums text-stone-700">{rooms.childcare.length}</strong></span>}
-      </span>
-      <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-stone-400" aria-hidden="true" />
-    </Link>
     </div>
   );
 }
 
+
+/** 首頁的房況摘要條先隱藏（客戶 2026-10-22）；要開回改成 true。 */
+const SHOW_ROOM_SUMMARY = false;
 
 const STAT_TONE = {
   rose: "border-rose-200 bg-rose-50 text-rose-700",

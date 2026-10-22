@@ -27,6 +27,12 @@ import { useCurrentRole } from "@/lib/roleStore";
 import OperationsOverview from "./OperationsOverview";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
 
+/**
+ * 首頁右下「○○・階段完成條件」區塊先隱藏（客戶 2026-10-22）。
+ * 清單內容仍在各階段定義裡，要開回把旗標改成 true。
+ */
+const SHOW_STAGE_CHECKLIST = false;
+
 type QuickView = "overdue" | "today" | "staying" | "moving";
 
 const STAGE_STYLE = {
@@ -170,7 +176,8 @@ export default function JourneyDashboard() {
         </div>
       </CollapsibleSection>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.7fr)]">
+      {/* 右側的「階段完成條件」隱藏後就不再分欄，案件流程滿版（客戶 2026-10-22）。 */}
+      <section className={SHOW_STAGE_CHECKLIST ? "grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,0.7fr)]" : "grid gap-4"}>
         {/* 篩選結果整塊也可收合：護理站只想看房況時，這一長串案件清單可以先收起來。
             id 固定不隨階段變，否則每切一個階段就是一個新的收合偏好。 */}
         <CollapsibleSection
@@ -247,7 +254,7 @@ export default function JourneyDashboard() {
           </div>
         </CollapsibleSection>
 
-        {!quickInfo && (
+        {SHOW_STAGE_CHECKLIST && !quickInfo && (
           <aside>
             <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm sm:p-5">
               <div className="mb-2 flex items-center gap-2 text-sm font-bold text-amber-800">

@@ -18,6 +18,7 @@ import ContractSteps from "./ContractSteps";
 import RoomServicePanel from "./RoomServicePanel";
 import { DailyLedger, AdmissionMeal, ReturnPhotos, ReturnInspection, ReturnGuide, RefundCalculator } from "./CaseDetails";
 import { CaseDocLinks } from "./CaseDocs";
+import type { QuotePreset } from "./PricingCalculator";
 import { docsForStage, docsForTimeline } from "@/lib/domain/caseDocs";
 import MonthlyStats from "./MonthlyStats";
 import { buttonStyles } from "@/components/ui/buttonStyles";
@@ -35,7 +36,6 @@ const corporateCompanies = [...CORPORATE_COMPANIES];
  */
 const SHOW_ROOM_SERVICE = false;
 const emptyReservation = (): ReservationInput => ({ category: "懷孕", name: DEMO_MOTHER_NAME, phone: DEMO_PHONE, dueDate: "", parity: "第 1 胎", deliveryMethod: "未定", hospital: HOSPITALS[0], visitDate: "", visitTime: "14:00", source: "網路推薦", receptionist: "林小姐", note: "" });
-type QuotePreset = Pick<CaseRecord, "roomType" | "days" | "hospital" | "priceClass" | "corporateCompany">;
 
 // required 會在標題右邊加紅色 *：客戶回報按下儲存才跳「請完成必填欄位」，卻看不出哪幾欄要填。
 function Field({ label, value, type = "text", options, onChange, required = false }: { label: string; value: string | number; type?: string; options?: string[]; onChange: (value: string) => void; required?: boolean }) {
@@ -151,6 +151,9 @@ export default function CaseWorkspace() {
       hospital: params.get("hospital") ?? HOSPITALS[0],
       priceClass: params.get("priceClass") ?? "一般",
       corporateCompany: params.get("corporateCompany") ?? "",
+      addOns: (params.get("addOns") ?? "").split("|").filter(Boolean),
+      tasting: params.get("tasting") === "1",
+      bossGift: params.get("bossGift") ?? "",
     });
   }
   const [operation, setOperation] = useState<"force" | "reopen" | "override" | "change" | "charge" | "sign" | "sign-staff" | "end-childcare" | null>(null);

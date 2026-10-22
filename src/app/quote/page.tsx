@@ -23,6 +23,10 @@ export default function QuotePage() {
               hospital: preset.hospital,
               priceClass: preset.priceClass,
               corporateCompany: preset.corporateCompany,
+              // 加購與試吃也一起帶過去，不然到了案件流程還要再選一次。
+              addOns: preset.addOns.join("|"),
+              tasting: preset.tasting ? "1" : "",
+              bossGift: preset.bossGift,
             });
             router.push(`/cases/?${query.toString()}`);
           }}

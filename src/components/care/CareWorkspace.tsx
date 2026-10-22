@@ -75,6 +75,8 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   const [signing, setSigning] = useState(false);
   const [signingRole, setSigningRole] = useState<CareSignatureRole>("recipient");
   const [listVisible, setListVisible] = useState(false);
+  // 列印空白表格（手冊第 41 頁「評估表要可以印空白表格」）：臨時手寫或補單時用。
+  const [blankSheet, setBlankSheet] = useState(false);
   const hydrated = useSyncExternalStore(hydrationSubscribe, () => true, () => false);
   const confirmation = useRef<HTMLElement>(null);
   const configured = useAssessmentFields();
@@ -218,7 +220,22 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
         </section>}
         <div className={styles.layout}>
           <article className={`${styles.form} min-w-0 rounded-xl border border-stone-200 bg-white p-4 sm:p-6`}>
-            <h2 className="mb-4 text-xl font-semibold">{form.label}</h2>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-xl font-semibold">{form.label}</h2>
+              <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => setBlankSheet((value) => !value)}>{blankSheet ? "回到填寫畫面" : "列印空白表格"}</button>
+            </div>
+            {blankSheet && <section className="mb-6 space-y-4 rounded-xl border border-stone-300 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-semibold">{form.label}（空白表格）</h3>
+                <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => window.print()}>列印</button>
+              </div>
+              <p className="text-sm text-stone-600">房號／姓名／病歷號：____________________　日期：__________</p>
+              {form.sections.map((section) => <div key={section.label} className="space-y-2">
+                <h4 className="font-medium">{section.label}</h4>
+                <dl className="grid gap-3 sm:grid-cols-2">{section.fields.map((field) => <div key={field.key} className="flex items-end gap-2 text-sm"><dt className="shrink-0 text-stone-600">{field.label}</dt><dd className="min-w-16 flex-1 border-b border-dotted border-stone-400">&nbsp;</dd></div>)}</dl>
+              </div>)}
+              <p className="text-sm text-stone-600">護理人員簽章：____________________</p>
+            </section>}
             <p className="mb-4 text-sm text-stone-600">{document.savedAt ? `${document.dirty ? "有未完成暫存的修改｜" : ""}儲存 ${taipeiTimestamp(document.savedAt)}｜${document.author}` : "尚未暫存；欄位變更會保留於本機草稿。"}</p>
             {document.editingEntryId && <p role="status" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">正在修改一筆已簽出的紀錄：完成後請重新簽名並簽出，系統會覆蓋原紀錄並記下修改者與時間。想保留原紀錄請改用「新增一筆」。</p>}
             {form.sections.length > 1 && <nav aria-label="表單區段" className="mb-5 flex flex-wrap gap-2" data-no-print>{form.sections.map((section, index) => <button type="button" key={section.label} aria-pressed={index === sectionIndex} className={buttonStyles({ selected: index === sectionIndex })} onClick={() => setSectionIndex(index)}>{section.label}</button>)}</nav>}

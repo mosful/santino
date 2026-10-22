@@ -34,7 +34,7 @@ Next.js 16 與訓練資料中的版本有破壞性差異 —— **寫任何程�
 
 ## 路由即模組
 
-`src/app/` 下各路由對應各模組：`todo`（待辦，選單第一項）／`mama`／`baby`／`babycam`／`customer`／`doctor`／`care`／`kpi`／`meal`／`hr`／`contract`／`course`／`line`／`admin`／`cases`，另有 `login`／`forgot-password`／`view`。**沒有 `room` 路由**（房況收回首頁總覽）；`/cases/calendar` 僅保留舊連結，實際轉導 `/todo`。
+`src/app/` 下各路由對應各模組：`todo`（待辦，選單第一項）／`quote`（套餐速算，櫃台服務第一個子項）／`mama`／`baby`／`babycam`／`customer`／`doctor`／`care`／`kpi`／`meal`／`hr`／`contract`／`course`／`line`／`admin`／`cases`，另有 `login`／`forgot-password`／`view`。**沒有 `room` 路由**（房況收回首頁總覽）；`/cases/calendar` 僅保留舊連結，實際轉導 `/todo`。
 
 ## 按鈕樣式只有一個來源
 
@@ -51,7 +51,7 @@ Next.js 16 與訓練資料中的版本有破壞性差異 —— **寫任何程�
 ```powershell
 npm run lint      # Next.js ESLint 規則
 npm run build     # 型別檢查並靜態輸出至 out/
-npm test          # 31 項 node:test 單元測試
+npm test          # 39 項 node:test 單元測試
 npm run test:e2e  # Playwright 走 out/，8 支場景
 ```
 

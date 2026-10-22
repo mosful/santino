@@ -9,7 +9,7 @@ const assert = require("node:assert/strict"); const fs = require("node:fs/promis
   await context.addInitScript(() => { localStorage.setItem("santino_auth_v1", "1"); if (!localStorage.getItem("santino_current_role_v1")) localStorage.setItem("santino_current_role_v1", "管理者"); });
   const page = await context.newPage(); const errors = []; const requests = [];
   page.on("pageerror", (error) => errors.push(error.message)); page.on("request", (request) => { if (/\/api\//.test(request.url()) || /^https?:/.test(request.url()) && !request.url().startsWith(base + "")) requests.push(request.url()); });
-  await page.goto(base + "/cases/"); await page.getByRole("button", { name: /^入住後/ }).click(); await page.getByRole("button", { name: "開啟案件", exact: true }).first().click();
+  await page.goto(base + "/cases/"); await page.getByRole("button", { name: /^入住後/ }).click(); await page.getByRole("link", { name: "開啟案件", exact: true }).first().click();
   await page.getByRole("button", { name: "合約變更單", exact: true }).click();
   await page.getByLabel("變更後天數", { exact: true }).fill("25"); await page.getByLabel("換房至（選填）", { exact: true }).selectOption("303"); await page.getByLabel("原因", { exact: true }).fill("展示換房與續住");
   await page.getByLabel("案件操作確認").getByRole("button", { name: "確認", exact: true }).click();

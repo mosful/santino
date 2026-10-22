@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
 import { CASE_STAGES, type CaseRecord, type ReservationInput } from "@/lib/domain/types";
@@ -18,6 +18,7 @@ import ContractSteps from "./ContractSteps";
 import RoomServicePanel from "./RoomServicePanel";
 import { DailyLedger, AdmissionMeal, ReturnPhotos, ReturnInspection, ReturnGuide, RefundCalculator } from "./CaseDetails";
 import CaseDocs from "./CaseDocs";
+import MonthlyStats from "./MonthlyStats";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { CASE_FLOW_ROLE_HINT, canUseCaseFlow } from "@/lib/permissions";
 
@@ -116,6 +117,7 @@ function PaymentRecords({ record, editable }: { record: CaseRecord; editable: bo
 
 export default function CaseWorkspace() {
   const params = useSearchParams();
+  const router = useRouter();
   const { data, storageError } = useDomainStore();
   const role = useCurrentRole();
   const [selected, setSelected] = useState<string | null>(null);
@@ -190,8 +192,14 @@ export default function CaseWorkspace() {
   const createReservation = (asDraft: boolean) => run(() => {
     const id = caseActions.createReservation(reservation, asDraft);
     if (quotePreset) caseActions.update(id, quotePreset);
-    setReservation(emptyReservation()); setQuotePreset(null); setCreating(false); setSelected(id);
-  }, asDraft ? "已暫存預約案件，可稍後繼續。" : "已建立完整預約案件。");
+    setReservation(emptyReservation()); setQuotePreset(null); setCreating(false); setSelected(null);
+    /*
+      ⚠️ 暫存後要回清單，不要直接跳進案件詳情：客戶回報「暫存完再點左選單的案件清單跳不回來」——
+      當時是把 selected 設成新案件，而左選單連的是同一個路由（/cases/），網址沒變就不會重畫。
+      現在案件詳情一律走 /cases/detail/?id=…，清單頁就只負責清單。
+    */
+    if (!asDraft) router.push(`/cases/detail/?id=${encodeURIComponent(id)}`);
+  }, asDraft ? "已暫存預約案件，可在清單中繼續編輯。" : "已建立完整預約案件。");
   // ⚠️ 分頁鈕上的筆數與清單必須用同一支判定，不要各寫一次 filter。
   const inTab = (item: typeof data.cases[number], label: string) =>
     label === "已結案" ? item.closed : !item.closed && (label === "入住前" ? item.stage <= 4 : item.stage >= 5);
@@ -229,7 +237,8 @@ export default function CaseWorkspace() {
       {/* 「入住前」同時是分頁名與階段名（v24 §4.2／§4.3 皆如此用字），
           iPad 上沒有滑鼠提示，所以把涵蓋範圍直接寫出來，避免被讀成只有該階段。 */}
       <p className="text-xs text-stone-500">由預約開始，沿案件流程的七個階段追蹤。入住前＝預約～入住前階段　·　入住後＝入住中～退房階段　·　已結案＝媽媽已退房（含寶寶續留托嬰）</p>
-      <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white"><table className="w-full min-w-[960px] text-left text-sm"><thead className="bg-stone-50"><tr>{["媽媽／聯絡方式", tab === "入住前" ? "預產期／房型" : "房號／房型", "目前階段", "下一步", "負責人", ""].map((label) => <th key={label} className="p-3 font-medium">{label}</th>)}</tr></thead><tbody>{matches.map((item) => <tr key={item.id} className="border-t border-stone-200"><td className="p-3">{item.name}<br /><span className="text-stone-500">{item.phone}｜{item.contractNo || "尚未下訂"}</span></td><td className="p-3">{item.room || item.dueDate || "尚未排房"}<br />{item.roomType} {item.days} 天</td><td className="p-3"><span className="inline-flex rounded-full bg-stone-100 px-2 py-1 text-xs font-medium">{item.closed ? "已結案" : CASE_STAGES[item.stage]}</span><div className="mt-2 flex gap-1" aria-label={`案件流程進度 ${item.stage + 1}／7`}>{CASE_STAGES.map((stageName, index) => <span key={stageName} title={stageName} className={`h-2.5 w-2.5 rounded-full border ${index < item.stage || item.closed ? "border-emerald-600 bg-emerald-500" : index === item.stage ? "border-brand-600 bg-brand-600" : "border-stone-300 bg-white"}`} />)}</div>{item.draftAt && <span className="mt-2 inline-flex rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">草稿</span>}</td><td className="p-3 text-stone-600">{caseNextAction(item)}</td><td className="p-3">{item.owner}</td><td className="p-3"><button type="button" className={button} onClick={() => { setSelected(item.id); setExpanded([]); setMessage(""); }}>開啟案件</button></td></tr>)}</tbody></table>{!matches.length && <p className="p-6 text-sm">沒有符合條件的案件。</p>}</div>
+      <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white"><table className="w-full min-w-[960px] text-left text-sm"><thead className="bg-stone-50"><tr>{["媽媽／聯絡方式", tab === "入住前" ? "預產期／房型" : "房號／房型", "目前階段", "下一步", "負責人", ""].map((label) => <th key={label} className="p-3 font-medium">{label}</th>)}</tr></thead><tbody>{matches.map((item) => <tr key={item.id} className="border-t border-stone-200"><td className="p-3">{item.name}<br /><span className="text-stone-500">{item.phone}｜{item.contractNo || "尚未下訂"}</span></td><td className="p-3">{item.room || item.dueDate || "尚未排房"}<br />{item.roomType} {item.days} 天</td><td className="p-3"><span className="inline-flex rounded-full bg-stone-100 px-2 py-1 text-xs font-medium">{item.closed ? "已結案" : CASE_STAGES[item.stage]}</span><div className="mt-2 flex gap-1" aria-label={`案件流程進度 ${item.stage + 1}／7`}>{CASE_STAGES.map((stageName, index) => <span key={stageName} title={stageName} className={`h-2.5 w-2.5 rounded-full border ${index < item.stage || item.closed ? "border-emerald-600 bg-emerald-500" : index === item.stage ? "border-brand-600 bg-brand-600" : "border-stone-300 bg-white"}`} />)}</div>{item.draftAt && <span className="mt-2 inline-flex rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">草稿</span>}</td><td className="p-3 text-stone-600">{caseNextAction(item)}</td><td className="p-3">{item.owner}</td><td className="p-3"><Link href={`/cases/detail/?id=${encodeURIComponent(item.id)}`} className={button}>開啟案件</Link></td></tr>)}</tbody></table>{!matches.length && <p className="p-6 text-sm">沒有符合條件的案件。</p>}</div>
+      <MonthlyStats />
       </CollapsibleSection>
     </> : <>
       <CollapsibleSection id="case-common" title={`${record.name}・共通資料`} summary={record.closed ? "已結案" : CASE_STAGES[record.stage]} action={record.closed ? <button type="button" className={button} onClick={() => setOperation("reopen")}>重新開啟案件</button> : <button type="button" className={button} onClick={() => setOperation("force")}>強制結案</button>}><fieldset disabled={!edit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Field required label="媽媽姓名" value={record.name} onChange={(name) => patch({ name })} /><Field required label="聯絡電話" value={record.phone} onChange={(phone) => patch({ phone })} /><Field label="預產期" type="date" value={record.dueDate} onChange={(dueDate) => patch({ dueDate })} /><Field label="身分證字號（展示）" value={record.idNo} onChange={(idNo) => patch({ idNo })} /><Field label="醫院病歷號" value={record.hospitalChartNo ?? ""} onChange={(hospitalChartNo) => patch({ hospitalChartNo })} /></fieldset>{record.closed && <p className="mt-3 text-sm text-stone-600">案件已結案，所有階段唯讀。{record.forced ? "行政強制結案不代表實際退房。" : ""}</p>}</CollapsibleSection>

@@ -11,7 +11,7 @@ export default function QuotePage() {
   return (
     <div className="page-frame">
       <RequireAccess moduleNo="1">
-        <PageHeader title="套餐速算" />
+        <PageHeader title="套餐速算" iconKey="quote" />
         <PricingCalculator
           onUse={(name, phone, preset) => {
             const query = new URLSearchParams({

@@ -9,7 +9,7 @@ import RoleSwitcher from "./RoleSwitcher";
 import SidebarIllustration from "./SidebarIllustration";
 import { useSidebarCollapsed, setSidebarCollapsed } from "@/lib/sidebarStore";
 import { usePageHeading } from "@/lib/pageHeadingStore";
-import { MODULE_ICONS } from "./icons";
+import { MODULE_ICONS, SUB_ICONS } from "./icons";
 import { HEADER_INLINE_SLOT_ID, HEADER_SLOT_ID } from "./HeaderSlot";
 
 const AUTH_ROUTE_PREFIXES = ["/login", "/forgot-password"];
@@ -34,7 +34,8 @@ function Brand({ compact = false }: { compact?: boolean }) {
 
 function PageHeading() {
   const heading = usePageHeading();
-  const Icon = heading?.moduleNo ? MODULE_ICONS[heading.moduleNo] : undefined;
+  // 先看 iconKey（側邊欄子項圖示），再看模組編號；兩個都沒有才落回那根漸層小直條。
+  const Icon = heading?.iconKey ? SUB_ICONS[heading.iconKey] : heading?.moduleNo ? MODULE_ICONS[heading.moduleNo] : undefined;
 
   if (!heading) {
     // 標題由各頁的 PageHeader 於掛載後送進來；未送達前先佔住列高避免頁首跳動。

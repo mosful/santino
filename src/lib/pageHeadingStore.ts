@@ -2,7 +2,8 @@
 
 import { useSyncExternalStore } from "react";
 
-export type PageHeading = { title: string; moduleNo?: string } | null;
+/** iconKey 對應側邊欄子項圖示（SUB_ICONS）；沒有模組編號的頁面靠它顯示頁首圖示。 */
+export type PageHeading = { title: string; moduleNo?: string; iconKey?: string } | null;
 
 // 頁面標題改由 AppShell 的頁首列渲染，與登入者資訊同一列；
 // 各頁仍用 PageHeader 宣告自己的標題，由這支 store 傳給頁首。
@@ -14,7 +15,7 @@ function emit() {
 }
 
 export function setPageHeading(next: PageHeading) {
-  if (current?.title === next?.title && current?.moduleNo === next?.moduleNo) return;
+  if (current?.title === next?.title && current?.moduleNo === next?.moduleNo && current?.iconKey === next?.iconKey) return;
   current = next;
   emit();
 }

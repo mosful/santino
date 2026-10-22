@@ -13,15 +13,18 @@ export default function PageHeader({
   title,
   action,
   moduleNo,
+  iconKey,
 }: {
   title: string;
   action?: React.ReactNode;
   moduleNo?: string;
+  /** 沒有模組編號的頁面（例如櫃台服務底下的子頁）用這個指定頁首圖示，值同側邊欄的 iconKey。 */
+  iconKey?: string;
 }) {
   useEffect(() => {
-    setPageHeading({ title, moduleNo });
+    setPageHeading({ title, moduleNo, iconKey });
     return () => clearPageHeading(title);
-  }, [title, moduleNo]);
+  }, [title, moduleNo, iconKey]);
 
   return (
     <>

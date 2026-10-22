@@ -77,7 +77,7 @@ const GROUPS: { id: GroupId; label: string; heading: string; description: string
     heading: "入住登記",
     description: "登記後即可交付觀看 QRCode 與密碼；寶寶與監視器由護理人員在「寶寶登錄」指派。",
     tabs: [
-      { id: "desk", label: "櫃檯入住與交付", access: "01", roles: CASE_FLOW_ROLES_FOR_BABYCAM },
+      { id: "desk", label: "入住登記", access: "01", roles: CASE_FLOW_ROLES_FOR_BABYCAM },
       { id: "list", label: "入住狀態", access: "01" },
       // 報表查的是觀看與照護紀錄，和「誰在住、授權到什麼時候」是同一條線，
       // 所以跟著 01 走；護理師不需要看誰在觀看，故限定角色。

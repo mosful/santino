@@ -1,6 +1,7 @@
 import type { CaseRecord } from "./types";
 import { HOSPITALS } from "./options";
 import { caseBalance } from "./rules";
+import { DEMO_BABY_NAME, DEMO_MOTHER_NAME, DEMO_PHONE, orDemo } from "../demo/demoDefaults";
 
 /**
  * 櫃台在案件流程裡要填、要印的紙本單據 —— 欄位全部照客戶手冊抄。
@@ -91,8 +92,9 @@ export const CASE_DOCS: CaseDoc[] = [
       { label: "簽核", fields: [text("staff", "客房專員"), date("staffDate", "日期"), text("approver", "副總簽核")] },
     ],
     prefill: (record) => ({
-      motherName: record.name,
-      motherPhone: record.phone,
+      motherName: orDemo(record.name, DEMO_MOTHER_NAME),
+      motherPhone: orDemo(record.phone, DEMO_PHONE),
+      husbandPhone: DEMO_PHONE,
       dueDate: record.dueDate,
       hospital: record.hospital,
       delivery: record.deliveryMethod === "自然產" ? "NSD 自然產" : record.deliveryMethod === "剖腹產" ? "C/S 剖腹產" : "未定",
@@ -124,7 +126,7 @@ export const CASE_DOCS: CaseDoc[] = [
     ],
     prefill: (record) => ({
       room: record.room,
-      motherName: record.name,
+      motherName: orDemo(record.name, DEMO_MOTHER_NAME),
       stay: stayRange(record),
       delivery: record.deliveryMethod === "剖腹產" ? "剖腹產" : "自然產",
       dietAvoid: record.customerDetails?.mealSummary ?? "",
@@ -141,6 +143,7 @@ export const CASE_DOCS: CaseDoc[] = [
         fields: [
           text("room", "房號"),
           text("motherName", "媽媽姓名"),
+          text("babyName", "寶寶姓名"),
           text("signature", "通知簽章"),
           text("weeks", "週數"),
           select("sex", "性別", ["男", "女"]),
@@ -158,7 +161,8 @@ export const CASE_DOCS: CaseDoc[] = [
     ],
     prefill: (record) => ({
       room: record.room,
-      motherName: record.name,
+      motherName: orDemo(record.name, DEMO_MOTHER_NAME),
+      babyName: DEMO_BABY_NAME,
       hospitalDoctor: record.hospital,
       delivery: record.deliveryMethod === "剖腹產" ? "C/S" : "NSD",
       chinese: record.chineseConsent ? "是" : "否",
@@ -183,7 +187,7 @@ export const CASE_DOCS: CaseDoc[] = [
         ],
       },
     ],
-    prefill: (record) => ({ room: record.room, motherName: record.name, stay: stayRange(record) }),
+    prefill: (record) => ({ room: record.room, motherName: orDemo(record.name, DEMO_MOTHER_NAME), stay: stayRange(record) }),
   },
   {
     key: "payment-notice",
@@ -206,7 +210,7 @@ export const CASE_DOCS: CaseDoc[] = [
       },
     ],
     prefill: (record) => ({
-      motherName: record.name,
+      motherName: orDemo(record.name, DEMO_MOTHER_NAME),
       days: String(record.days),
       balance: String(Math.max(0, caseBalance(record))),
       method: "現金或匯款",
@@ -245,7 +249,7 @@ export const CASE_DOCS: CaseDoc[] = [
       },
       { label: "填表", fields: [date("filledAt", "填表日期"), text("filledBy", "填表人")] },
     ],
-    prefill: (record) => ({ motherName: record.name, parity: record.parity, filledBy: record.name }),
+    prefill: (record) => ({ motherName: orDemo(record.name, DEMO_MOTHER_NAME), parity: record.parity, filledBy: orDemo(record.name, DEMO_MOTHER_NAME) }),
   },
   {
     key: "pediatric-consult",
@@ -265,7 +269,7 @@ export const CASE_DOCS: CaseDoc[] = [
         ],
       },
     ],
-    prefill: (record) => ({ room: record.room, motherName: record.name }),
+    prefill: (record) => ({ room: record.room, motherName: orDemo(record.name, DEMO_MOTHER_NAME) }),
   },
 ];
 

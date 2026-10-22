@@ -210,8 +210,8 @@ function adminTabContent(key: string, canEditSystem: boolean, canEditOperations:
         <PendingEntry
           title="套餐與贈品規則"
           detail="房型 × 天數 × 生產院所 × 價格身分的定價表、贈天數與贈課程門檻，目前寫在程式內的示範值。待取得客戶實際定價 Excel 後改為此處維護。"
-          href="/cases/"
-          hrefLabel="先到案件清單看套餐快速試算"
+          href="/quote/"
+          hrefLabel="先到套餐速算看定價"
         />
       );
     case "contract-version":

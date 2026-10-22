@@ -1,10 +1,19 @@
+import { DEMO_BABY_NAME, DEMO_MOTHER_NAME, DEMO_PHONE } from "@/lib/demo/demoDefaults";
 import PrototypeFormActions from "@/components/ui/PrototypeFormActions";
+
+/** 欄位名稱帶「姓名」「電話」就先填 DEMO 預設值（客戶 2026-10-22：展示時不要每次重打）。 */
+function demoValue(label: string) {
+  if (label.includes("電話") || label.includes("手機")) return DEMO_PHONE;
+  if (label.includes("寶寶") || label.includes("嬰兒")) return DEMO_BABY_NAME;
+  if (label.includes("媽媽") || label.includes("產婦")) return DEMO_MOTHER_NAME;
+  return undefined;
+}
 
 function Field({ label, placeholder }: { label: string; placeholder?: string }) {
   return (
     <div>
       <label className="mb-1 block text-xs text-stone-500">{label}</label>
-      <input placeholder={placeholder} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm" />
+      <input aria-label={label} defaultValue={demoValue(label)} placeholder={placeholder} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm" />
     </div>
   );
 }
@@ -90,6 +99,7 @@ export function VisitorInfo({ room }: { room: string }) {
       <div className="text-xs text-stone-400">房號 {room}｜訪客資料</div>
       <div className="grid grid-cols-2 gap-3">
         <Field label="訪客姓名" />
+        <Field label="訪客電話" />
         <Field label="到訪時段" />
       </div>
       <SubmitBar />
@@ -103,6 +113,7 @@ export function CompanionInfo({ room }: { room: string }) {
       <div className="text-xs text-stone-400">房號 {room}｜陪宿者資料</div>
       <div className="grid grid-cols-2 gap-3">
         <Field label="陪宿者姓名" />
+        <Field label="陪宿者電話" />
         <Field label="與媽媽關係" />
       </div>
       <SubmitBar />

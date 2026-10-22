@@ -68,7 +68,7 @@ export const MODULES: ModuleInfo[] = [
       每一項都接真正的權限判定，沒權限的角色連項目都不會出現。
     */
     subItems: [
-      { key: "quote", label: "套餐快速試算", href: "/quote/", requiresCaseFlow: true, iconKey: "quote" },
+      { key: "quote", label: "套餐速算", href: "/quote/", requiresCaseFlow: true, iconKey: "quote" },
       { key: "cases", label: "案件清單", href: "/cases/", requiresCaseFlow: true, iconKey: "cases" },
       { key: "customer", label: "客戶資料", href: "/customer/", moduleNo: "5", iconKey: "customer" },
       { key: "care", label: "媽媽關懷", href: "/care/", moduleNo: "7", iconKey: "care" },

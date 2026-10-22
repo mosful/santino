@@ -5,6 +5,7 @@ import { babycamActions } from "@/lib/babycam/actions";
 import type { DemoDomain, ViewingBinding } from "@/lib/domain/types";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { CameraChipGrid, ZoneFilter } from "./BabycamUi";
+import { DEMO_BABY_NAME, orDemo } from "@/lib/demo/demoDefaults";
 
 const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
 // 按鈕樣式一律取自 components/ui/Button，不在此另開複本（見該檔開頭說明）。
@@ -12,7 +13,7 @@ const button = buttonStyles();
 
 export default function BindingEditor({ data, binding, onChange }: { data: DemoDomain; binding: ViewingBinding; onChange: () => void }) {
   const [babyId, setBabyId] = useState("");
-  const [name, setName] = useState("");
+  const [name, setName] = useState(DEMO_BABY_NAME);
   const [cartNo, setCartNo] = useState("");
   const [birthDate, setBirthDate] = useState("2026-10-01");
   const [sex, setSex] = useState<"男" | "女">("男");
@@ -46,7 +47,7 @@ export default function BindingEditor({ data, binding, onChange }: { data: DemoD
   function selectBaby(id: string) {
     const subject = candidates.find((item) => item.id === id);
     const baby = binding.babies.find((item) => item.babyId === id);
-    setBabyId(id); setName(subject?.name ?? ""); setCartNo(baby?.cartNo ?? subject?.carNo ?? "");
+    setBabyId(id); setName(orDemo(subject?.name, DEMO_BABY_NAME)); setCartNo(baby?.cartNo ?? subject?.carNo ?? "");
     setBirthDate(subject?.birthDate ?? "2026-10-01"); setSex(subject?.gender === "女" ? "女" : "男");
     setBirthOrder(baby?.birthOrder ?? (binding.babies.length ? binding.babies.length + 1 : 0));
     setCameraId(baby?.cameraId ?? data.cameras.find((camera) => camera.enabled && !data.bindings.some((item) => !item.ended && item.babies.some((child) => child.cameraId === camera.id)))?.id ?? data.cameras[0]?.id ?? "");

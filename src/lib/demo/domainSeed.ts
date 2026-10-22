@@ -10,7 +10,8 @@ import { cameraCodec, DEFAULT_NETWORK_PREFIX } from "../babycam/network";
   真正決定看到哪一間房的是 ticket，不是這組帳密。
   正式版請改回每筆各自產生。
 */
-export const DEMO_PHONE = "0912345678";
+export { DEMO_PHONE } from "./demoDefaults";
+import { DEMO_PHONE } from "./demoDefaults";
 export const DEMO_PASSCODE = "123456";
 
 import { DEFAULT_PRINT_SETTINGS } from "../babycam/wristband-print";

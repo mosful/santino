@@ -11,7 +11,7 @@ const assert = require("node:assert/strict"); const fs = require("node:fs/promis
   page.on("pageerror", (error) => errors.push(error.message)); page.on("request", (request) => { if (/\/api\//.test(request.url()) || /^https?:/.test(request.url()) && !request.url().startsWith(base + "")) requests.push(request.url()); });
   await page.goto(base + "/cases/"); await page.getByRole("button", { name: /^入住後/ }).click(); await page.getByRole("button", { name: "開啟案件", exact: true }).first().click();
   await page.getByRole("button", { name: "合約變更單", exact: true }).click();
-  await page.getByLabel("變更後天數", { exact: true }).fill("25"); await page.getByLabel("換房至（選填）", { exact: true }).selectOption("303"); await page.getByLabel("原因（必填）", { exact: true }).fill("展示換房與續住");
+  await page.getByLabel("變更後天數", { exact: true }).fill("25"); await page.getByLabel("換房至（選填）", { exact: true }).selectOption("303"); await page.getByLabel("原因", { exact: true }).fill("展示換房與續住");
   await page.getByLabel("案件操作確認").getByRole("button", { name: "確認", exact: true }).click();
   let data = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1"))); const record = data.cases.find((item) => item.roomMoves?.length);
   assert.equal(record.room, "303"); assert.equal(record.days, 25);

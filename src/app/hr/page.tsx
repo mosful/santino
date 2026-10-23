@@ -7,6 +7,7 @@ import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import Switch from "@/components/ui/Switch";
 import { makeRng, makeUniqueNameGenerator } from "@/lib/mock/genUtil";
+import { FormSection, SummaryRow, WorkArea } from "@/components/ui/Workspace";
 
 const DEPTS = ["嬰兒室組", "業務組", "房務組", "餐飲組", "院長室"];
 const ROLES_BY_DEPT: Record<string, string[]> = {
@@ -55,8 +56,7 @@ function RoleGroupSettings() {
   const [visibleUnits, setVisibleUnits] = useState({ nursery: true, admin: false, meal: false });
 
   return (
-    <div className="rounded border border-stone-200 p-3">
-      <div className="mb-2 text-xs font-medium text-stone-600">角色群組資料修改（如：護理長）</div>
+    <FormSection title="角色群組資料修改" description="以護理長為例，設定自動授權、班表可見單位與主管歸屬。">
       <div className="space-y-3 text-xs">
         <Switch checked={autoAuth} onChange={setAutoAuth} label="自動授權開關（開啟後新進該角色人員自動套用群組權限）" />
         <div>
@@ -89,23 +89,24 @@ function RoleGroupSettings() {
           ⚠ 角色名稱異動請連動權限模版設定，避免兩處資料不同步。
         </p>
       </div>
-    </div>
+    </FormSection>
   );
 }
 
 function PermissionTab() {
   return (
-    <div className="space-y-3 text-sm">
-      <div className="rounded border border-stone-200 p-3">
-        <div className="mb-2 text-xs font-medium text-stone-600">2.1 各部門權限比較表展開</div>
+    <WorkArea aside={<FormSection title="目前權限架構" description="此頁為角色群組與主管層級的設定入口。"><SummaryRow label="部門" value="5 組" /><SummaryRow label="角色群組" value="依部門套用" /><SummaryRow label="功能範圍" value="15 個模組" /></FormSection>}>
+      <div className="settings-stack text-sm">
+      <section>
+        <div className="text-sm font-medium text-stone-700">2.1 各部門權限比較表展開</div>
         <p className="text-xs text-stone-400">部門/單位/角色權限比較列表（示意）</p>
-      </div>
-      <div className="rounded border border-stone-200 p-3">
-        <div className="mb-2 text-xs font-medium text-stone-600">2.2 考勤主管設定</div>
+      </section>
+      <section>
+        <div className="text-sm font-medium text-stone-700">2.2 考勤主管設定</div>
         <p className="text-xs text-stone-400">設定各部門/單位之考勤主管</p>
-      </div>
-      <div className="rounded border border-stone-200 p-3">
-        <div className="mb-2 text-xs font-medium text-stone-600">2.3 部門角色列表</div>
+      </section>
+      <section>
+        <div className="text-sm font-medium text-stone-700">2.3 部門角色列表</div>
         <ul className="space-y-1 text-xs text-stone-600">
           {DEPT_ROLES.map((d) => (
             <li key={d.dept}>
@@ -113,12 +114,13 @@ function PermissionTab() {
             </li>
           ))}
         </ul>
-      </div>
+      </section>
       <RoleGroupSettings />
       <p className="text-xs text-stone-400">
         權限模版設定完整系統功能樹狀清單需覆蓋15個模組，每節點可設定「權限：全覽/部分/無」（另於15.後台管理章節詳列，本頁僅示意入口）。
       </p>
-    </div>
+      </div>
+    </WorkArea>
   );
 }
 

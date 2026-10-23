@@ -37,7 +37,11 @@ export default function OperationsOverview({
   const pending = taskEvents(domain, care).filter(
     (event) => !event.handled && roleTaskCategories(role).includes(event.category)
   );
-  const urgent = pending.filter((event) => event.date <= today).slice(0, 5);
+  const prioritized = [...pending]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 5);
+  const overdueCount = pending.filter((event) => event.date < today).length;
+  const todayCount = pending.filter((event) => event.date === today).length;
   /*
     四個數字一律由 pending（＝下方到期清單的同一份來源）算出。
 
@@ -48,8 +52,8 @@ export default function OperationsOverview({
   const inHouse = domain.cases.filter((record) => !record.closed && record.stage === 5).length;
   const movingSoon = domain.cases.filter((record) => !record.closed && (record.stage === 4 || record.stage === 6)).length;
   const quickStats: QuickStat[] = [
-    { key: "overdue", label: "逾期待辦", value: pending.filter((event) => event.date < today).length, tone: "rose" },
-    { key: "today", label: "今日追蹤", value: pending.filter((event) => event.date === today).length, tone: "amber" },
+    { key: "overdue", label: "逾期待辦", value: overdueCount, tone: "rose" },
+    { key: "today", label: "今日追蹤", value: todayCount, tone: "amber" },
     { key: "staying", label: "入住中", value: inHouse, tone: "brand" },
     { key: "moving", label: "近日入退房", value: movingSoon, tone: "blue" },
   ].map((stat) => ({
@@ -76,7 +80,7 @@ export default function OperationsOverview({
       <CollapsibleSection
         id="today-workspace"
         title="今日工作台"
-        summary={urgent.length ? `${urgent.length} 件到期事項` : "今天沒有到期事項"}
+        summary={overdueCount || todayCount ? `逾期 ${overdueCount}・今日 ${todayCount}` : "今天沒有到期事項"}
         icon={<BellRing className="h-[18px] w-[18px] shrink-0 text-rose-500" aria-hidden="true" />}
       >
 
@@ -86,17 +90,25 @@ export default function OperationsOverview({
           {quickStats.map(({ key, ...stat }) => <QuickStatButton key={key} {...stat} />)}
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2">
-          {urgent.map((event) => (
-            <Link key={event.id} href={event.href} className="group flex min-w-0 items-center gap-3 rounded-2xl border border-rose-100 bg-rose-50/60 p-3 hover:border-rose-200 hover:bg-rose-50">
-              <span className="rounded-lg bg-white px-2 py-1 text-xs font-bold text-rose-600 shadow-sm">{event.date.slice(5)}</span>
+        <div className="overflow-hidden rounded-xl border border-border-subtle bg-surface-raised">
+          {prioritized.map((event) => {
+            const timing = event.date < today ? "逾期" : event.date === today ? "今天" : event.date.slice(5);
+            const urgent = event.date < today;
+            return <Link key={event.id} href={event.href} className="group flex min-w-0 items-center gap-3 border-b border-border-subtle px-4 py-3 last:border-b-0 hover:bg-brand-50/50">
+              <span className={`min-w-12 rounded-lg px-2 py-1 text-center text-xs font-bold ${urgent ? "bg-rose-100 text-rose-700" : event.date === today ? "bg-amber-100 text-amber-800" : "bg-stone-100 text-stone-600"}`}>{timing}</span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[11px] font-semibold text-rose-600">{event.category}</span>
-                <span className="block truncate text-sm font-medium text-stone-700 group-hover:text-rose-700">{event.title}</span>
+                <span className="block text-[11px] font-semibold text-stone-500">{event.category}</span>
+                <span className="block truncate text-sm font-medium text-stone-700 group-hover:text-brand-700">{event.title}</span>
               </span>
-            </Link>
-          ))}
-          {!urgent.length && <p className="col-span-full rounded-2xl border border-dashed border-stone-200 p-6 text-center text-sm text-stone-500">今天沒有逾期或到期待辦。</p>}
+              <ArrowRight className="h-4 w-4 shrink-0 text-stone-300 group-hover:text-brand-500" aria-hidden="true" />
+            </Link>;
+          })}
+          {!prioritized.length && <p className="p-6 text-center text-sm text-stone-500">目前沒有待處理事項。</p>}
+        </div>
+
+        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-stone-500">
+          <span>依期限排序，先顯示最需要處理的 5 件。</span>
+          <Link href="/todo/" className="inline-flex items-center gap-1 font-semibold text-brand-700 hover:text-brand-800">查看全部待辦<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
         </div>
 
         {/* 只留數字，不再連去 /cases/：上方常用功能列已經有「案件流程」，
@@ -134,7 +146,7 @@ export default function OperationsOverview({
         */}
         {SHOW_ROOM_SUMMARY && <Link
           href="/rooms/"
-          className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-border-subtle bg-surface-raised px-4 py-3 shadow-xs transition-colors hover:border-brand-300 hover:bg-brand-50"
+          className="work-surface flex flex-wrap items-center gap-x-4 gap-y-1.5 px-4 py-3 transition-colors hover:border-brand-300 hover:bg-brand-50"
         >
           <span className="flex items-center gap-2 text-sm font-bold text-stone-700">
             <BedDouble className="h-[18px] w-[18px] shrink-0 text-brand-500" aria-hidden="true" />

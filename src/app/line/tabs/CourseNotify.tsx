@@ -5,11 +5,11 @@ import Badge from "@/components/ui/Badge";
 
 function NotifyLogTab({ type }: { type: string }) {
   return (
-    <div className="space-y-2 text-sm">
+    <div className="query-panel space-y-3 text-sm">
       <p className="text-xs text-stone-400">
         觸發條件與時機由13.8課程通知設定決定，本頁僅顯示{type}的實際發送記錄（Push API，單一對象即時發送）。
       </p>
-      <table className="w-full text-left text-xs">
+      <div className="overflow-x-auto"><table className="w-full min-w-[520px] text-left text-xs">
         <thead className="text-stone-500">
           <tr>
             <th className="px-2 py-1">會員</th>
@@ -28,7 +28,7 @@ function NotifyLogTab({ type }: { type: string }) {
             </td>
           </tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
   );
 }

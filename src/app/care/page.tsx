@@ -35,7 +35,8 @@ const reminderFields: FieldSchema[] = [
 function ContactReminderTab({ note }: { note?: string }) {
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-2 text-xs">
+
+      <EditableList moduleNo="7" filters={<>
         <input aria-label="關懷查詢開始日期" name="care-start-date" type="date" className="rounded border border-stone-200 px-2 py-1.5" />
         <span>～</span>
         <input aria-label="關懷查詢結束日期" name="care-end-date" type="date" className="rounded border border-stone-200 px-2 py-1.5" />
@@ -43,8 +44,7 @@ function ContactReminderTab({ note }: { note?: string }) {
           <option>分類：全部</option>
         </select>
         <DemoActionButton feedback={`查詢完成，共 ${SAMPLE.length} 筆關懷紀錄`} variant="primary">查詢</DemoActionButton>
-      </div>
-      <EditableList moduleNo="7" fields={reminderFields} initialRows={SAMPLE} searchPlaceholder="孕媽姓名" />
+       </>} fields={reminderFields} initialRows={SAMPLE} searchPlaceholder="孕媽姓名" />
       {note && <p className="text-xs text-stone-400">{note}</p>}
     </div>
   );

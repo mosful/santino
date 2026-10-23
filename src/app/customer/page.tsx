@@ -254,7 +254,7 @@ export default function CustomerPage() {
               </>
             )}
             {canEdit && (
-              <button onClick={openAdd} className={buttonStyles({ variant: "danger", size: "sm" })}>
+              <button onClick={openAdd} className={buttonStyles({ variant: "primary", size: "sm" })}>
                 ＋ 新增客戶
               </button>
             )}
@@ -270,7 +270,7 @@ export default function CustomerPage() {
         wide
       >
         {selected && draft && (
-          <div className="space-y-3">
+          <div className="customer-detail space-y-5">
             {canEdit && (
               <div className="flex justify-end gap-2">
                 {editing ? (
@@ -278,7 +278,7 @@ export default function CustomerPage() {
                     <button onClick={cancelEdit} className={buttonStyles({ variant: "subtle", size: "sm" })}>
                       取消
                     </button>
-                    <button onClick={save} className={buttonStyles({ variant: "danger", size: "sm" })}>
+                    <button onClick={save} className={buttonStyles({ variant: "primary", size: "sm" })}>
                       儲存
                     </button>
                   </>

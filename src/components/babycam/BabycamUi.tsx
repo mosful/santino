@@ -52,7 +52,7 @@ export function Panel({
   return (
     <section
       className={
-        "overflow-hidden rounded-2xl border border-border-subtle bg-surface-raised shadow-xs " +
+        "work-surface overflow-hidden " +
         (flush ? "" : "p-4 sm:p-5")
       }
     >
@@ -93,9 +93,9 @@ export function SectionHeading({ no, title, description }: { no: string | number
  */
 export function SplitWorkspace({ form, aside }: { form: ReactNode; aside: ReactNode }) {
   return (
-    <div className="grid border-t border-border-subtle lg:grid-cols-[minmax(0,1.1fr)_minmax(380px,0.9fr)]">
-      <div className="min-w-0 p-4 sm:p-5">{form}</div>
-      <aside className="min-w-0 border-t border-border-subtle bg-surface-muted/60 p-4 sm:p-5 lg:border-l lg:border-t-0">
+    <div className="babycam-split">
+      <div className="babycam-form min-w-0">{form}</div>
+      <aside className="babycam-delivery min-w-0">
         {aside}
       </aside>
     </div>

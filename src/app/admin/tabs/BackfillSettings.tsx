@@ -5,6 +5,7 @@ import { useSameRoomLock, setSameRoomLock } from "@/lib/windowLockStore";
 import { careActions, useCareStore } from "@/lib/care/store";
 import { canEditAdminSetting } from "@/lib/permissions";
 import { useCurrentRole } from "@/lib/roleStore";
+import { FormSection, ResultCard, WorkArea } from "@/components/ui/Workspace";
 
 /** 資料回補與例外處理（v24 規格 §10）：退房後回補窗口與多視窗鎖房的例外規則。 */
 export default function BackfillSettings() {
@@ -15,12 +16,12 @@ export default function BackfillSettings() {
   const canEditOperations = canEditAdminSetting(role, "operations");
 
   return (
-    <div className="max-w-3xl space-y-4 text-sm">
-      <section className="rounded-xl border border-border-subtle bg-surface-raised p-4 shadow-xs">
-        <h3 className="text-sm font-semibold text-stone-700">退房後護理紀錄補登窗口</h3>
+    <WorkArea aside={<ResultCard title="一般回補期限" value={`退房後 ${care.backfillDays} 天`} description={`退房日起算，第 ${care.backfillDays} 天的 23:59 截止。逾期後由護理長／管理者補登或授權。`} />}>
+      <FormSection title="退房後護理紀錄補登窗口">
         <div className="mt-3 flex items-center gap-2 text-xs text-stone-600">
           退房後
           <input
+            aria-label="退房後回補天數"
             type="number"
             value={care.backfillDays}
             onChange={(e) => careActions.backfillDays(Number(e.target.value))}
@@ -42,20 +43,20 @@ export default function BackfillSettings() {
         <p className="mt-1 text-xs text-stone-500">
           授權須記錄原因；修改紀錄需正確歸屬實際登入員工，不可用共用帳號代填。
         </p>
-      </section>
+      </FormSection>
 
-      <section className="rounded-xl border border-rose-200 bg-rose-50 p-4">
+      <section className="work-surface p-5">
         <div className="mb-2 flex items-center justify-between gap-3">
-          <h3 className="text-sm font-semibold text-rose-700">多視窗鎖房範圍（開發總則第 9 條）</h3>
+          <h3 className="text-sm font-semibold text-stone-700">多視窗鎖房範圍</h3>
           <Switch checked={multiWindowLock} onChange={setSameRoomLock} disabled={!canEditSystem} />
         </div>
-        <p className="text-xs text-rose-600">
+        <p className="text-sm leading-6 text-stone-600">
           {multiWindowLock
             ? "已開啟：多視窗僅限「同一房間內」可多開，不可同時操作不同房間的表單。"
             : "已關閉（預設）：多視窗不限房間，可同時開啟不同房間的表單／分頁，僅「簽名」步驟強制鎖定單一房間。"}
         </p>
         {!canEditSystem && <p className="mt-2 text-xs font-medium text-rose-700">此為系統面設定，僅管理者可修改。</p>}
       </section>
-    </div>
+    </WorkArea>
   );
 }

@@ -14,13 +14,15 @@ import { careSubject } from "@/lib/care/subjects";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { careActions, careStore, useCareStore } from "@/lib/care/store";
 import { useAssessmentFields } from "@/lib/assessmentConfigStore";
-import { backfillDeadline, canAuthorizeCare, canEditCare, canViewCare, documentKey, isBackfillBlocked, isBackfillExpired, moodNeedsAttention, needsFeedingReassessment, taipeiTimestamp } from "@/lib/care/rules";
+import { backfillDeadline, canAuthorizeCare, canEditCare, canViewCare, documentKey, isBackfillBlocked, isBackfillExpired, moodNeedsAttention, needsFeedingReassessment, taipeiTimestamp, validateCareForm } from "@/lib/care/rules";
 import type { CareKind, CareSignatureRole, CareSubject } from "@/lib/care/types";
 import CareFieldInput, { GrowthChart, buttonClass, inputClass, valueText } from "./CareFields";
 import CareSignature from "./CareSignature";
+import CareFieldGroups from "./CareFieldGroups";
 import styles from "./CareWorkspace.module.css";
 import LocalMedia from "../babycam/LocalMedia";
 import { buttonStyles } from "@/components/ui/buttonStyles";
+import { ActionDock } from "@/components/ui/Workspace";
 
 
 /**
@@ -116,6 +118,9 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   );
   const drafts = Object.values(data.documents).filter((item) => !item.signedAt && (item.savedAt || item.dirty) && subjectFor(item.subjectId)?.kind === kind && forms.some((available) => available.key === item.formKey));
   const history = data.entries.filter((entry) => entry.subjectId === subject?.id && entry.formKey === document?.formKey);
+  const completionErrors = form && document ? validateCareForm(form, document.values) : [];
+  if (form?.signature && document && !document.signature) completionErrors.push("尚未完成本筆簽名。");
+  if (form?.key === "guidance" && document && ["recipient", "executor", "evaluator"].some((key) => !document.signatures?.[key as CareSignatureRole])) completionErrors.push("三方簽名尚未完成。");
   const searchedSubjects = domain.subjects.filter((item) => item.kind === kind).filter((item) => [item.name, item.motherName, item.room, item.carNo, item.chartNo].join(" ").toLowerCase().includes(query.toLowerCase()));
   const subjects = searchedSubjects.filter((item) => filter === "退房回補" ? item.historical : filter === "托嬰" ? !item.historical && item.status === "托嬰" : !item.historical);
   const backfillSubjects = filter === "在館" ? searchedSubjects.filter((item) => item.historical) : [];
@@ -219,7 +224,7 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
           </div>
         </section>}
         <div className={styles.layout}>
-          <article className={`${styles.form} min-w-0 rounded-xl border border-stone-200 bg-white p-4 sm:p-6`}>
+          <article className={`${styles.form} work-surface min-w-0 p-4 sm:p-6`}>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-xl font-semibold">{form.label}</h2>
               <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => setBlankSheet((value) => !value)}>{blankSheet ? "回到填寫畫面" : "列印空白表格"}</button>
@@ -238,12 +243,12 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
             </section>}
             <p className="mb-4 text-sm text-stone-600">{document.savedAt ? `${document.dirty ? "有未完成暫存的修改｜" : ""}儲存 ${taipeiTimestamp(document.savedAt)}｜${document.author}` : "尚未暫存；欄位變更會保留於本機草稿。"}</p>
             {document.editingEntryId && <p role="status" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">正在修改一筆已簽出的紀錄：完成後請重新簽名並簽出，系統會覆蓋原紀錄並記下修改者與時間。想保留原紀錄請改用「新增一筆」。</p>}
-            {form.sections.length > 1 && <nav aria-label="表單區段" className="mb-5 flex flex-wrap gap-2" data-no-print>{form.sections.map((section, index) => <button type="button" key={section.label} aria-pressed={index === sectionIndex} className={buttonStyles({ selected: index === sectionIndex })} onClick={() => setSectionIndex(index)}>{section.label}</button>)}</nav>}
+            {form.sections.length > 1 && <nav aria-label="表單區段" className={styles.sectionNav} data-no-print>{form.sections.map((section, index) => <button type="button" key={section.label} aria-label={section.label} aria-pressed={index === sectionIndex} className={buttonStyles({ selected: index === sectionIndex })} onClick={() => setSectionIndex(index)}><span className={styles.sectionNo} aria-hidden="true">{index + 1}</span>{section.label}</button>)}</nav>}
             {form.key === "growth" && <div className="mb-6"><h3 className="mb-3 font-medium">體重趨勢</h3><GrowthChart points={history.filter((entry) => Number(entry.values.weight) > 0).slice(0, 8).reverse().map((entry) => ({ date: valueText(entry.values.date), weight: Number(entry.values.weight) }))} /></div>}
             {form.key === "mood" && moodNeedsAttention(document.values) && <p role="status" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">達 v24 示範關注門檻，請記錄後續處理。此為護理長提醒情境，未發送通知。</p>}
             <fieldset disabled={!editable} className="space-y-5">
               <legend className="sr-only">{form.label}欄位</legend>
-              {form.sections.map((section, index) => <section key={section.label} className={index !== Math.min(sectionIndex, form.sections.length - 1) ? styles.hiddenSection : ""}><h3 className="mb-4 font-medium">{section.label}</h3><div className="grid gap-4 sm:grid-cols-2">{section.fields.map((field) => <CareFieldInput key={`${document.key}-${field.key}`} field={field} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value), "已加入目前角色的常用語。")} />)}</div></section>)}
+              {form.sections.map((section, index) => <section key={section.label} className={index !== Math.min(sectionIndex, form.sections.length - 1) ? styles.hiddenSection : ""}><h3 className="mb-4 font-medium">{section.label}</h3><CareFieldGroups key={`${document.key}-${section.label}`} formKey={form.key} fields={section.fields} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value), "已加入目前角色的常用語。")} /></section>)}
               {form.key === "feeding" && needsFeedingReassessment(document.values) && <section className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-4"><h3 className="font-semibold">媽媽護理紀錄（再評估）</h3><p className="text-sm">{subject.motherName}｜請於此直接補充評估與處理內容。</p><CareFieldInput field={{ key: "reassessmentNote", label: "再評估護理紀錄", type: "textarea", required: true }} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value))} /></section>}
             </fieldset>
             {form.signature && <div className="mt-6 space-y-3"><h3 className="font-medium">本筆簽名與員工署名</h3><p className="text-sm text-stone-600">對象：{identity(subject)}。簽出時記錄實際操作者；此為靜態原型簽名。</p>
@@ -257,14 +262,14 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
               {editable && signing && <CareSignature identity={`${identity(subject)}｜${form.key === "guidance" ? signatureRoles.find((item) => item.key === signingRole)?.label : "媽媽本人"}`} onCancel={() => setSigning(false)} onConfirm={(image) => { if (run(() => form.key === "guidance" ? careActions.signRole(document.key, signingRole, image) : careActions.sign(document.key, image), "已保存此個案本筆簽名。")) setSigning(false); }} />}
             </div>}
             {document.staffStamp && <p className="mt-4 text-sm">員工印章：{document.staffStamp.author}｜{taipeiTimestamp(document.staffStamp.at)}</p>}
-            <div className="mt-6 flex flex-wrap gap-2 border-t border-stone-200 pt-4" data-no-print>
+            <ActionDock title={document.signedAt ? "本筆紀錄已簽出" : "完成本筆照護紀錄"} description={document.signedAt ? `簽出 ${taipeiTimestamp(document.signedAt)}` : completionErrors[0] ?? "必要欄位已完成，可確認簽出。"}>
               <button type="button" disabled={!editable} onClick={() => run(() => careActions.carryLast(document.key), "已帶入同個案上一筆；日期時間已更新，簽名不帶入。")} className={buttonClass}>帶入上一筆</button>
               <button type="button" disabled={!editable} onClick={() => run(() => careActions.save(document.key), "已暫存，可關閉後從草稿重新開啟。")} className={buttonClass}><Save size={16} />暫存</button>
               <button type="button" disabled={!editable} onClick={() => setPending("complete")} className={buttonStyles({ selected: true })}><Check size={16} />完成簽出</button>
               {permitted && document.signedAt && <button type="button" className={buttonClass} onClick={() => { setSigning(false); run(() => careActions.newEntry(document.key), "已新增空白紀錄，歷史簽出仍保留。"); }}>新增一筆</button>}
               {kind === "mama" && form.key === "ongoing" && <button type="button" disabled={!editable} className={buttonClass} onClick={() => setPending("workorder")}>開立工單</button>}
               <button type="button" className={buttonClass} onClick={() => window.print()}><Printer size={16} />列印本頁</button>
-            </div>
+            </ActionDock>
             <section className="mt-8 border-t border-stone-200 pt-5"><h3 className="mb-3 font-semibold">已簽出紀錄（{history.length}）</h3>{permitted && !!history.length && <p className="mb-3 text-xs text-stone-600">每一筆都可以再次修改或刪除；修改後需重新簽名簽出，系統會記下修改者與時間。</p>}{!history.length && <div className="rounded-lg border border-dashed border-stone-300 bg-stone-50 p-4"><p className="text-sm font-medium">匿名示範歷程</p><p className="mt-1 text-xs text-stone-500">正式簽出後會改列實際操作者、日期、內容與簽名。</p><div className="mt-3 overflow-x-auto"><table className="w-full min-w-[440px] text-left text-sm"><thead><tr><th className="p-2">日期</th><th className="p-2">狀態</th><th className="p-2">摘要</th><th className="p-2">記錄人</th></tr></thead><tbody><tr className="border-t border-stone-200"><td className="p-2">2026-10-16</td><td className="p-2">已完成</td><td className="p-2">例行紀錄正常</td><td className="p-2">示範護理師</td></tr><tr className="border-t border-stone-200"><td className="p-2">2026-10-15</td><td className="p-2">已完成</td><td className="p-2">持續觀察，無異常</td><td className="p-2">示範護理師</td></tr></tbody></table></div></div>}{history.map((entry) => <details key={entry.id} className="border-b border-stone-200 py-3"><summary className="min-h-12 cursor-pointer text-sm">{taipeiTimestamp(entry.at)}｜{entry.author}{entry.historical ? "｜退房回補" : ""}</summary><dl className="mt-3 grid gap-3 sm:grid-cols-2">{Object.entries(entry.values).filter(([key, value]) => key !== "photo" && valueText(value)).map(([key, value]) => <div key={key}><dt className="text-xs text-stone-500">{form.sections.flatMap((section) => section.fields).find((field) => field.key === key)?.label ?? (key === "reassessmentNote" ? "媽媽護理紀錄（再評估）" : key)}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-sm">{valueText(value)}</dd></div>)}</dl>{valueText(entry.values.photo) && <LocalMedia key={valueText(entry.values.photo)} id={valueText(entry.values.photo)} alt="此筆歷史紀錄的本機照片" className="mt-3 max-h-64 max-w-full object-contain" />}{entry.signatures && Object.entries(entry.signatures).map(([roleKey, image]) => <div key={roleKey} className="mt-3"><p className="text-xs text-stone-500">{signatureRoles.find((item) => item.key === roleKey)?.label}</p><img src={image} alt={signatureRoles.find((item) => item.key === roleKey)?.label ?? "此筆簽名"} className={styles.signedImage} /></div>)}{entry.signature && !entry.signatures?.recipient && <img src={entry.signature} alt="此筆歷史媽媽簽名" className={styles.signedImage} />}{entry.staffStamp && <p className="mt-3 text-sm">員工印章：{entry.staffStamp.author}｜{taipeiTimestamp(entry.staffStamp.at)}</p>}{entry.revisions?.map((revision, index) => <p key={`${entry.id}-rev-${index}`} className="mt-2 text-xs text-amber-800">修改紀錄：{taipeiTimestamp(revision.at)}｜{revision.author}｜{revision.note}</p>)}{permitted && <div className="mt-3 flex flex-wrap gap-2" data-no-print><button type="button" className={buttonStyles({ size: "sm" })} onClick={() => run(() => careActions.editEntry(entry.id), "已載入這筆紀錄，修改後請重新簽名並簽出。")}>修改這筆</button><button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { setReason(""); setPending({ kind: "delete-entry", entryId: entry.id }); }}>刪除這筆</button></div>}</details>)}</section>
           </article>
           <aside className={`${styles.sidebar} space-y-6`} data-no-print>
@@ -276,7 +281,7 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
         </div>
       </> : <>
         <p className="mb-5 text-sm leading-6 text-stone-600">直接選擇房卡上的表單，於完整頁面填寫。草稿、編輯鎖與已簽出紀錄會保留於本機瀏覽器。</p>
-        <div className="mb-5 flex flex-wrap gap-3" data-no-print><label className="min-w-0 flex-1"><span className="sr-only">搜尋照護對象</span><input className={inputClass} placeholder="搜尋房號、車號、姓名、病歷號" value={query} onChange={(event) => setQuery(event.target.value)} /></label><div className="flex flex-wrap gap-2">{["在館", "托嬰", "退房回補"].map((status) => <button type="button" key={status} aria-pressed={filter === status} className={buttonStyles({ selected: filter === status })} onClick={() => setFilter(status)}>{status}</button>)}</div></div>
+        <div className="task-filter mb-5 flex flex-wrap gap-3" data-no-print><label className="min-w-0 flex-1"><span className="sr-only">搜尋照護對象</span><input className={inputClass} placeholder="搜尋房號、車號、姓名、病歷號" value={query} onChange={(event) => setQuery(event.target.value)} /></label><div className="flex flex-wrap gap-2">{["在館", "托嬰", "退房回補"].map((status) => <button type="button" key={status} aria-pressed={filter === status} className={buttonStyles({ selected: filter === status })} onClick={() => setFilter(status)}>{status}</button>)}</div></div>
         {drafts.length > 0 && <section className="mb-6 rounded-xl border border-stone-200 p-4"><h2 className="mb-3 flex items-center gap-2 font-semibold"><FileText size={18} />暫存中表單（{drafts.length}）</h2><div className="flex flex-wrap gap-2">{drafts.map((item) => { const target = subjectFor(item.subjectId)!; return <button type="button" key={item.key} className={buttonClass} onClick={() => open(target.id, item.formKey)}>{target.name}｜{forms.find((available) => available.key === item.formKey)?.label ?? item.formKey}</button>; })}</div></section>}
         {canAuthorizeCare(role) && <label className="mb-4 flex flex-wrap items-center gap-3 text-sm" data-no-print>退房回補天數（示範設定）<input aria-label="退房回補天數" type="number" min={0} max={30} className={`${inputClass} !w-24`} value={data.backfillDays} onChange={(event) => run(() => careActions.backfillDays(Number(event.target.value)), "已更新回補期限，所有照護對象同步。")} /></label>}
         <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-stone-600"><span>綠色：入住</span><span>粉色：親子同室</span><span>托嬰以車號識別</span><span>退房回補 {data.backfillDays} 天（示範設定）</span><span className="ml-auto">{subjects.length} 位</span></div>

@@ -28,11 +28,11 @@ export default function MemberBinding() {
   }
 
   return (
-    <div className="space-y-3 text-sm">
+    <div className="query-panel space-y-4 text-sm">
       <p className="text-xs text-stone-400">
         會員與LINE個人帳號綁定/解除；解除綁定後保留歷史發送記錄但停止後續推播。
       </p>
-      <table className="w-full text-left text-xs">
+      <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-xs">
         <thead className="text-stone-500">
           <tr>
             <th className="px-2 py-1">會員姓名</th>
@@ -61,7 +61,7 @@ export default function MemberBinding() {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
       <p className="text-xs text-amber-600">
         ⚠ 群發訊息與課程通知發送前必須檢查「同意接收通知」欄位，未同意者不可發送（個資合規要求）。
       </p>

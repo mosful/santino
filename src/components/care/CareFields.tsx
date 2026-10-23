@@ -61,7 +61,7 @@ export default function CareFieldInput({ field, values, onChange, personal, addP
     {field.type === "textarea" ? <textarea id={id} value={valueText(value)} onChange={(event) => onChange({ [field.key]: event.target.value })} className={inputClass} />
       : field.type === "multiple" ? <div className="flex flex-wrap gap-2" role="group" aria-label={field.label}>{field.options?.map((option) => {
         const selected = Array.isArray(value) ? value : [];
-        return <label key={option} className="flex min-h-12 items-center gap-2 rounded-lg border border-stone-300 px-3 text-sm"><input type="checkbox" checked={selected.includes(option)} onChange={() => onChange({ [field.key]: selected.includes(option) ? selected.filter((item) => item !== option) : [...selected, option] })} />{option}</label>;
+        return <label key={option} data-selected={selected.includes(option)} className="care-option flex min-h-12 items-center gap-2 rounded-lg border border-stone-300 px-3 text-sm"><input type="checkbox" checked={selected.includes(option)} onChange={() => onChange({ [field.key]: selected.includes(option) ? selected.filter((item) => item !== option) : [...selected, option] })} />{option}</label>;
       })}</div>
       : field.type === "select" ? <select id={id} value={valueText(value)} onChange={(event) => onChange({ [field.key]: event.target.value })} className={inputClass}><option value="">請選擇</option>{field.options?.map((option) => <option key={option}>{option}</option>)}</select>
       : field.type === "photo" ? <PhotoField key={valueText(value)} id={valueText(value)} label={field.label} onChange={(next) => onChange({ [field.key]: next })} />

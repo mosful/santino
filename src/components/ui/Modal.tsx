@@ -42,7 +42,7 @@ export default function Modal({
             ✕
           </button>
         </div>
-        <div className="scroll-fade overflow-y-auto p-4">{children}</div>
+        <div className="module-content scroll-fade overflow-y-auto p-4 sm:p-5">{children}</div>
       </div>
     </div>,
     document.body

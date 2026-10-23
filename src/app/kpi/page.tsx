@@ -7,6 +7,8 @@ import TabsFromUrl from "@/components/ui/TabsFromUrl";
 import EditableList, { type FieldSchema, type Row } from "@/components/ui/EditableList";
 import { makeRng, addDays } from "@/lib/mock/genUtil";
 import { RED_RASH_GRADES, useKpiSettings, type RedRashGrade } from "@/lib/kpiRuleStore";
+import { buttonStyles } from "@/components/ui/buttonStyles";
+import { ResultCard } from "@/components/ui/Workspace";
 
 const CARE_INDICATORS = [
   "純母乳哺育率",
@@ -33,11 +35,11 @@ function IndicatorTab({ indicators }: { indicators: string[] }) {
   const target = rule?.target ?? 80;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[210px_1fr]">
-      <ul className="flex gap-2 overflow-x-auto pb-1 text-sm lg:block lg:space-y-1 lg:overflow-visible">
+    <div className="grid gap-5 lg:grid-cols-[230px_1fr]">
+      <ul className="work-surface flex gap-2 overflow-x-auto p-2 text-sm lg:block lg:space-y-1 lg:overflow-visible">
         {indicators.map((indicator) => (
           <li key={indicator} className="shrink-0">
-            <button type="button" onClick={() => setActive(indicator)} className={"w-full rounded-lg px-3 py-2 text-left " + (indicator === active ? "bg-rose-500 text-white" : "bg-white hover:bg-stone-100")}>
+            <button type="button" onClick={() => setActive(indicator)} className={buttonStyles({ selected: indicator === active, fullWidth: true, className: "justify-start whitespace-normal text-left" })}>
               {indicator}
             </button>
           </li>
@@ -45,20 +47,9 @@ function IndicatorTab({ indicators }: { indicators: string[] }) {
       </ul>
       <div className="space-y-4">
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-stone-200 bg-white p-4">
-            <div className="text-xs text-stone-400">本月結果</div>
-            <div className="mt-1 text-2xl font-bold text-stone-700">{values.at(-1)}%</div>
-          </div>
-          <div className="rounded-xl border border-stone-200 bg-white p-4">
-            <div className="text-xs text-stone-400">目標值</div>
-            <div className="mt-1 text-2xl font-bold text-sky-600">{target}%</div>
-          </div>
-          <div className="rounded-xl border border-stone-200 bg-white p-4">
-            <div className="text-xs text-stone-400">判定</div>
-            <div className={"mt-2 font-bold " + ((values.at(-1) ?? 0) >= target ? "text-emerald-600" : "text-amber-600")}>
-              {(values.at(-1) ?? 0) >= target ? "已達標" : "需追蹤"}
-            </div>
-          </div>
+          <ResultCard title="本月結果" value={`${values.at(-1)}%`} />
+          <ResultCard title="目標值" value={`${target}%`} />
+          <ResultCard title="判定" value={(values.at(-1) ?? 0) >= target ? "已達標" : "需追蹤"} />
         </div>
 
         {rule && (
@@ -67,7 +58,7 @@ function IndicatorTab({ indicators }: { indicators: string[] }) {
           </div>
         )}
 
-        <div className="rounded-xl border border-stone-200 bg-white p-4">
+        <div className="work-surface p-5">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-medium text-stone-700">{active}｜近六個月趨勢</h3>
             <span className="text-xs text-stone-400">2026-04～2026-09</span>
@@ -106,7 +97,7 @@ function RedRashStatistics() {
   const rashRule = settings.rules.find((rule) => rule.id === "rash");
 
   return (
-    <section className="space-y-3 rounded-xl border border-stone-200 bg-white p-4">
+    <section className="work-surface space-y-4 p-5">
       <div className="flex flex-wrap items-center gap-2">
         <div>
           <h3 className="font-medium text-stone-700">紅臀分級統計</h3>

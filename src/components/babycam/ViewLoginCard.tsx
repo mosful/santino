@@ -38,9 +38,9 @@ export default function ViewLoginCard({
   }
 
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+    <div className="auth-card rounded-2xl bg-white p-6">
       <div className="mb-5 flex flex-col items-center gap-2 text-center">
-        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-accent-400 text-white shadow-sm">
+        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-600 text-white">
           <Baby className="h-6 w-6" />
         </span>
         <h1 className="text-base font-bold text-stone-800">{title}</h1>
@@ -87,7 +87,7 @@ export default function ViewLoginCard({
 
         <button
           type="submit"
-          className={buttonStyles({ variant: "primary", fullWidth: true, className: "bg-gradient-to-r from-brand-500 to-brand-400 shadow-sm shadow-brand-200 hover:from-brand-600 hover:to-brand-500 active:scale-[0.98]" })}
+          className={buttonStyles({ variant: "primary", fullWidth: true, size: "lg" })}
         >
           進入觀看
         </button>

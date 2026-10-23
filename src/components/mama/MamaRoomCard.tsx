@@ -12,7 +12,7 @@ export default function MamaRoomCard({
   const empty = room.status === "空房" || room.status === "打掃" || room.status === "報修";
 
   return (
-    <div className={`rounded-xl border p-3.5 shadow-sm transition-shadow hover:shadow-md sm:p-4 ${STATUS_COLOR[room.status]}`}>
+    <div className={`rounded-2xl border p-4 transition-colors ${STATUS_COLOR[room.status]}`}>
       <div className="mb-2 flex items-center justify-between">
         <span className="text-lg font-bold">{room.room}</span>
         <Badge

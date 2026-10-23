@@ -50,14 +50,13 @@ const doctorFields: FieldSchema[] = [
 function DeptTab({ showTcmConsent }: { showTcmConsent?: boolean } = {}) {
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2 text-xs">
-        <input aria-label="醫師姓名篩選" name="doctor-name" autoComplete="off" placeholder="輸入醫師姓名…" className="rounded border border-stone-200 px-2 py-1.5" />
+
+      <EditableList moduleNo="6" filters={<>
         <input aria-label="巡診查詢開始日期" name="doctor-start-date" type="date" className="rounded border border-stone-200 px-2 py-1.5" />
         <span>～</span>
         <input aria-label="巡診查詢結束日期" name="doctor-end-date" type="date" className="rounded border border-stone-200 px-2 py-1.5" />
         <DemoActionButton feedback={`查詢完成，共 ${SAMPLE.length} 筆巡診統計`} variant="primary">查詢</DemoActionButton>
-      </div>
-      <EditableList moduleNo="6" fields={doctorFields} initialRows={SAMPLE} searchPlaceholder="醫師姓名" />
+       </>} fields={doctorFields} initialRows={SAMPLE} searchPlaceholder="醫師姓名" />
       {showTcmConsent && (
         <div className="rounded border border-stone-200 p-3">
           <div className="mb-2 text-xs font-medium text-stone-600">中醫看診同意書（6.3.1，新規劃）</div>

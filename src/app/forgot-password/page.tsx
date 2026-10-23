@@ -24,9 +24,9 @@ export default function ForgotPasswordPage() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <title>{pageTitle("忘記密碼")}</title>
-      <div className="animate-fade-in-up w-full max-w-sm rounded-2xl border border-brand-900/10 bg-white p-8 shadow-lg">
+      <div className="auth-card animate-fade-in-up w-full max-w-sm rounded-2xl bg-white p-8">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-accent-400 text-lg font-bold text-white shadow-sm">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 text-lg font-bold text-white">
             聖
           </div>
           <div>
@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
             </p>
             <Link
               href="/login"
-              className={buttonStyles({ variant: "primary", fullWidth: true, className: "mt-2 bg-gradient-to-r from-brand-500 to-brand-400 shadow-sm shadow-brand-200 hover:from-brand-600 hover:to-brand-500" })}
+              className={buttonStyles({ variant: "primary", fullWidth: true, size: "lg", className: "mt-2" })}
             >
               返回登入
             </Link>
@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
               {error && <p className="text-xs text-rose-500">{error}</p>}
               <button
                 type="submit"
-                className={buttonStyles({ variant: "primary", fullWidth: true, className: "bg-gradient-to-r from-brand-500 to-brand-400 shadow-sm shadow-brand-200 hover:from-brand-600 hover:to-brand-500 active:scale-[0.98]" })}
+                className={buttonStyles({ variant: "primary", fullWidth: true, size: "lg" })}
               >
                 寄送重設密碼連結
               </button>

@@ -51,8 +51,8 @@ const ROLE_FOCUS: Record<Role, string> = {
   管理者: "全院十類待辦都可處理，並可檢視所有角色的待辦來源。",
 };
 
-/** 待辦頁上方三張摘要卡（已逾期／今天／未來 7 天）先隱藏（客戶 2026-10-22）。 */
-const SHOW_TODO_SUMMARY = false;
+/** V2 將優先事項放回首屏，並改為可直接定位的三段任務佇列。 */
+const SHOW_TODO_SUMMARY = true;
 
 const DAY = 86_400_000;
 const todayInTaipei = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" });
@@ -136,30 +136,30 @@ function Workspace() {
 
       {/* 需立即處理事項：逾期最刺眼，今天其次，本週只作為預告。
           ⚠️ 2026-10-22 客戶要求先隱藏這三張卡；要開回把 SHOW_TODO_SUMMARY 改成 true。 */}
-      {SHOW_TODO_SUMMARY && <div className="grid gap-3 sm:grid-cols-3">
-        <SummaryCard
+      {SHOW_TODO_SUMMARY && <div className="grid gap-3 lg:grid-cols-3">
+        <PriorityLane
           tone="danger"
           icon={AlertTriangle}
           label="已逾期"
-          count={overdue.length}
-          hint={overdue[0] ? overdue[0].title : "沒有逾期項目"}
-          onClick={() => overdue[0] && jump(overdue[0])}
+          items={overdue}
+          empty="目前沒有逾期項目"
+          onSelect={jump}
         />
-        <SummaryCard
+        <PriorityLane
           tone="brand"
           icon={CalendarClock}
           label={`今天（${today.slice(5)}）`}
-          count={dueToday.length}
-          hint={dueToday[0] ? dueToday[0].title : "今天沒有待辦"}
-          onClick={() => setPick(today)}
+          items={dueToday}
+          empty="今天沒有待辦"
+          onSelect={jump}
         />
-        <SummaryCard
+        <PriorityLane
           tone="muted"
           icon={CalendarDays}
           label="未來 7 天"
-          count={dueThisWeek.length}
-          hint={dueThisWeek[0] ? `最近：${dueThisWeek[0].date.slice(5)} ${dueThisWeek[0].title}` : "未來一週沒有待辦"}
-          onClick={() => dueThisWeek[0] && setPick(dueThisWeek[0].date)}
+          items={dueThisWeek}
+          empty="未來一週沒有待辦"
+          onSelect={jump}
         />
       </div>}
 
@@ -440,39 +440,41 @@ function shift(date: string, days: number) {
   return new Date(Date.parse(`${date}T00:00:00+08:00`) + days * DAY).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" });
 }
 
-function SummaryCard({
+function PriorityLane({
   tone: cardTone,
   icon: Icon,
   label,
-  count,
-  hint,
-  onClick,
+  items,
+  empty,
+  onSelect,
 }: {
   tone: "danger" | "brand" | "muted";
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  count: number;
-  hint: string;
-  onClick: () => void;
+  items: Task[];
+  empty: string;
+  onSelect: (task: Task) => void;
 }) {
   const styles = {
-    danger: count > 0 ? "border-rose-200 bg-rose-50 text-rose-700" : "border-border-subtle bg-surface-raised text-stone-500",
+    danger: items.length > 0 ? "border-rose-200 bg-rose-50/70 text-rose-700" : "border-border-subtle bg-surface-raised text-stone-500",
     brand: "border-brand-200 bg-brand-50 text-brand-700",
     muted: "border-border-subtle bg-surface-raised text-stone-600",
   }[cardTone];
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex flex-col items-stretch gap-1 rounded-2xl border p-4 text-left shadow-xs transition-[border-color,box-shadow] hover:shadow-sm ${styles}`}
-    >
-      <span className="flex items-center gap-2 text-xs font-semibold">
+    <section className={`rounded-2xl border p-4 shadow-xs ${styles}`}>
+      <div className="flex items-center gap-2 text-xs font-semibold">
         <Icon className="h-4 w-4" aria-hidden="true" />
         {label}
-      </span>
-      <span className="text-2xl font-bold tabular-nums leading-tight">{count}</span>
-      <span className="truncate text-xs opacity-80">{hint}</span>
-    </button>
+        <strong className="ml-auto text-xl tabular-nums">{items.length}</strong>
+      </div>
+      <div className="mt-3 space-y-1.5">
+        {items.slice(0, 3).map((item) => <button key={item.id} type="button" onClick={() => onSelect(item)} className="block w-full truncate rounded-lg bg-white/75 px-3 py-2 text-left text-xs font-medium text-stone-700 transition hover:bg-white hover:text-brand-700">
+          <span className="mr-2 tabular-nums text-stone-400">{item.date.slice(5)}</span>{item.title}
+        </button>)}
+        {!items.length && <p className="rounded-lg border border-dashed border-current/20 px-3 py-4 text-center text-xs opacity-75">{empty}</p>}
+        {items.length > 3 && <p className="px-1 text-[11px] opacity-70">另有 {items.length - 3} 項，請由行事曆查看。</p>}
+      </div>
+    </section>
   );
 }

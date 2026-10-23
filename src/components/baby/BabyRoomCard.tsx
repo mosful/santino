@@ -21,7 +21,7 @@ export default function BabyRoomCard({
   const empty = room.status === "空房";
   const identifier = room.boarding ? `車號 ${room.carNo}` : `房號 ${room.room}`;
   return (
-    <div className={`rounded-xl border-2 p-3.5 shadow-sm transition-shadow hover:shadow-md sm:p-4 ${BABY_STATUS_COLOR[room.status]}`}>
+    <div className={`rounded-2xl border p-4 transition-colors ${BABY_STATUS_COLOR[room.status]}`}>
       <div className="mb-2 flex items-center justify-between">
         <span className="text-lg font-bold">{identifier}</span>
         <div className="flex gap-1">

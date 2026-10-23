@@ -25,7 +25,6 @@ import { canUseCaseFlow } from "@/lib/permissions";
 import { useCurrentRole } from "@/lib/roleStore";
 import OperationsOverview from "./OperationsOverview";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
-import Pagination from "@/components/ui/Pagination";
 
 /**
  * 首頁右下「○○・階段完成條件」區塊先隱藏（客戶 2026-10-22）。
@@ -81,8 +80,6 @@ export default function JourneyDashboard() {
   const [selectedStage, setSelectedStage] = useState<JourneyStageKey>("入住中");
   const [quickView, setQuickView] = useState<QuickView | null>(null);
   const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
 
   const selected = JOURNEY_STAGES.find((stage) => stage.key === selectedStage) ?? JOURNEY_STAGES[0];
   const quickInfo = quickView ? QUICK_VIEW_INFO[quickView] : null;
@@ -106,24 +103,16 @@ export default function JourneyDashboard() {
     const priority = { overdue: 0, today: 1, upcoming: 2, normal: 3 };
     return priority[a.urgency] - priority[b.urgency];
   });
-  /*
-    分頁（客戶 2026-10-22，預設每頁 10 筆）。
-    原本是「只顯示前 8 筆＋一條查看其餘」，筆數一多就得跳去案件清單才看得完。
-    ⚠️ 階段、快捷檢視或關鍵字一變就要回到第 1 頁，否則會停在一個空白的第 3 頁。
-  */
-  const totalPages = Math.max(1, Math.ceil(stageMothers.length / pageSize));
-  const safePage = Math.min(page, totalPages);
-  const visibleStageMothers = stageMothers.slice((safePage - 1) * pageSize, safePage * pageSize);
+  // 首頁只呈現目前條件下最需要關注的 5 筆；完整搜尋與翻頁統一回案件清單。
+  const visibleStageMothers = stageMothers.slice(0, 5);
 
   function selectStage(stage: JourneyStageKey) {
-    setPage(1);
     setSelectedStage(stage);
     setQuickView(null);
     setQuery("");
   }
 
   function selectQuickView(view: QuickView) {
-    setPage(1);
     setQuickView(view);
     setQuery("");
   }
@@ -170,7 +159,7 @@ export default function JourneyDashboard() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
             <input
               value={query}
-              onChange={(event) => { setQuery(event.target.value); setPage(1); }}
+              onChange={(event) => setQuery(event.target.value)}
               placeholder="搜尋姓名、房號、待辦"
               className="w-full rounded-xl border border-stone-200 bg-stone-50 py-2 pl-9 pr-3 text-sm transition-[border-color,background-color,box-shadow] focus:border-brand-300 focus:bg-white"
             />
@@ -286,17 +275,10 @@ export default function JourneyDashboard() {
             </tbody>
           </table>
         </div>
-        {stageMothers.length > 0 && (
-          <div className="mt-2.5">
-            <Pagination
-              page={safePage}
-              pageSize={pageSize}
-              total={stageMothers.length}
-              onPageChange={setPage}
-              onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
-            />
-          </div>
-        )}
+        {stageMothers.length > 0 && <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-stone-500">
+          <span>首頁顯示優先 5 筆；完整案件與進階搜尋集中在案件清單。</span>
+          <Link href="/cases/" className="inline-flex items-center gap-1 font-semibold text-brand-700 hover:text-brand-800">查看全部案件<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link>
+        </div>}
       </CollapsibleSection>
 
       <section className={SHOW_STAGE_CHECKLIST ? "grid gap-4" : "contents"}>

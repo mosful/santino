@@ -53,7 +53,7 @@ function CourseRegistrationTab() {
   return (
     <div className="space-y-2">
       {COURSES.map((c) => (
-        <div key={c.id} className="flex items-center justify-between rounded border border-stone-200 p-2 text-sm">
+        <div key={c.id} className="work-surface flex items-center justify-between gap-3 p-4 text-sm">
           <span>
             {c.name}｜{c.time}
           </span>
@@ -74,7 +74,7 @@ function CourseCalendarTab() {
   return (
     <div className="grid gap-3 md:grid-cols-2">
       {COURSES.map((course) => (
-        <div key={course.id} className="rounded-xl border border-stone-200 bg-white p-4">
+        <div key={course.id} className="work-surface p-5">
           <div className="font-medium text-stone-700">{course.name}</div>
           <div className="mt-1 text-xs text-stone-400">{course.time}・已報名 {course.enrolled}/{course.cap}</div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-stone-100"><div className="h-full rounded-full bg-amber-400" style={{ width: `${Math.min(100, (course.enrolled / course.cap) * 100)}%` }} /></div>
@@ -88,7 +88,7 @@ function CourseActivityTab() {
   return (
     <div className="space-y-3 text-sm">
       {["新生兒沐浴實作", "爸爸育兒體驗日"].map((name, index) => (
-        <div key={name} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 p-3">
+        <div key={name} className="work-surface flex flex-wrap items-center justify-between gap-3 p-5">
           <div><div className="font-medium text-stone-700">{name}</div><div className="text-xs text-stone-400">{index === 0 ? "09/18 14:00・親子活動室" : "09/21 10:00・多功能教室"}</div></div>
           <DemoActionButton feedback={`已開啟「${name}」活動名單`} variant="subtle" size="sm">查看名單</DemoActionButton>
         </div>

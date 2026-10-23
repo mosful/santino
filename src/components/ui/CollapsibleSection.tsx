@@ -94,7 +94,7 @@ export default function CollapsibleSection({
   const bodyId = `section-${id}`;
 
   return (
-    <section className={"overflow-hidden rounded-2xl border border-border-subtle bg-surface-raised shadow-xs " + className}>
+    <section className={"work-surface overflow-hidden " + className}>
       <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 sm:px-4">
         <button
           type="button"

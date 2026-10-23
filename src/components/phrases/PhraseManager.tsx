@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { FormSection, WorkArea } from "@/components/ui/Workspace";
 import Badge from "@/components/ui/Badge";
 import { usePhraseLibrary } from "@/hooks/usePhraseLibrary";
 import { PHRASE_CATEGORIES } from "@/lib/mock/phrases";
@@ -34,7 +35,7 @@ export default function PhraseManager() {
     if (!text.trim()) return;
     const tags = tagsInput
       .split(/[,，]/)
-      .map((t) => t.trim())
+      .map((tag) => tag.trim())
       .filter(Boolean);
     addPhrase({ category, tags, text: text.trim() });
     setText("");
@@ -42,98 +43,30 @@ export default function PhraseManager() {
   }
 
   return (
-    <div className="space-y-4 text-sm">
-      <p className="text-xs text-stone-400">
-        後台可分類設定常用字句，供各護理表單以下拉選單或關鍵字查詢引用，不用每次手key
-        （系統開發總則第10條；分類為單一歸屬，標籤🏷️可複選、更彈性）。
-      </p>
-
-      <div className="rounded-xl border border-stone-200 p-3">
-        <div className="mb-2 text-xs font-medium text-stone-600">＋ 新增片語</div>
-        <div className="grid gap-2 sm:grid-cols-[140px_1fr]">
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)} disabled={!canEdit}
-            className="rounded-lg border border-stone-200 px-2 py-2 text-sm"
-          >
-            {PHRASE_CATEGORIES.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
-          <input
-            value={tagsInput}
-            onChange={(e) => setTagsInput(e.target.value)} disabled={!canEdit}
-            placeholder="標籤🏷️（逗號分隔，如：母乳,傷口）"
-            className="rounded-lg border border-stone-200 px-2 py-2 text-sm"
-          />
-        </div>
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)} disabled={!canEdit}
-          placeholder="片語內容"
-          className="mt-2 w-full rounded-lg border border-stone-200 p-2 text-sm"
-        />
-        <div className="mt-2 flex justify-end">
-          <button onClick={submit} disabled={!canEdit} className={buttonStyles({ variant: "danger", size: "sm" })}>
-            新增片語
-          </button>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <select
-          value={filterCategory}
-          onChange={(e) => setFilterCategory(e.target.value)}
-          className="rounded-lg border border-stone-200 px-2 py-1.5 text-xs"
-        >
-          <option>全部</option>
-          {PHRASE_CATEGORIES.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
-        <input
-          value={filterKeyword}
-          onChange={(e) => setFilterKeyword(e.target.value)}
-          placeholder="關鍵字查詢（內容/標籤/分類）"
-          className="w-56 rounded-lg border border-stone-200 px-2 py-1.5 text-xs"
-        />
-        <span className="ml-auto text-xs text-stone-400">共 {filtered.length} 則</span>
-      </div>
-
-      {allTags.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 text-xs">
-          <span className="text-stone-400">🏷️ 現有標籤：</span>
-          {allTags.map((t) => (
-            <button key={t} onClick={() => setFilterKeyword(t)}>
-              <Badge color="purple">{t}</Badge>
-            </button>
-          ))}
-        </div>
-      )}
-
-      <ul className="space-y-2">
-        {filtered.map((p) => (
-          <li key={p.id} className="rounded-xl border border-stone-200 p-3">
-            <div className="mb-1 flex flex-wrap items-center gap-1.5">
-              <Badge color="amber">{p.category}</Badge>
-              {p.tags.map((t) => (
-                <Badge key={t} color="purple">
-                  🏷️ {t}
-                </Badge>
-              ))}
-              <button onClick={() => removePhrase(p.id)} disabled={!canEdit} className="ml-auto text-xs text-rose-500 underline disabled:cursor-not-allowed disabled:text-stone-300">
-                刪除
-              </button>
-            </div>
-            <p className="text-sm text-stone-700">{p.text}</p>
-          </li>
-        ))}
-        {filtered.length === 0 && (
-          <li className="rounded-xl border border-dashed border-stone-300 p-6 text-center text-xs text-stone-400">
-            查無片語
-          </li>
-        )}
-      </ul>
+    <div className="space-y-5 text-sm">
+      <p className="text-sm text-stone-600">依分類與標籤管理常用片語，護理表單可直接搜尋引用。</p>
+      <WorkArea aside={<FormSection title="新增片語" description="分類為單一歸屬；標籤可複選，方便從不同情境查找。">
+        <label className="block space-y-2">分類<select aria-label="新增片語分類" value={category} onChange={(e) => setCategory(e.target.value)} disabled={!canEdit} className="w-full rounded-lg border border-stone-300">{PHRASE_CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select></label>
+        <label className="block space-y-2">標籤<input aria-label="片語標籤" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)} disabled={!canEdit} placeholder="逗號分隔，如：母乳,傷口" className="w-full rounded-lg border border-stone-300" /></label>
+        <label className="block space-y-2">片語內容<textarea aria-label="片語內容" value={text} onChange={(e) => setText(e.target.value)} disabled={!canEdit} placeholder="輸入可重複引用的完整內容" className="w-full rounded-lg border border-stone-300" /></label>
+        <div className="form-actions"><button type="button" onClick={submit} disabled={!canEdit} className={buttonStyles({ variant: "primary" })}>新增片語</button></div>
+      </FormSection>}>
+        <FormSection title="片語清單">
+          <div className="flex flex-wrap items-center gap-3">
+            <select aria-label="片語分類篩選" value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} className="rounded-lg border border-stone-300"><option>全部</option>{PHRASE_CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select>
+            <input aria-label="片語關鍵字" value={filterKeyword} onChange={(e) => setFilterKeyword(e.target.value)} placeholder="關鍵字查詢（內容／標籤／分類）" className="min-w-0 flex-1 rounded-lg border border-stone-300" />
+            <span className="text-xs text-stone-500">共 {filtered.length} 則</span>
+          </div>
+          {allTags.length > 0 && <div className="flex flex-wrap items-center gap-2"><span className="text-xs text-stone-500">標籤</span>{allTags.map((t) => <button type="button" key={t} className={buttonStyles({ size: "sm", selected: filterKeyword === t })} onClick={() => setFilterKeyword(t)}>{t}</button>)}</div>}
+          <ul className="divide-y divide-stone-100">
+            {filtered.map((p) => <li key={p.id} className="py-4 first:pt-0 last:pb-0">
+              <div className="mb-2 flex flex-wrap items-center gap-2"><Badge color="blue">{p.category}</Badge>{p.tags.map((t) => <span key={t} className="text-xs text-stone-500">#{t}</span>)}<button type="button" onClick={() => removePhrase(p.id)} disabled={!canEdit} className="ml-auto text-xs text-rose-700 underline underline-offset-4 disabled:opacity-50">刪除</button></div>
+              <p className="leading-7 text-stone-700">{p.text}</p>
+            </li>)}
+            {filtered.length === 0 && <li className="rounded-lg bg-stone-50 p-6 text-center text-sm text-stone-500">查無片語，可調整分類或關鍵字。</li>}
+          </ul>
+        </FormSection>
+      </WorkArea>
     </div>
   );
 }

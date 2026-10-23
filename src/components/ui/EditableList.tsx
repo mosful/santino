@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Inbox } from "lucide-react";
 import Modal from "./Modal";
 import Pagination from "./Pagination";
@@ -26,6 +26,7 @@ export default function EditableList({
   onSave,
   onDelete,
   editAllowed,
+  filters,
 }: {
   moduleNo: string;
   fields: FieldSchema[];
@@ -35,6 +36,7 @@ export default function EditableList({
   onSave?: (row: Row) => void;
   onDelete?: (id: number) => void;
   editAllowed?: boolean;
+  filters?: ReactNode;
 }) {
   const access = useAccess(moduleNo);
   const canEdit = editAllowed ?? access === "edit";
@@ -84,9 +86,10 @@ export default function EditableList({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="query-panel space-y-4">
       {error && <p role="status" className="text-sm text-rose-700">{error}</p>}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="query-controls">
+        {filters}
         <label htmlFor="editable-list-search" className="sr-only">資料關鍵字查詢</label>
         <input
           id="editable-list-search"
@@ -174,7 +177,7 @@ export default function EditableList({
       />
 
       <Modal open={!!editing} title={editing?.id === 0 ? "新增" : "編輯"} onClose={() => setEditing(null)}>
-        <div className="space-y-3">
+        <div className="module-content space-y-5">
           {fields.map((f) => {
             const fieldId = `editable-${editing?.id ?? 0}-${f.key}`;
             return (

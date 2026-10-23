@@ -17,7 +17,7 @@
 .workspace :is(button, input, select, textarea, a):focus-visible { outline: 3px solid color-mix(in srgb, var(--focus-ring) 72%, transparent); outline-offset: 3px; }
 .workspace input, .workspace textarea { caret-color: var(--brand); }
 .workspace ::selection { background: var(--brand-200); color: var(--brand-900); }
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; align-items: start; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 20px; align-items: start; }
 /*
   右側欄**不要 sticky**（客戶兩次回報「右邊上方空一塊」）。
   sticky 元素一旦被頁首推下去，就會在格線容器裡留下一段空白，而這一欄只有
@@ -26,6 +26,10 @@
 */
 .sidebar { position: static; }
 .form fieldset:disabled { opacity: .75; }
+.sectionNav { display: flex; gap: 8px; margin: 0 -4px 20px; overflow-x: auto; padding: 4px; overscroll-behavior-inline: contain; scrollbar-width: thin; }
+.sectionNav > button { flex: 0 0 auto; }
+.sectionNo { display: inline-flex; width: 20px; height: 20px; align-items: center; justify-content: center; border-radius: 999px; background: var(--surface-muted); color: var(--text-muted); font-size: 11px; font-weight: 700; }
+.sectionNav > button[aria-pressed="true"] .sectionNo { background: var(--brand-600); color: white; }
 /*
   「開啟中的表單」列。
 

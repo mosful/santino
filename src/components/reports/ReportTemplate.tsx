@@ -12,11 +12,11 @@ export default function ReportTemplate({
   sampleRows?: string[][];
 }) {
   return (
-    <div className="space-y-3 text-sm">
-      <div className="flex flex-wrap items-center gap-2 text-xs">
-        <input placeholder="查詢日期起" className="rounded-lg border border-stone-200 px-2.5 py-2" />
+    <div className="query-panel space-y-4 text-sm">
+      <div className="query-controls">
+        <input aria-label="查詢日期起" placeholder="查詢日期起" className="rounded-lg border border-stone-200 px-2.5 py-2" />
         <span className="text-stone-400">～</span>
-        <input placeholder="查詢日期迄" className="rounded-lg border border-stone-200 px-2.5 py-2" />
+        <input aria-label="查詢日期迄" placeholder="查詢日期迄" className="rounded-lg border border-stone-200 px-2.5 py-2" />
         <DemoActionButton feedback={`「${title}」查詢完成`} variant="primary">送出查詢</DemoActionButton>
         <DemoActionButton feedback={`已匯出「${title}」Demo 資料`} onClick={() => exportCsv(title, columns, sampleRows ?? [])} className="ml-auto rounded-lg bg-stone-100 px-3.5 py-2 hover:bg-stone-200">匯出</DemoActionButton>
         <DemoActionButton feedback={`已開啟「${title}」列印預覽`} onClick={() => window.print()} className="rounded-lg bg-stone-100 px-3.5 py-2 hover:bg-stone-200">列印</DemoActionButton>

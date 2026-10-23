@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Choice from "@/components/ui/ChoiceField";
+import { SummaryRow as DetailRow } from "@/components/ui/Workspace";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { casePriceBreakdown, gifts } from "@/lib/domain/rules";
 import { CORPORATE_COMPANIES, COMMON_STAY_DAYS, HOSPITALS } from "@/lib/domain/options";
@@ -38,34 +40,6 @@ const ADD_ONS = [
 ];
 
 const star = <em className="ml-0.5 not-italic font-semibold text-rose-600" aria-hidden="true">*</em>;
-
-/** 一排可切換的膠囊；取代下拉，諮詢時一眼看完所有方案。 */
-function Choice({ label, value, options, onChange, required = false, hint }: { label: string; value: string; options: readonly string[]; onChange: (value: string) => void; required?: boolean; hint?: string }) {
-  return (
-    <div className="space-y-2 text-sm">
-      <span className="block font-medium text-stone-700">
-        {label}{required && star}
-        {hint && <span className="ml-2 text-xs font-normal text-stone-500">{hint}</span>}
-      </span>
-      <div className="flex flex-wrap gap-2">
-        {options.map((option) => (
-          <button key={option} type="button" aria-pressed={value === option} className={buttonStyles({ size: "sm", selected: value === option })} onClick={() => onChange(option)}>
-            {option}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function DetailRow({ label, value, muted = false }: { label: React.ReactNode; value: React.ReactNode; muted?: boolean }) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-stone-100 py-2 text-sm last:border-b-0">
-      <span className={muted ? "text-stone-500" : "text-stone-600"}>{label}</span>
-      <span className={"tabular-nums " + (muted ? "text-stone-500" : "font-medium text-stone-800")}>{value}</span>
-    </div>
-  );
-}
 
 export default function PricingCalculator({ onUse }: { onUse: (name: string, phone: string, preset: QuotePreset) => void }) {
   const [name, setName] = useState(DEMO_MOTHER_NAME);

@@ -40,6 +40,7 @@ import {
   SplitWorkspace,
   ZoneFilter,
 } from "./BabycamUi";
+import { StatusSummary } from "@/components/ui/Workspace";
 
 /*
   寶寶視訊管理工作區。
@@ -268,7 +269,6 @@ export default function BabycamWorkspace({
   const expectedBabyId = scanBaby || scannedBinding?.babies.find((baby) => baby.identityCode === initialScanCode)?.babyId || "";
   const camera = data.cameras.find((item) => item.id === cameraId) ?? data.cameras[0];
   const zoneCameras = data.cameras.filter((item) => zone === "全部" || item.code.startsWith(zone));
-
   function run(action: () => void, feedback = "已儲存，相關畫面及紀錄已同步。") {
     try {
       action();
@@ -425,6 +425,17 @@ export default function BabycamWorkspace({
           </ButtonLink>
         </div>
       </HeaderSlot>
+
+      {active.id === "cameras" && <StatusSummary
+        title="監視器健康摘要"
+        description="狀態與設備主檔同源；選擇下方代碼可查看最後截圖與觀看時段。"
+        items={[
+          { label: "設備總數", value: `${data.cameras.length} 支`, tone: "brand" },
+          { label: "正常啟用", value: `${data.cameras.filter((item) => item.enabled && item.health !== "異常").length} 支`, tone: "success" },
+          { label: "健康異常", value: `${data.cameras.filter((item) => item.health === "異常").length} 支`, detail: "請優先檢查來源與最後截圖", tone: data.cameras.some((item) => item.health === "異常") ? "danger" : "success" },
+          { label: "停用設備", value: `${data.cameras.filter((item) => !item.enabled).length} 支`, detail: "停用設備不提供觀看", tone: data.cameras.some((item) => !item.enabled) ? "warning" : "default" },
+        ]}
+      />}
 
       <Panel flush>
 

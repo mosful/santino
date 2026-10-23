@@ -35,6 +35,7 @@ export default function RoomStatusOverview() {
   const role = useCurrentRole();
   const router = useRouter();
   const [statusRoom, setStatusRoom] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<RoomCardStatus | "全部">("全部");
   /*
     房況只有房卡一種呈現。
     ⚠️ 原本還有一個「卡片／清單」切換，同一份資料兩種版面、兩段 JSX 要同步維護。
@@ -47,6 +48,7 @@ export default function RoomStatusOverview() {
   const { rooms, mothers, babies, childcare, admissionsToday, dischargesToday } = roomOccupancySummary(data);
   const floors = [...new Set(rooms.map((room) => room.room.slice(0, 1)))].sort();
   const isNursing = NURSING_ROLES.includes(role);
+  const statusCounts = Object.fromEntries(LEGEND.map((item) => [item.status, item.status === "托嬰" ? childcare.length : rooms.filter((room) => roomCardStatus(data, room.room) === item.status).length])) as Record<RoomCardStatus, number>;
 
   /**
    * 房號 → 案件流程資訊。
@@ -122,15 +124,26 @@ export default function RoomStatusOverview() {
 
       {message && <p role="status" className="rounded-xl border border-border-subtle bg-stone-50 p-3 text-sm text-stone-600">{message}</p>}
 
+      <div role="group" aria-label="依房況篩選" className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
+        <button type="button" aria-pressed={statusFilter === "全部"} onClick={() => setStatusFilter("全部")} className={`rounded-xl border px-3 py-2.5 text-left transition ${statusFilter === "全部" ? "border-brand-300 bg-brand-50 text-brand-700" : "border-border-subtle bg-surface-raised text-stone-600 hover:border-brand-200"}`}>
+          <span className="block text-[11px] font-semibold">全部房況</span><strong className="mt-0.5 block text-xl tabular-nums">{rooms.length + childcare.length}</strong>
+        </button>
+        {LEGEND.map((item) => <button key={item.status} type="button" aria-pressed={statusFilter === item.status} onClick={() => setStatusFilter(item.status)} className={`rounded-xl border px-3 py-2.5 text-left transition ${statusFilter === item.status ? "border-brand-300 bg-brand-50 text-brand-700" : "border-border-subtle bg-surface-raised text-stone-600 hover:border-brand-200"}`}>
+          <span className="flex items-center gap-1.5 text-[11px] font-semibold"><span data-status={item.status} className={`${styles.legendSwatch} h-2.5 w-2.5 rounded-sm`} aria-hidden="true" />{item.label}</span><strong className="mt-0.5 block text-xl tabular-nums">{statusCounts[item.status]}</strong>
+        </button>)}
+      </div>
+
       <div className="space-y-3">
         {floors.map((floor) => {
-          const floorRooms = rooms.filter((room) => room.room.startsWith(floor));
-          const used = floorRooms.filter((room) => mothers.some((subject) => subject.room === room.room)).length;
+          const allFloorRooms = rooms.filter((room) => room.room.startsWith(floor));
+          const floorRooms = allFloorRooms.filter((room) => statusFilter === "全部" || roomCardStatus(data, room.room) === statusFilter);
+          if (!floorRooms.length) return null;
+          const used = allFloorRooms.filter((room) => mothers.some((subject) => subject.room === room.room)).length;
           return (
-            <div key={floor} className="rounded-2xl border border-border-subtle bg-surface-raised p-3 shadow-xs">
+            <div key={floor} className="work-surface p-4">
               <div className="mb-2 flex items-baseline gap-2 text-xs font-semibold text-stone-500">
                 {floor}F
-                <span className="font-normal tabular-nums text-stone-400">{used}／{floorRooms.length} 間使用中</span>
+                <span className="font-normal tabular-nums text-stone-400">{used}／{allFloorRooms.length} 間使用中{statusFilter !== "全部" ? `・顯示 ${floorRooms.length} 間` : ""}</span>
               </div>
               {/* auto-fill 讓房卡撐滿整列；原本是固定 5.5rem 的小卡，右半整片空白。 */}
               <div className="grid grid-cols-[repeat(auto-fill,minmax(216px,1fr))] gap-2">
@@ -144,7 +157,7 @@ export default function RoomStatusOverview() {
                       data-status={status}
                       onClick={() => openRoom(room.room, status)}
                       title={`房 ${room.room}｜${status}${info ? `｜${info.mother.name}` : ""}`}
-                      className={`${styles.roomCard} relative flex min-h-[5.25rem] flex-col items-stretch justify-start gap-1 overflow-hidden rounded-xl border py-2 pl-3.5 pr-2.5 text-left transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-sm`}
+                      className={`${styles.roomCard} relative flex min-h-[5.25rem] flex-col items-stretch justify-start gap-1 overflow-hidden rounded-xl border py-2 pl-3.5 pr-2.5 text-left transition-colors hover:border-brand-300`}
                     >
                       <span data-status={status} className={`${styles.statusBar} absolute inset-y-0 left-0 w-1.5`} aria-hidden="true" />
                       <span className="flex items-baseline gap-2">
@@ -162,6 +175,7 @@ export default function RoomStatusOverview() {
                             <span>{info.stage}</span>
                             {info.balance > 0 && <span className="text-rose-600">待收 {info.balance.toLocaleString("zh-TW")}</span>}
                           </span>
+                          {info.balance > 0 && <span className="self-start rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">需注意・尚有待收款</span>}
                           <span className="truncate text-[11px] text-stone-500">下一步：{info.next}</span>
                         </>
                       ) : (
@@ -175,8 +189,8 @@ export default function RoomStatusOverview() {
           );
         })}
 
-        {childcare.length > 0 && (
-          <div className="rounded-2xl border border-border-subtle bg-surface-raised p-3 shadow-xs">
+        {childcare.length > 0 && (statusFilter === "全部" || statusFilter === "托嬰") && (
+          <div className="work-surface p-4">
             <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-stone-500">
               <Baby className="h-3.5 w-3.5" aria-hidden="true" />
               托嬰（無房號，以車號識別）
@@ -189,7 +203,7 @@ export default function RoomStatusOverview() {
                   data-status="托嬰"
                   onClick={() => router.push(`/cases/detail/?id=${encodeURIComponent(record.id)}`)}
                   title={`${record.name}｜車號 ${record.childcareCar || "待指派"}${record.room ? `｜原 ${record.room} 房` : ""}`}
-                  className={`${styles.roomCard} relative flex min-h-[5.25rem] flex-col items-stretch justify-start gap-1 overflow-hidden rounded-xl border py-2 pl-3.5 pr-2.5 text-left transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-sm`}
+                  className={`${styles.roomCard} relative flex min-h-[5.25rem] flex-col items-stretch justify-start gap-1 overflow-hidden rounded-xl border py-2 pl-3.5 pr-2.5 text-left transition-colors hover:border-brand-300`}
                 >
                   <span data-status="托嬰" className={`${styles.statusBar} absolute inset-y-0 left-0 w-1.5`} aria-hidden="true" />
                   <span className="flex items-baseline gap-2">

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Tabs from "@/components/ui/Tabs";
 import Badge from "@/components/ui/Badge";
 import DemoActionButton from "@/components/ui/DemoActionButton";
+import { FormSection, ResultCard, SummaryRow, WorkArea } from "@/components/ui/Workspace";
 
 type MsgTemplate = { id: number; name: string; type: "文字" | "圖片" | "圖文選單" | "Flex" };
 const TEMPLATES: MsgTemplate[] = [
@@ -13,8 +14,8 @@ const TEMPLATES: MsgTemplate[] = [
 
 function TemplateTab() {
   return (
-    <div className="space-y-2 text-sm">
-      <table className="w-full text-left text-xs">
+    <div className="query-panel space-y-4 text-sm">
+      <div className="overflow-x-auto"><table className="w-full min-w-[480px] text-left text-xs">
         <thead className="text-stone-500">
           <tr>
             <th className="px-2 py-1">範本名稱</th>
@@ -35,8 +36,8 @@ function TemplateTab() {
             </tr>
           ))}
         </tbody>
-      </table>
-      <DemoActionButton feedback="已建立一筆訊息範本草稿" variant="danger" size="sm">＋ 新增範本</DemoActionButton>
+      </table></div>
+      <DemoActionButton feedback="已建立一筆訊息範本草稿" variant="primary" size="sm">＋ 新增範本</DemoActionButton>
     </div>
   );
 }
@@ -49,7 +50,7 @@ function AudienceTab() {
     courseEnrollment: false,
   });
   return (
-    <div className="space-y-3 text-sm">
+    <FormSection title="建立受眾群組" description="勾選要套用的分眾條件，建立供排程使用的 audience 群組。" className="text-sm">
       <p className="text-xs text-stone-400">分眾條件轉換為LINE Narrowcast API所需的audience物件。</p>
       <div className="space-y-2 text-xs">
         <label className="flex items-center gap-2">
@@ -85,7 +86,7 @@ function AudienceTab() {
       <p className="text-xs text-stone-400">
         建議提前建立好audience群組，不要每次發送才即時計算（Narrowcast為非同步API）。
       </p>
-    </div>
+    </FormSection>
   );
 }
 
@@ -96,23 +97,22 @@ const RECORDS: SendRecord[] = [
 
 function ScheduleTab() {
   return (
-    <div className="space-y-3 text-sm">
-      <div className="rounded border border-stone-200 p-3">
-        <div className="mb-2 text-xs font-medium text-stone-600">新增排程</div>
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <select className="rounded border border-stone-200 px-2 py-1.5">
+    <WorkArea aside={<ResultCard title="排程摘要" value={`${RECORDS.length} 筆`} description="目前已建立的發送排程"><SummaryRow label="最近一次" value={RECORDS[0].time} /><SummaryRow label="狀態" value={RECORDS[0].status} /></ResultCard>}>
+      <FormSection title="新增排程" description="選擇訊息範本、受眾與預定發送時間。" className="text-sm">
+        <div className="form-grid text-xs">
+          <label className="space-y-2 text-stone-600">訊息範本<select className="w-full rounded border border-stone-200 px-2 py-1.5">
             {TEMPLATES.map((t) => (
               <option key={t.id}>{t.name}</option>
             ))}
-          </select>
-          <input placeholder="受眾群組" className="rounded border border-stone-200 px-2 py-1.5" />
-          <input placeholder="發送時間" className="rounded border border-stone-200 px-2 py-1.5" />
+          </select></label>
+          <label className="space-y-2 text-stone-600">受眾群組<input placeholder="例如：本週入住會員" className="w-full rounded border border-stone-200 px-2 py-1.5" /></label>
+          <label className="space-y-2 text-stone-600">發送時間<input type="datetime-local" className="w-full rounded border border-stone-200 px-2 py-1.5" /></label>
         </div>
-        <div className="mt-2 flex justify-end">
-          <DemoActionButton feedback="訊息排程草稿已建立（Demo 模式不發送訊息）" variant="danger" size="sm">建立排程</DemoActionButton>
+        <div className="form-actions justify-end">
+          <DemoActionButton feedback="訊息排程草稿已建立（Demo 模式不發送訊息）" variant="primary" size="sm">建立排程</DemoActionButton>
         </div>
-      </div>
-      <table className="w-full text-left text-xs">
+      </FormSection>
+      <div className="query-panel overflow-x-auto"><table className="w-full min-w-[540px] text-left text-xs">
         <thead className="text-stone-500">
           <tr>
             <th className="px-2 py-1">範本</th>
@@ -133,8 +133,8 @@ function ScheduleTab() {
             </tr>
           ))}
         </tbody>
-      </table>
-    </div>
+      </table></div>
+    </WorkArea>
   );
 }
 

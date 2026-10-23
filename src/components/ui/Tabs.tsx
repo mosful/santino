@@ -64,7 +64,7 @@ export default function Tabs({
               ? headerTabClass(t.key === active)
               : "shrink-0 rounded-lg px-3.5 py-1.5 text-sm font-medium transition-[color,background-color,box-shadow] sm:px-4 " +
                 (t.key === active
-                  ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm shadow-brand-200"
+                  ? "bg-surface-raised text-brand-700 shadow-2xs ring-1 ring-border-subtle"
                   : "text-stone-600 hover:bg-surface-raised hover:text-brand-700 hover:shadow-2xs")
           }
         >
@@ -77,7 +77,7 @@ export default function Tabs({
   return (
     <div>
       {inHeader ? <HeaderSlot slot="below">{list}</HeaderSlot> : list}
-      <div id={`tab-panel-${current?.key}`} role="tabpanel" key={current?.key} className={inHeader ? "animate-fade-in" : "animate-fade-in pt-5"}>
+      <div id={`tab-panel-${current?.key}`} role="tabpanel" key={current?.key} className={inHeader ? "module-content" : "module-content pt-5"}>
         {current?.content}
       </div>
     </div>

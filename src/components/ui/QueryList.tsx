@@ -33,8 +33,8 @@ export default function QueryList<T extends { id: string | number }>({
   const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="query-panel space-y-4">
+      <div className="query-controls">
         <label htmlFor="query-list-search" className="sr-only">關鍵字查詢</label>
         <input
           id="query-list-search"

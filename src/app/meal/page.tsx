@@ -68,7 +68,7 @@ const CYCLE_TEA = [
 
 function CycleTeaTab() {
   return (
-    <div className="overflow-x-auto rounded border border-stone-200">
+    <div className="work-surface overflow-x-auto">
       <table className="w-full text-left text-sm">
         <thead className="bg-stone-50 text-xs text-stone-500">
           <tr>
@@ -98,7 +98,7 @@ function DailyMealTab() {
   const MEALS = useMealRows();
   const rows = MEALS.filter((row) => row.name !== "（空房）").slice(0, 6);
   return (
-    <div className="overflow-x-auto rounded border border-stone-200">
+    <div className="work-surface overflow-x-auto">
       <table className="w-full min-w-max text-left text-sm">
         <thead className="bg-stone-50 text-xs text-stone-500"><tr><th className="px-3 py-2">房號</th><th className="px-3 py-2">媽媽</th><th className="px-3 py-2">早餐</th><th className="px-3 py-2">午餐</th><th className="px-3 py-2">晚餐</th><th className="px-3 py-2">備註</th></tr></thead>
         <tbody>{rows.map((row) => <tr key={row.id} className="border-t border-stone-100"><td className="px-3 py-2">{String(row.room)}</td><td className="px-3 py-2">{String(row.name)}</td><td className="px-3 py-2 text-emerald-600">已出餐</td><td className="px-3 py-2 text-amber-600">備餐中</td><td className="px-3 py-2 text-stone-400">待備餐</td><td className="px-3 py-2">{String(row.restriction)}</td></tr>)}</tbody>
@@ -116,7 +116,7 @@ function RestrictionStatsTab() {
   }, {});
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {Object.entries(counts).map(([label, count]) => <div key={label} className="rounded-xl border border-stone-200 bg-white p-4"><div className="text-xs text-stone-400">飲食備註</div><div className="mt-1 flex items-end justify-between"><strong className="text-stone-700">{label}</strong><span className="text-xl font-bold text-rose-500">{count}</span></div></div>)}
+      {Object.entries(counts).map(([label, count]) => <div key={label} className="work-surface p-5"><div className="text-xs text-stone-400">飲食備註</div><div className="mt-2 flex items-end justify-between"><strong className="text-stone-700">{label}</strong><span className="text-2xl font-bold text-brand-700">{count}</span></div></div>)}
     </div>
   );
 }
@@ -124,14 +124,14 @@ function RestrictionStatsTab() {
 function MenuPublishTab() {
   return (
     <div className="space-y-3 text-sm">
-      {["09/14～09/20 秋季調養菜單", "09/21～09/27 產後修復菜單"].map((name, index) => <div key={name} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 p-3"><div><div className="font-medium text-stone-700">{name}</div><div className="text-xs text-stone-400">{index === 0 ? "已發佈至住客 WebApp" : "草稿・待營養師確認"}</div></div><DemoActionButton feedback={index === 0 ? "已開啟菜單預覽" : "菜單草稿已送交確認"} variant="subtle" size="sm">{index === 0 ? "預覽" : "送交確認"}</DemoActionButton></div>)}
+      {["09/14～09/20 秋季調養菜單", "09/21～09/27 產後修復菜單"].map((name, index) => <div key={name} className="work-surface flex flex-wrap items-center justify-between gap-3 p-5"><div><div className="font-medium text-stone-700">{name}</div><div className="mt-1 text-xs text-stone-400">{index === 0 ? "已發佈至住客 WebApp" : "草稿・待營養師確認"}</div></div><DemoActionButton feedback={index === 0 ? "已開啟菜單預覽" : "菜單草稿已送交確認"} variant="subtle" size="sm">{index === 0 ? "預覽" : "送交確認"}</DemoActionButton></div>)}
     </div>
   );
 }
 
 function MenuCycleTab() {
   return (
-    <div className="overflow-x-auto rounded border border-stone-200">
+    <div className="work-surface overflow-x-auto">
       <table className="w-full min-w-max text-left text-sm"><thead className="bg-stone-50 text-xs text-stone-500"><tr><th className="px-3 py-2">週次</th><th className="px-3 py-2">早餐主食</th><th className="px-3 py-2">午餐主菜</th><th className="px-3 py-2">晚餐主菜</th></tr></thead><tbody><tr className="border-t border-stone-100"><td className="px-3 py-2">第1週</td><td className="px-3 py-2">麻油雞粥</td><td className="px-3 py-2">杜仲腰花</td><td className="px-3 py-2">清蒸鱸魚</td></tr><tr className="border-t border-stone-100"><td className="px-3 py-2">第2週</td><td className="px-3 py-2">山藥排骨粥</td><td className="px-3 py-2">紅棗燉雞</td><td className="px-3 py-2">枸杞鮮魚</td></tr></tbody></table>
       <p className="p-2 text-xs text-stone-400">循環菜單依入住週次自動套用，飲食禁忌會另外標示。</p>
     </div>

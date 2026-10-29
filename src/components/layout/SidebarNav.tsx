@@ -90,7 +90,10 @@ export default function SidebarNav({
                 onClick={() => onNavigate?.()}
                 title={collapsed ? m.label : undefined}
                 className={
-                  "group flex flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors md:max-lg:min-h-12 md:max-lg:justify-center md:max-lg:px-2 " +
+                  "group flex flex-1 rounded-xl text-sm font-medium transition-colors " +
+                  // 收合時是直排的圖示＋名稱：觸控裝置看不到 title 提示，只有圖示認不出是哪個模組。
+                  (collapsed ? "flex-col items-center gap-1 px-1 py-2 text-[10px] leading-tight" : "items-center gap-3 px-3 py-2.5") +
+                  " " +
                   (isPath(m.href)
                     ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-sm shadow-brand-200"
                     : active
@@ -99,7 +102,7 @@ export default function SidebarNav({
                 }
               >
                 <Icon className="h-[18px] w-[18px] shrink-0" />
-                {!collapsed && <span className="flex-1 truncate">{m.label}</span>}
+                <span className={collapsed ? "line-clamp-2 w-full text-center" : "flex-1 truncate"}>{m.label}</span>
               </Link>
               {/*
                 展開鈕與主連結分開：父項本身也是一個頁面（櫃台服務＝首頁），

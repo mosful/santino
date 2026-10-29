@@ -538,18 +538,10 @@ html { --app-header-h: 3.5rem; }
     min-height: 2.75rem;
   }
 
-  .tablet-sidebar {
-    display: flex !important;
-  }
-
+  /* 平板與桌機共用同一個可收合側欄（見 AppShell）；原本在這裡把兩條軌道互換，
+     平板那條沒有第 2 層，iPad 上子項等於到不了。預設收合由 sidebarStore 決定。 */
   .desktop-sidebar {
-    display: none !important;
-  }
-
-  .tablet-sidebar nav a {
-    min-height: 3rem;
-    justify-content: center;
-    padding-inline: 0.5rem;
+    display: flex !important;
   }
 
   .role-employee-number,
@@ -601,6 +593,12 @@ html { --app-header-h: 3.5rem; }
 
   table[class*="min-w-["] :is(th, td) {
     padding: 0.5rem;
+  }
+
+  /* 案件清單在 iPad 上（展開側欄後內容只剩 580px）六欄擠不下，「負責人」會被壓成
+     一字一行。它是輔助資訊，案件詳情裡看得到；先讓位給「下一步」與「開啟案件」。 */
+  .case-list-table :is(th, td):nth-child(5) {
+    display: none;
   }
 
   .care-floating-window {

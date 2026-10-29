@@ -101,9 +101,14 @@ export default function CollapsibleSection({
           onClick={() => setCollapsed(id, !collapsed)}
           aria-expanded={!collapsed}
           aria-controls={bodyId}
-          // ⚠️ 要明寫 justify-start：globals.css 把所有 button 設成置中的 inline-flex，
-          // 少了它標題會跑到卡片正中間。
-          className="-m-1 flex min-w-0 flex-1 items-center justify-start gap-2 rounded-lg p-1 text-left transition-colors hover:bg-surface-muted"
+          /*
+            ⚠️ 要明寫 justify-start：globals.css 把所有 button 設成置中的 inline-flex，
+            少了它標題會跑到卡片正中間。
+            ⚠️ min-w 不能只靠 min-w-0：action 放了搜尋框＋按鈕時（案件清單）會把標題壓到
+            一個字一行——iPad 展開側欄後內容只剩 580px，實際看到的就是直排的「案 件 清 單」。
+            給一個下限，放不下時由 flex-wrap 把 action 擠到下一行。
+          */
+          className="-m-1 flex min-w-[9rem] flex-1 items-center justify-start gap-2 rounded-lg p-1 text-left transition-colors hover:bg-surface-muted"
         >
           <ChevronDown
             className={"h-4 w-4 shrink-0 text-stone-400 transition-transform " + (collapsed ? "-rotate-90" : "")}

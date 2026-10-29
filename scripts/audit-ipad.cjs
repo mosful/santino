@@ -13,6 +13,11 @@
   ⚠️ 會先展開所有收合區塊再量。只看初始畫面會漏掉一半內容——第一版就是這樣
   才只抓到 1 個問題，展開後才量得準。
 
+  ⑤ 側邊選單的可達性：收合與展開兩種狀態下，選單列出的連結數是否相同。
+     2026-10-29 客戶回報 iPad 上選不到「案件清單」——平板當時走另一條唯讀圖示軌，
+     SidebarNav 在 collapsed 時把第 2 層清空，子項只剩打網址才到得了。
+     前四項全綠卻完全沒抓到：它們量的是「畫面有沒有壞」，不是「功能還到不到得了」。
+
   已知限制：不會開啟 Modal、不會逐一點過頁內頁籤（頁籤多以 ?tab=／?section= 直達，
   已列在 ROUTES 裡）。新增帶頁籤的頁面時記得補進 ROUTES。
 */
@@ -90,6 +95,29 @@ const PROBE = (vw) => {
         for (const o of res.overflow.slice(0, 4)) findings.push({ orientation, role, route, kind: "元素超出畫面", detail: `${o.key} right=${o.right}「${o.text}」` });
         for (const s of res.small.slice(0, 4)) findings.push({ orientation, role, route, kind: "觸控目標過小", detail: `${s.key} 高 ${s.h}px` });
         for (const e of errors.slice(0, 2)) findings.push({ orientation, role, route, kind: "主控台錯誤", detail: e });
+
+        // 選單可達性只在首頁量一次，每個路由都量是重複的。
+        if (route === "/") {
+          const countLinks = () => page.locator("aside:visible nav a").count();
+          const collapsedLinks = await countLinks();
+          const toggle = page.getByRole("button", { name: /展開選單|收合選單/ });
+          if (await toggle.count()) {
+            await toggle.first().click();
+            await page.waitForTimeout(150);
+            const expandedLinks = await countLinks();
+            if (Math.max(collapsedLinks, expandedLinks) > Math.min(collapsedLinks, expandedLinks)) {
+              // 收合時少列連結是正常的（圖示軌只放第 1 層），但展開後必須拿得回來。
+              if (expandedLinks <= collapsedLinks) findings.push({ orientation, role, route, kind: "選單可達性", detail: `展開後連結沒有變多（${collapsedLinks} → ${expandedLinks}）` });
+            }
+            if (expandedLinks === 0) findings.push({ orientation, role, route, kind: "選單可達性", detail: "展開後側邊選單沒有任何連結" });
+            await toggle.first().click();
+            await page.waitForTimeout(120);
+          } else {
+            /* 沒有展開按鈕就是問題，不必管現在列了幾條：收合軌一定會少掉第 2 層，
+               沒有展開的辦法，那些子項就只剩打網址才到得了——2026-10-29 回報的正是這個。 */
+            findings.push({ orientation, role, route, kind: "選單可達性", detail: collapsedLinks ? `側邊選單沒有展開按鈕，第 2 層子項無法從選單到達（目前列 ${collapsedLinks} 條）` : "側邊選單沒有任何連結，也沒有展開按鈕" });
+          }
+        }
       }
       await ctx.close();
     }

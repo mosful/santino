@@ -120,19 +120,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-full">
       <a className="skip-link" href="#main-content">跳至主要內容</a>
-      {/* 平板固定快捷列：保留內容寬度，同時避免每次換頁都開關抽屜 */}
-      <aside className="tablet-sidebar scroll-fade sticky top-0 hidden h-screen w-[72px] shrink-0 flex-col overflow-y-auto border-r border-brand-900/10 bg-white/85 backdrop-blur md:flex lg:hidden">
-        <div className="flex justify-center pt-1">
-          <Brand compact />
-        </div>
-        <SidebarNav collapsed />
-      </aside>
-
-      {/* 桌機固定側邊欄 */}
+      {/*
+        平板與桌機共用同一個側邊欄（2026-10-29 客戶回報）。
+        原本平板另走一條 72px 的唯讀圖示軌，而 SidebarNav 在 collapsed 時會把第 2 層
+        清空——iPad 上「案件清單」「套餐速算」等子項等於只能打網址才到得了。
+        改成同一套可收合側欄：平板預設收合（sidebarStore 依視窗寬度給預設），
+        要用第 2 層時按開關展開，選擇會記住。
+      */}
       <aside
         className={
-          "desktop-sidebar scroll-fade sticky top-0 hidden h-screen shrink-0 overflow-y-auto border-r border-brand-900/10 bg-white/80 backdrop-blur lg:flex lg:flex-col " +
-          (collapsed ? "w-[68px]" : "w-60")
+          "desktop-sidebar scroll-fade sticky top-0 hidden h-screen shrink-0 overflow-y-auto border-r border-brand-900/10 bg-white/80 backdrop-blur md:flex md:flex-col " +
+          (collapsed ? "w-[76px]" : "w-60")
         }
       >
         {collapsed ? (

@@ -69,7 +69,9 @@ async function decodeQr(locator, label = false) {
   await page.getByAltText("寶寶 1 標籤預覽", { exact: true }).waitFor();
   const labelQr = await decodeQr(page.getByAltText("寶寶 1 標籤預覽", { exact: true }), true); assert.equal(labelQr.pathname, new URL(`${base}/babycam/scan/`).pathname); assert.equal(labelQr.searchParams.get("code"), assigned.babies[0].identityCode); assert.equal(labelQr.searchParams.has("ticket"), false);
   await page.screenshot({ path: `${output}/labels-desktop.png`, fullPage: true });
-  await page.getByRole("link", { name: "入住登記", exact: true }).click(); await page.getByRole("button", { name: "入住登記", exact: true }).click(); const ticketQr = await decodeQr(page.getByAltText("可掃描的展示 QRCode", { exact: true }).first()); assert.equal(ticketQr.pathname, new URL(`${base}/view/mama/`).pathname); assert.equal(ticketQr.searchParams.get("ticket"), assigned.internalTicket);
+  await page.getByRole("link", { name: "入住登記", exact: true }).click(); await page.getByRole("button", { name: "入住登記", exact: true }).click(); // 櫃台只交付親友觀看連結（客戶 2026-10-29）；院內那張與「踢除親友登入」都已下架。
+  const ticketQr = await decodeQr(page.getByAltText("可掃描的展示 QRCode", { exact: true }).first()); assert.equal(ticketQr.pathname, new URL(`${base}/view/family/`).pathname); assert.equal(ticketQr.searchParams.get("ticket"), assigned.familyTicket);
+  assert.equal(await page.getByRole("button", { name: "踢除親友登入", exact: true }).count(), 0);
   await page.getByRole("link", { name: "入住登記", exact: true }).click(); await page.getByRole("button", { name: "紀錄與報表", exact: true }).click();
   await page.getByRole("button", { name: "操作", exact: true }).click();
   const downloadWait = page.waitForEvent("download"); await page.getByRole("button", { name: "匯出 Excel", exact: true }).click();

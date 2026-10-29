@@ -15,6 +15,7 @@ import { cameraTimeRows } from "../src/lib/babycam/cameraTime";
 import { toCsv } from "../src/lib/babycam/csv";
 import { babyDisplayName } from "../src/lib/babycam/wristband";
 import { activeDisinfection } from "../src/lib/babycam/disinfection";
+import { labelValues } from "../src/lib/babycam/wristband-print";
 import { caseTransitionErrors } from "../src/lib/domain/rules";
 
 const storage = new Map<string, string>(); const events = new EventTarget();
@@ -445,4 +446,14 @@ test("消毒排程的新增驗證：日期、時間格式與房號必須在主�
   assert.deepEqual(added.rooms, ["305"]);
   babycamActions.removeDisinfection(added.id);
   assert.equal(domainStore.get().disinfections.some((item) => item.id === added.id), false);
+});
+
+test("手圈標籤一律照命名規則，雙胞胎印得出 A／B", () => {
+  const baby = { cameraId: 1, cameraCode: "A01", babyName: "兩位都叫這個", cartNo: "C01", identityCode: "DEMO", scanUrl: "", birthDate: "2026-10-01", sex: "male" as const, birthOrder: 1 };
+  assert.deepEqual(labelValues("305", "王○晴", baby), ["305", "王○晴之子A", "115/10/01"]);
+  assert.deepEqual(labelValues("305", "王○晴", { ...baby, sex: "female" as const, birthOrder: 2 })[1], "王○晴之女B");
+  // 單胞胎（胎序 0）不加字母。
+  assert.equal(labelValues("305", "王○晴", { ...baby, birthOrder: 0 })[1], "王○晴之子");
+  // 媽媽姓名空白（舊資料）才退回名稱欄位，否則標籤會變成「之子」。
+  assert.equal(labelValues("305", "  ", baby)[1], "兩位都叫這個");
 });

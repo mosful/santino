@@ -200,11 +200,18 @@ export function qrModuleCount(url: string): number {
 
 /**
  * 標籤上三行的內容，順序與 `settings.lines` 一致。
- * 第二行以**寶寶名稱欄位**為準：它預設就是「媽媽姓名＋之子／之女＋胎序」，但護理
- * 人員改過之後，印出來的要跟畫面上看到的一樣——否則左右兩邊永遠對不起來。
+ *
+ * 第二行一律由命名規則推導（`labelName` → `babyDisplayName`）：媽媽姓名＋之子／之女，
+ * 雙胞胎再加胎序 A、B。
+ *
+ * ⚠️ 這裡刻意**不**拿寶寶名稱欄位來印。那個欄位在雙胞胎身上常常兩位一模一樣
+ * （示範資料與舊資料都沒帶胎序），印出來兩張手圈分不出誰是誰——標籤是識別用的，
+ * 這是它唯一不能出錯的事。畫面上的名稱由 BindingEditor 跟著性別與胎序自動帶，
+ * 兩邊用的是同一支函式，正常情況下本來就一致。只有媽媽姓名空白時才退回名稱欄位。
  */
 export function labelValues(roomNo: string, motherLabel: string, baby: LabelBaby): string[] {
-  return [roomNo, baby.babyName.trim() || labelName(motherLabel, baby), baby.birthDate ? rocDate(baby.birthDate) : ""];
+  const name = motherLabel.trim() ? labelName(motherLabel, baby) : baby.babyName.trim();
+  return [roomNo, name, baby.birthDate ? rocDate(baby.birthDate) : ""];
 }
 
 export type WristbandMetrics = { qrModule: number; qrDots: number; sizes: number[] };

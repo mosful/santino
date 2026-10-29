@@ -24,13 +24,17 @@ export type FamilyNoticeData = {
   passcode: string;
   validFrom: string;
   validTo: string;
-  /** 兩個觀看頁的站內路徑（含 ticket），會補上網域再轉成 QRCode。 */
-  internalHref: string;
+  /**
+   * 觀看頁的站內路徑（含 ticket），會補上網域再轉成 QRCode。
+   * 院內那張自 2026-10-29 起依客戶要求不交付，`internalHref` 留成選填——
+   * 給了就多印一張卡，不給就只印親友那張。
+   */
+  internalHref?: string;
   familyHref: string;
 };
 
 const NOTES = [
-  "院內即時畫面與親友觀看畫面使用不同連結，請分別掃描。",
+  "請以上方登入帳號與密碼登入，掃描 QRCode 即可觀看。",
   "密碼請交由指定家屬保管，不要公開或轉傳。",
   "重新產生 QRCode 後，舊的 QRCode 與密碼會立即失效。",
   "若寶寶不在專屬位置上，應是在媽媽房內，或正由護理人員護理中。",
@@ -41,7 +45,7 @@ function escapeHtml(value: string): string {
 }
 
 /** A4 單張版面；尺寸用 mm，螢幕預覽與實際列印才會一致。 */
-function sheetHtml(data: FamilyNoticeData, qr: { internal: string; family: string }, printedAt: string): string {
+function sheetHtml(data: FamilyNoticeData, qr: { internal: string | null; family: string }, printedAt: string): string {
   const card = (tag: string, title: string, hint: string, src: string, accent: string) => `
     <article class="qr">
       <span class="tag" style="background:${accent}">${escapeHtml(tag)}</span>
@@ -69,6 +73,9 @@ function sheetHtml(data: FamilyNoticeData, qr: { internal: string; family: strin
     .creds dd.code { letter-spacing:.2em; font-variant-numeric:tabular-nums; }
     .creds dd.span { font-size:11pt; font-weight:600; }
     .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6mm; margin:6mm 0; }
+    /* 只交付親友那一張時置中並放大，整張 A4 才不會右半邊空著、家屬也好掃。 */
+    .grid.solo { grid-template-columns:minmax(0,78mm); justify-content:center; }
+    .grid.solo .qr img { width:60mm; height:60mm; }
     .qr { padding:5mm 4mm; border:1pt solid #d6d3d1; border-radius:3mm; text-align:center; break-inside:avoid; }
     .qr .tag { display:inline-block; padding:.6mm 3mm; border-radius:99px; color:#fff; font-size:9pt; font-weight:700; }
     .qr h3 { margin:2.5mm 0 3.5mm; font-size:13pt; }
@@ -92,8 +99,8 @@ function sheetHtml(data: FamilyNoticeData, qr: { internal: string; family: strin
       <div><dt>登入密碼</dt><dd class="code">${escapeHtml(data.passcode)}</dd></div>
       <div><dt>觀看期間</dt><dd class="span">${escapeHtml(data.validFrom)} 至 ${escapeHtml(data.validTo)}</dd></div>
     </dl>
-    <div class="grid">
-      ${card("院內", "媽媽即時畫面", "限院內網路，約 1 秒更新", qr.internal, "#236276")}
+    <div class="grid${qr.internal ? "" : " solo"}">
+      ${qr.internal ? card("院內", "媽媽即時畫面", "限院內網路，約 1 秒更新", qr.internal, "#236276") : ""}
       ${card("親友", "親友觀看畫面", "限開放時段與有效期限內", qr.family, "#7e4fa8")}
     </div>
     <ul class="notes">${NOTES.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>
@@ -106,7 +113,7 @@ function sheetHtml(data: FamilyNoticeData, qr: { internal: string; family: strin
 export async function printFamilyNotice(data: FamilyNoticeData): Promise<void> {
   const toQr = (href: string) =>
     QRCode.toDataURL(`${window.location.origin}${BASE_PATH}${href}`, { width: 480, margin: 1 });
-  const [internal, family] = await Promise.all([toQr(data.internalHref), toQr(data.familyHref)]);
+  const [internal, family] = await Promise.all([data.internalHref ? toQr(data.internalHref) : Promise.resolve(null), toQr(data.familyHref)]);
   const printedAt = new Date().toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false });
 
   const frame = document.createElement("iframe");

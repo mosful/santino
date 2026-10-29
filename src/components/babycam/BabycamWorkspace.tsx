@@ -507,9 +507,8 @@ export default function BabycamWorkspace({
                       <Button size="sm" variant="primary" onClick={() => run(() => babycamActions.reissue(binding.id), "已重發，舊觀看連結及工作階段失效。")}>
                         重發連結
                       </Button>
-                      <Button size="sm" onClick={() => run(() => babycamActions.kick(binding.id), "已踢除親友展示登入。")}>
-                        踢除親友登入
-                      </Button>
+                      {/* 「踢除親友登入」依客戶 2026-10-29 要求下架；babycamActions.kick 與其測試保留，
+                          要開回只需把這顆按鈕加回來。要收回授權請用右邊的「作廢觀看授權」。 */}
                       <Button size="sm" onClick={() => run(() => babycamActions.passcode(binding.id, String(Math.floor(100000 + Math.random() * 900000))))}>
                         重設展示密碼
                       </Button>
@@ -538,7 +537,7 @@ export default function BabycamWorkspace({
             }
             aside={
               <>
-                <AsideHeading eyebrow="櫃檯交付" title="觀看 QRCode 與密碼" description="院內即時畫面與親友觀看畫面使用不同連結。" />
+                <AsideHeading eyebrow="櫃檯交付" title="觀看 QRCode 與密碼" description="交付給家屬的親友觀看連結；掃描後以下方帳號密碼登入。" />
                 {!binding ? (
                   <AsideEmpty mark="QR" title="等待選擇案件" description="選定入住案件後，交付資料會顯示在這裡。" />
                 ) : (
@@ -546,31 +545,20 @@ export default function BabycamWorkspace({
                     <p className="text-sm">
                       <strong className="text-stone-800">{binding.room || "托嬰"} 房</strong> · {binding.motherName}
                     </p>
-                    {/* 兩張卡並排：櫃台交付時是「一次看兩個連結」，上下排會逼人捲動比對。 */}
-                    <div className="grid grid-cols-2 gap-3">
-                    {(["internal", "family"] as const).map((audience) => {
-                      const href = `/view/${audience === "internal" ? "mama" : "family"}/?ticket=${encodeURIComponent(
-                        audience === "internal" ? binding.internalTicket : binding.familyTicket,
-                      )}`;
-                      return (
-                        <article key={audience} className="space-y-2 rounded-xl border border-border-subtle bg-surface-raised p-3 text-center">
-                          <span
-                            className={
-                              "inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold " +
-                              (audience === "internal" ? "bg-brand-100 text-brand-700" : "bg-purple-100 text-purple-700")
-                            }
-                          >
-                            {audience === "internal" ? "院內" : "親友"}
-                          </span>
-                          <h4 className="text-sm font-bold text-stone-800">{audience === "internal" ? "媽媽即時畫面" : "親友觀看畫面"}</h4>
-                          <TicketQr href={href} size={200} />
-                          <Link href={href} className="block break-all text-xs text-brand-600 underline underline-offset-4">
-                            開啟觀看頁
-                          </Link>
-                        </article>
-                      );
-                    })}
-                    </div>
+                    {/*
+                      只交付親友觀看連結（客戶 2026-10-29）：院內媽媽即時畫面改由病房端自行進入，
+                      櫃台不再一次給兩個連結。internalTicket 仍照常產生（/view/mama 照舊可用），
+                      要開回就把院內那張卡加回來，並把 printFamilyNotice 的 internalHref 一併帶上。
+                      只剩一張時放大 QR：櫃台當面交付，家屬常常是拿自己的手機隔著桌子掃。
+                    */}
+                    <article className="space-y-2 rounded-xl border border-border-subtle bg-surface-raised p-4 text-center">
+                      <span className="inline-flex rounded-full bg-purple-100 px-2 py-0.5 text-[11px] font-bold text-purple-700">親友</span>
+                      <h4 className="text-sm font-bold text-stone-800">親友觀看畫面</h4>
+                      <TicketQr href={`/view/family/?ticket=${encodeURIComponent(binding.familyTicket)}`} size={240} />
+                      <Link href={`/view/family/?ticket=${encodeURIComponent(binding.familyTicket)}`} className="block break-all text-xs text-brand-600 underline underline-offset-4">
+                        開啟觀看頁
+                      </Link>
+                    </article>
                     <section className="space-y-1 rounded-xl border border-border-subtle bg-surface-raised p-3 text-sm">
                       <strong className="block text-stone-800">家屬登入資料</strong>
                       <span className="block text-stone-600">登入帳號：{binding.phone}</span>
@@ -592,7 +580,7 @@ export default function BabycamWorkspace({
                           passcode: binding.passcode,
                           validFrom: binding.validFrom,
                           validTo: binding.validTo,
-                          internalHref: `/view/mama/?ticket=${encodeURIComponent(binding.internalTicket)}`,
+                          // 院內那張依客戶要求不印；familyNotice 的 internalHref 是選填，給了才會多印一張卡。
                           familyHref: `/view/family/?ticket=${encodeURIComponent(binding.familyTicket)}`,
                         });
                       }}

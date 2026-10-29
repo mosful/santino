@@ -16,17 +16,22 @@ const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-res
   await page.goto(base + "/babycam/");
   await page.getByRole("link", { name: "寶寶登錄", exact: true }).click(); await page.getByRole("button", { name: "寶寶登錄與標籤", exact: true }).click();
 
-  // 首次未寫入時，從畫面觸發共用資料保存。
-  await page.getByLabel("新增或編輯寶寶", { exact: true }).selectOption({ index: 1 });
-  await page.getByLabel("胎序（單胞胎 0）", { exact: true }).fill("1");
+  /* 寶寶改用按鈕列挑、胎序改用胎別按鈕（客戶 2026-10-29），不再是下拉與數字框。
+     第一顆按鈕就是這筆入住的第一位寶寶。 */
+  // 這筆入住的第一顆寶寶按鈕（localStorage 此時還沒寫入，名稱只能從畫面取）。
+  const babyButtons = page.locator('fieldset:has(legend:text-is("這筆入住的寶寶")) button');
+  await babyButtons.first().click();
+  await page.getByRole("button", { name: "雙胞胎", exact: true }).click();
+  await page.getByRole("button", { name: "A（第 1 位）", exact: true }).click();
   await page.getByRole("button", { name: "儲存原寶寶指派", exact: true }).click();
   const data = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1")));
   const binding = data.bindings[0]; const first = binding.babies[0];
   assert.equal(first.birthOrder, 1);
-  await page.getByLabel("新增或編輯寶寶", { exact: true }).selectOption("");
+  await page.getByRole("button", { name: "＋ 新增寶寶", exact: true }).click();
   await page.getByLabel("寶寶姓名", { exact: true }).fill("多胞胎測試二寶");
   await page.getByLabel("車號", { exact: true }).fill("TWINS99");
-  await page.getByLabel("胎序（單胞胎 0）", { exact: true }).fill("2");
+  await page.getByRole("button", { name: "雙胞胎", exact: true }).click();
+  await page.getByRole("button", { name: "B（第 2 位）", exact: true }).click();
   const freeCamera = data.cameras.find((camera) => camera.enabled && !data.bindings.some((item) => !item.ended && item.babies.some((baby) => baby.cameraId === camera.id)));
   // 監視器改以晶片網格挑選（隱藏的 checkbox，aria-label 為「監視器 {代碼}」）。
   await page.getByRole("checkbox", { name: `監視器 ${freeCamera.code}`, exact: true }).check();
@@ -38,7 +43,7 @@ const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-res
   await page.getByRole("status").filter({ hasText: "身分核對通過" }).waitFor();
   // 掃碼頁現在直接落在「掃碼歸位核對」，要解除指派得先切到登錄頁籤。
   await page.getByRole("button", { name: "寶寶登錄與標籤", exact: true }).click();
-  await page.getByLabel("新增或編輯寶寶", { exact: true }).selectOption(first.babyId);
+  await babyButtons.first().click();
   await page.getByRole("button", { name: "解除此寶寶指派", exact: true }).click();
   await page.getByRole("button", { name: "確認解除指派", exact: true }).click();
   // 再切回核對頁籤，確認該標籤已失效、不能再歸位。

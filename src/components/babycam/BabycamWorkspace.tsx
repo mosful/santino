@@ -242,6 +242,10 @@ export default function BabycamWorkspace({
   const [scanCode, setScanCode] = useState(initialScanCode);
   const [scanBaby, setScanBaby] = useState("");
   const [labelImages, setLabelImages] = useState<string[]>([]);
+  /* 標籤要印哪幾位（客戶 2026-10-29：多胞胎預設全勾）。
+     存的是「不印的 babyId」而不是「要印的」——這樣換到另一筆入住時不必重設，
+     新的寶寶不在排除清單裡，自然就是全勾。 */
+  const [labelSkip, setLabelSkip] = useState<string[]>([]);
   const [zone, setZone] = useState("全部");
   const [reportChoice, setReport] = useState("照護");
   const [keyword, setKeyword] = useState("");
@@ -700,13 +704,39 @@ export default function BabycamWorkspace({
                   <AsideEmpty mark="標籤" title="等待指派寶寶" description="完成寶寶與監視器指派後，可在這裡產生並列印標籤。" />
                 ) : (
                   <div className="space-y-3">
+                    {/* 兩位以上才需要挑；只有一位時勾選框是多餘的一步。 */}
+                    {binding.babies.length > 1 && (
+                      <fieldset className="space-y-2 rounded-xl border border-border-subtle bg-surface-raised p-3">
+                        <legend className="px-1 text-xs font-semibold text-stone-700">要列印的寶寶</legend>
+                        {binding.babies.map((baby) => {
+                          const subject = data.subjects.find((item) => item.id === baby.babyId);
+                          const picked = !labelSkip.includes(baby.babyId);
+                          return (
+                            <label key={baby.babyId} className="flex min-h-11 items-center gap-2 text-sm">
+                              <input
+                                type="checkbox"
+                                checked={picked}
+                                onChange={() => {
+                                  setLabelSkip((current) => (picked ? [...current, baby.babyId] : current.filter((id) => id !== baby.babyId)));
+                                  setLabelImages([]);
+                                }}
+                              />
+                              <span>{subject?.name ?? "未命名"}</span>
+                              <span className="ml-auto text-xs text-stone-500">{data.cameras.find((camera) => camera.id === baby.cameraId)?.code ?? "未設定"}・車號 {baby.cartNo}</span>
+                            </label>
+                          );
+                        })}
+                      </fieldset>
+                    )}
                     <Button
                       size="sm"
                       variant="primary"
                       onClick={async () => {
                         try {
+                          const picked = binding.babies.filter((baby) => !labelSkip.includes(baby.babyId));
+                          if (!picked.length) throw new Error("請至少勾選一位寶寶。");
                           await loadPrintFont(data.printSettings);
-                          const images = binding.babies.map((baby) => {
+                          const images = picked.map((baby) => {
                             const subject = data.subjects.find((item) => item.id === baby.babyId)!;
                             const rendered = renderWristband(
                               binding.room,
@@ -728,7 +758,7 @@ export default function BabycamWorkspace({
                             return rendered.canvas.toDataURL();
                           });
                           setLabelImages(images);
-                          setMessage("已產生本機標籤預覽。");
+                          setMessage(`已產生 ${images.length} 位寶寶的標籤預覽。`);
                         } catch (error) {
                           setMessage(error instanceof Error ? error.message : "標籤預覽失敗。");
                         }

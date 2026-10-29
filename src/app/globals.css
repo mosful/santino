@@ -496,6 +496,28 @@ html { --app-header-h: 3.5rem; }
   html { overscroll-behavior: none; }
 }
 
+/* 側欄開關（設計沿用 myAgent）：靜止顯示身分，指向／鍵盤聚焦才露出開關箭頭。 */
+.sidebar-toggle-rest,
+.sidebar-toggle-action {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.sidebar-toggle-action { visibility: hidden; }
+.sidebar-toggle:hover .sidebar-toggle-rest,
+.sidebar-toggle:focus-visible .sidebar-toggle-rest { visibility: hidden; }
+.sidebar-toggle:hover .sidebar-toggle-action,
+.sidebar-toggle:focus-visible .sidebar-toggle-action { visibility: visible; }
+
+/* 觸控沒有 hover，整顆停在靜止態，否則手指一碰就換圖示。 */
+@media (hover: none) {
+  .sidebar-toggle:hover .sidebar-toggle-rest { visibility: visible; }
+  .sidebar-toggle:hover .sidebar-toggle-action { visibility: hidden; }
+}
+
 /* iPad／平板專用操作層：窄螢幕，或橫向 iPad 的粗指標觸控環境；滑鼠桌機不受影響。 */
 .tablet-only-copy {
   display: none;
@@ -567,6 +589,18 @@ html { --app-header-h: 3.5rem; }
 
   .tablet-stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* iPad 放不下 min-w-[…] 的寬表：右側欄位（案件清單連「開啟案件」鈕）整個落在畫面外，
+     而觸控裝置沒有可見捲軸，看起來就像那一段「沒有出現」（客戶回報月統計表）。
+     平板下讓寬表縮回容器寬度，欄距與字級一併收窄；真的擠不下時原本的橫捲仍在。 */
+  table[class*="min-w-["] {
+    min-width: 0 !important;
+    font-size: 0.8125rem;
+  }
+
+  table[class*="min-w-["] :is(th, td) {
+    padding: 0.5rem;
   }
 
   .care-floating-window {

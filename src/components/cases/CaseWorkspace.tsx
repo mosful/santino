@@ -264,7 +264,7 @@ export default function CaseWorkspace() {
         description={`${record.contractNo || "尚未下訂"}・${record.roomType} ${record.days} 天・負責 ${record.owner}`}
         items={[
           { label: "目前階段", value: record.closed ? "已結案" : `${record.stage + 1}. ${CASE_STAGES[record.stage]}`, detail: record.closed ? "案件內容唯讀" : `共 7 階段`, tone: record.closed ? "default" : "brand" },
-          { label: "完成條件", value: record.closed ? "已結案" : transitionErrors.length ? `${transitionErrors.length} 項待完成` : "可完成本階段", detail: transitionErrors[0] ?? "必要資料已齊全", tone: record.closed ? "default" : transitionErrors.length ? "warning" : "success" },
+          { label: "完成條件", value: record.closed ? "已結案" : transitionErrors.length ? `${transitionErrors.length} 項待完成` : "可完成本階段", detail: transitionErrors.join("；") || "必要資料已齊全", tone: record.closed ? "default" : transitionErrors.length ? "warning" : "success" },
           { label: "應收餘額", value: money(caseBalance(record)), detail: record.settlementDone ? "已標記完成尾款結算" : "含合約、訂金、自費與付款", tone: caseBalance(record) > 0 ? "danger" : "success" },
           { label: "下一步", value: caseNextAction(record), detail: edit ? "可在下方目前階段處理" : "目前為唯讀狀態", tone: "brand" },
         ]}
@@ -306,7 +306,7 @@ export default function CaseWorkspace() {
               <label className="sm:col-span-2 block space-y-2 text-sm">階段備註<textarea disabled={!stageEditable(index)} className={input} value={record.note} onChange={(event) => patch({ note: event.target.value })} /></label>
             </fieldset>
               {index < record.stage && stageEditable(index) && <ActionDock title={`${stage}・修改已完成階段`} description="欄位改動即時生效；按儲存會在案件歷程留下一筆修改紀錄。"><button type="button" className={buttonStyles({ variant: "primary" })} onClick={() => run(() => caseActions.save(record.id, `修改已完成階段：${index + 1}. ${stage}`), `${stage}的修改已儲存，並寫入案件歷程。`)}>儲存修改</button></ActionDock>}
-              {index === record.stage && !record.closed && <ActionDock title={`${stage}・目前作業`} description={transitionErrors[0] ?? "本階段必要條件已齊全，可完成並前往下一階段。"}><button type="button" className={button} onClick={() => run(() => caseActions.save(record.id), "整張案件單已暫存。")}>暫存整張單</button><button type="button" className={buttonStyles({ variant: "primary" })} onClick={() => run(() => caseActions.advance(record.id), "階段已完成，相關入住及授權資料已同步。")}>{stage}完成 → {CASE_STAGES[index + 1] ?? "結案"}</button></ActionDock>}
+              {index === record.stage && !record.closed && <ActionDock title={`${stage}・目前作業`} description={transitionErrors.join("；") || "本階段必要條件已齊全，可完成並前往下一階段。"}><button type="button" className={button} onClick={() => run(() => caseActions.save(record.id), "整張案件單已暫存。")}>暫存整張單</button><button type="button" className={buttonStyles({ variant: "primary" })} onClick={() => run(() => caseActions.advance(record.id), "階段已完成，相關入住及授權資料已同步。")}>{stage}完成 → {CASE_STAGES[index + 1] ?? "結案"}</button></ActionDock>}
             </div>}
           </section>;
         })}

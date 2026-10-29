@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { Menu, PanelLeft, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import SidebarNav from "./SidebarNav";
 import RoleSwitcher from "./RoleSwitcher";
 import SidebarIllustration from "./SidebarIllustration";
@@ -29,6 +29,39 @@ function Brand({ compact = false }: { compact?: boolean }) {
         </div>
       )}
     </Link>
+  );
+}
+
+/*
+  側欄開關（設計沿用 myAgent）：按鈕位置固定，靜止時顯示身分（展開＝面板圖示、收合＝品牌方塊），
+  指向或鍵盤聚焦時才換成開關箭頭。收合時品牌方塊「就是」按鈕，68px 的側欄少掉一整行。
+  觸控裝置沒有 hover，由 globals.css 讓它一直停在靜止態。
+*/
+function SidebarToggle({ collapsed }: { collapsed: boolean }) {
+  const label = collapsed ? "展開選單" : "收合選單";
+  return (
+    <button
+      type="button"
+      onClick={() => setSidebarCollapsed(!collapsed)}
+      aria-label={label}
+      aria-expanded={!collapsed}
+      title={label}
+      className={
+        "sidebar-toggle relative shrink-0 rounded-xl text-stone-400 hover:bg-stone-100 hover:text-stone-600 " +
+        (collapsed ? "h-9 w-9" : "mr-2 h-8 w-8")
+      }
+    >
+      <span className="sidebar-toggle-rest" aria-hidden="true">
+        {collapsed ? (
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-accent-400 text-sm font-bold text-white shadow-sm">聖</span>
+        ) : (
+          <PanelLeft className="h-4 w-4" />
+        )}
+      </span>
+      <span className="sidebar-toggle-action" aria-hidden="true">
+        {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+      </span>
+    </button>
   );
 }
 
@@ -103,30 +136,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         }
       >
         {collapsed ? (
-          <div className="flex flex-col items-center gap-1 pt-2">
-            <Brand compact />
-            <button
-              onClick={() => setSidebarCollapsed(false)}
-              className="mb-1 flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600"
-              aria-label="展開選單"
-              title="展開選單"
-            >
-              <PanelLeftOpen className="h-4 w-4" />
-            </button>
+          <div className="flex justify-center py-4">
+            <SidebarToggle collapsed />
           </div>
         ) : (
           <div className="flex items-center">
             <div className="min-w-0 flex-1">
               <Brand />
             </div>
-            <button
-              onClick={() => setSidebarCollapsed(true)}
-              className="mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600"
-              aria-label="收合選單"
-              title="收合選單"
-            >
-              <PanelLeftClose className="h-4 w-4" />
-            </button>
+            <SidebarToggle collapsed={false} />
           </div>
         )}
         <SidebarNav collapsed={collapsed} />

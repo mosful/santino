@@ -1,6 +1,7 @@
 import { BABY_ROOMS } from "../mock/babyRoom";
 import { DISCHARGED_MAMA_RECORDS, MAMA_ROOMS } from "../mock/mamaRoom";
 import type { CareSubject } from "./types";
+import { babyDisplayName } from "../babycam/wristband";
 
 /** 以病歷個案識別，退房後同一房的新住客不會共用草稿或簽名。 */
 export const CARE_SUBJECTS: CareSubject[] = [
@@ -14,8 +15,8 @@ export const CARE_SUBJECTS: CareSubject[] = [
     return {
       id: `baby-${room.chartNo}`, caseId: mother ? `stay-${mother.chartNo}` : room.caseId!, kind: "baby" as const,
       room: room.boarding ? "" : room.room, carNo: room.carNo, previousRoom: room.previousRoom,
-      // 寶寶跟媽媽同姓：原本取自寶寶產生器的姓氏，換房間時看起來像沒跟著切換（客戶回報）。
-      name: `${(mother?.motherName ?? room.babyName!).slice(0, 1)}○寶`,
+      // 寶寶跟著媽媽叫：原本取自寶寶產生器的姓氏，換房間時看起來像沒跟著切換（客戶回報）。
+      name: mother?.motherName ? babyDisplayName(mother.motherName, room.gender) : room.babyName!,
       motherName: mother?.motherName ?? "示範托嬰媽媽", chartNo: room.chartNo!, status: room.status,
       stayDay: mother?.stayDay ?? 1, birthDate: room.birthDate, gender: room.gender,
     };
@@ -25,7 +26,7 @@ export const CARE_SUBJECTS: CareSubject[] = [
     const base = { caseId: room.caseId!, room: room.room, motherName: room.motherName!, status: "已退房", stayDay: room.stayDay ?? 1, historical: true, dischargedAt };
     return [
       { ...base, id: `mama-${room.caseId}`, kind: "mama" as const, name: room.motherName!, chartNo: room.chartNo! },
-      { ...base, id: `baby-${room.caseId}`, kind: "baby" as const, name: `${room.motherName}之寶寶`, chartNo: `B-${room.chartNo}` },
+      { ...base, id: `baby-${room.caseId}`, kind: "baby" as const, name: babyDisplayName(room.motherName!, undefined), chartNo: `B-${room.chartNo}` },
     ];
   }),
 ];

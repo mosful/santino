@@ -1,5 +1,6 @@
 import { makeRng, makeCycler, SURNAMES } from "./genUtil";
 import { MAMA_ROOMS } from "./mamaRoom";
+import { babyDisplayName } from "../babycam/wristband";
 
 export type BabyStatus = "入住" | "隔離" | "親子同室" | "視訊" | "托嬰" | "空房";
 export type BabyGender = "男" | "女";
@@ -70,10 +71,11 @@ const RESIDENT_BABY_ROOMS: BabyRoom[] = MAMA_ROOMS.map((mr): BabyRoom => {
   const occupied = mr.status === "入住" || mr.status === "親子同室";
   if (!occupied) return { room: mr.room, status: "空房" };
 
+  // 寶寶名稱一律由媽媽姓名推導（見 babyDisplayName）；精選範例只保留性別與出生等寶寶欄位。
   const override = CURATED_OVERRIDE[mr.room];
-  if (override) return { room: mr.room, ...override };
+  if (override) return { room: mr.room, ...override, babyName: babyDisplayName(mr.motherName!, override.gender) };
 
-  const { value: combo, round } = nameCycler();
+  const { value: combo } = nameCycler();
   const status: BabyStatus = mr.status === "親子同室" ? "親子同室" : rng.pick(STATUS_WEIGHTED);
   const month = rng.int(8, 9);
   const day = rng.int(1, 27);
@@ -83,12 +85,11 @@ const RESIDENT_BABY_ROOMS: BabyRoom[] = MAMA_ROOMS.map((mr): BabyRoom => {
       : status === "親子同室"
       ? "親子同室中"
       : "隔離中";
-  const label = combo.gender === "男" ? "小弟" : "小妹";
   return {
     room: mr.room,
     status,
     gender: combo.gender,
-    babyName: round === 1 ? `${combo.surname}${label}` : `${combo.surname}${label}(${round})`,
+    babyName: babyDisplayName(mr.motherName!, combo.gender),
     chartNo: `B2026${String(month).padStart(2, "0")}${String(day).padStart(2, "0")}${mr.room}`,
     birthDate: `2026-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
     weight: `${(rng.int(24, 38) / 10).toFixed(1)}kg`,
@@ -105,7 +106,7 @@ export const BOARDING_BABIES: BabyRoom[] = [
     boarding: true,
     status: "托嬰",
     gender: "男",
-    babyName: "周小弟",
+    babyName: "周○柔之子",
     chartNo: "B20260818001",
     birthDate: "2026-08-18",
     weight: "3.4kg",
@@ -119,7 +120,7 @@ export const BOARDING_BABIES: BabyRoom[] = [
     boarding: true,
     status: "托嬰",
     gender: "女",
-    babyName: "許小妹",
+    babyName: "許○涵之女",
     chartNo: "B20260822002",
     birthDate: "2026-08-22",
     weight: "3.1kg",

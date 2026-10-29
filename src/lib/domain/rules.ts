@@ -84,8 +84,12 @@ export function caseTransitionErrors(record: CaseRecord, reviewDays = 5): string
   if (record.stage === 0 && !record.visitDate) errors.push("請安排參觀日期。");
   if (record.stage === 1 && record.visitStatus !== "已出席") errors.push("請確認參觀出席，未出席或改期案件先留在參觀階段。");
   if (record.stage === 2 && (!record.contractNo.trim() || record.deposit <= 0 || record.days <= 0)) errors.push("請填寫收字號、正確天數及訂金。");
-  if (record.stage === 3 && (!record.signed || !record.signature || !record.reviewStart || !record.signedDate)) errors.push("請完成審閱期、簽約日與本案簽名。");
-  if (record.stage === 3 && (!record.milkConsent || !record.milkChoice)) errors.push("請完成母乳哺育意願書與哺餵方式選擇。");
+  // 合約階段逐項列出，不要揉成一句：櫃台填完簽約日後訊息若原地不動，會被當成檢查壞掉（客戶回報）。
+  if (record.stage === 3 && !record.signedDate) errors.push("請填寫簽約日。");
+  if (record.stage === 3 && !record.reviewStart) errors.push("請填寫攜回審閱日。");
+  if (record.stage === 3 && !record.milkChoice) errors.push("請選擇預計哺餵方式。");
+  if (record.stage === 3 && !record.milkConsent) errors.push("請勾選母乳哺育意願書已確認。");
+  if (record.stage === 3 && (!record.signed || !record.signature)) errors.push("請完成本案簽名。");
   if (record.reviewStart && record.signedDate && record.reviewStart > record.signedDate) errors.push("攜回審閱日不能晚於簽約日。");
   if (record.stage === 3 && record.reviewStart && record.signedDate && Date.parse(record.signedDate) - Date.parse(record.reviewStart) < reviewDays * 86_400_000) errors.push(`示範審閱期為 ${reviewDays} 天，攜回審閱日須再往前調整。`);
   if (record.stage === 4 && (!record.actualAdmission || !record.room)) errors.push("請填寫實際入住日並選擇房間。");

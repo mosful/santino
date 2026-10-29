@@ -46,14 +46,19 @@ export function labelOrdersError(babies: Array<Partial<LabelFields>>): string | 
   return null;
 }
 
-export function chineseOrdinal(value: number): string {
-  const digits = "零一二三四五六七八九";
-  if (value < 10) return digits[value] ?? String(value);
-  return `${value >= 20 ? digits[Math.floor(value / 10)] : ""}十${value % 10 ? digits[value % 10] : ""}`;
+/**
+ * 寶寶顯示名稱：媽媽姓名＋之子／之女，雙胞胎以上依胎序加 A、B、C（單胞胎的胎序 0 不加）。
+ * 全站共用這一支——照護對象、寶寶房卡、寶寶視訊、手圈標籤，不要各自拼字串。
+ */
+export function babyDisplayName(motherName: string, sex: "男" | "女" | "male" | "female" | null | undefined, birthOrder?: number | null): string {
+  const female = sex === "女" || sex === "female";
+  // shortcut: 胎序超過 26 直接印數字，現實不會有第 27 胞胎。
+  const order = birthOrder && birthOrder > 0 ? (birthOrder <= 26 ? String.fromCharCode(64 + birthOrder) : String(birthOrder)) : "";
+  return `${motherName}之${female ? "女" : "子"}${order}`;
 }
 
 export function labelName(motherLabel: string, fields: LabelFields): string {
-  return `${motherLabel}之${fields.sex === "female" ? "女" : "子"}${fields.birthOrder ? `(${chineseOrdinal(fields.birthOrder)})` : ""}`;
+  return babyDisplayName(motherLabel, fields.sex, fields.birthOrder);
 }
 
 export function rocDate(value: string): string {

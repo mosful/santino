@@ -13,6 +13,8 @@ import { lightChannels } from "../src/lib/babycam/lights";
 import { contractSettingActions } from "../src/lib/domain/contractSettings";
 import { cameraTimeRows } from "../src/lib/babycam/cameraTime";
 import { toCsv } from "../src/lib/babycam/csv";
+import { babyDisplayName } from "../src/lib/babycam/wristband";
+import { caseTransitionErrors } from "../src/lib/domain/rules";
 
 const storage = new Map<string, string>(); const events = new EventTarget();
 Object.defineProperty(globalThis, "window", { value: { localStorage: { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value), removeItem: (key: string) => storage.delete(key) }, dispatchEvent: events.dispatchEvent.bind(events), addEventListener: events.addEventListener.bind(events), removeEventListener: events.removeEventListener.bind(events) }, configurable: true });
@@ -370,4 +372,27 @@ test("瀏覽器 XLSX 是真正 ZIP，包含可跳脫的中文數字資料", () =
 test("CSV 保留中文與換行，阻擋公式和控制字元開頭", () => {
   const csv = toCsv(["內容"], [["=1+1"], ["\t公式"], ['中文,"引號"\n換行']]);
   assert.equal(csv.charCodeAt(0), 0xfeff); assert.match(csv, /'=1\+1/); assert.match(csv, /'\t公式/); assert.match(csv, /"中文,""引號""\n換行"/);
+});
+
+test("寶寶標籤依性別取之子／之女，雙胞胎才加 A、B", () => {
+  assert.equal(babyDisplayName("王○晴", "男"), "王○晴之子");
+  assert.equal(babyDisplayName("王○晴", "女"), "王○晴之女");
+  assert.equal(babyDisplayName("王○晴", "male", 0), "王○晴之子");
+  assert.equal(babyDisplayName("王○晴", "男", 1), "王○晴之子A");
+  assert.equal(babyDisplayName("王○晴", "female", 2), "王○晴之女B");
+  // 性別未填時一律之子，與手圈標籤同一套規則。
+  assert.equal(babyDisplayName("王○晴", null), "王○晴之子");
+});
+
+test("合約階段缺項逐條列出，填一項就少一條", () => {
+  reset();
+  const id = "case-demo-contract";
+  const record = () => domainStore.get().cases.find((item) => item.id === id)!;
+  assert.deepEqual(caseTransitionErrors(record(), 5), ["請填寫簽約日。", "請填寫攜回審閱日。", "請勾選母乳哺育意願書已確認。", "請完成本案簽名。"]);
+  caseActions.update(id, { signedDate: "2026-10-29", reviewStart: "2026-10-24" });
+  assert.deepEqual(caseTransitionErrors(record(), 5), ["請勾選母乳哺育意願書已確認。", "請完成本案簽名。"]);
+  caseActions.update(id, { milkConsent: true });
+  assert.deepEqual(caseTransitionErrors(record(), 5), ["請完成本案簽名。"]);
+  caseActions.sign(id, "data:image/png;base64,demo");
+  assert.deepEqual(caseTransitionErrors(record(), 5), []);
 });

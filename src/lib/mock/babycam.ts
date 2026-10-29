@@ -6,6 +6,7 @@
  * 不含任何真實 IP、攝影機帳密或真實影像。
  */
 import { makeRng, makeUniqueNameGenerator, pad2 } from "./genUtil";
+import { babyDisplayName as babyName } from "../babycam/wristband";
 import { MAMA_ROOMS } from "./mamaRoom";
 
 /** 顯示狀態：沿用舊系統 9 種，另加「正常顯示」為預設值。非正常顯示一律遮蔽畫面。 */
@@ -148,7 +149,9 @@ export const BINDINGS: Binding[] = OCCUPIED_ROOMS.map((r, i) => {
     id: `bind-${r.room}`,
     room: r.room,
     motherName: r.motherName ?? nextName(),
-    babyName: twin ? "雙胞胎（兩位）" : `${(r.motherName ?? "陳o如")[0]}小弟／小妹`,
+    babyName: twin
+      ? `${babyName(r.motherName ?? "陳○如", "男", 1)}、${babyName(r.motherName ?? "陳○如", "女", 2)}`
+      : babyName(r.motherName ?? "陳○如", undefined),
     camIds,
     statusKey,
     openFrom: overnight ? "20:00" : "09:00",

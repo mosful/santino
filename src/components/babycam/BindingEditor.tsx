@@ -6,6 +6,7 @@ import type { DemoDomain, ViewingBinding } from "@/lib/domain/types";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { CameraChipGrid, ZoneFilter } from "./BabycamUi";
 import { DEMO_BABY_NAME, orDemo } from "@/lib/demo/demoDefaults";
+import { babyDisplayName } from "@/lib/babycam/wristband";
 
 const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
 // 按鈕樣式一律取自 components/ui/Button，不在此另開複本（見該檔開頭說明）。
@@ -13,7 +14,7 @@ const button = buttonStyles();
 
 export default function BindingEditor({ data, binding, onChange }: { data: DemoDomain; binding: ViewingBinding; onChange: () => void }) {
   const [babyId, setBabyId] = useState("");
-  const [name, setName] = useState(DEMO_BABY_NAME);
+  const [name, setName] = useState(() => (binding.motherName ? babyDisplayName(binding.motherName, "男", 0) : DEMO_BABY_NAME));
   const [cartNo, setCartNo] = useState("");
   const [birthDate, setBirthDate] = useState("2026-10-01");
   const [sex, setSex] = useState<"男" | "女">("男");
@@ -44,12 +45,21 @@ export default function BindingEditor({ data, binding, onChange }: { data: DemoD
     .map((baby) => baby.cameraId);
   const zoneCameras = data.cameras.filter((camera) => (camera.enabled || camera.id === cameraId) && (zone === "全部" || camera.code.startsWith(zone)));
 
+  /* 寶寶姓名預設跟著媽媽、性別與胎序走（雙胞胎才會有 A／B）；護理師若自己打過字就不再覆蓋。
+     手圈標籤印的是這個欄位（wristband-print 只在它空白時才回頭推導），所以要在這裡就對。 */
+  const autoName = babyDisplayName(binding.motherName, sex, birthOrder);
+  function retitle(nextSex: "男" | "女", nextOrder: number) {
+    if (name === autoName) setName(babyDisplayName(binding.motherName, nextSex, nextOrder));
+  }
+
   function selectBaby(id: string) {
     const subject = candidates.find((item) => item.id === id);
     const baby = binding.babies.find((item) => item.babyId === id);
-    setBabyId(id); setName(orDemo(subject?.name, DEMO_BABY_NAME)); setCartNo(baby?.cartNo ?? subject?.carNo ?? "");
-    setBirthDate(subject?.birthDate ?? "2026-10-01"); setSex(subject?.gender === "女" ? "女" : "男");
-    setBirthOrder(baby?.birthOrder ?? (binding.babies.length ? binding.babies.length + 1 : 0));
+        const nextSex = subject?.gender === "女" ? "女" : "男";
+    const nextOrder = baby?.birthOrder ?? (binding.babies.length ? binding.babies.length + 1 : 0);
+    setBabyId(id); setName(orDemo(subject?.name, babyDisplayName(binding.motherName, nextSex, nextOrder) || DEMO_BABY_NAME)); setCartNo(baby?.cartNo ?? subject?.carNo ?? "");
+    setBirthDate(subject?.birthDate ?? "2026-10-01"); setSex(nextSex);
+    setBirthOrder(nextOrder);
     setCameraId(baby?.cameraId ?? data.cameras.find((camera) => camera.enabled && !data.bindings.some((item) => !item.ended && item.babies.some((child) => child.cameraId === camera.id)))?.id ?? data.cameras[0]?.id ?? "");
     setConfirmRemove(false); setMessage("");
   }
@@ -68,8 +78,8 @@ export default function BindingEditor({ data, binding, onChange }: { data: DemoD
       <label className="text-sm">寶寶姓名<input aria-label="寶寶姓名" className={input} value={name} onChange={(event) => setName(event.target.value)} /></label>
       <label className="text-sm">車號<input aria-label="車號" className={input} value={cartNo} onChange={(event) => setCartNo(event.target.value)} /></label>
       <label className="text-sm">出生日期<input aria-label="出生日期" type="date" className={input} value={birthDate} onChange={(event) => setBirthDate(event.target.value)} /></label>
-      <label className="text-sm">性別<select aria-label="性別" className={input} value={sex} onChange={(event) => setSex(event.target.value as "男" | "女")}><option>男</option><option>女</option></select></label>
-      <label className="text-sm">胎序（單胞胎 0）<input aria-label="胎序（單胞胎 0）" type="number" className={input} min={0} value={birthOrder} onChange={(event) => setBirthOrder(Number(event.target.value))} /></label>
+      <label className="text-sm">性別<select aria-label="性別" className={input} value={sex} onChange={(event) => { const next = event.target.value as "男" | "女"; retitle(next, birthOrder); setSex(next); }}><option>男</option><option>女</option></select></label>
+      <label className="text-sm">胎序（單胞胎 0）<input aria-label="胎序（單胞胎 0）" type="number" className={input} min={0} value={birthOrder} onChange={(event) => { const next = Number(event.target.value); retitle(sex, next); setBirthOrder(next); }} /></label>
     </div>
     {/* 監視器用晶片挑，不用下拉選單——33 支塞進 select 一次只看得到幾支，
         護理人員在現場要做的事只是「挑一支」。與 BabyCam 的 camera-chip-grid 對齊。 */}

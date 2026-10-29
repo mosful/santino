@@ -289,13 +289,15 @@ export default function BabycamWorkspace({
     setLabelImages([]);
   }
 
+  /* 欄位依客戶 2026-10-29 指定精簡：照護拿掉「照護秒數」，觀看拿掉「受眾」「裝置識別」
+     「最後觀看」「結果」。資料仍完整留在 careEvents／viewingHistory，只是不上表。 */
   const reportHeaders =
     report === "在鏡頭下"
       ? ["媽媽／房號", "寶寶", "監視器", "開始", "結束", "在鏡頭下秒數（推算）", "照護秒數"]
       : report === "照護"
-        ? ["媽媽／房號", "寶寶", "開始", "結束", "照護秒數", "執行者"]
+        ? ["媽媽／房號", "寶寶", "開始", "結束", "執行者"]
         : report === "觀看"
-          ? ["媽媽／房號", "受眾", "裝置識別", "開始", "最後觀看", "結束", "結果"]
+          ? ["媽媽／房號", "開始", "結束"]
           : ["時間", "操作者", "操作", "對象"];
   const reportRows: (string | number)[][] =
     report === "在鏡頭下"
@@ -308,26 +310,18 @@ export default function BabycamWorkspace({
               data.subjects.find((subject) => subject.id === event.babyId)?.name ?? "",
               event.start,
               event.end ?? "進行中",
-              Math.max(0, Math.round((Date.parse(event.end ?? data.demoAt) - Date.parse(event.start)) / 1000)),
               event.actor,
             ];
           })
         : report === "觀看"
           ? data.viewingHistory.map((event) => {
               const item = data.bindings.find((target) => target.id === event.bindingId);
-              return [
-                `${item?.motherName ?? ""}／${item?.room || "托嬰"}`,
-                event.audience,
-                event.deviceId,
-                event.start,
-                event.lastSeen,
-                event.end ?? "觀看中",
-                event.reason,
-              ];
+              return [`${item?.motherName ?? ""}／${item?.room || "托嬰"}`, event.start, event.end ?? "觀看中"];
             })
           : data.audit.map((entry) => [entry.at, entry.actor, entry.action, entry.target]);
   const filteredRows = reportRows.filter((row) => {
-    const raw = String(row[report === "照護" ? 2 : ["觀看", "在鏡頭下"].includes(report) ? 3 : 0]);
+    // 「操作」報表的時間欄叫「時間」，找不到「開始」就落回第一欄。
+    const raw = String(row[Math.max(0, reportHeaders.indexOf("開始"))]);
     const date = new Date(raw).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" });
     return row.join(" ").includes(keyword) && (!dateFrom || date >= dateFrom) && (!dateTo || date <= dateTo);
   });
@@ -827,9 +821,10 @@ export default function BabycamWorkspace({
 
         {active.id === "report" && (
           <div className="space-y-4 p-4 sm:p-5">
-            <SectionHeading no={1} title="紀錄與報表" description="觀看、照護與在鏡頭下的時間皆為模擬推算；可匯出 Excel 或 CSV。" />
+            <SectionHeading no={1} title="紀錄與報表" description="觀看與照護紀錄皆為模擬資料；可依日期與關鍵字篩選後匯出 Excel。" />
             <div className="flex flex-wrap items-end gap-2">
-              {["照護", "在鏡頭下", "觀看", ...(role === "管理者" ? ["操作"] : [])].map((item) => (
+              {/* 「在鏡頭下」依客戶 2026-10-29 要求下架；報表分支與 cameraTimeRows 保留，要開回只需加回這裡。 */}
+              {["照護", "觀看", ...(role === "管理者" ? ["操作"] : [])].map((item) => (
                 <Button
                   key={item}
                   size="sm"

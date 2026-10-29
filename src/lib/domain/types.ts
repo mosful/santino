@@ -86,7 +86,7 @@ export type ViewingBinding = {
 };
 export type DemoDomain = {
   /** 示範資料結構版本；不符時 domainStore 會丟棄本機資料重新播種。 */
-  version: 5; subjects: CareSubject[]; cases: CaseRecord[]; cameras: CameraRecord[]; bindings: ViewingBinding[];
+  version: 6; subjects: CareSubject[]; cases: CaseRecord[]; cameras: CameraRecord[]; bindings: ViewingBinding[];
   /** 監視器與繼電器板的網段前綴；真值不進版控，見 lib/babycam/network.ts 的說明。 */
   networkPrefix?: string;
   displayStates: DisplayState[]; houseWindow: WindowRule; internalWindow: WindowRule; familyWindow: WindowRule;

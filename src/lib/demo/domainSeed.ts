@@ -80,7 +80,7 @@ export const DISPLAY_STATE_SEED: DemoDomain["displayStates"] = STATE_BACKGROUNDS
 }));
 
 export const DOMAIN_SEED: DemoDomain = {
-  version: 5, subjects: structuredClone(CARE_SUBJECTS), cases, checkoutItems: structuredClone(DEFAULT_CHECKOUT_ITEMS), saleItems: structuredClone(DEFAULT_SALE_ITEMS),
+  version: 6, subjects: structuredClone(CARE_SUBJECTS), cases, checkoutItems: structuredClone(DEFAULT_CHECKOUT_ITEMS), saleItems: structuredClone(DEFAULT_SALE_ITEMS),
   cameras: cameraCodes.map((code, index) => ({ id: `camera-${index + 1}`, code, zone: code[0] as "A" | "B", enabled: true, codec: cameraCodec(code) ?? "H.264", health: index === 12 ? "異常" : "正常", lastShotAt: "2026-10-16T12:00:00+08:00", scheduleInternal: inheritWindow(), scheduleFamily: inheritWindow(), baseline: false })),
   bindings: cases.filter((record) => record.stage === 5 || record.childcare && !record.childcareEnded).map((record, index) => ({
     id: `binding-${record.id}`, caseId: record.id, room: record.room, motherName: record.name, phone: record.phone,
@@ -121,8 +121,31 @@ export const DOMAIN_SEED: DemoDomain = {
 };
 
 // 初始房卡也使用已指派的車號，避免照護頁與標籤各讀一份資料。
+let careSeq = 0;
 for (const binding of DOMAIN_SEED.bindings) for (const baby of binding.babies) {
   const subject = DOMAIN_SEED.subjects.find((item) => item.id === baby.babyId);
   if (subject) { subject.carNo = baby.cartNo; subject.birthOrder = baby.birthOrder ?? 0; }
   DOMAIN_SEED.cameraIntervals.push({ id: `seed-${baby.babyId}`, bindingId: binding.id, babyId: baby.babyId, cameraId: baby.cameraId, start: `${binding.validFrom}T00:00:00+08:00`, end: null });
+  /*
+    照護紀錄的示範資料：「紀錄與報表 → 照護」原本一開啟是空表（careEvents 只在現場
+    切換照護模式時才長出來），客戶看不到東西。每位寶寶在展示日與前一天各排一段，
+    時刻以胎序推開避免看起來像同一批匯入；全部都是已結束的區段，不會影響燈號。
+    ⚠️ 這些區段會被 cameraTimeRows 從在鏡頭下的時間裡扣掉——那正是它要算的事。
+  */
+  for (const day of ["2026-10-15", "2026-10-16"]) {
+    const hour = 8 + ((careSeq * 3) % 10);
+    const minute = (careSeq * 17) % 60;
+    const minutes = 20 + ((careSeq * 7) % 26);
+    const pad = (value: number) => String(value).padStart(2, "0");
+    const endMinute = minute + minutes;
+    DOMAIN_SEED.careEvents.push({
+      id: `seed-care-${careSeq}`,
+      bindingId: binding.id,
+      babyId: baby.babyId,
+      start: `${day}T${pad(hour)}:${pad(minute)}:00+08:00`,
+      end: `${day}T${pad(hour + Math.floor(endMinute / 60))}:${pad(endMinute % 60)}:00+08:00`,
+      actor: careSeq % 3 === 0 ? "護理長 婉真" : "護理師 陳護理師",
+    });
+    careSeq += 1;
+  }
 }

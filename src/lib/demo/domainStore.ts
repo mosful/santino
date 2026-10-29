@@ -121,7 +121,8 @@ export const caseActions = {
   override(id: string, amount: number, reason: string) {
     domainStore.update((data) => { const record = findCase(data, id); if (record.signed) throw new Error("已簽合約請使用變更單。"); if (!reason.trim() || !Number.isFinite(amount) || amount < 0) throw new Error("請填寫有效金額與覆寫原因。"); const before = record.overrideAmount ?? record.quotedAmount; record.overrideAmount = amount; record.overrideReason = reason.trim(); caseLog(record, `覆寫金額 ${before} → ${amount}；原因：${reason.trim()}`); audit(data, "報價覆寫", id); });
   },
-  save(id: string) { domainStore.update((data) => { const record = findCase(data, id); record.draftAt = new Date().toISOString(); caseLog(record, "暫存整張案件單"); }); },
+  // note 讓主管回頭修改已完成階段時，在案件歷程留下「改的是哪一階段」而不是一律記成暫存。
+  save(id: string, note = "暫存整張案件單") { domainStore.update((data) => { const record = findCase(data, id); record.draftAt = new Date().toISOString(); caseLog(record, note); }); },
   timeline(id: string, key: "prenatalContactDone" | "hospitalizationNoticeDone" | "dischargeNoticeDone" | "preAdmissionPapersDone" | "admissionGuidanceDone" | "admissionPaymentNoticeDone", done: boolean) {
     const labels = { prenatalContactDone: "產前關懷電話", hospitalizationNoticeDone: "住院通知", dischargeNoticeDone: "出院通知", preAdmissionPapersDone: "入住前紙本準備", admissionGuidanceDone: "入住指導單", admissionPaymentNoticeDone: "入住繳款通知單" };
     domainStore.update((data) => { const record = findCase(data, id); record[key] = done; caseLog(record, `${labels[key]}：${done ? "已完成" : "改回待辦"}`); audit(data, "更新入住前時間軸", `${id}:${key}`); });

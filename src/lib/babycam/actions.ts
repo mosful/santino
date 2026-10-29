@@ -167,6 +167,37 @@ export const babycamActions = {
   lightColor(state: string, color: string, label?: string) { domainStore.update((data) => { requireSection(data, "08"); if (!["熄滅", "紅", "綠", "藍", "黃", "洋紅", "青", "白"].includes(color) || !state.trim()) throw new Error("請選擇有效燈色與名稱。"); data.lightColors[state] = color; if (label?.trim()) data.lightLabels[state] = label.trim(); audit(data, "修改模擬燈號狀態", state); }); },
   removeLight(state: string) { domainStore.update((data) => { requireSection(data, "08"); if (["empty", "care", "idle", "internal", "family"].includes(state)) throw new Error("五種內建業務狀態不可刪除。"); delete data.lightColors[state]; delete data.lightLabels[state]; audit(data, "刪除自訂燈號狀態", state); }); },
   relay(channel: string, enabled: boolean) { domainStore.update((data) => { requireSection(data, "07"); if (getCurrentRole() !== "管理者") throw new Error("通道點測模擬僅限管理者。"); data.relayChannels[channel] = enabled; audit(data, `模擬通道 ${enabled ? "開" : "關"}`, channel); }); },
+  /*
+    消毒排程（客戶 2026-10-29）：固定的紫外線消毒用 weekday，不定期的環境消毒用 date。
+    歸在 04（開放時段）底下——它就是一種「這段時間不開放」的設定，護理長即可維護。
+  */
+  saveDisinfection(input: { id?: string; label: string; kind: "紫外線" | "環境"; weekday: number | null; date: string; start: string; end: string; rooms: string[]; enabled: boolean }) {
+    domainStore.update((data) => {
+      requireSection(data, "04");
+      if (!input.label.trim()) throw new Error("請填寫消毒項目名稱。");
+      if (input.weekday === null && !/^\d{4}-\d{2}-\d{2}$/.test(input.date)) throw new Error("不定期消毒請選擇日期。");
+      if (input.weekday !== null && (!Number.isInteger(input.weekday) || input.weekday < 0 || input.weekday > 6)) throw new Error("請選擇有效的星期。");
+      if (!/^\d{2}:\d{2}$/.test(input.start) || !/^\d{2}:\d{2}$/.test(input.end)) throw new Error("請填寫 HH:MM 格式的起訖時間。");
+      if (input.start === input.end) throw new Error("起訖時間不可相同。");
+      const unknown = input.rooms.filter((room) => !data.rooms.some((item) => item.room === room));
+      if (unknown.length) throw new Error(`房號 ${unknown.join("、")} 不在房間主檔內。`);
+      data.disinfections ??= [];
+      const existing = input.id ? data.disinfections.find((item) => item.id === input.id) : undefined;
+      const fields = { label: input.label.trim(), kind: input.kind, weekday: input.weekday, date: input.weekday === null ? input.date : "", start: input.start, end: input.end, rooms: [...input.rooms], enabled: input.enabled };
+      if (existing) Object.assign(existing, fields);
+      else data.disinfections.push({ id: crypto.randomUUID(), ...fields });
+      audit(data, existing ? "修改消毒排程" : "新增消毒排程", fields.label);
+    });
+  },
+  removeDisinfection(id: string) {
+    domainStore.update((data) => {
+      requireSection(data, "04");
+      const target = (data.disinfections ?? []).find((item) => item.id === id);
+      if (!target) throw new Error("找不到這筆消毒排程。");
+      data.disinfections = data.disinfections.filter((item) => item.id !== id);
+      audit(data, "刪除消毒排程", target.label);
+    });
+  },
   staff(id: string, name: string, role: string, enabled: boolean) {
     domainStore.update((data) => { requireSection(data, "08"); if (!name.trim() || !(ROLES as readonly string[]).includes(role)) throw new Error("請填姓名並選擇有效角色。"); const old = data.staff.find((item) => item.id === id); if (old?.role === "管理者" && old.enabled && (role !== "管理者" || !enabled) && data.staff.filter((item) => item.enabled && item.role === "管理者").length === 1) throw new Error("最後一位啟用中的管理員不可停用或降級。"); if (old) Object.assign(old, { name, role, enabled }); else data.staff.push({ id: crypto.randomUUID(), name, role, enabled }); audit(data, "修改展示帳號", id || name); });
   },

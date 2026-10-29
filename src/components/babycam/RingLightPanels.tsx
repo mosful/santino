@@ -7,6 +7,7 @@ import { deriveDemoLight } from "@/lib/babycam/viewing";
 import { ringLightsInZone, UNMAPPED_CAMERA_CODES, type RelayZone } from "@/lib/babycam/ring-light-map";
 import { CHANNEL_CSS, MIX_DISPLAY_ORDER, mixChannels, mixCss, mixLabel, mixOf } from "@/lib/babycam/lightMix";
 import { cameraHost, DEFAULT_NETWORK_PREFIX, relayHost } from "@/lib/babycam/network";
+import { activeDisinfection, describeDisinfection } from "@/lib/babycam/disinfection";
 import type { DemoDomain } from "@/lib/domain/types";
 
 /*
@@ -153,6 +154,13 @@ export function RelayBoard({ data, onToggle }: { data: DemoDomain; onToggle: (ch
   */
   const prefix = data.networkPrefix || DEFAULT_NETWORK_PREFIX;
   const lights = ringLightsInZone(zone).filter((light) => data.cameras.some((camera) => camera.code === light.cameraCode));
+  /*
+    消毒期間監視器與燈具一併斷電（客戶 2026-10-29）。全院排程進行中時整塊板切離，
+    通道一律顯示熄滅且不可點；只涵蓋部分房間的排程改用橫幅說明是哪幾間——
+    通道是按分區佈線、不是按房號，逐支標示只會讓板子變得難讀。
+  */
+  const houseWide = activeDisinfection(data, "");
+  const running = (data.disinfections ?? []).filter((item) => activeDisinfection(data, item.rooms[0] ?? "")?.id === item.id);
 
   function channelKey(zoneId: RelayZone, yNumber: number) {
     return `${zoneId}-Y${yNumber}`;
@@ -211,6 +219,11 @@ export function RelayBoard({ data, onToggle }: { data: DemoDomain; onToggle: (ch
         {!unlocked && " 目前為唯讀，可檢視佈線與通道狀態；要操作請先按「解鎖」。"}
       </p>
 
+      {running.length > 0 && <p role="status" className="mt-3 rounded-lg border border-[#d29922] bg-[#2a1f12] px-3.5 py-2.5 text-xs leading-6 text-[#f0c674]">
+        🧼 消毒進行中，監視器與環狀燈{houseWide ? "全數切離" : "於下列範圍切離"}：
+        {running.map((item) => `${item.label}（${describeDisinfection(item)}）`).join("；")}
+      </p>}
+
       <section className="mt-4 rounded-xl border border-[#2b3542] bg-[#1a212b] p-4">
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
           <h4 className="flex items-baseline gap-2.5 text-xs font-semibold tracking-wide text-[#8b98a8]">
@@ -223,6 +236,7 @@ export function RelayBoard({ data, onToggle }: { data: DemoDomain; onToggle: (ch
         <div className="grid gap-1.5">
           {lights.map((light) => {
             const on = (color: "red" | "green" | "blue") => {
+              if (houseWide) return false;
               const channel = light.channels.find((item) => item.color === color);
               return channel ? !!data.relayChannels[channelKey(light.zone, channel.yNumber)] : false;
             };
@@ -250,13 +264,13 @@ export function RelayBoard({ data, onToggle }: { data: DemoDomain; onToggle: (ch
                 <div className={"flex gap-1.5 " + "w-full sm:w-[300px]"}>
                   {light.channels.map((channel) => {
                     const key = channelKey(light.zone, channel.yNumber);
-                    const active = !!data.relayChannels[key];
+                    const active = !houseWide && !!data.relayChannels[key];
                     const css = CHANNEL_CSS[channel.color];
                     return (
                       <button
                         key={key}
                         type="button"
-                        disabled={!unlocked}
+                        disabled={!unlocked || Boolean(houseWide)}
                         aria-pressed={active}
                         aria-label={`${light.cameraCode} ${css.label} 通道 Y${channel.yNumber}`}
                         title={`Y${channel.yNumber}／暫存器 ${channel.register}`}

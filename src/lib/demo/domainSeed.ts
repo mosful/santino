@@ -120,6 +120,15 @@ export const DOMAIN_SEED: DemoDomain = {
   roomTypes: ["精緻", "VIP", "VILLA"].map((name) => ({ id: name, name, priceCategory: name as "精緻" | "VIP" | "VILLA" })),
   lightLabels: { empty: "無寶寶", care: "寶寶照護中", idle: "有寶寶無人看", internal: "院內觀看", family: "親友觀看" },
   cameraIntervals: [], hospitals: [],
+  /*
+    消毒排程（客戶 2026-10-29）：院內固定每週二上午做紫外線消毒，期間監視器全關；
+    環境消毒時間不固定，由院方臨時排一筆。第二筆刻意涵蓋展示時刻（demoAt 12:00），
+    一打開就看得到「消毒中」的效果，而且只套用 305 一間房，不影響其他示範畫面。
+  */
+  disinfections: [
+    { id: "disinfect-uv-weekly", label: "紫外線消毒", kind: "紫外線", weekday: 2, date: "", start: "09:00", end: "12:00", rooms: [], enabled: true },
+    { id: "disinfect-room-305", label: "隔離房環境消毒", kind: "環境", weekday: null, date: "2026-10-16", start: "11:30", end: "13:00", rooms: ["305"], enabled: true },
+  ],
 };
 
 // 初始房卡也使用已指派的車號，避免照護頁與標籤各讀一份資料。

@@ -14,6 +14,7 @@ import { contractSettingActions } from "../src/lib/domain/contractSettings";
 import { cameraTimeRows } from "../src/lib/babycam/cameraTime";
 import { toCsv } from "../src/lib/babycam/csv";
 import { babyDisplayName } from "../src/lib/babycam/wristband";
+import { activeDisinfection } from "../src/lib/babycam/disinfection";
 import { caseTransitionErrors } from "../src/lib/domain/rules";
 
 const storage = new Map<string, string>(); const events = new EventTarget();
@@ -395,4 +396,53 @@ test("合約階段缺項逐條列出，填一項就少一條", () => {
   assert.deepEqual(caseTransitionErrors(record(), 5), ["請完成本案簽名。"]);
   caseActions.sign(id, "data:image/png;base64,demo");
   assert.deepEqual(caseTransitionErrors(record(), 5), []);
+});
+
+test("消毒排程依星期、日期與房號生效，跨午夜不判錯", () => {
+  reset();
+  const data = structuredClone(domainStore.get());
+  const at = (iso: string) => new Date(iso);
+  // 展示資料第二筆：2026-10-16（週五）11:30–13:00、只套 305。
+  assert.equal(activeDisinfection(data, "305", at("2026-10-16T12:00:00+08:00"))?.label, "隔離房環境消毒");
+  assert.equal(activeDisinfection(data, "306", at("2026-10-16T12:00:00+08:00")), null, "沒排到的房間不該被關");
+  assert.equal(activeDisinfection(data, "305", at("2026-10-16T13:30:00+08:00")), null, "過了結束時間就恢復");
+  // 第一筆：每週二 09:00–12:00 全院；2026-10-20 是週二。
+  assert.equal(activeDisinfection(data, "", at("2026-10-20T10:00:00+08:00"))?.kind, "紫外線");
+  assert.equal(activeDisinfection(data, "任意房", at("2026-10-20T10:00:00+08:00"))?.kind, "紫外線", "全院排程不挑房號");
+  assert.equal(activeDisinfection(data, "", at("2026-10-21T10:00:00+08:00")), null, "只有週二");
+  // 跨午夜與停用
+  data.disinfections = [{ id: "x", label: "夜間消毒", kind: "環境", weekday: null, date: "2026-10-16", start: "22:00", end: "02:00", rooms: [], enabled: true }];
+  assert.ok(activeDisinfection(data, "", at("2026-10-16T23:30:00+08:00")), "跨午夜的前半段要算在內");
+  assert.equal(activeDisinfection(data, "", at("2026-10-16T12:00:00+08:00")), null);
+  data.disinfections[0].enabled = false;
+  assert.equal(activeDisinfection(data, "", at("2026-10-16T23:30:00+08:00")), null, "停用就不生效");
+});
+
+test("消毒期間觀看一律擋下，與授權與時段無關", () => {
+  reset();
+  const data = structuredClone(domainStore.get());
+  const binding = data.bindings.find((item) => !item.ended && item.babies.length)!;
+  const baby = binding.babies[0];
+  const at = new Date("2026-10-20T10:00:00+08:00"); // 週二紫外線消毒時段
+  data.demoAt = at.toISOString();
+  assert.match(String(viewingBlock(data, binding, baby, "internal", at)), /紫外線消毒中/);
+  assert.match(String(viewingBlock(data, binding, baby, "family", at)), /紫外線消毒中/);
+  // 排程停用後就恢復原本的判定（不再是消毒擋的）。
+  data.disinfections = [];
+  assert.doesNotMatch(String(viewingBlock(data, binding, baby, "internal", at) ?? ""), /消毒/);
+});
+
+test("消毒排程的新增驗證：日期、時間格式與房號必須在主檔內", () => {
+  reset(); setCurrentRole("管理者");
+  const base = { label: "測試消毒", kind: "環境" as const, weekday: null, date: "", start: "09:00", end: "12:00", rooms: [], enabled: true };
+  assert.throws(() => babycamActions.saveDisinfection({ ...base, label: " " }), /名稱/);
+  assert.throws(() => babycamActions.saveDisinfection({ ...base, date: "" }), /日期/);
+  assert.throws(() => babycamActions.saveDisinfection({ ...base, date: "2026-10-20", start: "9:00" }), /HH:MM/);
+  assert.throws(() => babycamActions.saveDisinfection({ ...base, date: "2026-10-20", end: "09:00" }), /不可相同/);
+  assert.throws(() => babycamActions.saveDisinfection({ ...base, date: "2026-10-20", rooms: ["999"] }), /房間主檔/);
+  babycamActions.saveDisinfection({ ...base, date: "2026-10-20", rooms: ["305"] });
+  const added = domainStore.get().disinfections.find((item) => item.label === "測試消毒")!;
+  assert.deepEqual(added.rooms, ["305"]);
+  babycamActions.removeDisinfection(added.id);
+  assert.equal(domainStore.get().disinfections.some((item) => item.id === added.id), false);
 });

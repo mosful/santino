@@ -114,5 +114,10 @@ export type DemoDomain = {
   /** 鏡頭區間即換鏡頭歷程：換一次就封閉舊區間、開一段新的，reason 記下為什麼換。 */
   /** 院方自行新增的生產醫院（內建清單見 options.ts 的 HOSPITALS）。 */
   hospitals: string[];
+  /**
+   * 消毒排程。到點時指定房間（rooms 空＝全院）的監視器一律關閉：觀看端擋下、燈號熄滅、
+   * 繼電器通道全關。院內固定每週二 09:00–12:00 做紫外線消毒，環境消毒則不定期。
+   */
+  disinfections: { id: string; label: string; kind: "紫外線" | "環境"; weekday: number | null; date: string; start: string; end: string; rooms: string[]; enabled: boolean }[];
   cameraIntervals: { id: string; bindingId: string; babyId: string; cameraId: string; start: string; end: string | null; reason?: string }[];
 };

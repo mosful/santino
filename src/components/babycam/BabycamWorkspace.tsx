@@ -24,6 +24,7 @@ import { cameraHost, DEFAULT_NETWORK_PREFIX } from "@/lib/babycam/network";
 import type { WindowRule } from "@/lib/domain/types";
 import CamPreview from "./CamPreview";
 import BindingEditor from "./BindingEditor";
+import DisinfectionSchedule from "./DisinfectionSchedule";
 import MaintenanceConsole from "./MaintenanceConsole";
 import DemoReset from "./DemoReset";
 import { cameraTimeRows } from "@/lib/babycam/cameraTime";
@@ -110,6 +111,8 @@ const GROUPS: { id: GroupId; label: string; heading: string; description: string
     description: "開放時段、房型房號、顯示狀態與背景圖、監視器主檔，以及環狀燈號與繼電器。",
     tabs: [
       { id: "schedule", label: "開放時段", access: "04" },
+      // 消毒排程也是「這段時間不開放」的設定，跟開放時段擺一起；到點時監視器一律關閉。
+      { id: "disinfect", label: "消毒排程", access: "04" },
       { id: "rooms", label: "房間清單", access: "04" },
       // 名稱與背景圖已合併成同一頁（見 StateMaintenance 的說明）；上傳底圖另吃 05 權限。
       { id: "states", label: "狀態維護", access: "04" },
@@ -791,6 +794,8 @@ export default function BabycamWorkspace({
         )}
 
         {/* ── 04 後臺管理 ── */}
+        {active.id === "disinfect" && <DisinfectionSchedule data={data} onChange={() => setMessage("")} />}
+
         {active.id === "schedule" && (
           <div className="space-y-4 p-4 sm:p-5">
             <SectionHeading

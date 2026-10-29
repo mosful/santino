@@ -24,7 +24,7 @@ const ROUTES = [
   "/", "/todo/", "/quote/", "/cases/", "/cases/detail/?id=case-demo-contract", "/cases/detail/?id=case-demo-preadmission",
   "/customer/", "/mama/", "/baby/", "/rooms/", "/doctor/", "/care/", "/kpi/", "/meal/", "/hr/", "/course/", "/line/", "/login/", "/forgot-password/",
   "/contract/", "/contract/?tab=clauses", "/contract/?tab=childcare",
-  "/babycam/?section=intake", "/babycam/?section=registry", "/babycam/?section=ops",
+  "/babycam/?section=registration", "/babycam/?section=assign", "/babycam/?section=schedule",
   "/admin/", "/admin/?tab=master", "/admin/?tab=staff", "/admin/?tab=system", "/admin/?tab=phrases", "/admin/?tab=backfill", "/admin/?tab=kpi",
   "/view/mama/", "/view/family/",
 ];
@@ -63,8 +63,9 @@ const PROBE = (vw) => {
   const root = path.resolve(__dirname, "../out");
   const manifest = JSON.parse(fs.readFileSync(path.join(root, "static-site.json"), "utf8"));
   const server = createStaticServer(root, manifest.basePath);
-  await new Promise((r) => server.listen(4387, "127.0.0.1", r));
-  const base = `http://localhost:4387${manifest.basePath}`;
+  // 埠號交給系統挑（0），前一次還沒收掉的伺服器才不會讓這次整支掛掉。
+  await new Promise((r) => server.listen(0, "127.0.0.1", r));
+  const base = `http://localhost:${server.address().port}${manifest.basePath}`;
   const browser = await chromium.launch();
   const findings = [];
   let pages = 0;

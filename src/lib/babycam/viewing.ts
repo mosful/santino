@@ -1,4 +1,5 @@
 import { intersectWindows, isWithinSchedule, taipeiDate, taipeiHhmm, type ScheduleWindow } from "./schedule";
+import { activeDisinfection } from "./disinfection";
 import type { BabyBinding, CameraRecord, DemoDomain, ViewingBinding, WindowRule } from "../domain/types";
 
 function asSchedule(rule: WindowRule): ScheduleWindow { return { ...rule, mode: rule.mode === "inherit" ? "always" : rule.mode }; }
@@ -17,6 +18,9 @@ export function viewingBlock(data: DemoDomain, binding: ViewingBinding, baby: Ba
   if (!baby) return "寶寶與監視器尚未指派";
   const camera = data.cameras.find((item) => item.id === baby.cameraId);
   if (!camera?.enabled) return "監視器暫停使用";
+  // 消毒期間監視器一律關閉（客戶 2026-10-29）；排在授權與時段之前，因為它跟誰有沒有權限無關。
+  const disinfecting = activeDisinfection(data, binding.room, at);
+  if (disinfecting) return `${disinfecting.label}中（${disinfecting.start}–${disinfecting.end}），監視器暫停`;
   if (baby.careMode) return "寶寶照護中";
   const state = data.displayStates.find((item) => item.key === baby.state);
   if (state?.masked) return state.name;
@@ -39,6 +43,7 @@ export function deriveDemoLight(data: DemoDomain, camera: CameraRecord) {
   if (!binding || !baby || !camera.enabled) return "empty";
   const at = new Date(data.demoAt); const day = taipeiDate(at);
   if (day < binding.validFrom || day > binding.validTo) return "empty";
+  if (activeDisinfection(data, binding.room, at)) return "empty";
   if (baby.careMode || data.viewScenario === "cart-away") return "care";
   if (data.displayStates.find((state) => state.key === baby.state)?.masked) return "idle";
   for (const audience of ["family", "internal"] as const) {

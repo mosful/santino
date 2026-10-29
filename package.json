@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "tsx --test tests/*.test.ts",
     "test:e2e": "node scripts/verify-static.cjs",
+    "audit:ipad": "node scripts/audit-ipad.cjs",
     "preview": "node scripts/preview-static.cjs"
   },
   "dependencies": {

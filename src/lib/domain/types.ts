@@ -112,5 +112,7 @@ export type DemoDomain = {
   demoScenarios: Record<string, DemoScenario>;
   detection: { enabled: boolean; threshold: number; streak: number; intervalSeconds: number; maxAgeSeconds: number };
   /** 鏡頭區間即換鏡頭歷程：換一次就封閉舊區間、開一段新的，reason 記下為什麼換。 */
+  /** 院方自行新增的生產醫院（內建清單見 options.ts 的 HOSPITALS）。 */
+  hospitals: string[];
   cameraIntervals: { id: string; bindingId: string; babyId: string; cameraId: string; start: string; end: string | null; reason?: string }[];
 };

@@ -15,7 +15,23 @@
  */
 export const HOSPITALS = ["璟馨婦幼醫院（院內）", "詠馨婦幼中心（院內）", "成大", "奇美", "其他"] as const;
 
-/** 照護表單用的簡短版（欄位寬度有限，不放全名）。 */
+/**
+ * 櫃台用的生產醫院選單＝內建清單＋院方自行新增的。
+ *
+ * 櫃台在新增預約選「其他」時可直接打新的院所名，存檔就併進 data.hospitals，
+ * 之後所有生產醫院下拉都看得到（客戶 2026-10-29），要改名或移除走
+ * 「後台管理 → 基礎主檔設定」。「其他」固定排最後，它是入口不是選項。
+ */
+export function hospitalOptions(custom: readonly string[] = []): string[] {
+  const builtin = HOSPITALS.filter((item) => item !== "其他");
+  const extra = custom.filter((item) => item.trim() && !builtin.includes(item as typeof builtin[number]));
+  return [...builtin, ...extra, "其他"];
+}
+
+/** 判斷是不是「其他」這個入口選項；自行輸入的院所名不算。 */
+export const OTHER_HOSPITAL = "其他";
+
+/** 照護表單用的簡短版（欄位寬度有限，不放全名）；不跟著後台自訂清單走，它問的是病歷填寫慣用寫法。 */
 export const HOSPITALS_SHORT = ["璟馨（院內）", "詠馨（院內）", "成大", "奇美", "其他"] as const;
 
 /**

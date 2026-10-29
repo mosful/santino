@@ -24,6 +24,7 @@ import { MODULES, type SubItem } from "@/lib/modules";
 import { useCurrentRole } from "@/lib/roleStore";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
+import { HOSPITALS } from "@/lib/domain/options";
 import { DEFAULT_CHECKOUT_ITEMS } from "@/lib/domain/checkout";
 import { DEFAULT_SALE_ITEMS, SALE_CATEGORIES } from "@/lib/domain/sales";
 
@@ -140,6 +141,35 @@ function SaleItemSettings({ canEdit }: { canEdit: boolean }) {
   );
 }
 
+/**
+ * 生產醫院主檔。
+ *
+ * 內建那幾家（options.ts 的 HOSPITALS）照客戶手冊第 3 頁抄，固定不動；這裡只維護
+ * 櫃台在新增預約選「其他」時當場加進來的院所。改名會一併改掉用舊名的案件，
+ * 還有案件在用的則擋住刪除——不然那些案件的下拉會選到一個不存在的值。
+ */
+function HospitalSettings({ canEdit }: { canEdit: boolean }) {
+  const { data } = useDomainStore();
+  const custom = data.hospitals ?? [];
+  const rows: Row[] = custom.map((name, index) => ({ id: index + 1, name }));
+  return (
+    <section className="space-y-2">
+      <h3 className="text-sm font-semibold text-stone-700">生產醫院</h3>
+      <p className="text-xs text-stone-500">內建：{HOSPITALS.filter((item) => item !== "其他").join("、")}（固定不可改）。以下是櫃台新增預約時自行加入的院所。</p>
+      <EditableList
+        moduleNo="15"
+        editAllowed={canEdit}
+        fields={[{ key: "name", label: "生產醫院名稱" }]}
+        initialRows={rows}
+        rows={rows}
+        searchPlaceholder="生產醫院名稱"
+        onSave={(row) => caseActions.saveHospital(row.id === 0 ? "" : custom[row.id - 1], String(row.name ?? ""))}
+        onDelete={(id) => caseActions.removeHospital(custom[id - 1])}
+      />
+    </section>
+  );
+}
+
 /** 基礎主檔設定：房間與院內各式主檔，v24 §10 標示為僅管理者可修改。 */
 function MasterDataTab({ canEdit }: { canEdit: boolean }) {
   return (
@@ -153,6 +183,7 @@ function MasterDataTab({ canEdit }: { canEdit: boolean }) {
         <h3 className="text-sm font-semibold text-stone-700">房型與房間資料</h3>
         <EditableList moduleNo="15" editAllowed={canEdit} fields={simpleFields} initialRows={ROOM_DATA_ROWS} searchPlaceholder="項目名稱" />
       </section>
+      <HospitalSettings canEdit={canEdit} />
       <CheckoutItemSettings canEdit={canEdit} />
       <SaleItemSettings canEdit={canEdit} />
       <section className="space-y-2">

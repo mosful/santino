@@ -119,7 +119,7 @@ export const DOMAIN_SEED: DemoDomain = {
   demoScenarios: {}, detection: { enabled: false, threshold: 0.3, streak: 3, intervalSeconds: 5, maxAgeSeconds: 120 },
   roomTypes: ["精緻", "VIP", "VILLA"].map((name) => ({ id: name, name, priceCategory: name as "精緻" | "VIP" | "VILLA" })),
   lightLabels: { empty: "無寶寶", care: "寶寶照護中", idle: "有寶寶無人看", internal: "院內觀看", family: "親友觀看" },
-  cameraIntervals: [],
+  cameraIntervals: [], hospitals: [],
 };
 
 // 初始房卡也使用已指派的車號，避免照護頁與標籤各讀一份資料。

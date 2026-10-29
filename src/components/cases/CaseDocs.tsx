@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
-import { caseActions } from "@/lib/demo/domainStore";
+import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
+import { hospitalOptions } from "@/lib/domain/options";
 import { docValues, type CaseDoc } from "@/lib/domain/caseDocs";
 import type { CaseRecord } from "@/lib/domain/types";
 import { buttonStyles } from "@/components/ui/buttonStyles";
@@ -19,6 +20,7 @@ const button = buttonStyles();
  * 欄位定義一律在 lib/domain/caseDocs.ts，這裡只負責畫與存。
  */
 export function CaseDocPanel({ record, doc, editable, onClose }: { record: CaseRecord; doc: CaseDoc; editable: boolean; onClose: () => void }) {
+  const { data } = useDomainStore();
   const saved = record.documents?.[doc.key];
   const [values, setValues] = useState<Record<string, string>>(() => docValues(record, doc));
   const [message, setMessage] = useState("");
@@ -46,6 +48,8 @@ export function CaseDocPanel({ record, doc, editable, onClose }: { record: CaseR
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {section.fields.map((field) => {
               const value = values[field.key] ?? "";
+              // 生產醫院的選項是主檔不是定義：櫃台在新增預約加的院所，這裡也要看得到。
+              const options = field.key === "hospital" && field.type === "select" ? hospitalOptions(data.hospitals) : field.options ?? [];
               const span = field.wide || field.type === "textarea" || field.type === "multiple" ? "sm:col-span-2 xl:col-span-3" : "";
               if (field.type === "multiple") {
                 const picked = value.split("、").filter(Boolean);
@@ -53,7 +57,7 @@ export function CaseDocPanel({ record, doc, editable, onClose }: { record: CaseR
                   <fieldset key={field.key} className={`${span} space-y-2 text-sm`}>
                     <legend>{field.label}</legend>
                     <div className="flex flex-wrap gap-2">
-                      {(field.options ?? []).map((option) => (
+                      {options.map((option) => (
                         <label key={option} className="flex min-h-12 items-center gap-2 rounded-lg border border-stone-200 bg-white px-3">
                           <input type="checkbox" disabled={!editable} checked={picked.includes(option)} onChange={() => toggle(field.key, option)} />
                           {option}
@@ -69,7 +73,7 @@ export function CaseDocPanel({ record, doc, editable, onClose }: { record: CaseR
                   {field.type === "select" ? (
                     <select aria-label={field.label} disabled={!editable} className={input} value={value} onChange={(event) => set(field.key, event.target.value)}>
                       <option value="">請選擇</option>
-                      {(field.options ?? []).map((option) => <option key={option}>{option}</option>)}
+                      {options.map((option) => <option key={option}>{option}</option>)}
                     </select>
                   ) : field.type === "textarea" ? (
                     <textarea aria-label={field.label} disabled={!editable} className={input} value={value} onChange={(event) => set(field.key, event.target.value)} />

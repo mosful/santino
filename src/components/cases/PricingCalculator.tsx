@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import Choice from "@/components/ui/ChoiceField";
+import { useDomainStore } from "@/lib/demo/domainStore";
 import { SummaryRow as DetailRow } from "@/components/ui/Workspace";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { casePriceBreakdown, gifts } from "@/lib/domain/rules";
-import { CORPORATE_COMPANIES, COMMON_STAY_DAYS, HOSPITALS } from "@/lib/domain/options";
+import { CORPORATE_COMPANIES, COMMON_STAY_DAYS, HOSPITALS, hospitalOptions } from "@/lib/domain/options";
 import { DEMO_MOTHER_NAME, DEMO_PHONE } from "@/lib/demo/demoDefaults";
 import { quoteActions, useSavedQuotes } from "@/lib/quoteStore";
 import type { CaseRecord } from "@/lib/domain/types";
@@ -53,6 +54,7 @@ export default function PricingCalculator({ onUse }: { onUse: (name: string, pho
   const [tasting, setTasting] = useState(false);
   const [bossGift, setBossGift] = useState("");
   const [message, setMessage] = useState("");
+  const { data } = useDomainStore();
   const saved = useSavedQuotes();
 
   const quote = { roomType, days, hospital, priceClass, addOns };
@@ -97,7 +99,7 @@ export default function PricingCalculator({ onUse }: { onUse: (name: string, pho
             </div>
           </div>
 
-          <Choice label="生產院所" required value={hospital} options={HOSPITALS} onChange={setHospital} hint="院內最優惠，院外每日加價" />
+          <Choice label="生產院所" required value={hospital} options={hospitalOptions(data.hospitals)} onChange={setHospital} hint="院內最優惠，院外每日加價" />
 
           <div className="space-y-2">
             <Choice label="價格類別" value={priceClass} options={["一般", "特約企業", "員工價"]} onChange={(value) => { setPriceClass(value); if (value !== "特約企業") setCorporateCompany(""); }} hint="特約 95 折、員工 9 折" />

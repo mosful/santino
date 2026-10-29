@@ -2,9 +2,9 @@
 
 import { useRef, useState } from "react";
 import LegacyCaseScope from "@/components/cases/LegacyCaseScope";
-import { caseActions } from "@/lib/demo/domainStore";
+import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
 import type { CaseRecord } from "@/lib/domain/types";
-import { HOSPITALS } from "@/lib/domain/options";
+import { HOSPITALS, hospitalOptions } from "@/lib/domain/options";
 import PrototypeFormActions from "@/components/ui/PrototypeFormActions";
 
 function Field({ label, placeholder, value, readOnly }: { label: string; placeholder?: string; value?: string | number; readOnly?: boolean }) {
@@ -19,6 +19,7 @@ function Field({ label, placeholder, value, readOnly }: { label: string; placeho
 export default function NewContract() { return <LegacyCaseScope filter="draft">{(record) => <NewContractForm key={record.id} record={record} />}</LegacyCaseScope>; }
 function NewContractForm({ record }: { record: CaseRecord }) {
   const form = useRef<HTMLFormElement>(null);
+  const hospitals = hospitalOptions(useDomainStore().data.hospitals);
   const [upgradeVip, setUpgradeVip] = useState((record.addOns ?? []).includes("升等房間"));
   const [mealFollowsUpgrade, setMealFollowsUpgrade] = useState((record.addOns ?? []).includes("餐點一併升等"));
   function save() {
@@ -93,8 +94,8 @@ function NewContractForm({ record }: { record: CaseRecord }) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="mb-1 block text-xs text-stone-500">生產院所分級</label>
-            <select name="hospital" defaultValue={HOSPITALS.find((item) => item === record.hospital) ?? HOSPITALS[0]} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm">
-              {HOSPITALS.map((item) => <option key={item}>{item}</option>)}
+            <select name="hospital" defaultValue={hospitals.includes(record.hospital) ? record.hospital : HOSPITALS[0]} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm">
+              {hospitals.map((item) => <option key={item}>{item}</option>)}
             </select>
           </div>
           <div>

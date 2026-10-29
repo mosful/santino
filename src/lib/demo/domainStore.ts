@@ -12,12 +12,13 @@ import { DEFAULT_CHECKOUT_ITEMS, INSPECTION_ITEMS, abnormalInspection, pendingIn
 import { dailyCharges } from "../domain/rules";
 import { caseDoc } from "../domain/caseDocs";
 import { DEFAULT_SALE_ITEMS } from "../domain/sales";
+import { HOSPITALS } from "../domain/options";
 
 function valid(value: unknown): value is DemoDomain {
   const data = value as DemoDomain | null;
   if (!data || data.version !== 6 || !Array.isArray(data.cases) || !Array.isArray(data.subjects) || !Array.isArray(data.cameras) || !Array.isArray(data.bindings) || !Array.isArray(data.audit)) return false;
   if (!data.cameras.length || !Array.isArray(data.displayStates) || !data.houseWindow || !data.internalWindow || !data.familyWindow || !data.bindings.every((binding) => Array.isArray(binding.babies) && Array.isArray(binding.sessions))) return false;
-  data.careEvents ??= []; data.staff ??= structuredClone(DOMAIN_SEED.staff); data.sectionPermissions ??= structuredClone(DOMAIN_SEED.sectionPermissions);
+  data.careEvents ??= []; data.hospitals ??= []; data.staff ??= structuredClone(DOMAIN_SEED.staff); data.sectionPermissions ??= structuredClone(DOMAIN_SEED.sectionPermissions);
   data.rooms ??= structuredClone(DOMAIN_SEED.rooms); data.printSettings ??= structuredClone(DOMAIN_SEED.printSettings); data.viewingHistory ??= [];
   data.tasks ??= structuredClone(DOMAIN_SEED.tasks); data.handledTasks ??= [];
   data.checkoutItems ??= structuredClone(DEFAULT_CHECKOUT_ITEMS);
@@ -410,6 +411,41 @@ export const caseActions = {
       if (existing) Object.assign(existing, { category: item.category.trim(), name: item.name.trim(), price: item.price });
       else items.push({ id: crypto.randomUUID(), category: item.category.trim(), name: item.name.trim(), price: item.price });
       audit(data, existing ? "修改自費品項" : "新增自費品項", item.name.trim());
+    });
+  },
+  /*
+    生產醫院主檔。櫃台在新增預約選「其他」時可直接打新的院所名，存檔就併進這裡，
+    之後所有生產醫院下拉都看得到；內建那幾家寫在 options.ts 的 HOSPITALS，不經此處。
+    ⚠️ 改名要一併改掉已經用舊名的案件，否則那些案件的下拉會選到一個不存在的值，
+    看起來像資料掉了；刪除則擋在「還有案件在用」上，由人決定要改成哪一家。
+  */
+  saveHospital(before: string, after: string) {
+    const name = after.trim();
+    if (!name) throw new Error("請填寫生產醫院名稱。");
+    if (HOSPITALS.includes(name as (typeof HOSPITALS)[number])) throw new Error("這是內建的生產醫院，不需要另外新增。");
+    domainStore.update((data) => {
+      data.hospitals ??= [];
+      if (data.hospitals.some((item) => item !== before && item === name)) throw new Error("這家生產醫院已經在清單裡。");
+      if (before) {
+        const index = data.hospitals.indexOf(before);
+        if (index < 0) throw new Error("找不到這家生產醫院。");
+        data.hospitals[index] = name;
+        data.cases.filter((record) => record.hospital === before).forEach((record) => { record.hospital = name; });
+        audit(data, `生產醫院改名 ${before} → ${name}`, name);
+      } else {
+        data.hospitals.push(name);
+        audit(data, "新增生產醫院", name);
+      }
+    });
+  },
+  removeHospital(name: string) {
+    domainStore.update((data) => {
+      data.hospitals ??= [];
+      if (!data.hospitals.includes(name)) throw new Error("找不到這家生產醫院。");
+      const used = data.cases.filter((record) => record.hospital === name).length;
+      if (used) throw new Error(`還有 ${used} 筆案件使用這家生產醫院，請先改掉再刪除。`);
+      data.hospitals = data.hospitals.filter((item) => item !== name);
+      audit(data, "刪除生產醫院", name);
     });
   },
   removeSaleItem(itemId: string) {

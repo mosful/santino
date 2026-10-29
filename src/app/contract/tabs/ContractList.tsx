@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { ButtonLink } from "@/components/ui/Button";
 import QueryList, { type Column } from "@/components/ui/QueryList";
 import Badge from "@/components/ui/Badge";
@@ -28,9 +27,9 @@ const columns: Column<Contract & { caseId: string }>[] = [
     // 變更、退約、作廢全部回到同一件案件辦理，所以這裡只給一個入口。
     // 原本並列「變更」與「退約/作廢」兩個連結，後者還指向已下架的頁籤。
     render: (record) => (
-      <Link href={`/cases/detail/?id=${encodeURIComponent(record.caseId)}`} className="whitespace-nowrap text-xs text-rose-500 underline">
-        開啟案件
-      </Link>
+      // 用 ButtonLink 而不是純文字連結：iPad 上 16px 高的文字連結點不準（觸控目標至少 44px，
+      // 由 globals.css 的 .btn-sm 在觸控環境統一上推）。
+      <ButtonLink href={`/cases/detail/?id=${encodeURIComponent(record.caseId)}`} size="sm">開啟案件</ButtonLink>
     ),
   },
 ];

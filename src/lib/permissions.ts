@@ -112,6 +112,18 @@ export function canUseCaseFlow(role: Role) {
 export const CASE_FLOW_ROLE_HINT = CASE_FLOW_ROLES.join("、");
 
 /**
+ * 可以回頭修改「已完成階段」內容的角色（2026-10-29 客戶要求）。
+ *
+ * 一般櫃台只能動目前階段，避免已走過的流程被無聲改掉；護理長與管理者是主管角色，
+ * 需要替現場補正填錯的資料。異動一律經 caseActions.update，仍會寫入案件歷程。
+ */
+const CASE_STAGE_BACKFILL_ROLES: Role[] = ["護理長 婉真", "管理者"];
+
+export function canEditCompletedStage(role: Role) {
+  return CASE_STAGE_BACKFILL_ROLES.includes(role);
+}
+
+/**
  * 該角色登入後（或被擋頁後）該落在哪一頁。
  *
  * ⚠️ 不要寫死 "/"：衛教師與護理師對模組 1 沒有權限，送他們回首頁只會再被擋一次，

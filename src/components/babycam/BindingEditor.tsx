@@ -33,30 +33,54 @@ function birthKindOf(order: number, siblings: number): BirthKind {
 }
 
 export default function BindingEditor({ data, binding, onChange }: { data: DemoDomain; binding: ViewingBinding; onChange: () => void }) {
-  const [babyId, setBabyId] = useState("");
-  const [name, setName] = useState(() => (binding.motherName ? babyDisplayName(binding.motherName, "男", 0) : DEMO_BABY_NAME));
-  const [cartNo, setCartNo] = useState("");
-  const [birthDate, setBirthDate] = useState("2026-10-01");
-  const [sex, setSex] = useState<"男" | "女">("男");
-  const [birthOrder, setBirthOrder] = useState(0);
-  const [birthKind, setBirthKind] = useState<BirthKind>("單胞胎");
-  /* 預設落在「第一支沒人用的監視器」而不是 cameras[0]——後者幾乎永遠已被 A01 的寶寶占用，
-     晶片網格會同時顯示「已選取」又「已指派」，看起來像可以重複指派。 */
-  const [cameraId, setCameraId] = useState(
-    () =>
-      data.cameras.find(
-        (camera) =>
-          camera.enabled &&
-          !data.bindings.some((item) => !item.ended && item.babies.some((baby) => baby.cameraId === camera.id)),
-      )?.id ??
+  const candidates = data.subjects.filter((subject) => subject.caseId === binding.caseId && subject.kind === "baby");
+  /* 新增一位時的胎序要接在既有寶寶後面（已有兩位 → 第 3 位），否則單胞胎 0。
+     少了這段，203 房那種已有雙胞胎的案件按「＋ 新增寶寶」會停在「單胞胎 0」，
+     直接存會被 assign 的多胞胎檢查擋下。 */
+  const nextOrder = binding.babies.length ? binding.babies.length + 1 : 0;
+
+  /** 第一支沒人用的監視器——cameras[0] 幾乎永遠已被 A01 的寶寶占用，拿它當預設會讓
+      晶片網格同時顯示「已選取」又「已指派」，看起來像可以重複指派。 */
+  function firstFreeCamera() {
+    return (
+      data.cameras.find((camera) => camera.enabled && !data.bindings.some((item) => !item.ended && item.babies.some((baby) => baby.cameraId === camera.id)))?.id ??
       data.cameras[0]?.id ??
-      "",
-  );
+      ""
+    );
+  }
+
+  /** 一位寶寶（或空字串＝新增）對應的整組欄位值；初始掛載與切換寶寶共用同一份推導。 */
+  function draftFor(id: string) {
+    const subject = candidates.find((item) => item.id === id);
+    const baby = binding.babies.find((item) => item.babyId === id);
+    const sex: "男" | "女" = subject?.gender === "女" ? "女" : "男";
+    const order = baby?.birthOrder ?? nextOrder;
+    return {
+      babyId: id,
+      sex,
+      order,
+      name: orDemo(subject?.name, babyDisplayName(binding.motherName, sex, order) || DEMO_BABY_NAME),
+      cartNo: baby?.cartNo ?? subject?.carNo ?? "",
+      birthDate: subject?.birthDate ?? "2026-10-01",
+      cameraId: baby?.cameraId ?? firstFreeCamera(),
+    };
+  }
+
+  /* 已經有寶寶的入住一進畫面就載入第一位：護理人員這時多半是來編輯或換監視器，
+     不是再加一位。真的要加再按「＋ 新增寶寶」。binding 換人時由 key 重掛。 */
+  const initial = draftFor(binding.babies[0]?.babyId ?? "");
+  const [babyId, setBabyId] = useState(initial.babyId);
+  const [name, setName] = useState(initial.name);
+  const [cartNo, setCartNo] = useState(initial.cartNo);
+  const [birthDate, setBirthDate] = useState(initial.birthDate);
+  const [sex, setSex] = useState<"男" | "女">(initial.sex);
+  const [birthOrder, setBirthOrder] = useState(initial.order);
+  const [birthKind, setBirthKind] = useState<BirthKind>(() => birthKindOf(initial.order, binding.babies.length));
+  const [cameraId, setCameraId] = useState(initial.cameraId);
   const [zone, setZone] = useState("全部");
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [reason, setReason] = useState(CHANGE_REASONS[0]);
   const [message, setMessage] = useState("");
-  const candidates = data.subjects.filter((subject) => subject.caseId === binding.caseId && subject.kind === "baby");
   const assigned = binding.babies.find((baby) => baby.babyId === babyId);
   // 新的在上：現場想知道的是「現在在哪一支、上一支是哪一支」。
   const history = data.cameraIntervals.filter((item) => item.babyId === babyId).slice().reverse();
@@ -90,14 +114,11 @@ export default function BindingEditor({ data, binding, onChange }: { data: DemoD
   }
 
   function selectBaby(id: string) {
-    const subject = candidates.find((item) => item.id === id);
-    const baby = binding.babies.find((item) => item.babyId === id);
-        const nextSex = subject?.gender === "女" ? "女" : "男";
-    const nextOrder = baby?.birthOrder ?? (binding.babies.length ? binding.babies.length + 1 : 0);
-    setBabyId(id); setName(orDemo(subject?.name, babyDisplayName(binding.motherName, nextSex, nextOrder) || DEMO_BABY_NAME)); setCartNo(baby?.cartNo ?? subject?.carNo ?? "");
-    setBirthDate(subject?.birthDate ?? "2026-10-01"); setSex(nextSex);
-    setBirthOrder(nextOrder); setBirthKind(birthKindOf(nextOrder, binding.babies.length));
-    setCameraId(baby?.cameraId ?? data.cameras.find((camera) => camera.enabled && !data.bindings.some((item) => !item.ended && item.babies.some((child) => child.cameraId === camera.id)))?.id ?? data.cameras[0]?.id ?? "");
+    const draft = draftFor(id);
+    setBabyId(draft.babyId); setName(draft.name); setCartNo(draft.cartNo);
+    setBirthDate(draft.birthDate); setSex(draft.sex);
+    setBirthOrder(draft.order); setBirthKind(birthKindOf(draft.order, binding.babies.length));
+    setCameraId(draft.cameraId);
     setConfirmRemove(false); setMessage("");
   }
   function save() {

@@ -25,6 +25,7 @@ import { docsForStage, docsForTimeline } from "@/lib/domain/caseDocs";
 import MonthlyStats from "./MonthlyStats";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { CASE_FLOW_ROLE_HINT, canUseCaseFlow } from "@/lib/permissions";
+import { Toast, useToast } from "@/components/ui/Toast";
 
 const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm disabled:bg-stone-100";
 // 按鈕樣式一律取自 components/ui/Button，不在此另開複本（見該檔開頭說明）。
@@ -134,7 +135,7 @@ export default function CaseWorkspace() {
   const [creating, setCreating] = useState(false);
   const [quotePreset, setQuotePreset] = useState<QuotePreset | null>(null);
   const [reservation, setReservation] = useState<ReservationInput>(emptyReservation);
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
   const [expanded, setExpanded] = useState<number[]>([]);
   const [reason, setReason] = useState("");
 
@@ -196,8 +197,8 @@ export default function CaseWorkspace() {
   const permitted = canUseCaseFlow(role);
   const edit = permitted && !!record && !record.closed;
   function run(action: () => void, feedback = "已儲存並更新案件資料。") {
-    try { action(); setMessage(feedback); setOperation(null); setReason(""); return true; }
-    catch (error) { setMessage(error instanceof Error ? error.message : "操作失敗。"); return false; }
+    try { action(); toast.ok(feedback); setOperation(null); setReason(""); return true; }
+    catch (error) { toast.fail(error instanceof Error ? error.message : "操作失敗。"); return false; }
   }
   const patch = (change: Partial<CaseRecord>) => record && run(() => caseActions.update(record.id, change), "共通資料與後續階段已同步；已簽合約快照保留。");
   const patchReservation = (change: Partial<ReservationInput>) => setReservation((current) => ({ ...current, ...change }));
@@ -229,7 +230,8 @@ export default function CaseWorkspace() {
       同一件事兩個入口只會讓頁首多一列。套餐速算也已搬到選單的獨立頁（/quote）。
     */}
     <PageHeader title="案件清單" iconKey="cases" />
-    {(message || storageError) && <p role="status" className="whitespace-pre-line rounded-lg border border-stone-300 bg-stone-50 p-3 text-sm">{storageError ?? message}</p>}
+    {storageError && <p role="alert" className="whitespace-pre-line rounded-lg border border-stone-300 bg-stone-50 p-3 text-sm">{storageError}</p>}
+    <Toast {...toastProps} />
     {!record ? <>
       {creating && <section className="rounded-xl border border-stone-300 bg-white p-4" aria-label="新增預約"><div className="mb-4 flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-semibold">新增預約</h2><p className="mt-1 text-sm text-stone-500">登記諮詢與參觀預約；標<em className="not-italic font-semibold text-rose-600">*</em> 為必填，全部填完才能建立案件；只填姓名與電話可先暫存。</p></div><button type="button" className={button} onClick={() => { setCreating(false); setReservation(emptyReservation()); }}>取消新增</button></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"><Field required label="類別" value={reservation.category} options={["懷孕", "小產", "婦科術後"]} onChange={(category) => patchReservation({ category })} /><Field required label="媽媽姓名" value={reservation.name} onChange={(name) => patchReservation({ name })} /><Field required label="聯絡電話（展示資料）" value={reservation.phone} type="tel" onChange={(phone) => patchReservation({ phone })} /><Field required label="預產期" value={reservation.dueDate} type="date" onChange={(dueDate) => patchReservation({ dueDate })} /><Field required label="胎次" value={reservation.parity} options={["第 1 胎", "第 2 胎", "第 3 胎以上"]} onChange={(parity) => patchReservation({ parity })} /><Field required label="生產方式" value={reservation.deliveryMethod} options={["自然產", "剖腹產", "未定"]} onChange={(deliveryMethod) => patchReservation({ deliveryMethod })} /><Field required label="生產醫院" value={reservation.hospital} options={[...HOSPITALS]} onChange={(hospital) => patchReservation({ hospital })} /><Field required label="參觀日期" value={reservation.visitDate} type="date" onChange={(visitDate) => patchReservation({ visitDate })} /><Field required label="參觀時段" value={reservation.visitTime} options={["10:00", "11:00", "14:00", "15:00", "16:00"]} onChange={(visitTime) => patchReservation({ visitTime })} /><Field required label="訊息來源" value={reservation.source} options={["親友介紹", "網路推薦", "媽媽教室", "有入住經驗", "其他"]} onChange={(source) => patchReservation({ source })} /><Field required label="接待人員" value={reservation.receptionist} options={["林小姐", "陳小姐"]} onChange={(receptionist) => patchReservation({ receptionist })} /><label className="block space-y-2 text-sm sm:col-span-2 xl:col-span-3"><span>備註（諮詢問題、待回覆事項）</span><textarea aria-label="備註（諮詢問題、待回覆事項）" className={input} value={reservation.note} onChange={(event) => patchReservation({ note: event.target.value })} placeholder="例：詢問 VIP 房 24 天價格、是否可帶大寶同住" /></label></div><div className="mt-4 flex flex-wrap justify-end gap-2"><button type="button" className={button} onClick={() => window.print()}>列印空白預約單</button><button type="button" className={button} onClick={() => createReservation(true)}>暫存</button><button type="button" className={buttonStyles({ variant: "primary" })} onClick={() => createReservation(false)}>儲存預約</button></div></section>}
       {/* 分頁、說明與表格收成同一個可收合區塊；標題列的 action 放搜尋框。 */}

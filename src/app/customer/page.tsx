@@ -15,6 +15,7 @@ import { DEMO_MOTHER_NAME, DEMO_PHONE } from "@/lib/demo/demoDefaults";
 import { caseActions, domainStore } from "@/lib/demo/domainStore";
 import DemoActionButton from "@/components/ui/DemoActionButton";
 import { buttonStyles } from "@/components/ui/buttonStyles";
+import { Toast, useToast } from "@/components/ui/Toast";
 
 const columns: Column<Customer>[] = [
   { key: "name", label: "媽媽姓名" },
@@ -176,7 +177,7 @@ export default function CustomerPage() {
   const canEdit = access === "edit";
 
   const customers = useCustomerRows();
-  const [feedback, setFeedback] = useState("");
+  const [toast, toastProps] = useToast();
   const [selected, setSelected] = useState<Customer | null>(null);
   const [editing, setEditing] = useState(false);
   const [isNew, setIsNew] = useState(false);
@@ -220,14 +221,14 @@ export default function CustomerPage() {
       if (!id) throw new Error("找不到對應案件。");
       caseActions.update(id, { name: draft.name, phone: draft.phone, dueDate: draft.dueDate, owner: draft.mainStaff, customerDetails: { level: draft.level, parity: draft.parity, birthday: draft.birthday, referrer: draft.referrer, mainNurse: draft.mainNurse, lineBound: draft.lineBound, family: draft.family } });
       const record = domainStore.get().cases.find((item) => item.id === id)!;
-      setSelected({ ...draft, id: record.legacyId }); setEditing(false); setIsNew(false); setFeedback("客戶資料已與案件、照護及視訊同步。");
-    } catch (error) { setFeedback(error instanceof Error ? error.message : "儲存失敗。"); }
+      setSelected({ ...draft, id: record.legacyId }); setEditing(false); setIsNew(false); toast.ok("客戶資料已與案件、照護及視訊同步。");
+    } catch (error) { toast.fail(error instanceof Error ? error.message : "儲存失敗。"); }
   }
 
   function remove() {
     if (!selected) return;
-    try { const record = customers.find((item) => item.id === selected.id); if (!record) return; caseActions.removeDraft(record.caseId); setConfirmDelete(false); closeModal(); setFeedback("已移除尚未下訂的草稿。"); }
-    catch (error) { setFeedback(error instanceof Error ? error.message : "移除失敗。"); setConfirmDelete(false); }
+    try { const record = customers.find((item) => item.id === selected.id); if (!record) return; caseActions.removeDraft(record.caseId); setConfirmDelete(false); closeModal(); toast.ok("已移除尚未下訂的草稿。"); }
+    catch (error) { toast.fail(error instanceof Error ? error.message : "移除失敗。"); setConfirmDelete(false); }
   }
 
   function closeModal() {
@@ -262,7 +263,7 @@ export default function CustomerPage() {
         }
       />
       <QueryList columns={columns} rows={customers} onRowClick={openView} />
-      {feedback && <p role="status" className="my-3 text-sm text-stone-600">{feedback}</p>}
+      <Toast {...toastProps} />
       <Modal
         open={!!selected}
         title={isNew ? "新增客戶" : `客戶基本資料 — ${selected?.name ?? ""}`}

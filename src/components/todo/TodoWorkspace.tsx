@@ -10,6 +10,7 @@ import { useCareStore } from "@/lib/care/store";
 import { useCurrentRole } from "@/lib/roleStore";
 import { roleTaskCategories, TASK_CATEGORIES, taskActions, taskEvents, type Task } from "@/lib/domain/tasks";
 import { ROLE_PROFILE, type Role } from "@/lib/permissions";
+import { Toast, useToast } from "@/components/ui/Toast";
 
 /*
   待辦事項（v24 §9 的待辦行事曆）。
@@ -78,7 +79,7 @@ function Workspace() {
   const [category, setCategory] = useState(defaults[0] ?? "關懷／提醒");
   // 手動新增的待辦可以再編輯；自動產生的（案件、照護）要改請回來源頁面。
   const [editingTaskId, setEditingTaskId] = useState("");
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
 
   const all = useMemo(() => taskEvents(data, care), [data, care]);
   const events = all.filter((item) => filters.includes(item.category));
@@ -121,9 +122,9 @@ function Workspace() {
   function run(action: () => void) {
     try {
       action();
-      setMessage("已更新本機待辦；原型不會發送任何通知。");
+      toast.ok("已更新本機待辦；原型不會發送任何通知。");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "處理失敗。");
+      toast.fail(error instanceof Error ? error.message : "處理失敗。");
     }
   }
 
@@ -163,11 +164,7 @@ function Workspace() {
         />
       </div>}
 
-      {message && (
-        <p role="status" className="rounded-xl border border-border-subtle bg-surface-muted px-4 py-3 text-sm">
-          {message}
-        </p>
-      )}
+      <Toast {...toastProps} />
 
       {/* 類別篩選：角色預設為實心可處理，其餘虛線＋👁 僅供檢視 */}
       {/*
@@ -223,7 +220,7 @@ function Workspace() {
                 onChange={(event) => setTitle(event.target.value)}
               />
               {editingTaskId && (
-                <Button onClick={() => { setEditingTaskId(""); setTitle(""); setMessage(""); }}>
+                <Button onClick={() => { setEditingTaskId(""); setTitle(""); toast.clear(); }}>
                   取消修改
                 </Button>
               )}
@@ -403,7 +400,7 @@ function Workspace() {
                           setCategory(event.category);
                           setTitle(event.title);
                           setPick(event.date);
-                          setMessage("已載入這筆待辦，於下方修改後儲存。");
+                          toast.ok("已載入這筆待辦，於下方修改後儲存。");
                         }}
                       >
                         編輯

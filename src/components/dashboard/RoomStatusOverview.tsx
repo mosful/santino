@@ -12,6 +12,7 @@ import { roomActions, roomOccupancySummary, ROOM_SERVICE_STATUSES, roomCardStatu
 import type { RoomServiceStatus } from "@/lib/domain/types";
 import { useCurrentRole } from "@/lib/roleStore";
 import styles from "./RoomStatusOverview.module.css";
+import { Toast, useToast } from "@/components/ui/Toast";
 
 const LEGEND: { status: RoomCardStatus; label: string }[] = [
   { status: "入住", label: "入住" },
@@ -42,7 +43,7 @@ export default function RoomStatusOverview() {
     客戶（老闆）明確表示「同樣的資料不需要太多種呈現方式」，2026-10-21 移除清單，
     保留房卡——房卡是舊系統既有語彙，現場人員認的是顏色與房號。
   */
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
 
   // 彙總數字與首頁的房況摘要條共用同一支，避免兩邊算法分岔（見 domain/roomStatus）。
   const { rooms, mothers, babies, childcare, admissionsToday, dischargesToday } = roomOccupancySummary(data);
@@ -75,7 +76,7 @@ export default function RoomStatusOverview() {
   }
 
   function openRoom(room: string, status: RoomCardStatus) {
-    setMessage("");
+    toast.clear();
     if (status === "空房" || status === "打掃中" || status === "報修中") {
       setStatusRoom(room);
       return;
@@ -87,17 +88,17 @@ export default function RoomStatusOverview() {
     }
     const record = mother && data.cases.find((item) => item.id === mother.caseId);
     if (record) router.push(`/cases/detail/?id=${encodeURIComponent(record.id)}`);
-    else setMessage(`房 ${room} 目前找不到對應案件，請至案件流程確認。`);
+    else toast.fail(`房 ${room} 目前找不到對應案件，請至案件流程確認。`);
   }
 
   function updateStatus(status: RoomServiceStatus) {
     if (!statusRoom) return;
     try {
       roomActions.serviceStatus(statusRoom, status);
-      setMessage(`房 ${statusRoom} 已更新為${status}。`);
+      toast.ok(`房 ${statusRoom} 已更新為${status}。`);
       setStatusRoom(null);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "更新房況失敗。");
+      toast.fail(error instanceof Error ? error.message : "更新房況失敗。");
     }
   }
 
@@ -122,7 +123,7 @@ export default function RoomStatusOverview() {
       }
     >
 
-      {message && <p role="status" className="rounded-xl border border-border-subtle bg-stone-50 p-3 text-sm text-stone-600">{message}</p>}
+      <Toast {...toastProps} />
 
       <div role="group" aria-label="依房況篩選" className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
         <button type="button" aria-pressed={statusFilter === "全部"} onClick={() => setStatusFilter("全部")} className={`rounded-xl border px-3 py-2.5 text-left transition ${statusFilter === "全部" ? "border-brand-300 bg-brand-50 text-brand-700" : "border-border-subtle bg-surface-raised text-stone-600 hover:border-brand-200"}`}>

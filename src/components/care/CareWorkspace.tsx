@@ -23,6 +23,7 @@ import styles from "./CareWorkspace.module.css";
 import LocalMedia from "../babycam/LocalMedia";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { ActionDock } from "@/components/ui/Workspace";
+import { Toast, useToast } from "@/components/ui/Toast";
 
 
 /**
@@ -60,7 +61,7 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   const subjectFor = (id: string) => domain.subjects.find((item) => item.id === id);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("在館");
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
   /*
     頁內確認面板的待辦動作。
     ⚠️ 關閉的單位是「房間」（close-subject）不是單張表單：表單是這間房的頁籤，
@@ -133,8 +134,8 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   }
 
   function run(action: () => void, success = "") {
-    try { action(); setMessage(success); setPending(null); setReason(""); return true; }
-    catch (error) { setMessage(error instanceof Error ? error.message : "操作失敗，請重試。"); return false; }
+    try { action(); toast.ok(success); setPending(null); setReason(""); return true; }
+    catch (error) { toast.fail(error instanceof Error ? error.message : "操作失敗，請重試。"); return false; }
   }
   function open(id: string, key: string) {
     if (!run(() => careActions.open(id, key))) return;
@@ -148,10 +149,10 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
     if (linkedSubject?.kind !== kind || !careForms(kind).some((item) => item.key === linkedForm)) return;
     const timer = window.setTimeout(() => {
       try { careActions.open(linkedSubject.id, linkedForm); setListVisible(false); setSigning(false); }
-      catch (error) { setMessage(error instanceof Error ? error.message : "無法開啟指定照護表單。"); }
+      catch (error) { toast.fail(error instanceof Error ? error.message : "無法開啟指定照護表單。"); }
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [kind]);
+  }, [kind, toast]);
   useEffect(() => {
     if (!activeKey || !hasActive) return;
     const key = activeKey; let timer = 0; let frame = 0; let disposed = false; let restoring = true;
@@ -173,10 +174,10 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
     if (pending) confirmation.current?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [pending]);
   useEffect(() => {
-    const listener = () => { careActions.switchRole(); setSigning(false); setPending(null); setListVisible(false); setMessage("已切換角色，開啟中的表單及編輯鎖已釋放；草稿仍保留。"); };
+    const listener = () => { careActions.switchRole(); setSigning(false); setPending(null); setListVisible(false); toast.ok("已切換角色，開啟中的表單及編輯鎖已釋放；草稿仍保留。"); };
     window.addEventListener("santino-role-changed", listener);
     return () => window.removeEventListener("santino-role-changed", listener);
-  }, []);
+  }, [toast]);
   useEffect(() => {
     const beforeUnload = (event: BeforeUnloadEvent) => { if (Object.values(data.documents).some((item) => item.dirty)) event.preventDefault(); };
     window.addEventListener("beforeunload", beforeUnload);
@@ -198,7 +199,7 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
     <RequireAccess moduleNo={kind === "mama" ? "2" : "3"}>
       <PageHeader title={kind === "mama" ? "媽媽照護" : "寶寶照護"} moduleNo={kind === "mama" ? "2" : "3"} />
       {storageError && <p role="alert" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{storageError}</p>}
-      {message && <div role="status" className="mb-4 whitespace-pre-line rounded-lg border border-stone-300 bg-stone-50 p-3 text-sm">{message}</div>}
+      <Toast {...toastProps} />
       {/*
         照護對象只有房卡一種呈現。
         ⚠️ 原本有「卡片／清單」切換（careViewStore＋CareSubjectTable），同一份資料

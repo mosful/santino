@@ -14,6 +14,8 @@ export type BabyRoom = {
   boarding?: boolean;
   status: BabyStatus;
   gender?: BabyGender;
+  /** 胎序：單胞胎 0，多胞胎 1、2…。標籤的 A／B 由它決定。 */
+  birthOrder?: number;
   babyName?: string;
   chartNo?: string;
   birthDate?: string;
@@ -128,7 +130,31 @@ export const BOARDING_BABIES: BabyRoom[] = [
   },
 ];
 
-export const BABY_ROOMS: BabyRoom[] = [...BOARDING_BABIES, ...RESIDENT_BABY_ROOMS];
+/*
+  雙胞胎示範（客戶 2026-10-29）：手圈標籤要看得出「○○○之子A／之女B」，
+  示範資料裡就得真的有一組雙胞胎，否則畫面上永遠只印得出不帶字母的名字。
+  挑 203 房（狀態單純的入住房）：老大設胎序 1、妹妹補一筆胎序 2，同房同媽媽。
+  ⚠️ 病歷號不可共用，二寶補尾碼 B——照護草稿與簽名都以病歷號識別個案。
+*/
+const TWIN_ROOM = "203";
+const twinElder = RESIDENT_BABY_ROOMS.find((room) => room.room === TWIN_ROOM && room.babyName);
+const twinMother = MAMA_ROOMS.find((room) => room.room === TWIN_ROOM)?.motherName;
+const TWIN_SIBLING: BabyRoom[] = [];
+if (twinElder && twinMother) {
+  TWIN_SIBLING.push({
+    ...twinElder,
+    gender: "女",
+    birthOrder: 2,
+    babyName: babyDisplayName(twinMother, "女", 2),
+    chartNo: `${twinElder.chartNo}B`,
+    weight: "2.9kg",
+  });
+  twinElder.gender = "男";
+  twinElder.birthOrder = 1;
+  twinElder.babyName = babyDisplayName(twinMother, "男", 1);
+}
+
+export const BABY_ROOMS: BabyRoom[] = [...BOARDING_BABIES, ...RESIDENT_BABY_ROOMS, ...TWIN_SIBLING];
 
 export const BABY_STATUS_COLOR: Record<BabyStatus, string> = {
   入住: "bg-sky-50 border-sky-300",

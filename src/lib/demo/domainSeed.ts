@@ -79,13 +79,28 @@ export const DISPLAY_STATE_SEED: DemoDomain["displayStates"] = STATE_BACKGROUNDS
   defaultImage: `/state-backgrounds/${file}.webp`,
 }));
 
+/** 同一筆入住的第 2 位寶寶往後挪幾個座位（鏡頭／車號／識別碼）。 */
+const SEAT_STRIDE = 18;
+
 export const DOMAIN_SEED: DemoDomain = {
-  version: 6, subjects: structuredClone(CARE_SUBJECTS), cases, checkoutItems: structuredClone(DEFAULT_CHECKOUT_ITEMS), saleItems: structuredClone(DEFAULT_SALE_ITEMS),
+  version: 7, subjects: structuredClone(CARE_SUBJECTS), cases, checkoutItems: structuredClone(DEFAULT_CHECKOUT_ITEMS), saleItems: structuredClone(DEFAULT_SALE_ITEMS),
   cameras: cameraCodes.map((code, index) => ({ id: `camera-${index + 1}`, code, zone: code[0] as "A" | "B", enabled: true, codec: cameraCodec(code) ?? "H.264", health: index === 12 ? "異常" : "正常", lastShotAt: "2026-10-16T12:00:00+08:00", scheduleInternal: inheritWindow(), scheduleFamily: inheritWindow(), baseline: false })),
   bindings: cases.filter((record) => record.stage === 5 || record.childcare && !record.childcareEnded).map((record, index) => ({
     id: `binding-${record.id}`, caseId: record.id, room: record.room, motherName: record.name, phone: record.phone,
     validFrom: "2026-10-01", validTo: record.childcare ? "2026-10-22" : "2026-11-01", familyEnabled: true, familyFrom: "", familyTo: "", internalWindow: inheritWindow(), familyWindow: inheritWindow(), internalTicket: `demo-internal-${index + 1}`, familyTicket: `demo-family-${index + 1}`, passcode: DEMO_PASSCODE,
-    babies: CARE_SUBJECTS.filter((subject) => subject.caseId === record.id && subject.kind === "baby" && (index < 28 || record.childcare)).map((baby) => ({ babyId: baby.id, cameraId: `camera-${record.childcare ? index - 3 : index + 1}`, cartNo: record.childcare ? baby.carNo! : `C${String(index + 1).padStart(2, "0")}`, identityCode: `DEMO-${String(index + 1).padStart(4, "0")}-BABY`, state: "normal", careMode: false })), sessions: [], ended: false,
+    babies: CARE_SUBJECTS.filter((subject) => subject.caseId === record.id && subject.kind === "baby" && (index < 28 || record.childcare)).map((baby, order) => {
+      /*
+        同一筆入住有兩位寶寶時（203 房的雙胞胎示範）不可共用鏡頭、車號與識別碼——
+        babycamActions.assign 本來就擋這件事，示範資料自然也不能違反。
+        往後挪 SEAT_STRIDE 個號；20 筆入住只用到前 18 支鏡頭，19 之後是空的。
+
+        ⚠️ 托嬰原本用 `index - 3` 另外配號，結果撞到在住寶寶的鏡頭（camera-15／16 各被
+        兩位寶寶佔用），畫面上正好違反「不同寶寶不得共用監視器」這條規則。
+        一律走同一套配號就不會再撞，托嬰排在最後、落在空號段。車號仍沿用托嬰車號。
+      */
+      const seat = index + 1 + order * SEAT_STRIDE;
+      return { babyId: baby.id, cameraId: `camera-${seat}`, cartNo: record.childcare ? baby.carNo! : `C${String(seat).padStart(2, "0")}`, identityCode: `DEMO-${String(seat).padStart(4, "0")}-BABY`, state: "normal", careMode: false, birthOrder: baby.birthOrder ?? 0 };
+    }), sessions: [], ended: false,
   })),
   networkPrefix: DEFAULT_NETWORK_PREFIX,
   displayStates: DISPLAY_STATE_SEED,

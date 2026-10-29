@@ -16,9 +16,9 @@ export const CARE_SUBJECTS: CareSubject[] = [
       id: `baby-${room.chartNo}`, caseId: mother ? `stay-${mother.chartNo}` : room.caseId!, kind: "baby" as const,
       room: room.boarding ? "" : room.room, carNo: room.carNo, previousRoom: room.previousRoom,
       // 寶寶跟著媽媽叫：原本取自寶寶產生器的姓氏，換房間時看起來像沒跟著切換（客戶回報）。
-      name: mother?.motherName ? babyDisplayName(mother.motherName, room.gender) : room.babyName!,
+      name: mother?.motherName ? babyDisplayName(mother.motherName, room.gender, room.birthOrder) : room.babyName!,
       motherName: mother?.motherName ?? "示範托嬰媽媽", chartNo: room.chartNo!, status: room.status,
-      stayDay: mother?.stayDay ?? 1, birthDate: room.birthDate, gender: room.gender,
+      stayDay: mother?.stayDay ?? 1, birthDate: room.birthDate, gender: room.gender, birthOrder: room.birthOrder ?? 0,
     };
   }),
   ...DISCHARGED_MAMA_RECORDS.flatMap((room, index) => {

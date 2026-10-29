@@ -103,7 +103,9 @@ export const DOMAIN_SEED: DemoDomain = {
     - 衛教師：不涉及寶寶視訊。
     - 護理長：以上全部＋04 時段與房間、05 狀態背景。
   */
-  sectionPermissions: { 櫃台: ["01"], "護理師 陳護理師": ["01", "02"], "衛教師 琳雅": [], "護理長 婉真": ["01", "02", "04", "05"] },
+  // 櫃台的 02 是 2026-10-29 加的：寶寶臨時移到隔離房時要由櫃台改鏡頭。
+  // 同群組的「掃碼歸位核對」另以 tabs 的 roles 擋住櫃台，不靠分段權限。
+  sectionPermissions: { 櫃台: ["01", "02"], "護理師 陳護理師": ["01", "02"], "衛教師 琳雅": [], "護理長 婉真": ["01", "02", "04", "05"] },
   printSettings: DEFAULT_PRINT_SETTINGS,
   // 房號主檔與院務端共用同一份（mock/roomMaster.ts，複製自 BabyCam 的現場快照）。
   rooms: ROOM_MASTER.map((room) => ({ room: room.room, roomType: room.roomType === "精緻房" ? "精緻" : room.roomType === "VIP房" ? "VIP" : "VILLA", enabled: true })),

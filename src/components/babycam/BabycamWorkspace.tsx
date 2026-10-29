@@ -91,7 +91,8 @@ const GROUPS: { id: GroupId; label: string; heading: string; description: string
     description: "指派寶寶、車號與監視器，列印手圈與嬰兒車標籤；歸位時掃碼核對。",
     tabs: [
       { id: "assign", label: "寶寶登錄與標籤", access: "02" },
-      { id: "scan", label: "掃碼歸位核對", access: "02" },
+      // 掃碼歸位是護理端的動作；櫃台拿到 02 只是為了換鏡頭，不該出現在這裡。
+      { id: "scan", label: "掃碼歸位核對", access: "02", roles: ROLES.filter((item) => item !== "櫃台") },
     ],
   },
   {

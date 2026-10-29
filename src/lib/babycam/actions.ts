@@ -61,7 +61,7 @@ export const babycamActions = {
   updateBinding(id: string, patch: Partial<ViewingBinding>) {
     domainStore.update((data) => { requireSection(data, "01"); const binding = bindingOf(data, id); const allowed = ["validFrom", "validTo", "familyEnabled", "familyFrom", "familyTo", "internalWindow", "familyWindow"]; if (Object.keys(patch).some((key) => !allowed.includes(key))) throw new Error("請使用對應視訊操作。"); if (patch.internalWindow) checkWindow(patch.internalWindow); if (patch.familyWindow) checkWindow(patch.familyWindow); const after = { ...binding, ...patch }; if (!dateValid(after.validFrom) || !dateValid(after.validTo) || after.familyFrom && !dateValid(after.familyFrom) || after.familyTo && !dateValid(after.familyTo)) throw new Error("觀看授權日期格式不正確。"); if (after.validFrom > after.validTo || (after.familyFrom && after.familyTo && after.familyFrom > after.familyTo)) throw new Error("結束日期不能早於起始日期。"); Object.assign(binding, patch); audit(data, "修改入住觀看授權", id); });
   },
-  assign(id: string, input: { babyId?: string; name: string; cameraId: string; cartNo: string; birthDate: string; sex: "男" | "女"; birthOrder: number }) {
+  assign(id: string, input: { babyId?: string; name: string; cameraId: string; cartNo: string; birthDate: string; sex: "男" | "女"; birthOrder: number; reason?: string }) {
     domainStore.update((data) => {
       requireSection(data, "02"); const binding = bindingOf(data, id);
       if (!input.name.trim() || !input.cartNo.trim() || !input.birthDate || !input.cameraId || !Number.isInteger(input.birthOrder) || input.birthOrder < 0) throw new Error("請填寫寶寶、車號、生日、胎序與監視器。");
@@ -75,9 +75,18 @@ export const babycamActions = {
       if (binding.babies.some((baby) => baby.babyId !== babyId && (baby.birthOrder ?? 0) === input.birthOrder)) throw new Error("多胞胎請使用不同胎序，並將單胞胎 0 改為對應胎序。");
       if (data.bindings.some((item) => !item.ended && item.babies.some((baby) => baby.babyId !== babyId && (baby.cameraId === input.cameraId || normalizeCartNo(baby.cartNo) === cartNo)))) throw new Error("監視器或車號已由其他寶寶使用。");
       const existing = binding.babies.find((baby) => baby.babyId === babyId);
-      if (!existing || existing.cameraId !== input.cameraId) {
+      /* 換鏡頭的歷程就是這一段區間：封閉舊的、開一段新的，原因寫在新區間上。
+         寶寶臨時移到隔離房、好了再推回原位都靠它回答「那天這支鏡頭照的是誰」。 */
+      const movedCamera = Boolean(existing) && existing!.cameraId !== input.cameraId;
+      if (!existing || movedCamera) {
+        const reason = input.reason?.trim() || (existing ? "未註明" : "首次指派");
         data.cameraIntervals.filter((item) => item.babyId === babyId && !item.end).forEach((item) => { item.end = data.demoAt; });
-        data.cameraIntervals.push({ id: crypto.randomUUID(), bindingId: id, babyId, cameraId: input.cameraId, start: data.demoAt, end: null });
+        data.cameraIntervals.push({ id: crypto.randomUUID(), bindingId: id, babyId, cameraId: input.cameraId, start: data.demoAt, end: null, reason });
+        if (movedCamera) {
+          const from = data.cameras.find((camera) => camera.id === existing!.cameraId)?.code ?? existing!.cameraId;
+          const to = data.cameras.find((camera) => camera.id === input.cameraId)?.code ?? input.cameraId;
+          audit(data, `更換監視器 ${from} → ${to}；原因：${reason}`, babyId);
+        }
       }
       const baby: BabyBinding = { babyId, cameraId: input.cameraId, cartNo, identityCode: existing?.identityCode ?? `DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`, state: existing?.state ?? "normal", careMode: existing?.careMode ?? false, careSince: existing?.careSince, birthOrder: input.birthOrder };
       if (existing) Object.assign(existing, baby); else binding.babies.push(baby);

@@ -111,5 +111,6 @@ export type DemoDomain = {
   contractSettings: { reviewDays: number; templates: { id: number; name: string; version: string; active: boolean; createdDate: string; clauses: string }[] };
   demoScenarios: Record<string, DemoScenario>;
   detection: { enabled: boolean; threshold: number; streak: number; intervalSeconds: number; maxAgeSeconds: number };
-  cameraIntervals: { id: string; bindingId: string; babyId: string; cameraId: string; start: string; end: string | null }[];
+  /** 鏡頭區間即換鏡頭歷程：換一次就封閉舊區間、開一段新的，reason 記下為什麼換。 */
+  cameraIntervals: { id: string; bindingId: string; babyId: string; cameraId: string; start: string; end: string | null; reason?: string }[];
 };

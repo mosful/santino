@@ -11,6 +11,9 @@ import { babyDisplayName } from "@/lib/babycam/wristband";
 const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
 // 按鈕樣式一律取自 components/ui/Button，不在此另開複本（見該檔開頭說明）。
 const button = buttonStyles();
+/* 換鏡頭的常見情境（客戶 2026-10-29）：寶寶感冒移到隔離房、好了推回原位、
+   原鏡頭故障。選單化而不是自由輸入，現場才不會每個人寫法不同。 */
+const CHANGE_REASONS = ["移至隔離房", "隔離結束歸位", "原監視器故障", "房間消毒", "其他"];
 
 export default function BindingEditor({ data, binding, onChange }: { data: DemoDomain; binding: ViewingBinding; onChange: () => void }) {
   const [babyId, setBabyId] = useState("");
@@ -33,9 +36,12 @@ export default function BindingEditor({ data, binding, onChange }: { data: DemoD
   );
   const [zone, setZone] = useState("全部");
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [reason, setReason] = useState(CHANGE_REASONS[0]);
   const [message, setMessage] = useState("");
   const candidates = data.subjects.filter((subject) => subject.caseId === binding.caseId && subject.kind === "baby");
   const assigned = binding.babies.find((baby) => baby.babyId === babyId);
+  // 新的在上：現場想知道的是「現在在哪一支、上一支是哪一支」。
+  const history = data.cameraIntervals.filter((item) => item.babyId === babyId).slice().reverse();
   /* 已被其他寶寶占用的監視器（含本筆的其他寶寶）；晶片上會標成虛線「已指派」而不是消失，
      現場才看得出來「那支不是壞了，是別人在用」。 */
   const taken = data.bindings
@@ -65,7 +71,7 @@ export default function BindingEditor({ data, binding, onChange }: { data: DemoD
   }
   function save() {
     try {
-      babycamActions.assign(binding.id, { babyId: babyId || undefined, name, cartNo, birthDate, sex, birthOrder, cameraId });
+      babycamActions.assign(binding.id, { babyId: babyId || undefined, name, cartNo, birthDate, sex, birthOrder, cameraId, reason });
       setMessage(assigned ? "已更新原指派；照護、標籤與觀看端同步。" : "已指派，寶寶照護頁與視訊同步更新。");
       onChange();
     } catch (error) { setMessage(error instanceof Error ? error.message : "指派失敗。"); }
@@ -90,7 +96,20 @@ export default function BindingEditor({ data, binding, onChange }: { data: DemoD
         <span className="text-xs text-stone-500">目前選定 {data.cameras.find((camera) => camera.id === cameraId)?.code ?? "尚未選擇"}</span>
       </div>
       <CameraChipGrid cameras={zoneCameras} selectedIds={cameraId ? [cameraId] : []} takenIds={taken} onToggle={(id) => setCameraId(id)} />
+      {assigned && assigned.cameraId !== cameraId && <label className="block text-sm">更換原因（寫進歷程）<select aria-label="更換原因" className={input} value={reason} onChange={(event) => setReason(event.target.value)}>{CHANGE_REASONS.map((item) => <option key={item}>{item}</option>)}</select></label>}
     </fieldset>
+    {/* 換鏡頭歷程直接讀 cameraIntervals——換一次就封一段、開一段，不另外存一張表。 */}
+    {babyId && history.length > 0 && <div className="space-y-2">
+      <h3 className="text-sm font-semibold text-stone-700">此寶寶的監視器歷程</h3>
+      <div className="overflow-x-auto"><table className="w-full min-w-[520px] text-left text-sm"><thead className="bg-stone-50"><tr>{["監視器", "開始", "結束", "原因"].map((label) => <th key={label} className="whitespace-nowrap p-2 font-medium">{label}</th>)}</tr></thead><tbody>
+        {history.map((item) => <tr key={item.id} className="border-t border-stone-200">
+          <td className="p-2">{data.cameras.find((camera) => camera.id === item.cameraId)?.code ?? item.cameraId}</td>
+          <td className="p-2">{item.start}</td>
+          <td className="p-2">{item.end ?? "使用中"}</td>
+          <td className="p-2">{item.reason ?? "—"}</td>
+        </tr>)}
+      </tbody></table></div>
+    </div>}
     <div className="flex flex-wrap gap-3"><button type="button" className={button} onClick={save}>{assigned ? "儲存原寶寶指派" : "指派新寶寶"}</button>{assigned && <button type="button" className={button} onClick={() => setConfirmRemove(true)}>解除此寶寶指派</button>}</div>
     {confirmRemove && <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm"><p>確認解除 {name} 的監視器與車號？原照護紀錄保留，舊識別標籤失效；重新指派後須重印標籤。</p><button type="button" className={button} onClick={() => { try { babycamActions.unassign(binding.id, babyId); selectBaby(babyId); setMessage("已解除，照護紀錄保留，舊標籤失效。"); onChange(); } catch (error) { setMessage(error instanceof Error ? error.message : "解除失敗。"); } }}>確認解除指派</button><button type="button" className={button} onClick={() => setConfirmRemove(false)}>保留原指派</button></div>}
     {message && <p role="status" className="rounded-lg bg-stone-50 p-3 text-sm">{message}</p>}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import SignaturePad from "./SignaturePad";
 import Modal from "./Modal";
-import { useSessionSignature, setSessionSignature } from "@/lib/signatureStore";
+import { useSignature, rememberSignature, staffKey } from "@/lib/signatureStore";
 import { useCurrentRole } from "@/lib/roleStore";
 import { ROLE_PROFILE } from "@/lib/permissions";
 import { buttonStyles } from "@/components/ui/buttonStyles";
@@ -21,8 +21,9 @@ export default function SignatureBox({
   showStamp?: boolean;
   caseLabel?: string;
 }) {
-  const sessionSignature = useSessionSignature();
   const role = useCurrentRole();
+  // 這幾張舊表單的簽名欄位都是當班人員自己簽的，跟著登入角色帶（見 signatureStore）。
+  const sessionSignature = useSignature(staffKey(role))?.image ?? null;
   const profile = ROLE_PROFILE[role];
   const [drawing, setDrawing] = useState(false);
   const [caseConfirmed, setCaseConfirmed] = useState(false);
@@ -33,7 +34,7 @@ export default function SignatureBox({
 
   function handleConfirm(dataUrl: string) {
     setLocalOverride(dataUrl);
-    setSessionSignature(dataUrl);
+    rememberSignature(staffKey(role), dataUrl, role);
     setDrawing(false);
   }
 

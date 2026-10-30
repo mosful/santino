@@ -43,6 +43,22 @@ async function decodeQr(locator, label = false) {
   const canvas = page.getByLabel("手寫簽名區"); await canvas.scrollIntoViewIfNeeded(); const rect = await canvas.boundingBox();
   await page.mouse.move(rect.x + 30, rect.y + 40); await page.mouse.down(); await page.mouse.move(rect.x + 120, rect.y + 80, { steps: 8 }); await page.mouse.up();
   await page.getByRole("button", { name: "確認本筆簽名", exact: true }).click();
+  /* 簽名一次多處帶入（客戶 2026-10-30）。
+     ⚠️ 帶入的來源依身分分開：媽媽的簽名跟著病歷號、員工的跟著登入角色，
+     所以剛剛那筆媽媽簽名**不會**出現在經辦人員欄——那正是要的行為。
+     這裡驗的是同一位員工的第二次：先手寫一次，再開就該有「帶入上次簽名」。 */
+  await page.getByRole("button", { name: "經辦人員簽名", exact: true }).click();
+  assert.equal(await page.getByRole("button", { name: "帶入上次簽名", exact: true }).count(), 0, "媽媽的簽名不該帶到經辦人員欄");
+  const staffCanvas = page.getByLabel("手寫簽名區"); await staffCanvas.scrollIntoViewIfNeeded(); const staffRect = await staffCanvas.boundingBox();
+  await page.mouse.move(staffRect.x + 40, staffRect.y + 50); await page.mouse.down(); await page.mouse.move(staffRect.x + 150, staffRect.y + 90, { steps: 8 }); await page.mouse.up();
+  await page.getByRole("button", { name: "確認本筆簽名", exact: true }).click();
+  await page.getByRole("status").filter({ hasText: "經辦人員簽名已保存" }).waitFor();
+  await page.getByRole("button", { name: "重新簽名（經辦人員）", exact: true }).click();
+  await page.getByRole("button", { name: "帶入上次簽名", exact: true }).click();
+  await page.getByRole("button", { name: "改成重新手寫", exact: true }).click();
+  await page.getByRole("button", { name: "帶入上次簽名", exact: true }).click();
+  await page.getByRole("button", { name: "確認帶入這個簽名", exact: true }).click();
+  await page.getByRole("status").filter({ hasText: "經辦人員簽名已保存" }).waitFor();
   await page.getByRole("button", { name: /^合約完成/ }).click();
   await page.getByLabel("實際入住日", { exact: true }).fill("2026-10-16");
   await page.getByLabel("入住房號", { exact: true }).fill("303");

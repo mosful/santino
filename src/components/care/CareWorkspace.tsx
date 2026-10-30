@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { staffKey, subjectKey } from "@/lib/signatureStore";
 import { report, reportFail } from "@/lib/demo/lenient";
 import Link from "next/link";
 import { ArrowLeft, Check, FileText, LockKeyhole, Printer, Save, UnlockKeyhole, X } from "lucide-react";
@@ -261,7 +262,13 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
               </button>}
               {editable && !signing && <button type="button" className={buttonClass} onClick={() => run(() => careActions.carrySubjectSignature(document.key), "已確認相同照護對象，帶入上一筆媽媽簽名。")}>帶入此對象上一筆簽名</button>}
               <p className="text-sm text-stone-600">完成簽出時加蓋實際操作者員工印章及時間。</p>
-              {editable && signing && <CareSignature identity={`${identity(subject)}｜${form.key === "guidance" ? signatureRoles.find((item) => item.key === signingRole)?.label : "媽媽本人"}`} onCancel={() => setSigning(false)} onConfirm={(image) => { if (run(() => form.key === "guidance" ? careActions.signRole(document.key, signingRole, image) : careActions.sign(document.key, image), "已保存此個案本筆簽名。")) setSigning(false); }} />}
+              {editable && signing && <CareSignature
+                identity={`${identity(subject)}｜${form.key === "guidance" ? signatureRoles.find((item) => item.key === signingRole)?.label : "媽媽本人"}`}
+                /* 帶入的來源依「簽的是誰」分開：媽媽／家屬跟著病歷號（只帶到同一位個案的其他表單），
+                   執行者與評值者是當班人員自己的簽名，跟著登入角色走，每一張都能帶。 */
+                carryKey={form.key === "guidance" && signingRole !== "recipient" ? staffKey(role) : subjectKey(subject.chartNo)}
+                carryLabel={form.key === "guidance" && signingRole !== "recipient" ? role : subject.name}
+                onCancel={() => setSigning(false)} onConfirm={(image) => { if (run(() => form.key === "guidance" ? careActions.signRole(document.key, signingRole, image) : careActions.sign(document.key, image), "已保存此個案本筆簽名。")) setSigning(false); }} />}
             </div>}
             {document.staffStamp && <p className="mt-4 text-sm">員工印章：{document.staffStamp.author}｜{taipeiTimestamp(document.staffStamp.at)}</p>}
             <ActionDock title={document.signedAt ? "本筆紀錄已簽出" : "完成本筆照護紀錄"} description={document.signedAt ? `簽出 ${taipeiTimestamp(document.signedAt)}` : completionErrors[0] ?? "必要欄位已完成，可確認簽出。"}>

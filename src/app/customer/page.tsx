@@ -35,6 +35,10 @@ const columns: Column<Customer>[] = [
 /*
   匯出 Excel 的欄位（客戶 2026-10-30）。
 
+  ⚠️ LINE ID 與 LINE 綁定三處畫面欄位（明細、查詢條件、匯出）依客戶 2026-10-30 要求移除。
+  資料層的 lineBound 刻意保留——LINE 官方帳號管理（模組 14）的會員綁定還要用它，
+  現在拿掉之後那邊要重建一次。要在客戶資料開回來就把這三處加回去。
+
   畫面上把「等級/胎次」「生日/預產期」「合約/簽約日期」併成一欄比較省橫向空間，
   但匯出要給人篩選與樞紐，所以一欄一值拆開。
 */
@@ -52,14 +56,13 @@ const EXPORT_COLUMNS: { label: string; value: (row: Customer) => string }[] = [
   { label: "主要客服", value: (row) => row.mainStaff },
   { label: "主要護理師", value: (row) => row.mainNurse },
   { label: "關聯家屬", value: (row) => row.family },
-  { label: "LINE 綁定", value: (row) => (row.lineBound ? "已綁定" : "未綁定") },
 ];
 
 /** 查詢條件的空白值；「全部」用空字串表示，比對時直接跳過。 */
 const filterInput = "min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
 
 /** 查詢條件的空白值；「全部」用空字串或「全部」表示，比對時直接跳過。 */
-const BLANK_FILTERS = { level: "", staff: "", nurse: "", contract: "全部", line: "全部", dueFrom: "", dueTo: "" };
+const BLANK_FILTERS = { level: "", staff: "", nurse: "", contract: "全部", dueFrom: "", dueTo: "" };
 
 /**
  * 右上角三顆空白表單列印鈕先隱藏（客戶 2026-10-22）。程式保留，要開回改成 true。
@@ -140,7 +143,6 @@ function DetailTabs({
               <Field label="生日" value={c.birthday} />
               <Field label="身分證號" value="（欄位範例，未填）" />
               <Field label="通訊地址" value="（欄位範例，未填）" />
-              <Field label="LINE ID" value="（供14.會員綁定比對）" />
             </div>
           ),
         },
@@ -222,8 +224,6 @@ export default function CustomerPage() {
     if (filters.nurse && row.mainNurse !== filters.nurse) return false;
     if (filters.contract === "已簽約" && !row.contractNo) return false;
     if (filters.contract === "尚未簽約" && row.contractNo) return false;
-    if (filters.line === "已綁定" && !row.lineBound) return false;
-    if (filters.line === "未綁定" && row.lineBound) return false;
     // 沒有預產期的案件在設了區間時就不該出現，否則「篩 11 月」會混進一批空白。
     if (filters.dueFrom && (!row.dueDate || row.dueDate < filters.dueFrom)) return false;
     if (filters.dueTo && (!row.dueDate || row.dueDate > filters.dueTo)) return false;
@@ -328,7 +328,7 @@ export default function CustomerPage() {
       />
       {/*
         查詢條件（客戶 2026-10-30）。關鍵字搜尋留在下方 QueryList（它本來就有，且支援模糊比對），
-        這裡放需要「選」的條件：等級、主責人員、合約狀態、LINE 綁定、預產期區間。
+        這裡放需要「選」的條件：等級、主責人員、合約狀態、預產期區間。
         條件是 AND，結果同時餵給清單與匯出——畫面看到什麼就匯出什麼。
       */}
       <CollapsibleSection id="customer-filters" title="查詢條件" summary={`符合 ${matched.length} / ${customers.length} 筆`} bodyClassName="space-y-3">
@@ -354,11 +354,6 @@ export default function CustomerPage() {
           <label className="block space-y-1.5 text-sm">合約狀態
             <select aria-label="合約狀態" className={filterInput} value={filters.contract} onChange={(event) => setFilters({ ...filters, contract: event.target.value })}>
               {["全部", "已簽約", "尚未簽約"].map((item) => <option key={item}>{item}</option>)}
-            </select>
-          </label>
-          <label className="block space-y-1.5 text-sm">LINE 綁定
-            <select aria-label="LINE 綁定" className={filterInput} value={filters.line} onChange={(event) => setFilters({ ...filters, line: event.target.value })}>
-              {["全部", "已綁定", "未綁定"].map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
           <div className="grid grid-cols-2 gap-2">

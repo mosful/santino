@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { report, reportFail } from "@/lib/demo/lenient";
+import { Toast, useToast } from "@/components/ui/Toast";
 import LegacyCaseScope from "@/components/cases/LegacyCaseScope";
 import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
 import { contractSettingActions } from "@/lib/domain/contractSettings";
@@ -17,8 +19,8 @@ const ARTICLES = [
 export default function ContractTerms() { return <LegacyCaseScope>{(record) => <TermsPanel key={record.id} record={record} />}</LegacyCaseScope>; }
 function TermsPanel({ record }: { record: CaseRecord }) {
   const { data } = useDomainStore(); const days = data.contractSettings.reviewDays;
-  const [message, setMessage] = useState("");
-  function run(action: () => void) { try { action(); setMessage("已更新共用合約資料。"); } catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); } }
+  const [toast, toastProps] = useToast();
+  function run(action: () => void) { try { action(); report(toast, "已更新共用合約資料。"); } catch (error) { reportFail(toast, error, "儲存失敗。"); } }
   const [selectedArticle, setSelectedArticle] = useState(ARTICLES[0]);
   return (
     <div className="grid gap-4 md:grid-cols-[160px_1fr]">
@@ -35,7 +37,7 @@ function TermsPanel({ record }: { record: CaseRecord }) {
           </li>
         ))}
       </ul>
-      <div className="space-y-4 text-sm">{message && <p role="status">{message}</p>}
+      <div className="space-y-4 text-sm"><Toast {...toastProps} />
         <div className="rounded border border-stone-200 bg-stone-50 p-3 text-xs text-stone-600">
           目前檢視：<strong>{selectedArticle}</strong>
         </div>

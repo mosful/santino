@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Toast, useToast } from "@/components/ui/Toast";
 import { readCarePhoto, saveCarePhoto } from "@/lib/care/media";
 import type { CareField, CareValues } from "@/lib/care/types";
 import styles from "./CareWorkspace.module.css";
@@ -14,27 +15,29 @@ export const valueText = (value: string | string[] | undefined) => Array.isArray
 
 function PhotoField({ id, label, onChange }: { id: string; label: string; onChange: (value: string) => void }) {
   const [source, setSource] = useState("");
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
   const [loading, setLoading] = useState(false);
   useEffect(() => {
     let active = true; let url = "";
     if (id) void readCarePhoto(id).then((blob) => {
       if (active && blob) { url = URL.createObjectURL(blob); setSource(url); }
-    }).catch(() => { if (active) setMessage("照片僅存在原瀏覽器，目前無法讀取。"); });
+    }).catch(() => { if (active) toast.fail("照片僅存在原瀏覽器，目前無法讀取。"); });
     return () => { active = false; if (url) URL.revokeObjectURL(url); };
-  }, [id]);
+  }, [id, toast]);
   return <div className="space-y-3">
     <input aria-label={label} type="file" accept="image/*" capture="environment" disabled={loading} className={inputClass} onChange={async (event) => {
       const file = event.target.files?.[0]; if (!file) return;
-      setLoading(true); setMessage("");
-      try { onChange(await saveCarePhoto(file)); setMessage("照片已存於本機瀏覽器，沒有對外上傳。"); }
-      catch (error) { setMessage(error instanceof Error ? error.message : "圖片讀取失敗。"); }
+      setLoading(true); toast.clear();
+      try { onChange(await saveCarePhoto(file)); toast.ok("照片已存於本機瀏覽器，沒有對外上傳。"); }
+      catch (error) { toast.fail(error instanceof Error ? error.message : "圖片讀取失敗。"); }
       finally { setLoading(false); }
     }} />
     {/* 本機 Blob URL 不經 Next.js 圖片服務，維持純靜態。 */}
     {/* eslint-disable-next-line @next/next/no-img-element */}
     {source && <img src={source} alt="目前個案的本機照護照片" className={styles.photo} />}
-    {(message || loading) && <p className="text-xs text-stone-600" role="status">{loading ? "正在儲存本機預覽…" : message}</p>}
+    {/* 進行中狀態留在原地（使用者正盯著這張照片等它存完）；結果回饋走浮出提示。 */}
+    {loading && <p className="text-xs text-stone-600" role="status">正在儲存本機預覽…</p>}
+    <Toast {...toastProps} />
   </div>;
 }
 

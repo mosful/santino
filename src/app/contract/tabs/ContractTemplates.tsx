@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { report, reportFail } from "@/lib/demo/lenient";
+import { Toast, useToast } from "@/components/ui/Toast";
 import Switch from "@/components/ui/Switch";
 import Badge from "@/components/ui/Badge";
 import { domainStore, useDomainStore } from "@/lib/demo/domainStore";
@@ -26,15 +28,15 @@ const CLAUSES = [
 
 export default function ContractTemplates() {
   const { data } = useDomainStore(); const templates = data.contractSettings.templates;
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
   const [editing, setEditing] = useState<Template | null>(null);
 
   const editingLocked = !!(editing && templates.find((item) => item.id === editing.id)?.active);
-  function run(action: () => void) { try { action(); setMessage("已儲存合約範本設定，已簽快照保留。"); } catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); } }
+  function run(action: () => void) { try { action(); report(toast, "已儲存合約範本設定，已簽快照保留。"); } catch (error) { reportFail(toast, error, "儲存失敗。"); } }
   function toggleActive(id: number) { run(() => contractSettingActions.activate(id)); }
   function addTemplate() { run(() => { const id = contractSettingActions.addTemplate(); setEditing(domainStore.get().contractSettings.templates.find((item) => item.id === id)!); }); }
   return (
-    <div className="space-y-3 text-sm">{message && <p role="status">{message}</p>}
+    <div className="space-y-3 text-sm"><Toast {...toastProps} />
       <p className="text-xs text-stone-400">
         維護標準21條條款範本，供新增合約套用，支援版本管理；同時間僅一個版本可為「啟用中」，
         新客戶簽署一律套用啟用中版本，不影響已簽署的舊客戶。

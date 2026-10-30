@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { report, reportFail } from "@/lib/demo/lenient";
+import { Toast, useToast } from "@/components/ui/Toast";
 import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
 import { freeDays, roomDailyRate } from "@/lib/domain/rules";
 import {
@@ -28,19 +30,19 @@ const button = buttonStyles();
 
 export function DailyLedger({ record, editable }: { record: CaseRecord; editable: boolean }) {
   const role = useCurrentRole();
-  const [entryId, setEntryId] = useState(""); const [amount, setAmount] = useState(""); const [reason, setReason] = useState(""); const [message, setMessage] = useState("");
+  const [entryId, setEntryId] = useState(""); const [amount, setAmount] = useState(""); const [reason, setReason] = useState(""); const [toast, toastProps] = useToast();
   const rows = dailyCharges(record);
-  return <CollapsibleSection id="case-daily-ledger" title="逐日房租與自費明細" summary={`${rows.length} 列`} bodyClassName="space-y-4"><p className="text-sm text-stone-600">原合約金額按原付費日分攤，最後付費日調整尾差；贈送日為 0。變更與自費另列，不更動原合約快照。逐日可改為贈送日，系統會加一筆同額折讓，原房費保留在明細中。</p><div className="max-h-96 overflow-auto"><table className="w-full min-w-[560px] text-left text-sm"><thead><tr><th className="p-2">日期</th><th className="p-2">項目</th><th className="p-2 text-right">金額</th>{editable && <th className="p-2">計費方式</th>}</tr></thead><tbody>{rows.map((row, index) => { const gifted = record.ledger.some((entry) => entry.giftDate === row.date); const chargeable = row.amount > 0 && row.label.includes("原合約"); return <tr key={index} className="border-t border-stone-200"><td className="p-2">{row.date}</td><td className="p-2">{row.label}</td><td className="p-2 text-right tabular-nums">{row.amount.toLocaleString("zh-TW")}</td>{editable && <td className="p-2">{(chargeable || gifted) && !row.label.includes("折讓") && <button type="button" className={buttonStyles({ size: "sm", selected: gifted })} onClick={() => { try { caseActions.toggleGiftDay(record.id, row.date); setMessage(gifted ? `已恢復 ${row.date} 的房費。` : `${row.date} 已改為贈送日。`); } catch (error) { setMessage(error instanceof Error ? error.message : "操作失敗。"); } }}>{gifted ? "取消贈送" : "設為贈送"}</button>}</td>}</tr>; })}</tbody></table></div>{editable && ["護理長 婉真", "管理者"].includes(role) && <details><summary className="min-h-12 cursor-pointer text-sm">主管帳務例外調整</summary><div className="grid gap-3 sm:grid-cols-2"><label className="text-sm">原收費項目<select aria-label="例外調整項目" className={input} value={entryId} onChange={(event) => { setEntryId(event.target.value); setAmount(""); }}><option value="">請選擇自費／變更項目</option>{record.ledger.filter((entry) => !entry.adjustsId).map((entry) => <option value={entry.id} key={entry.id}>{entry.date}｜{entry.label}</option>)}</select></label><label className="text-sm">修正後金額<input aria-label="例外修正後金額" type="number" className={input} value={amount} onChange={(event) => setAmount(event.target.value)} /></label><label className="sm:col-span-2 text-sm">急診／例外原因<input aria-label="帳務例外原因" className={input} value={reason} onChange={(event) => setReason(event.target.value)} /></label><button type="button" className={button} onClick={() => { try { if (!amount.trim()) throw new Error("請填修正後金額。"); caseActions.adjustCharge(record.id, entryId, Number(amount), reason); setMessage("已加列差額、保留原項目與主管授權紀錄。"); } catch (error) { setMessage(error instanceof Error ? error.message : "調整失敗。"); } }}>授權並加列調整</button></div></details>}{message && <p role="status" className="text-sm">{message}</p>}</CollapsibleSection>;
+  return <CollapsibleSection id="case-daily-ledger" title="逐日房租與自費明細" summary={`${rows.length} 列`} bodyClassName="space-y-4"><p className="text-sm text-stone-600">原合約金額按原付費日分攤，最後付費日調整尾差；贈送日為 0。變更與自費另列，不更動原合約快照。逐日可改為贈送日，系統會加一筆同額折讓，原房費保留在明細中。</p><div className="max-h-96 overflow-auto"><table className="w-full min-w-[560px] text-left text-sm"><thead><tr><th className="p-2">日期</th><th className="p-2">項目</th><th className="p-2 text-right">金額</th>{editable && <th className="p-2">計費方式</th>}</tr></thead><tbody>{rows.map((row, index) => { const gifted = record.ledger.some((entry) => entry.giftDate === row.date); const chargeable = row.amount > 0 && row.label.includes("原合約"); return <tr key={index} className="border-t border-stone-200"><td className="p-2">{row.date}</td><td className="p-2">{row.label}</td><td className="p-2 text-right tabular-nums">{row.amount.toLocaleString("zh-TW")}</td>{editable && <td className="p-2">{(chargeable || gifted) && !row.label.includes("折讓") && <button type="button" className={buttonStyles({ size: "sm", selected: gifted })} onClick={() => { try { caseActions.toggleGiftDay(record.id, row.date); toast.ok(gifted ? `已恢復 ${row.date} 的房費。` : `${row.date} 已改為贈送日。`); } catch (error) { reportFail(toast, error); } }}>{gifted ? "取消贈送" : "設為贈送"}</button>}</td>}</tr>; })}</tbody></table></div>{editable && ["護理長 婉真", "管理者"].includes(role) && <details><summary className="min-h-12 cursor-pointer text-sm">主管帳務例外調整</summary><div className="grid gap-3 sm:grid-cols-2"><label className="text-sm">原收費項目<select aria-label="例外調整項目" className={input} value={entryId} onChange={(event) => { setEntryId(event.target.value); setAmount(""); }}><option value="">請選擇自費／變更項目</option>{record.ledger.filter((entry) => !entry.adjustsId).map((entry) => <option value={entry.id} key={entry.id}>{entry.date}｜{entry.label}</option>)}</select></label><label className="text-sm">修正後金額<input aria-label="例外修正後金額" type="number" className={input} value={amount} onChange={(event) => setAmount(event.target.value)} /></label><label className="sm:col-span-2 text-sm">急診／例外原因<input aria-label="帳務例外原因" className={input} value={reason} onChange={(event) => setReason(event.target.value)} /></label><button type="button" className={button} onClick={() => { try { if (!amount.trim()) throw new Error("請填修正後金額。"); caseActions.adjustCharge(record.id, entryId, Number(amount), reason); toast.ok("已加列差額、保留原項目與主管授權紀錄。"); } catch (error) { toast.fail(error instanceof Error ? error.message : "調整失敗。"); } }}>授權並加列調整</button></div></details>}<Toast {...toastProps} /></CollapsibleSection>;
 }
 
 export function AdmissionMeal({ record, editable }: { record: CaseRecord; editable: boolean }) {
-  const [people, setPeople] = useState(record.meal?.people ?? 1); const [content, setContent] = useState(record.meal?.content ?? "一般餐"); const [message, setMessage] = useState("");
-  return <section className="sm:col-span-2 space-y-3"><h3 className="font-medium">入住當天餐飲</h3><div className="grid gap-3 sm:grid-cols-2"><label className="text-sm">餐飲人數<input aria-label="餐飲人數" type="number" min={1} max={10} disabled={!editable} className={input} value={people} onChange={(event) => setPeople(Number(event.target.value))} /></label><label className="text-sm">餐飲內容<input aria-label="餐飲內容" disabled={!editable} className={input} value={content} onChange={(event) => setContent(event.target.value)} /></label></div><button type="button" disabled={!editable} className={button} onClick={() => { try { caseActions.meal(record.id, people, content); setMessage("已保存入住當天餐飲。"); } catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); } }}>儲存入住當天餐飲</button><p className="text-xs text-stone-600">以展示控制台日期判定入住當天，其他日期依變更流程處理。</p>{message && <p role="status" className="text-sm">{message}</p>}</section>;
+  const [people, setPeople] = useState(record.meal?.people ?? 1); const [content, setContent] = useState(record.meal?.content ?? "一般餐"); const [toast, toastProps] = useToast();
+  return <section className="sm:col-span-2 space-y-3"><h3 className="font-medium">入住當天餐飲</h3><div className="grid gap-3 sm:grid-cols-2"><label className="text-sm">餐飲人數<input aria-label="餐飲人數" type="number" min={1} max={10} disabled={!editable} className={input} value={people} onChange={(event) => setPeople(Number(event.target.value))} /></label><label className="text-sm">餐飲內容<input aria-label="餐飲內容" disabled={!editable} className={input} value={content} onChange={(event) => setContent(event.target.value)} /></label></div><button type="button" disabled={!editable} className={button} onClick={() => { try { caseActions.meal(record.id, people, content); toast.ok("已保存入住當天餐飲。"); } catch (error) { toast.fail(error instanceof Error ? error.message : "儲存失敗。"); } }}>儲存入住當天餐飲</button><p className="text-xs text-stone-600">以展示控制台日期判定入住當天，其他日期依變更流程處理。</p><Toast {...toastProps} /></section>;
 }
 
 export function ReturnPhotos({ record, editable }: { record: CaseRecord; editable: boolean }) {
-  const [email, setEmail] = useState(record.returnEmail ?? "demo@example.test"); const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false);
-  return <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-4"><h2 className="font-semibold">返家照片留存與寄送示意</h2><input aria-label="返家照片" type="file" accept="image/*" disabled={!editable || busy} className={input} onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; setBusy(true); try { caseActions.returnPhoto(record.id, await saveCarePhoto(file)); setMessage("照片已留存在本機瀏覽器。"); } catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); } finally { setBusy(false); event.target.value = ""; } }} /><div className="grid gap-3 sm:grid-cols-3">{record.returnPhotos?.map((id) => <LocalMedia key={id} id={id} alt="匿名返家照片" className="aspect-video w-full rounded-lg object-cover" />)}</div><label className="block space-y-2 text-sm">展示收件 Email<input aria-label="展示收件 Email" className={input} disabled={!editable} value={email} onChange={(event) => setEmail(event.target.value)} /></label><button type="button" className={button} disabled={!editable} onClick={() => { try { caseActions.simulateReturnMail(record.id, email); setMessage("寄送示意已記錄，未寄出郵件。"); } catch (error) { setMessage(error instanceof Error ? error.message : "操作失敗。"); } }}>模擬寄送返家照片</button><p className="text-sm">寄送示意紀錄 {record.returnMailLog?.length ?? 0} 次；不連線郵件服務。</p>{message && <p role="status" className="text-sm">{message}</p>}</section>;
+  const [email, setEmail] = useState(record.returnEmail ?? "demo@example.test"); const [toast, toastProps] = useToast(); const [busy, setBusy] = useState(false);
+  return <section className="space-y-4 rounded-xl border border-stone-200 bg-white p-4"><h2 className="font-semibold">返家照片留存與寄送示意</h2><input aria-label="返家照片" type="file" accept="image/*" disabled={!editable || busy} className={input} onChange={async (event) => { const file = event.target.files?.[0]; if (!file) return; setBusy(true); try { caseActions.returnPhoto(record.id, await saveCarePhoto(file)); toast.ok("照片已留存在本機瀏覽器。"); } catch (error) { toast.fail(error instanceof Error ? error.message : "儲存失敗。"); } finally { setBusy(false); event.target.value = ""; } }} /><div className="grid gap-3 sm:grid-cols-3">{record.returnPhotos?.map((id) => <LocalMedia key={id} id={id} alt="匿名返家照片" className="aspect-video w-full rounded-lg object-cover" />)}</div><label className="block space-y-2 text-sm">展示收件 Email<input aria-label="展示收件 Email" className={input} disabled={!editable} value={email} onChange={(event) => setEmail(event.target.value)} /></label><button type="button" className={button} disabled={!editable} onClick={() => { try { caseActions.simulateReturnMail(record.id, email); toast.ok("寄送示意已記錄，未寄出郵件。"); } catch (error) { reportFail(toast, error); } }}>模擬寄送返家照片</button><p className="text-sm">寄送示意紀錄 {record.returnMailLog?.length ?? 0} 次；不連線郵件服務。</p><Toast {...toastProps} /></section>;
 }
 
 /**
@@ -51,11 +53,11 @@ export function ReturnPhotos({ record, editable }: { record: CaseRecord; editabl
  */
 export function ReturnInspection({ record, editable }: { record: CaseRecord; editable: boolean }) {
   const [reasons, setReasons] = useState<Record<string, string>>({});
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
   const pending = pendingInspection(record);
   const done = INSPECTION_ITEMS.length - pending;
   function run(action: () => void, success = "") {
-    try { action(); setMessage(success); } catch (error) { setMessage(error instanceof Error ? error.message : "操作失敗。"); }
+    try { action(); report(toast, success); } catch (error) { reportFail(toast, error); }
   }
   const reasonOf = (item: string) => reasons[item] ?? record.roomInspection?.[item]?.reason ?? "";
   return <CollapsibleSection id="case-return-inspection" title="返家檢查表" summary={`${done}／${INSPECTION_ITEMS.length} 項`} bodyClassName="space-y-4" defaultCollapsed>
@@ -85,7 +87,7 @@ export function ReturnInspection({ record, editable }: { record: CaseRecord; edi
       <button type="button" className={button} onClick={() => run(() => caseActions.completeCheckout(record.id), "返家檢查表已完成。")}>完成返家檢查表</button>
       {record.checkoutCompletedAt && <button type="button" className={button} onClick={() => run(() => caseActions.checkoutProgress(record.id, false), "返家檢查表已重新開啟。")}>重新開啟檢查</button>}
     </div>}
-    {message && <p role="status" className="text-sm">{message}</p>}
+    <Toast {...toastProps} />
   </CollapsibleSection>;
 }
 
@@ -97,12 +99,12 @@ export function ReturnInspection({ record, editable }: { record: CaseRecord; edi
 export function ReturnGuide({ record, editable }: { record: CaseRecord; editable: boolean }) {
   const { data } = useDomainStore();
   const items = data.checkoutItems ?? DEFAULT_CHECKOUT_ITEMS;
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
   const rows = returnItemRows(record, items);
   const charges = record.returnCharges ?? { jaundice: 0, childcare: 0, chinese: 0, hair: 0, other: 0, note: "" };
   const total = returnTotal(record, items);
   function run(action: () => void, success = "") {
-    try { action(); setMessage(success); } catch (error) { setMessage(error instanceof Error ? error.message : "操作失敗。"); }
+    try { action(); report(toast, success); } catch (error) { reportFail(toast, error); }
   }
   return <CollapsibleSection id="case-return-guide" title="返家指導單" summary={`應收 ${total.toLocaleString("zh-TW")} 元`} bodyClassName="space-y-4" defaultCollapsed>
     <p className="text-sm text-stone-600">入住期間提供的品項請於退房歸還，未歸還依單價計價；單價於「後台管理 → 基礎主檔設定」維護。</p>
@@ -136,7 +138,7 @@ export function ReturnGuide({ record, editable }: { record: CaseRecord; editable
       <button type="button" className={buttonStyles({ variant: "primary" })} onClick={() => run(() => caseActions.chargeReturnTotal(record.id), "返家應收已寫入帳務。")}>應收寫入帳務</button>
       <button type="button" className={button} onClick={() => window.print()}>列印返家指導單</button>
     </div>}
-    {message && <p role="status" className="text-sm">{message}</p>}
+    <Toast {...toastProps} />
   </CollapsibleSection>;
 }
 
@@ -153,7 +155,7 @@ export function RefundCalculator({ record, editable }: { record: CaseRecord; edi
   const [stayedDays, setStayedDays] = useState(String(contractDays));
   const [babyDays, setBabyDays] = useState(String(contractDays));
   const [babyDailyRefund, setBabyDailyRefund] = useState("0");
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
 
   const diffDays = Math.max(0, contractDays - (Number(stayedDays) || 0));
   const babyDiff = Math.max(0, contractDays - (Number(babyDays) || 0));
@@ -177,11 +179,11 @@ export function RefundCalculator({ record, editable }: { record: CaseRecord; edi
         try {
           if (refund <= 0) throw new Error("退費金額為 0，不需寫入帳務。");
           caseActions.charge(record.id, `提前返家退費（媽媽 ${diffDays} 天、寶寶 ${babyDiff} 天）`, -refund, new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" }), "", { category: "其他備品" });
-          setMessage("退費已寫入帳務（負數）。");
-        } catch (error) { setMessage(error instanceof Error ? error.message : "操作失敗。"); }
+          toast.ok("退費已寫入帳務（負數）。");
+        } catch (error) { reportFail(toast, error); }
       }}>退費寫入帳務</button>
       <button type="button" className={button} onClick={() => window.print()}>列印退費試算</button>
     </div>}
-    {message && <p role="status" className="text-sm">{message}</p>}
+    <Toast {...toastProps} />
   </CollapsibleSection>;
 }

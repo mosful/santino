@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import { Toast, useToast } from "@/components/ui/Toast";
 import { Check, Minus } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { babycamActions } from "@/lib/babycam/actions";
@@ -67,7 +68,7 @@ export default function StaffPermissionSettings() {
   const canEdit = canEditAdminSetting(role, "system");
   const [staffName, setStaffName] = useState("");
   const [staffRole, setStaffRole] = useState<Role>("護理師 陳護理師");
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
 
   // 只列目前開放的分期，避免管理者在 Phase 1 看到一堆還沒開發的模組；
   // 寶寶視訊是客戶指定優先開發的獨立範圍，不屬於任何分期，固定列出。
@@ -76,9 +77,9 @@ export default function StaffPermissionSettings() {
   function run(action: () => void, success = "已更新。") {
     try {
       action();
-      setMessage(success);
+      toast.ok(success);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "操作失敗。");
+      toast.fail(error instanceof Error ? error.message : "操作失敗。");
     }
   }
 
@@ -89,11 +90,7 @@ export default function StaffPermissionSettings() {
           此為系統面設定，僅「管理者」可修改；目前身分「{role}」為唯讀檢視。
         </p>
       )}
-      {message && (
-        <p role="status" className="rounded-xl border border-border-subtle bg-surface-muted p-3 text-xs">
-          {message}
-        </p>
-      )}
+      <Toast {...toastProps} />
 
       <section className={panel}>
         <div>

@@ -268,7 +268,8 @@ test("胎序、修改、解除及重新指派不串到其他寶寶，舊標籤�
   const subject = domainStore.get().subjects.find((item) => item.id === first.babyId)!;
   const unused = domainStore.get().cameras.find((camera) => !domainStore.get().bindings.some((item) => item.babies.some((baby) => baby.cameraId === camera.id)))!;
   const second = { name: "示範二寶", cameraId: unused.id, cartNo: "DEMO99", birthDate: "2026-10-01", sex: "女" as const, birthOrder: 2 };
-  assert.throws(() => babycamActions.assign(binding.id, second), /先將既有寶寶/);
+  /* 原本這裡驗「既有寶寶胎序還是 0 就不准新增第二位」。客戶 2026-10-30 指出那是要人工
+     維護內部編號，已移除；胎序現在由畫面的胎別一次給齊，直接新增第二位要能過。 */
   babycamActions.assign(binding.id, { babyId: first.babyId, name: subject.name, cameraId: first.cameraId, cartNo: first.cartNo, birthDate: subject.birthDate!, sex: "男", birthOrder: 1 });
   assert.equal(domainStore.get().bindings[0].babies[0].identityCode, first.identityCode);
   assert.equal(domainStore.get().subjects.find((item) => item.id === first.babyId)!.birthOrder, 1);

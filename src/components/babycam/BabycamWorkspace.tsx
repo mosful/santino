@@ -4,6 +4,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
+import { Toast, useToast } from "@/components/ui/Toast";
 import { useEffect, useMemo, useState } from "react";
 import QRCode from "qrcode";
 import { ExternalLink, Printer, QrCode } from "lucide-react";
@@ -238,7 +239,7 @@ export default function BabycamWorkspace({
   const tabs: Record<GroupId, string> = { ...DEFAULT_TAB, [group]: legacy.tab, ...tabOverrides };
   const [bindingId, setBindingId] = useState(initialBindingId);
   const [cameraId, setCameraId] = useState("");
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
   const [scanCode, setScanCode] = useState(initialScanCode);
   const [scanBaby, setScanBaby] = useState("");
   const [labelImages, setLabelImages] = useState<string[]>([]);
@@ -280,9 +281,9 @@ export default function BabycamWorkspace({
   function run(action: () => void, feedback = "已儲存，相關畫面及紀錄已同步。") {
     try {
       action();
-      setMessage(feedback);
+      toast.ok(feedback);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "操作失敗。");
+      toast.fail(error instanceof Error ? error.message : "操作失敗。");
     }
   }
   /*
@@ -293,7 +294,7 @@ export default function BabycamWorkspace({
   function selectTab(id: string) {
     if (!activeGroup) return;
     setTabOverrides((current) => ({ ...current, [activeGroup.id]: id }));
-    setMessage("");
+    toast.clear();
     setLabelImages([]);
   }
 
@@ -373,9 +374,11 @@ export default function BabycamWorkspace({
 
   return (
     <div className="space-y-4">
-      {(message || storageError) && (
+      {/* 操作回饋走浮出提示；storageError 是示範資料本身的狀態，留在頁面上不自動消失。 */}
+      <Toast {...toastProps} />
+      {storageError && (
         <p role="status" className="whitespace-pre-line rounded-xl border border-border-subtle bg-surface-muted px-4 py-3 text-sm">
-          {storageError ?? message}
+          {storageError}
         </p>
       )}
       {initialScanCode && !scannedBinding && (
@@ -758,9 +761,9 @@ export default function BabycamWorkspace({
                             return rendered.canvas.toDataURL();
                           });
                           setLabelImages(images);
-                          setMessage(`已產生 ${images.length} 位寶寶的標籤預覽。`);
+                          toast.ok(`已產生 ${images.length} 位寶寶的標籤預覽。`);
                         } catch (error) {
-                          setMessage(error instanceof Error ? error.message : "標籤預覽失敗。");
+                          toast.fail(error instanceof Error ? error.message : "標籤預覽失敗。");
                         }
                       }}
                     >
@@ -770,7 +773,7 @@ export default function BabycamWorkspace({
                       <img key={index} src={src} alt={`寶寶 ${index + 1} 標籤預覽`} className="max-w-full rounded-lg border border-border-subtle bg-white" />
                     ))}
                     {labelImages.length > 0 && (
-                      <Button size="sm" onClick={() => void printWristbands(labelImages, data.printSettings.gap).catch((error: Error) => setMessage(error.message))}>
+                      <Button size="sm" onClick={() => void printWristbands(labelImages, data.printSettings.gap).catch((error: Error) => toast.ok(error.message))}>
                         <Printer className="h-3.5 w-3.5" aria-hidden="true" />
                         列印標籤
                       </Button>
@@ -812,7 +815,7 @@ export default function BabycamWorkspace({
         )}
 
         {/* ── 04 後臺管理 ── */}
-        {active.id === "disinfect" && <DisinfectionSchedule data={data} onChange={() => setMessage("")} />}
+        {active.id === "disinfect" && <DisinfectionSchedule data={data} onChange={() => toast.clear()} />}
 
         {active.id === "schedule" && (
           <div className="space-y-4 p-4 sm:p-5">

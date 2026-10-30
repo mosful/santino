@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Toast, useToast } from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import { babycamActions } from "@/lib/babycam/actions";
 import { deriveDemoLight } from "@/lib/babycam/viewing";
@@ -303,14 +304,14 @@ export function RelayBoard({ data, onToggle }: { data: DemoDomain; onToggle: (ch
 export function LightStatePanel({ data }: { data: DemoDomain }) {
   const [name, setName] = useState("");
   const [color, setColor] = useState("白");
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
 
   function run(action: () => void, feedback = "已更新燈號狀態；看板與繼電器板讀同一份設定，會同步變色。") {
     try {
       action();
-      setMessage(feedback);
+      toast.ok(feedback);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "儲存失敗。");
+      toast.fail(error instanceof Error ? error.message : "儲存失敗。");
     }
   }
 
@@ -409,11 +410,7 @@ export function LightStatePanel({ data }: { data: DemoDomain }) {
         </p>
       </div>
 
-      {message && (
-        <p role="status" className="rounded-xl border border-border-subtle bg-surface-muted px-4 py-3 text-sm">
-          {message}
-        </p>
-      )}
+      <Toast {...toastProps} />
     </section>
   );
 }

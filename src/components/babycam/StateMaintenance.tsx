@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Toast, useToast } from "@/components/ui/Toast";
 import Button from "@/components/ui/Button";
 import { BASE_PATH } from "@/lib/basePath";
 import { babycamActions } from "@/lib/babycam/actions";
@@ -52,7 +53,7 @@ export function useStateBackground(state?: DisplayState): string {
 
 function StateCard({ state }: { state: DisplayState }) {
   const background = useStateBackground(state);
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
   const [busy, setBusy] = useState(false);
 
   return (
@@ -83,7 +84,7 @@ function StateCard({ state }: { state: DisplayState }) {
               const next = event.target.value.trim();
               if (!next) {
                 event.target.value = state.name;
-                setMessage("狀態名稱不可空白。");
+                toast.fail("狀態名稱不可空白。");
                 return;
               }
               if (next === state.name) return;
@@ -91,9 +92,9 @@ function StateCard({ state }: { state: DisplayState }) {
                 // 只傳名稱：actions.display 收到第三個參數時會改要求 05（背景圖）權限，
                 // 但改名本身屬 04。
                 babycamActions.display(state.key, next);
-                setMessage(`名稱已改為「${next}」，寶寶與監視器的狀態下拉會跟著換。`);
+                toast.ok(`名稱已改為「${next}」，寶寶與監視器的狀態下拉會跟著換。`);
               } catch (error) {
-                setMessage(error instanceof Error ? error.message : "儲存失敗。");
+                toast.fail(error instanceof Error ? error.message : "儲存失敗。");
               }
             }}
           />
@@ -112,9 +113,9 @@ function StateCard({ state }: { state: DisplayState }) {
                 try {
                   const id = await saveCarePhoto(file);
                   babycamActions.display(state.key, state.name, id);
-                  setMessage("已更新背景，僅存在這台瀏覽器，未對外上傳。");
+                  toast.ok("已更新背景，僅存在這台瀏覽器，未對外上傳。");
                 } catch (error) {
-                  setMessage(error instanceof Error ? error.message : "圖片儲存失敗。");
+                  toast.fail(error instanceof Error ? error.message : "圖片儲存失敗。");
                 } finally {
                   setBusy(false);
                 }
@@ -128,9 +129,9 @@ function StateCard({ state }: { state: DisplayState }) {
               onClick={() => {
                 try {
                   babycamActions.display(state.key, state.name, "");
-                  setMessage("已改回內建底圖。");
+                  toast.ok("已改回內建底圖。");
                 } catch (error) {
-                  setMessage(error instanceof Error ? error.message : "清除失敗。");
+                  toast.fail(error instanceof Error ? error.message : "清除失敗。");
                 }
               }}
             >
@@ -139,11 +140,7 @@ function StateCard({ state }: { state: DisplayState }) {
           )}
         </div>
 
-        {message && (
-          <p role="status" className="rounded-lg bg-black/55 px-2.5 py-1.5 text-[11px] leading-5 text-white">
-            {message}
-          </p>
-        )}
+        <Toast {...toastProps} />
       </div>
     </article>
   );

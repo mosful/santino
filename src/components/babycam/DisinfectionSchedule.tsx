@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Toast, useToast } from "@/components/ui/Toast";
 import { babycamActions } from "@/lib/babycam/actions";
 import { activeDisinfection, describeDisinfection, type Disinfection } from "@/lib/babycam/disinfection";
 import type { DemoDomain } from "@/lib/domain/types";
@@ -27,7 +28,7 @@ const BLANK: Draft = { label: "環境消毒", kind: "環境", weekday: null, dat
 export default function DisinfectionSchedule({ data, onChange }: { data: DemoDomain; onChange: () => void }) {
   const [draft, setDraft] = useState<Draft>(BLANK);
   const [roomText, setRoomText] = useState("");
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
   const items = data.disinfections ?? [];
 
   function patch(next: Partial<Draft>) { setDraft((current) => ({ ...current, ...next })); }
@@ -35,7 +36,7 @@ export default function DisinfectionSchedule({ data, onChange }: { data: DemoDom
   function edit(item: Disinfection) {
     setDraft({ ...item });
     setRoomText(item.rooms.join("、"));
-    setMessage("");
+    toast.clear();
   }
 
   function save() {
@@ -43,13 +44,13 @@ export default function DisinfectionSchedule({ data, onChange }: { data: DemoDom
       // 房號用頓號或逗號分隔都收，現場不會記得該用哪一種。
       const rooms = roomText.split(/[、,，\s]+/).map((item) => item.trim()).filter(Boolean);
       babycamActions.saveDisinfection({ ...draft, rooms });
-      setDraft(BLANK); setRoomText(""); setMessage("消毒排程已儲存。"); onChange();
-    } catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); }
+      setDraft(BLANK); setRoomText(""); toast.ok("消毒排程已儲存。"); onChange();
+    } catch (error) { toast.fail(error instanceof Error ? error.message : "儲存失敗。"); }
   }
 
   function remove(item: Disinfection) {
-    try { babycamActions.removeDisinfection(item.id); setMessage(`已刪除「${item.label}」。`); onChange(); }
-    catch (error) { setMessage(error instanceof Error ? error.message : "刪除失敗。"); }
+    try { babycamActions.removeDisinfection(item.id); toast.ok(`已刪除「${item.label}」。`); onChange(); }
+    catch (error) { toast.fail(error instanceof Error ? error.message : "刪除失敗。"); }
   }
 
   // 橫幅要涵蓋「只套某幾間房」的排程，不能只看全院——305 在消毒時畫面上該說得出來。
@@ -103,7 +104,7 @@ export default function DisinfectionSchedule({ data, onChange }: { data: DemoDom
           <button type="button" className={buttonStyles({ variant: "primary" })} onClick={save}>{draft.id ? "儲存修改" : "新增排程"}</button>
           {draft.id && <button type="button" className={button} onClick={() => { setDraft(BLANK); setRoomText(""); }}>取消編輯</button>}
         </div>
-        {message && <p role="status" className="rounded-lg bg-stone-50 p-3 text-sm">{message}</p>}
+        <Toast {...toastProps} />
       </section>
     </div>
   );

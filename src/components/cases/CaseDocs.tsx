@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Toast, useToast } from "@/components/ui/Toast";
 import { X } from "lucide-react";
 import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
 import { hospitalOptions } from "@/lib/domain/options";
@@ -23,7 +24,7 @@ export function CaseDocPanel({ record, doc, editable, onClose }: { record: CaseR
   const { data } = useDomainStore();
   const saved = record.documents?.[doc.key];
   const [values, setValues] = useState<Record<string, string>>(() => docValues(record, doc));
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
   function set(key: string, value: string) { setValues((current) => ({ ...current, [key]: value })); }
   function toggle(key: string, option: string) {
     const picked = (values[key] ?? "").split("、").filter(Boolean);
@@ -92,16 +93,16 @@ export function CaseDocPanel({ record, doc, editable, onClose }: { record: CaseR
             type="button"
             className={buttonStyles({ variant: "primary" })}
             onClick={() => {
-              try { caseActions.saveDocument(record.id, doc.key, values); setMessage("已儲存，並勾選對應的時間軸項目。"); }
-              catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); }
+              try { caseActions.saveDocument(record.id, doc.key, values); toast.ok("已儲存，並勾選對應的時間軸項目。"); }
+              catch (error) { toast.fail(error instanceof Error ? error.message : "儲存失敗。"); }
             }}
           >
             儲存{doc.label}
           </button>
         )}
         <button type="button" className={button} onClick={() => window.print()}>列印</button>
-        {editable && <button type="button" className={button} onClick={() => { setValues(doc.prefill(record)); setMessage("已重新帶入案件資料。"); }}>重新帶入案件資料</button>}
-        <p role="status" className="text-sm">{message}</p>
+        {editable && <button type="button" className={button} onClick={() => { setValues(doc.prefill(record)); toast.ok("已重新帶入案件資料。"); }}>重新帶入案件資料</button>}
+        <Toast {...toastProps} />
       </div>
     </section>
   );

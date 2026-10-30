@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Toast, useToast } from "@/components/ui/Toast";
 import Badge from "@/components/ui/Badge";
 import LegacyCaseScope from "@/components/cases/LegacyCaseScope";
 import { caseActions } from "@/lib/demo/domainStore";
@@ -10,15 +11,15 @@ import { buttonStyles } from "@/components/ui/buttonStyles";
 export default function ContractChangeOrder() { return <LegacyCaseScope filter="signed">{(record) => <ChangePanel key={record.id} record={record} />}</LegacyCaseScope>; }
 function ChangePanel({ record }: { record: CaseRecord }) {
   const logs = record.ledger.filter((entry) => entry.before !== undefined).map((entry) => ({ id: entry.id, contractNo: record.contractNo, reason: entry.label, operator: entry.actor ?? "歷史展示資料", time: new Date(entry.at ?? `${entry.date}T00:00:00+08:00`).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" }), before: entry.before ?? 0, after: entry.after ?? 0 }));
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
   const [detail, setDetail] = useState("");
   const [reason, setReason] = useState("房型變更");
   const before = (record.overrideAmount ?? record.quotedAmount) + record.ledger.filter((entry) => /^(合約變更|合約金額調整)/.test(entry.label)).reduce((sum, entry) => sum + entry.amount, 0);
   const [after, setAfter] = useState(before);
 
-  function submit() { try { if (!detail.trim()) throw new Error("請填寫變更詳細原因。"); caseActions.contractAmount(record.id, after, `${reason}；${detail}`); setMessage("已保存共用變更單，原合約快照保留。"); } catch (error) { setMessage(error instanceof Error ? error.message : "儲存失敗。"); } }
+  function submit() { try { if (!detail.trim()) throw new Error("請填寫變更詳細原因。"); caseActions.contractAmount(record.id, after, `${reason}；${detail}`); toast.ok("已保存共用變更單，原合約快照保留。"); } catch (error) { toast.fail(error instanceof Error ? error.message : "儲存失敗。"); } }
   return (
-    <div className="space-y-4 text-sm">{message && <p role="status">{message}</p>}
+    <div className="space-y-4 text-sm"><Toast {...toastProps} />
       <div className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-700">
         ⚠ 開放對象：僅主管／櫃臺Leader層級帳號可直接修改（原舊系統此類修改被廠商鎖權限）。
       </div>

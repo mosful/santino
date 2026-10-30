@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { report, reportFail } from "@/lib/demo/lenient";
 import Link from "next/link";
 import { ArrowLeft, Check, FileText, LockKeyhole, Printer, Save, UnlockKeyhole, X } from "lucide-react";
 import RequireAccess from "@/components/ui/RequireAccess";
@@ -134,8 +135,8 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   }
 
   function run(action: () => void, success = "") {
-    try { action(); toast.ok(success); setPending(null); setReason(""); return true; }
-    catch (error) { toast.fail(error instanceof Error ? error.message : "操作失敗，請重試。"); return false; }
+    try { action(); report(toast, success); setPending(null); setReason(""); return true; }
+    catch (error) { reportFail(toast, error, "操作失敗，請重試。"); return false; }
   }
   function open(id: string, key: string) {
     if (!run(() => careActions.open(id, key))) return;

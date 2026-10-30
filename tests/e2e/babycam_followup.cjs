@@ -16,26 +16,17 @@ const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-res
   await page.goto(base + "/babycam/");
   await page.getByRole("link", { name: "寶寶登錄", exact: true }).click(); await page.getByRole("button", { name: "寶寶登錄與標籤", exact: true }).click();
 
-  /* 寶寶改用按鈕列挑、胎序改用胎別按鈕（客戶 2026-10-29），不再是下拉與數字框。
-     第一顆按鈕就是這筆入住的第一位寶寶。 */
-  // 這筆入住的第一顆寶寶按鈕（localStorage 此時還沒寫入，名稱只能從畫面取）。
-  const babyButtons = page.locator('fieldset:has(legend:text-is("這筆入住的寶寶")) button');
-  await babyButtons.first().click();
+  /* 「選雙胞胎就一次登錄兩位」（客戶 2026-10-30）：按胎別就長出第二組欄位，
+     胎序 1、2 由系統給，護理人員不必碰那個編號。第二位的監視器也自動挑一支沒人用的。 */
   await page.getByRole("button", { name: "雙胞胎", exact: true }).click();
-  await page.getByRole("button", { name: "A（第 1 位）", exact: true }).click();
-  await page.getByRole("button", { name: "儲存原寶寶指派", exact: true }).click();
+  await page.getByLabel("第 2 位寶寶姓名", { exact: true }).fill("多胞胎測試二寶");
+  await page.getByLabel("第 2 位車號", { exact: true }).fill("TWINS99");
+  await page.getByRole("button", { name: /^(登錄這 2 位寶寶|儲存這 2 位的資料)$/ }).click();
+  await page.getByRole("status").filter({ hasText: "已登錄 2 位寶寶" }).waitFor();
   const data = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1")));
-  const binding = data.bindings[0]; const first = binding.babies[0];
-  assert.equal(first.birthOrder, 1);
-  await page.getByRole("button", { name: "＋ 新增寶寶", exact: true }).click();
-  await page.getByLabel("寶寶姓名", { exact: true }).fill("多胞胎測試二寶");
-  await page.getByLabel("車號", { exact: true }).fill("TWINS99");
-  await page.getByRole("button", { name: "雙胞胎", exact: true }).click();
-  await page.getByRole("button", { name: "B（第 2 位）", exact: true }).click();
-  const freeCamera = data.cameras.find((camera) => camera.enabled && !data.bindings.some((item) => !item.ended && item.babies.some((baby) => baby.cameraId === camera.id)));
-  // 監視器改以晶片網格挑選（隱藏的 checkbox，aria-label 為「監視器 {代碼}」）。
-  await page.getByRole("checkbox", { name: `監視器 ${freeCamera.code}`, exact: true }).check();
-  await page.getByRole("button", { name: "指派新寶寶", exact: true }).click();
+  // 一次登錄兩位後 babies 的陣列順序不保證，明確取胎序 1 的那位（畫面上排第一、也是下面要解除的）。
+  const binding = data.bindings[0]; const first = binding.babies.find((baby) => baby.birthOrder === 1);
+  assert.deepEqual(binding.babies.map((baby) => baby.birthOrder).sort(), [1, 2]);
   await page.getByRole("button", { name: "產生標籤預覽", exact: true }).click();
   await page.getByAltText("寶寶 2 標籤預覽").waitFor();
   await page.goto(`${base}/babycam/scan/?code=${encodeURIComponent(first.identityCode)}`);
@@ -43,9 +34,8 @@ const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-res
   await page.getByRole("status").filter({ hasText: "身分核對通過" }).waitFor();
   // 掃碼頁現在直接落在「掃碼歸位核對」，要解除指派得先切到登錄頁籤。
   await page.getByRole("button", { name: "寶寶登錄與標籤", exact: true }).click();
-  await babyButtons.first().click();
-  await page.getByRole("button", { name: "解除此寶寶指派", exact: true }).click();
-  await page.getByRole("button", { name: "確認解除指派", exact: true }).click();
+  await page.getByRole("button", { name: "解除這一位的指派", exact: true }).first().click();
+  await page.getByRole("button", { name: "確認解除", exact: true }).click();
   // 再切回核對頁籤，確認該標籤已失效、不能再歸位。
   await page.getByRole("button", { name: "掃碼歸位核對", exact: true }).click();
   await page.getByRole("status").filter({ hasText: "此識別標籤已失效" }).waitFor();
@@ -53,7 +43,8 @@ const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-res
   await page.getByLabel("選擇入住案件", { exact: true }).selectOption(binding.id);
   await page.getByLabel("應歸位的寶寶", { exact: true }).selectOption({ index: 1 });
   await page.getByRole("button", { name: "核對並歸位", exact: true }).click();
-  await page.getByRole("status").filter({ hasText: "識別不符" }).waitFor();
+  // 失敗訊息改走浮出提示（Toast 的 error 是 role="alert"，成功才是 status）。
+  await page.getByRole("alert").filter({ hasText: "識別不符" }).waitFor();
   const removed = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1")));
   assert.ok(removed.subjects.some((subject) => subject.id === first.babyId));
   assert.equal(removed.bindings[0].babies.length, 1);

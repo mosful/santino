@@ -98,6 +98,10 @@ export const careActions = {
       const errors = validateCareForm(form, document.values);
       if (form.signature && !document.signature) errors.push("請先確認對象並完成本筆簽名。");
       if (form.key === "guidance" && ["recipient", "executor", "evaluator"].some((role) => !document.signatures?.[role as CareSignatureRole])) errors.push("護理指導單須完成媽媽／家屬、執行者及評值者三方簽名。");
+      /* ⚠️ 這一條**刻意保留硬擋**，與客戶 2026-10-30「檢查只提醒不要擋」的方向相反。
+         簽出會把這筆鎖成唯讀，放行等於產生一張「缺簽名卻已簽出」的表單，而且之後
+         連補簽都不行（signRole 會跳「此筆已完成簽出」），比擋在這裡更難救。
+         要在缺項狀態下繼續 DEMO，用「暫存」留草稿，填齊再簽出。 */
       if (errors.length) throw new Error(errors.join("\n"));
       const at = now();
       document.values.time = new Date(at).toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Toast, useToast } from "@/components/ui/Toast";
 import Choice from "@/components/ui/ChoiceField";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { SummaryRow as DetailRow } from "@/components/ui/Workspace";
@@ -53,7 +54,7 @@ export default function PricingCalculator({ onUse }: { onUse: (name: string, pho
   const [addOns, setAddOns] = useState<string[]>([]);
   const [tasting, setTasting] = useState(false);
   const [bossGift, setBossGift] = useState("");
-  const [message, setMessage] = useState("");
+  const [toast, toastProps] = useToast();
   const { data } = useDomainStore();
   const saved = useSavedQuotes();
 
@@ -172,7 +173,7 @@ export default function PricingCalculator({ onUse }: { onUse: (name: string, pho
               className={buttonStyles()}
               onClick={() => {
                 quoteActions.save({ name, phone, roomType, days, hospital, priceClass, corporateCompany, total: payable });
-                setMessage("已暫存這筆試算，可在下方取回。");
+                toast.ok("已暫存這筆試算，可在下方取回。");
               }}
             >
               暫存試算
@@ -182,7 +183,7 @@ export default function PricingCalculator({ onUse }: { onUse: (name: string, pho
             </button>
             <button type="button" className={buttonStyles()} onClick={() => window.print()}>列印試算單</button>
           </div>
-          {message && <p role="status" className="text-sm text-stone-600">{message}</p>}
+          <Toast {...toastProps} />
         </aside>
       </div>
 
@@ -190,7 +191,7 @@ export default function PricingCalculator({ onUse }: { onUse: (name: string, pho
         <section className="space-y-2" data-no-print>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-semibold">已暫存的試算（{saved.length}）</h3>
-            <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { quoteActions.clear(); setMessage("已清空暫存試算。"); }}>全部清除</button>
+            <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { quoteActions.clear(); toast.ok("已清空暫存試算。"); }}>全部清除</button>
           </div>
           <p className="text-xs text-stone-500">同一位媽媽常要比兩三個方案；暫存只存在這台瀏覽器，最多保留 10 筆。</p>
           <div className="overflow-x-auto rounded-xl border border-stone-200">
@@ -219,12 +220,12 @@ export default function PricingCalculator({ onUse }: { onUse: (name: string, pho
                           onClick={() => {
                             setName(item.name); setPhone(item.phone); setRoomType(item.roomType as CaseRecord["roomType"]);
                             setDays(item.days); setHospital(item.hospital); setPriceClass(item.priceClass); setCorporateCompany(item.corporateCompany);
-                            setMessage("已取回這筆試算。");
+                            toast.ok("已取回這筆試算。");
                           }}
                         >
                           取回
                         </button>
-                        <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { quoteActions.remove(item.id); setMessage("已刪除這筆暫存。"); }}>刪除</button>
+                        <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { quoteActions.remove(item.id); toast.ok("已刪除這筆暫存。"); }}>刪除</button>
                       </div>
                     </td>
                   </tr>

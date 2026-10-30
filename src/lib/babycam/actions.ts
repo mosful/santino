@@ -5,6 +5,7 @@ import { getCurrentRole } from "../roleStore";
 import type { BabyBinding, DemoDomain, ViewingBinding, WindowRule } from "../domain/types";
 import { validTime } from "../domain/rules";
 import { normalizeCartNo } from "./cart-no";
+import { guard } from "../demo/lenient";
 import { closeViewingHistory } from "./history";
 import { normalizePrintSettings } from "./wristband-print";
 import { getAccess, ROLES, type AccessLevel, type Role } from "../permissions";
@@ -64,15 +65,19 @@ export const babycamActions = {
   assign(id: string, input: { babyId?: string; name: string; cameraId: string; cartNo: string; birthDate: string; sex: "男" | "女"; birthOrder: number; reason?: string }) {
     domainStore.update((data) => {
       requireSection(data, "02"); const binding = bindingOf(data, id);
-      if (!input.name.trim() || !input.cartNo.trim() || !input.birthDate || !input.cameraId || !Number.isInteger(input.birthOrder) || input.birthOrder < 0) throw new Error("請填寫寶寶、車號、生日、胎序與監視器。");
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(input.birthDate) || !Number.isFinite(Date.parse(input.birthDate)) || new Date(input.birthDate).toISOString().slice(0, 10) !== input.birthDate) throw new Error("出生日期格式不正確。");
+      // 必填與格式在需求確認期間只提醒（客戶 2026-10-30）；監視器仍要選，否則整頁找不到裝置。
+      guard(Boolean(input.name.trim() && input.cartNo.trim() && input.birthDate), "寶寶姓名、車號或出生日期尚未填寫。");
+      if (!input.cameraId) throw new Error("請選擇一支監視器。");
+      guard(!input.birthDate || (/^\d{4}-\d{2}-\d{2}$/.test(input.birthDate) && new Date(input.birthDate).toISOString().slice(0, 10) === input.birthDate), "出生日期格式不正確。");
       if (!data.cameras.some((camera) => camera.id === input.cameraId && camera.enabled)) throw new Error("請選擇啟用中的監視器。");
       const babyId = input.babyId || `baby-${crypto.randomUUID()}`;
-      const siblings = binding.babies.filter((baby) => baby.babyId !== babyId);
-      if (siblings.length && (input.birthOrder === 0 || siblings.some((baby) => (baby.birthOrder ?? 0) === 0))) throw new Error("多胞胎須各有胎序，請先將既有寶寶的單胞胎 0 改為胎序 1，再新增另一位。");
-      const cartNo = normalizeCartNo(input.cartNo);
-      if (!cartNo) throw new Error("車號請使用 1 至 10 碼英數或連字號。");
-      if (binding.babies.some((baby) => baby.babyId !== babyId && (baby.birthOrder ?? 0) === input.birthOrder)) throw new Error("多胞胎請使用不同胎序，並將單胞胎 0 改為對應胎序。");
+      const normalized = normalizeCartNo(input.cartNo);
+      guard(Boolean(normalized), "車號請使用 1 至 10 碼英數或連字號。");
+      // 格式不合也照存，但存回原字串而不是 null——車號是顯示欄位，null 會讓房卡與標籤變空白。
+      const cartNo = normalized ?? input.cartNo.trim();
+      /* 原本這裡擋「多胞胎須各有胎序，請先把既有寶寶的 0 改成 1」——那是要求護理人員
+         自己去維護一個內部編號，客戶 2026-10-29 直接說這檢查很奇怪。胎序現在由畫面的
+         胎別決定（選雙胞胎就一次登錄兩位、自動給 1、2），不再要人工對齊。 */
       if (data.bindings.some((item) => !item.ended && item.babies.some((baby) => baby.babyId !== babyId && (baby.cameraId === input.cameraId || normalizeCartNo(baby.cartNo) === cartNo)))) throw new Error("監視器或車號已由其他寶寶使用。");
       const existing = binding.babies.find((baby) => baby.babyId === babyId);
       /* 換鏡頭的歷程就是這一段區間：封閉舊的、開一段新的，原因寫在新區間上。

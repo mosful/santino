@@ -13,6 +13,7 @@ import { dailyCharges } from "../domain/rules";
 import { caseDoc } from "../domain/caseDocs";
 import { DEFAULT_SALE_ITEMS } from "../domain/sales";
 import { HOSPITALS } from "../domain/options";
+import { guard } from "./lenient";
 
 function valid(value: unknown): value is DemoDomain {
   const data = value as DemoDomain | null;
@@ -335,8 +336,9 @@ export const caseActions = {
     domainStore.update((data) => {
       const record = findCase(data, id); if (record.stage !== 3) throw new Error("請在合約階段完成簽名。");
       if (record.signed) throw new Error("原合約已簽署，請保留簽名與快照，條件異動另開變更單。");
-      if (!record.contractNo || !record.reviewStart || !record.signedDate || record.reviewStart > record.signedDate) throw new Error("請先填寫收字號、簽約日與正確審閱日。");
-      if (Date.parse(record.signedDate) - Date.parse(record.reviewStart) < data.contractSettings.reviewDays * 86_400_000) throw new Error(`簽名前請確認至少 ${data.contractSettings.reviewDays} 天的示範審閱期。`);
+      // 需求確認期間只提醒、照樣簽（客戶 2026-10-30）；要擋回去把 guard 換回 throw。
+      guard(Boolean(record.contractNo && record.reviewStart && record.signedDate && record.reviewStart <= record.signedDate), "收字號、簽約日或攜回審閱日尚未填妥。");
+      guard(!record.signedDate || !record.reviewStart || Date.parse(record.signedDate) - Date.parse(record.reviewStart) >= data.contractSettings.reviewDays * 86_400_000, `審閱期不足 ${data.contractSettings.reviewDays} 天。`);
       record.signature = image; record.signed = true; record.contractVersion = 1;
       if (record.proxySigned && !record.proxyName?.trim()) throw new Error("代簽時請填寫代簽者姓名與關係。");
       record.contractStamp = currentActor();
@@ -346,7 +348,9 @@ export const caseActions = {
   },
   advance(id: string) {
     domainStore.update((data) => {
-      const record = findCase(data, id); const reviewDays = record.signed && record.contractSnapshot ? JSON.parse(record.contractSnapshot).reviewDays ?? data.contractSettings.reviewDays : data.contractSettings.reviewDays; const errors = caseTransitionErrors(record, reviewDays); if (errors.length) throw new Error(errors.join("\n"));
+      const record = findCase(data, id); const reviewDays = record.signed && record.contractSnapshot ? JSON.parse(record.contractSnapshot).reviewDays ?? data.contractSettings.reviewDays : data.contractSettings.reviewDays; const errors = caseTransitionErrors(record, reviewDays);
+      // 需求確認期間缺項只提醒、照樣推進（客戶 2026-10-30）；要擋回去把 guard 換回 throw。
+      guard(!errors.length, errors.join("\n"));
       if (record.stage === 4) {
         if (!data.rooms.some((room) => room.room === record.room && room.enabled)) throw new Error("請使用房間主檔內的有效房號。");
         if (data.cases.some((item) => item.id !== id && item.room === record.room && item.actualAdmission && !item.dischargedAt)) throw new Error("此房已有入住個案，請選擇其他空房。");

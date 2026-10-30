@@ -72,6 +72,8 @@ test("護理指導單須保留媽媽、執行者與評值者三方簽名", () =>
   reset(); careActions.open(first.id, "guidance"); const key = `${first.id}:guidance`;
   careActions.change(key, { date: "2026-10-18" });
   careActions.signRole(key, "recipient", "data:image/png;base64,recipient");
+  /* 照護簽出刻意保留硬擋（見 care/store.ts 的說明）：簽出會把這筆鎖成唯讀，
+     放行會產生「缺簽名卻已簽出」且補不回來的表單。 */
   assert.throws(() => careActions.complete(key), /三方簽名/);
   careActions.signRole(key, "executor", "data:image/png;base64,executor");
   careActions.signRole(key, "evaluator", "data:image/png;base64,evaluator");

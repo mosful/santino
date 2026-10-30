@@ -57,12 +57,14 @@ async function decodeQr(locator, label = false) {
   const binding = await page.evaluate((id) => JSON.parse(localStorage.getItem("santino_domain_v1")).bindings.find((item) => item.caseId === id), caseRecord.id);
   await page.getByLabel("選擇入住案件", { exact: true }).selectOption(binding.id);
   await page.getByRole("link", { name: "寶寶登錄", exact: true }).click(); await page.getByRole("button", { name: "寶寶登錄與標籤", exact: true }).click();
-  await page.getByLabel("寶寶姓名", { exact: true }).fill("整合測試寶寶");
-  await page.getByLabel("車號", { exact: true }).fill("DEMO-99");
+  /* 表單改成「選了幾位就填幾組」（客戶 2026-10-30），欄位帶位次：第 1 位寶寶姓名／車號。
+     預設是單胞胎一組。 */
+  await page.getByLabel("第 1 位寶寶姓名", { exact: true }).fill("整合測試寶寶");
+  await page.getByLabel("第 1 位車號", { exact: true }).fill("DEMO-99");
   // 監視器改以晶片網格挑選（原本是下拉）；挑一支未指派的。
   // 已指派的晶片 aria-label 會帶「（已指派）」，用 $ 結尾挑第一支還沒人用的。
   await page.getByRole("checkbox", { name: /^監視器 [AB]\d+$/ }).first().check();
-  await page.getByRole("button", { name: "指派新寶寶", exact: true }).click();
+  await page.getByRole("button", { name: "登錄這 1 位寶寶", exact: true }).click();
   const assigned = await page.evaluate((id) => JSON.parse(localStorage.getItem("santino_domain_v1")).bindings.find((item) => item.id === id), binding.id);
   assert.equal(assigned.babies.length, 1);
   await page.getByRole("button", { name: "產生標籤預覽", exact: true }).click();

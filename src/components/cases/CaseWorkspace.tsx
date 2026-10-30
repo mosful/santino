@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { report, reportFail } from "@/lib/demo/lenient";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
@@ -201,8 +202,8 @@ export default function CaseWorkspace() {
   const backfill = canEditCompletedStage(role);
   const stageEditable = (index: number) => !!record && edit && (index === record.stage || (backfill && index < record.stage));
   function run(action: () => void, feedback = "已儲存並更新案件資料。") {
-    try { action(); toast.ok(feedback); setOperation(null); setReason(""); return true; }
-    catch (error) { toast.fail(error instanceof Error ? error.message : "操作失敗。"); return false; }
+    try { action(); report(toast, feedback); setOperation(null); setReason(""); return true; }
+    catch (error) { reportFail(toast, error); return false; }
   }
   const patch = (change: Partial<CaseRecord>) => record && run(() => caseActions.update(record.id, change), "共通資料與後續階段已同步；已簽合約快照保留。");
   const patchReservation = (change: Partial<ReservationInput>) => setReservation((current) => ({ ...current, ...change }));

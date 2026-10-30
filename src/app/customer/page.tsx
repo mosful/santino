@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Download } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import { useAccess } from "@/lib/roleStore";
@@ -16,6 +17,8 @@ import { caseActions, domainStore } from "@/lib/demo/domainStore";
 import DemoActionButton from "@/components/ui/DemoActionButton";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { Toast, useToast } from "@/components/ui/Toast";
+import CollapsibleSection from "@/components/ui/CollapsibleSection";
+import { downloadFile, toBrowserXlsx } from "@/lib/babycam/exports";
 
 const columns: Column<Customer>[] = [
   { key: "name", label: "媽媽姓名" },
@@ -28,6 +31,35 @@ const columns: Column<Customer>[] = [
   { key: "mainNurse", label: "主要護理師" },
   { key: "family", label: "關聯家屬人" },
 ];
+
+/*
+  匯出 Excel 的欄位（客戶 2026-10-30）。
+
+  畫面上把「等級/胎次」「生日/預產期」「合約/簽約日期」併成一欄比較省橫向空間，
+  但匯出要給人篩選與樞紐，所以一欄一值拆開。
+*/
+const EXPORT_COLUMNS: { label: string; value: (row: Customer) => string }[] = [
+  { label: "媽媽姓名", value: (row) => row.name },
+  { label: "客戶等級", value: (row) => row.level },
+  { label: "胎次", value: (row) => row.parity },
+  { label: "手機／電話", value: (row) => row.phone },
+  { label: "生日", value: (row) => row.birthday },
+  { label: "預產期", value: (row) => row.dueDate },
+  { label: "收字號", value: (row) => row.contractNo ?? "" },
+  { label: "簽約日", value: (row) => row.signDate ?? "" },
+  { label: "參觀日", value: (row) => row.visitDate ?? "" },
+  { label: "介紹人", value: (row) => row.referrer },
+  { label: "主要客服", value: (row) => row.mainStaff },
+  { label: "主要護理師", value: (row) => row.mainNurse },
+  { label: "關聯家屬", value: (row) => row.family },
+  { label: "LINE 綁定", value: (row) => (row.lineBound ? "已綁定" : "未綁定") },
+];
+
+/** 查詢條件的空白值；「全部」用空字串表示，比對時直接跳過。 */
+const filterInput = "min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
+
+/** 查詢條件的空白值；「全部」用空字串或「全部」表示，比對時直接跳過。 */
+const BLANK_FILTERS = { level: "", staff: "", nurse: "", contract: "全部", line: "全部", dueFrom: "", dueTo: "" };
 
 /**
  * 右上角三顆空白表單列印鈕先隱藏（客戶 2026-10-22）。程式保留，要開回改成 true。
@@ -178,6 +210,38 @@ export default function CustomerPage() {
 
   const customers = useCustomerRows();
   const [toast, toastProps] = useToast();
+  const [filters, setFilters] = useState(BLANK_FILTERS);
+
+  /* 下拉選項直接從現有資料長出來，不另外維護一份清單：主責人員與護理師會隨案件變動，
+     寫死的話新來的同事永遠不在選單裡。 */
+  const optionsOf = (pick: (row: Customer) => string) => [...new Set(customers.map(pick).filter(Boolean))].sort();
+
+  const matched = customers.filter((row) => {
+    if (filters.level && row.level !== filters.level) return false;
+    if (filters.staff && row.mainStaff !== filters.staff) return false;
+    if (filters.nurse && row.mainNurse !== filters.nurse) return false;
+    if (filters.contract === "已簽約" && !row.contractNo) return false;
+    if (filters.contract === "尚未簽約" && row.contractNo) return false;
+    if (filters.line === "已綁定" && !row.lineBound) return false;
+    if (filters.line === "未綁定" && row.lineBound) return false;
+    // 沒有預產期的案件在設了區間時就不該出現，否則「篩 11 月」會混進一批空白。
+    if (filters.dueFrom && (!row.dueDate || row.dueDate < filters.dueFrom)) return false;
+    if (filters.dueTo && (!row.dueDate || row.dueDate > filters.dueTo)) return false;
+    return true;
+  });
+
+  function exportExcel() {
+    if (!matched.length) {
+      toast.fail("目前條件沒有資料可以匯出。");
+      return;
+    }
+    downloadFile(
+      `客戶資料_${domainStore.get().demoAt.slice(0, 10)}.xlsx`,
+      toBrowserXlsx(EXPORT_COLUMNS.map((column) => column.label), matched.map((row) => EXPORT_COLUMNS.map((column) => column.value(row)))),
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    toast.ok(`已匯出 ${matched.length} 筆客戶資料。`);
+  }
   const [selected, setSelected] = useState<Customer | null>(null);
   const [editing, setEditing] = useState(false);
   const [isNew, setIsNew] = useState(false);
@@ -262,7 +326,59 @@ export default function CustomerPage() {
           </div>
         }
       />
-      <QueryList columns={columns} rows={customers} onRowClick={openView} />
+      {/*
+        查詢條件（客戶 2026-10-30）。關鍵字搜尋留在下方 QueryList（它本來就有，且支援模糊比對），
+        這裡放需要「選」的條件：等級、主責人員、合約狀態、LINE 綁定、預產期區間。
+        條件是 AND，結果同時餵給清單與匯出——畫面看到什麼就匯出什麼。
+      */}
+      <CollapsibleSection id="customer-filters" title="查詢條件" summary={`符合 ${matched.length} / ${customers.length} 筆`} bodyClassName="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <label className="block space-y-1.5 text-sm">客戶等級
+            <select aria-label="客戶等級" className={filterInput} value={filters.level} onChange={(event) => setFilters({ ...filters, level: event.target.value })}>
+              <option value="">全部</option>
+              {optionsOf((row) => row.level).map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
+          <label className="block space-y-1.5 text-sm">主要客服
+            <select aria-label="主要客服" className={filterInput} value={filters.staff} onChange={(event) => setFilters({ ...filters, staff: event.target.value })}>
+              <option value="">全部</option>
+              {optionsOf((row) => row.mainStaff).map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
+          <label className="block space-y-1.5 text-sm">主要護理師
+            <select aria-label="主要護理師" className={filterInput} value={filters.nurse} onChange={(event) => setFilters({ ...filters, nurse: event.target.value })}>
+              <option value="">全部</option>
+              {optionsOf((row) => row.mainNurse).map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
+          <label className="block space-y-1.5 text-sm">合約狀態
+            <select aria-label="合約狀態" className={filterInput} value={filters.contract} onChange={(event) => setFilters({ ...filters, contract: event.target.value })}>
+              {["全部", "已簽約", "尚未簽約"].map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
+          <label className="block space-y-1.5 text-sm">LINE 綁定
+            <select aria-label="LINE 綁定" className={filterInput} value={filters.line} onChange={(event) => setFilters({ ...filters, line: event.target.value })}>
+              {["全部", "已綁定", "未綁定"].map((item) => <option key={item}>{item}</option>)}
+            </select>
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block space-y-1.5 text-sm">預產期起
+              <input aria-label="預產期起" type="date" className={filterInput} value={filters.dueFrom} onChange={(event) => setFilters({ ...filters, dueFrom: event.target.value })} />
+            </label>
+            <label className="block space-y-1.5 text-sm">預產期迄
+              <input aria-label="預產期迄" type="date" className={filterInput} value={filters.dueTo} onChange={(event) => setFilters({ ...filters, dueTo: event.target.value })} />
+            </label>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => setFilters(BLANK_FILTERS)}>清除條件</button>
+          <button type="button" className={buttonStyles({ variant: "primary", size: "sm", className: "ml-auto" })} onClick={exportExcel}>
+            <Download className="h-3.5 w-3.5" aria-hidden="true" />
+            匯出 Excel（{matched.length} 筆）
+          </button>
+        </div>
+      </CollapsibleSection>
+      <QueryList columns={columns} rows={matched} onRowClick={openView} />
       <Toast {...toastProps} />
       <Modal
         open={!!selected}

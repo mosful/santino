@@ -45,6 +45,25 @@ const assert = require("node:assert/strict"); const fs = require("node:fs/promis
   await page.goto(base + "/cases/calendar/"); await page.getByLabel("新增待辦事項類別", { exact: true }).selectOption("入住"); await page.getByLabel("待辦事項內容", { exact: true }).fill("整合待辦測試"); await page.getByRole("button", { name: "新增待辦事項", exact: true }).click(); await page.getByText(/入住｜整合待辦測試/).waitFor();
   await page.getByTitle("切換模擬角色，選單會依該角色權限立即隱藏或顯示", { exact: true }).click(); await page.getByRole("button", { name: /^護理師/ }).click();
   assert.equal(await page.getByRole("button", { name: "醫師巡診", exact: true }).getAttribute("aria-pressed"), "true"); assert.equal(await page.getByRole("button", { name: "入住", exact: true }).getAttribute("aria-pressed"), "false");
+  /* 客戶資料的查詢條件與匯出 Excel（客戶 2026-10-30）：條件要真的縮小結果，
+     匯出的是「畫面上這份」而不是全部，而且下載得到真的 xlsx。 */
+  // 上一段把角色切成護理師了，而客戶資料（模組 5）護理師沒有權限——先切回櫃台。
+  await page.goto(base + "/customer/");
+  await page.evaluate(() => localStorage.setItem("santino_current_role_v1", "櫃台"));
+  await page.reload({ waitUntil: "domcontentloaded" });
+  const allRows = Number((await page.getByText(/符合 \d+ \/ \d+ 筆/).innerText()).match(/\/ (\d+) 筆/)[1]);
+  await page.getByLabel("合約狀態", { exact: true }).selectOption("已簽約");
+  const signedRows = Number((await page.getByText(/符合 \d+ \/ \d+ 筆/).innerText()).match(/符合 (\d+)/)[1]);
+  assert.ok(signedRows > 0 && signedRows < allRows, `已簽約應該是全部的子集，實際 ${signedRows}/${allRows}`);
+  const customerDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: /匯出 Excel/ }).click();
+  const customerXlsx = `${output}/customers.xlsx`; await (await customerDownload).saveAs(customerXlsx);
+  const customerBytes = await fs.readFile(customerXlsx);
+  assert.equal(customerBytes.subarray(0, 2).toString("latin1"), "PK");
+  await page.getByRole("status").filter({ hasText: `已匯出 ${signedRows} 筆` }).waitFor();
+  await page.getByRole("button", { name: "清除條件", exact: true }).click();
+  assert.match(await page.getByText(/符合 \d+ \/ \d+ 筆/).innerText(), new RegExp(`符合 ${allRows} `));
+
   await page.screenshot({ path: `${output}/calendar-role.png`, fullPage: true }); assert.deepEqual(errors, []); assert.deepEqual(requests, []);
-  const result = { checks: ["換房與變更單", "過去費用主管例外", "逐日明細", "返家照片與寄送示意", "退房轉托嬰車號同步", "舊入口修改托嬰條件", "接回終止觀看", "十類待辦與角色預設"], errors, requests }; await fs.writeFile(`${output}/result.json`, JSON.stringify(result, null, 2)); console.log(JSON.stringify(result)); await browser.close();
+  const result = { checks: ["換房與變更單", "過去費用主管例外", "逐日明細", "返家照片與寄送示意", "退房轉托嬰車號同步", "舊入口修改托嬰條件", "接回終止觀看", "客戶資料查詢與匯出", "十類待辦與角色預設"], errors, requests }; await fs.writeFile(`${output}/result.json`, JSON.stringify(result, null, 2)); console.log(JSON.stringify(result)); await browser.close();
 })().catch(async (error) => { console.error(error); await activeBrowser?.close(); process.exitCode = 1; });

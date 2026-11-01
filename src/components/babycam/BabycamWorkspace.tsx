@@ -5,12 +5,14 @@
 
 import Link from "next/link";
 import { Toast, useToast } from "@/components/ui/Toast";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { ExternalLink, Printer, QrCode } from "lucide-react";
 import { BASE_PATH } from "@/lib/basePath";
 import Button, { ButtonLink } from "@/components/ui/Button";
-import { useDomainStore } from "@/lib/demo/domainStore";
+import { useLiveBabycamData } from "@/lib/babycam/useLiveBabycamData";
+import { activeDisinfection } from "@/lib/babycam/disinfection";
+import Modal from "@/components/ui/Modal";
 import { useCurrentRole } from "@/lib/roleStore";
 import HeaderSlot from "@/components/layout/HeaderSlot";
 import { headerTabClass } from "@/components/ui/Tabs";
@@ -25,10 +27,12 @@ import { cameraHost, DEFAULT_NETWORK_PREFIX } from "@/lib/babycam/network";
 import type { WindowRule } from "@/lib/domain/types";
 import CamPreview from "./CamPreview";
 import BindingEditor from "./BindingEditor";
+import RegistrationDetails from "./RegistrationDetails";
 import DisinfectionSchedule from "./DisinfectionSchedule";
 import MaintenanceConsole from "./MaintenanceConsole";
 import DemoReset from "./DemoReset";
 import { cameraTimeRows } from "@/lib/babycam/cameraTime";
+import { taipeiDate, taipeiHhmm } from "@/lib/babycam/schedule";
 import { PrintSettingsEditor, CameraMetadata } from "./BabycamMasterPanels";
 import StateMaintenance from "./StateMaintenance";
 import { LightStatePanel, RelayBoard, RingLightBoard } from "./RingLightPanels";
@@ -222,7 +226,7 @@ export default function BabycamWorkspace({
   initialScanCode?: string;
   initialBindingId?: string;
 }) {
-  const { data, storageError } = useDomainStore();
+  const { data, storageError } = useLiveBabycamData();
   const role = useCurrentRole();
 
   /*
@@ -237,11 +241,15 @@ export default function BabycamWorkspace({
   const group = legacy.group;
   const [tabOverrides, setTabOverrides] = useState<Partial<Record<GroupId, string>>>({});
   const tabs: Record<GroupId, string> = { ...DEFAULT_TAB, [group]: legacy.tab, ...tabOverrides };
+  const [registrationCaseId, setRegistrationCaseId] = useState("");
   const [bindingId, setBindingId] = useState(initialBindingId);
   const [cameraId, setCameraId] = useState("");
   const [toast, toastProps] = useToast();
   const [scanCode, setScanCode] = useState(initialScanCode);
   const [scanBaby, setScanBaby] = useState("");
+  const [labelDialog, setLabelDialog] = useState(false);
+  const [printDialog, setPrintDialog] = useState(false);
+  const labelGeneration = useRef(0);
   const [labelImages, setLabelImages] = useState<string[]>([]);
   /* 標籤要印哪幾位（客戶 2026-10-29：多胞胎預設全勾）。
      存的是「不印的 babyId」而不是「要印的」——這樣換到另一筆入住時不必重設，
@@ -275,9 +283,11 @@ export default function BabycamWorkspace({
     data.bindings.find((item) => item.id === bindingId && !item.ended) ??
     scannedBinding ??
     (initialScanCode ? undefined : data.bindings.find((item) => !item.ended));
+  const pendingRegistrations = data.cases.filter((item) => item.stage >= 3 && item.contractNo && !item.closed && !item.dischargedAt && !data.bindings.some((target) => target.caseId === item.id && !target.ended));
   const expectedBabyId = scanBaby || scannedBinding?.babies.find((baby) => baby.identityCode === initialScanCode)?.babyId || "";
   const camera = data.cameras.find((item) => item.id === cameraId) ?? data.cameras[0];
   const zoneCameras = data.cameras.filter((item) => zone === "全部" || item.code.startsWith(zone));
+  const cameraDisinfecting = activeDisinfection(data, data.bindings.find((item) => !item.ended && item.babies.some((baby) => baby.cameraId === camera.id))?.room ?? "");
   function run(action: () => void, feedback = "已儲存，相關畫面及紀錄已同步。") {
     try {
       action();
@@ -295,7 +305,7 @@ export default function BabycamWorkspace({
     if (!activeGroup) return;
     setTabOverrides((current) => ({ ...current, [activeGroup.id]: id }));
     toast.clear();
-    setLabelImages([]);
+    labelGeneration.current++; setLabelImages([]);
   }
 
   /* 欄位依客戶 2026-10-29 指定精簡：照護拿掉「照護秒數」，觀看拿掉「受眾」「裝置識別」
@@ -335,6 +345,42 @@ export default function BabycamWorkspace({
     return row.join(" ").includes(keyword) && (!dateFrom || date >= dateFrom) && (!dateTo || date <= dateTo);
   });
 
+  async function generateLabels() {
+    if (!binding) return;
+    const generation = ++labelGeneration.current;
+    try {
+      const picked = binding.babies.filter((baby) => !labelSkip.includes(baby.babyId));
+      if (!picked.length) throw new Error("請至少勾選一位寶寶。");
+      await loadPrintFont(data.printSettings);
+      if (generation !== labelGeneration.current) return;
+      const images = picked.map((baby) => {
+        const subject = data.subjects.find((item) => item.id === baby.babyId)!;
+        const rendered = renderWristband(
+          binding.room,
+          binding.motherName,
+          {
+            cameraId: Number(baby.cameraId.replace("camera-", "")) || 1,
+            cameraCode: data.cameras.find((item) => item.id === baby.cameraId)?.code ?? "",
+            babyName: subject.name,
+            cartNo: baby.cartNo,
+            identityCode: baby.identityCode,
+            scanUrl: `${window.location.origin}${BASE_PATH}/babycam/scan/?code=${encodeURIComponent(baby.identityCode)}`,
+            birthDate: subject.birthDate ?? "2026-10-01",
+            sex: subject.gender === "女" ? "female" : "male",
+            birthOrder: baby.birthOrder ?? 0,
+          },
+          data.printSettings,
+        );
+        if (rendered.overflow) throw new Error(rendered.reasons.join("、"));
+        return rendered.canvas.toDataURL();
+      });
+      setLabelImages(images);
+      toast.ok(`已產生 ${images.length} 位寶寶的標籤預覽。`);
+    } catch (error) {
+      toast.fail(error instanceof Error ? error.message : "標籤預覽失敗。");
+    }
+  }
+
   if (!activeGroup || !active) {
     return (
       <p className="rounded-2xl border border-dashed border-border-subtle bg-surface-raised p-8 text-center text-sm text-stone-500">
@@ -352,7 +398,7 @@ export default function BabycamWorkspace({
         value={binding?.id ?? ""}
         onChange={(event) => {
           setBindingId(event.target.value);
-          setLabelImages([]);
+          labelGeneration.current++; setLabelImages([]);
         }}
       >
         <option value="">請選擇正確入住案件</option>
@@ -450,6 +496,7 @@ export default function BabycamWorkspace({
             form={
               <div className="space-y-4">
                 <SectionHeading no={1} title="櫃台登記與授權期間" description="選定案件後設定觀看起迄；親友可另訂期間，也可單獨關閉。" />
+                {pendingRegistrations.length > 0 && <section className="space-y-3 border-b border-stone-200 pb-4" aria-label="由合約帶入入住登記"><label className="block space-y-1.5 text-sm">由合約建立入住登記<select aria-label="選擇待登記合約" className={input} value={registrationCaseId} onChange={(event) => setRegistrationCaseId(event.target.value)}><option value="">請選擇尚未登記的案件</option>{pendingRegistrations.map((item) => <option key={item.id} value={item.id}>{item.contractNo}｜{item.name}｜{item.room || "尚未排房"}</option>)}</select></label><Button size="sm" disabled={!registrationCaseId} onClick={() => run(() => { const id = babycamActions.register(registrationCaseId); setBindingId(id); setRegistrationCaseId(""); }, "已從合約帶入入住登記，可再修改基本資料與觀看期間。")}>帶入合約資料</Button></section>}
                 {caseSelector}
                 {binding ? (
                   <>
@@ -462,6 +509,7 @@ export default function BabycamWorkspace({
                       {binding.motherName}｜{binding.room || "無房號托嬰"}｜
                       {binding.babies.length ? "已完成護理指派" : "櫃台已登記，待護理指派"}
                     </p>
+                    <RegistrationDetails key={`${binding.id}-${binding.motherName}-${binding.phone}-${binding.room}`} data={data} binding={binding} />
                     <div className="grid gap-3 sm:grid-cols-2">
                       <label className="space-y-1.5 text-sm">
                         觀看起日
@@ -523,19 +571,6 @@ export default function BabycamWorkspace({
                         作廢觀看授權
                       </Button>
                     </div>
-                    <SectionHeading no={2} title="本筆入住的時段覆寫" description="未設定時沿用全院與受眾時段；交集為空會顯示全天關閉。" />
-                    <WindowEditor
-                      key={`${binding.id}-internal`}
-                      label="本筆入住院內時段"
-                      value={binding.internalWindow}
-                      onChange={(internalWindow) => run(() => babycamActions.updateBinding(binding.id, { internalWindow }))}
-                    />
-                    <WindowEditor
-                      key={`${binding.id}-family`}
-                      label="本筆入住親友時段"
-                      value={binding.familyWindow}
-                      onChange={(familyWindow) => run(() => babycamActions.updateBinding(binding.id, { familyWindow }))}
-                    />
                   </>
                 ) : (
                   <p className="text-sm text-stone-500">請先選擇一筆入住案件。</p>
@@ -685,24 +720,15 @@ export default function BabycamWorkspace({
 
         {/* ── 02 寶寶登錄 ── */}
         {active.id === "assign" && (
-          <SplitWorkspace
-            form={
-              <div className="space-y-4">
-                <SectionHeading no={2} title="護理指派寶寶與監視器" description="先選媽媽，再選監視器與寶寶資料；儲存後即可列印手圈及嬰兒車標籤。" />
-                {caseSelector}
-                {binding ? (
-                  <>
-                    <BindingEditor key={binding.id} data={data} binding={binding} onChange={() => setLabelImages([])} />
-                    <PrintSettingsEditor value={data.printSettings} onSaved={() => setLabelImages([])} />
-                  </>
-                ) : (
-                  <p className="text-sm text-stone-500">請先選擇一筆入住案件。</p>
-                )}
-              </div>
-            }
-            aside={
-              <>
-                <AsideHeading eyebrow="護理交付" title="手圈與嬰兒車標籤" description="識別 QR 只用於核對寶寶，不授予觀看權限；版型固定 40 × 15 mm 雙排。" />
+          <div className="space-y-5 p-4 sm:p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0"><h2 className="text-base font-semibold">護理指派寶寶與監視器</h2><p className="mt-1 text-sm leading-6 text-stone-600">選擇入住案件，再設定寶寶、車號與監視器。儲存後由右側按鈕預覽或列印標籤。</p></div>
+              <div className="flex flex-wrap gap-2"><Button size="sm" disabled={!binding?.babies.length} onClick={() => { setLabelDialog(true); void generateLabels(); }}><Printer className="h-3.5 w-3.5" aria-hidden="true" />標籤預覽與列印</Button><Button size="sm" onClick={() => setPrintDialog(true)}>標籤列印設定</Button></div>
+            </div>
+            {caseSelector}
+            {binding ? <BindingEditor key={binding.id} data={data} binding={binding} onChange={() => setLabelImages([])} /> : <p className="text-sm text-stone-600">請先選擇一筆入住案件。</p>}
+            <Modal wide open={labelDialog} title="手圈與嬰兒車標籤" onClose={() => setLabelDialog(false)}>
+              <div className="space-y-4">                <p className="text-sm leading-6 text-stone-600">識別 QR 僅供核對寶寶，不提供觀看權限。標籤為 40 × 15 mm 雙排；請先預覽，再列印。</p>
                 {!binding || !binding.babies.length ? (
                   <AsideEmpty mark="標籤" title="等待指派寶寶" description="完成寶寶與監視器指派後，可在這裡產生並列印標籤。" />
                 ) : (
@@ -734,38 +760,7 @@ export default function BabycamWorkspace({
                     <Button
                       size="sm"
                       variant="primary"
-                      onClick={async () => {
-                        try {
-                          const picked = binding.babies.filter((baby) => !labelSkip.includes(baby.babyId));
-                          if (!picked.length) throw new Error("請至少勾選一位寶寶。");
-                          await loadPrintFont(data.printSettings);
-                          const images = picked.map((baby) => {
-                            const subject = data.subjects.find((item) => item.id === baby.babyId)!;
-                            const rendered = renderWristband(
-                              binding.room,
-                              binding.motherName,
-                              {
-                                cameraId: Number(baby.cameraId.replace("camera-", "")) || 1,
-                                cameraCode: data.cameras.find((item) => item.id === baby.cameraId)?.code ?? "",
-                                babyName: subject.name,
-                                cartNo: baby.cartNo,
-                                identityCode: baby.identityCode,
-                                scanUrl: `${window.location.origin}${BASE_PATH}/babycam/scan/?code=${encodeURIComponent(baby.identityCode)}`,
-                                birthDate: subject.birthDate ?? "2026-10-01",
-                                sex: subject.gender === "女" ? "female" : "male",
-                                birthOrder: baby.birthOrder ?? 0,
-                              },
-                              data.printSettings,
-                            );
-                            if (rendered.overflow) throw new Error(rendered.reasons.join("、"));
-                            return rendered.canvas.toDataURL();
-                          });
-                          setLabelImages(images);
-                          toast.ok(`已產生 ${images.length} 位寶寶的標籤預覽。`);
-                        } catch (error) {
-                          toast.fail(error instanceof Error ? error.message : "標籤預覽失敗。");
-                        }
-                      }}
+                      onClick={() => void generateLabels()}
                     >
                       產生標籤預覽
                     </Button>
@@ -780,9 +775,12 @@ export default function BabycamWorkspace({
                     )}
                   </div>
                 )}
-              </>
-            }
-          />
+              </div>
+            </Modal>
+            <Modal wide open={printDialog} title="標籤列印設定" onClose={() => setPrintDialog(false)}>
+              <PrintSettingsEditor value={data.printSettings} onSaved={() => setLabelImages([])} />
+            </Modal>
+          </div>
         )}
 
         {active.id === "scan" && (
@@ -822,7 +820,7 @@ export default function BabycamWorkspace({
             <SectionHeading
               no={1}
               title="開放時段"
-              description="先設定全院總時段，再分別調整院內與親友可觀看的時間；每筆入住自行關閉的時段仍會擋住畫面。"
+              description="依序設定全院、媽媽端與親友端的開放時間；下方提供模式比較與設定範例。"
             />
             <SchedulePanel data={data} run={run} />
           </div>
@@ -961,7 +959,7 @@ export default function BabycamWorkspace({
                 <input
                   type="datetime-local"
                   className={input}
-                  defaultValue={data.demoAt.slice(0, 16)}
+                  defaultValue={`${taipeiDate(new Date(data.demoAt))}T${taipeiHhmm(new Date(data.demoAt))}`}
                   onBlur={(event) => {
                     if (event.target.value) run(() => babycamActions.settings({ demoAt: `${event.target.value}+08:00` }));
                   }}
@@ -1042,7 +1040,7 @@ export default function BabycamWorkspace({
                     </p>
                   );
                 })}
-                <CamPreview mode={camera.health === "異常" ? "offline" : "snapshot"} room="展示" camCode={camera.code} />
+                <CamPreview mode={cameraDisinfecting ? "masked" : camera.health === "異常" ? "offline" : "snapshot"} statusLabel={cameraDisinfecting ? "消毒中，監視器暫停" : undefined} room="展示" camCode={camera.code} />
                 <CameraMetadata key={camera.id} camera={camera} />
                 <div className="flex flex-wrap items-center gap-3">
                   <label className="flex min-h-11 items-center gap-2 text-sm">

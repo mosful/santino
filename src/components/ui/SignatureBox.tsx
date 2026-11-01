@@ -7,6 +7,7 @@ import { useSignature, rememberSignature, staffKey } from "@/lib/signatureStore"
 import { useCurrentRole } from "@/lib/roleStore";
 import { ROLE_PROFILE } from "@/lib/permissions";
 import { buttonStyles } from "@/components/ui/buttonStyles";
+import { todayTaipei } from "@/lib/dates";
 
 /**
  * 簽名可重複應用（總則#4）：本次登入session簽過一次後，其餘簽名欄位自動帶入同一份簽名，
@@ -30,7 +31,7 @@ export default function SignatureBox({
   const [localOverride, setLocalOverride] = useState<string | null>(null);
 
   const signature = localOverride ?? sessionSignature;
-  const today = new Date().toISOString().slice(0, 10);
+  const [signatureDate, setSignatureDate] = useState(todayTaipei);
 
   function handleConfirm(dataUrl: string) {
     setLocalOverride(dataUrl);
@@ -80,9 +81,10 @@ export default function SignatureBox({
       )}
 
       <input
-        readOnly
-        value={signature ? today : ""}
-        placeholder="日期（簽名後自動帶入）"
+        type="date"
+        aria-label={`${label}日期`}
+        value={signatureDate}
+        onChange={(event) => setSignatureDate(event.target.value)}
         className="mt-1 w-full rounded border border-stone-200 px-2 py-1 text-xs text-stone-500"
       />
     </div>

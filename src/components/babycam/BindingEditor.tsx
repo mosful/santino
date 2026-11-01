@@ -175,9 +175,8 @@ export default function BindingEditor({ data, binding, onChange }: { data: DemoD
     .filter((baby) => !drafts.some((draft) => draft.babyId === baby.babyId))
     .map((baby) => baby.cameraId);
   const zoneCameras = data.cameras.filter((camera) => camera.enabled && (zone === "全部" || camera.code.startsWith(zone)));
-  const history = data.cameraIntervals.filter((item) => drafts.some((draft) => draft.babyId === item.babyId)).slice().reverse();
 
-  return <section className="space-y-5 rounded-xl border border-stone-200 bg-white p-4">
+  return <section className="min-w-0 space-y-5 border-t border-stone-200 pt-5">
     <Toast {...toastProps} />
     <h2 className="font-semibold">登錄寶寶、車號與監視器</h2>
 
@@ -247,18 +246,6 @@ export default function BindingEditor({ data, binding, onChange }: { data: DemoD
       </button>
     </div>
 
-    {/* 換鏡頭歷程直接讀 cameraIntervals——換一次就封一段、開一段，不另外存一張表。 */}
-    {history.length > 0 && <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-stone-700">監視器歷程</h3>
-      <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-left text-sm"><thead className="bg-stone-50"><tr>{["寶寶", "監視器", "開始", "結束", "原因"].map((label) => <th key={label} className="whitespace-nowrap p-2 font-medium">{label}</th>)}</tr></thead><tbody>
-        {history.map((item) => <tr key={item.id} className="border-t border-stone-200">
-          <td className="p-2">{candidates.find((subject) => subject.id === item.babyId)?.name ?? "—"}</td>
-          <td className="p-2">{data.cameras.find((camera) => camera.id === item.cameraId)?.code ?? item.cameraId}</td>
-          <td className="p-2">{item.start}</td>
-          <td className="p-2">{item.end ?? "使用中"}</td>
-          <td className="p-2">{item.reason ?? "—"}</td>
-        </tr>)}
-      </tbody></table></div>
-    </div>}
+
   </section>;
 }

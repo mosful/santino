@@ -14,6 +14,8 @@ import { caseDoc } from "../domain/caseDocs";
 import { DEFAULT_SALE_ITEMS } from "../domain/sales";
 import { HOSPITALS } from "../domain/options";
 import { guard } from "./lenient";
+import { shiftDate, todayTaipei } from "../dates";
+import { registrationDefaults } from "../babycam/registration";
 
 function valid(value: unknown): value is DemoDomain {
   const data = value as DemoDomain | null;
@@ -75,11 +77,40 @@ function synchronizeIdentity(data: DemoDomain, record: CaseRecord) {
   data.subjects.filter((subject) => subject.caseId === record.id).forEach((subject) => { subject.motherName = record.name; if (subject.kind === "mama") subject.name = record.name; });
   data.bindings.filter((binding) => binding.caseId === record.id).forEach((binding) => { binding.motherName = record.name; binding.phone = record.phone; });
 }
+/** 換房共用同一套占房檢查、照護同步及觀看連結失效處理。 */
+export function moveCaseRoom(data: DemoDomain, record: CaseRecord, room: string, reason: string) {
+  if (room === record.room) return;
+  if (!record.actualAdmission || record.dischargedAt || !data.rooms.some((item) => item.room === room && item.enabled)) throw new Error("換房須為入住中個案並選擇有效房號。");
+  if (data.cases.some((item) => item.id !== record.id && item.room === room && item.actualAdmission && !item.dischargedAt)) throw new Error("此房已有入住個案。");
+  (record.roomMoves ??= []).push({ from: record.room, to: room, at: data.demoAt, reason: reason.trim(), actor: currentActor() });
+  caseLog(record, `換房 ${record.room} → ${room}；${reason.trim()}`); record.room = room;
+  data.subjects.filter((subject) => subject.caseId === record.id && !subject.historical).forEach((subject) => { subject.room = room; });
+  data.bindings.filter((binding) => binding.caseId === record.id && !binding.ended).forEach((binding) => { binding.room = room; binding.internalTicket = crypto.randomUUID(); binding.familyTicket = crypto.randomUUID(); closeViewingHistory(data, binding.id, "換房重發"); binding.sessions = []; });
+}
 function reserveViewing(data: DemoDomain, record: CaseRecord) {
-  if (data.bindings.some((binding) => binding.caseId === record.id && !binding.ended)) return;
+  const existing = data.bindings.find((binding) => binding.caseId === record.id && !binding.ended);
+  if (existing) {
+    const defaults = registrationDefaults(record);
+    existing.motherName = defaults.motherName; existing.phone = defaults.phone; existing.room = defaults.room;
+    if (!existing.registrationOverrides?.includes("validFrom")) existing.validFrom = defaults.validFrom;
+    if (!existing.registrationOverrides?.includes("validTo")) existing.validTo = defaults.validTo;
+    return;
+  }
   data.bindings.push({ id: `binding-${record.id}`, caseId: record.id, room: record.room, motherName: record.name, phone: record.phone, validFrom: record.actualAdmission, validTo: new Date(Date.parse(`${record.actualAdmission}T00:00:00+08:00`) + (record.days + 1) * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" }), familyEnabled: true, familyFrom: "", familyTo: "", internalWindow: inheritWindow(), familyWindow: inheritWindow(), internalTicket: crypto.randomUUID(), familyTicket: crypto.randomUUID(), passcode: `DEMO${String(data.bindings.length + 1).padStart(4, "0")}`, babies: [], sessions: [], ended: false });
 }
 export const caseActions = {
+  defaultDates(id: string) {
+    const record = domainStore.get().cases.find((item) => item.id === id);
+    if (!record || record.closed || !canManageCases()) return;
+    const patch: Partial<CaseRecord> = {};
+    if (record.stage <= 1 && !record.visitDate) patch.visitDate = todayTaipei();
+    if (record.stage === 2 && !record.orderDate) patch.orderDate = todayTaipei();
+    if (record.stage === 3 && !record.signed && !record.signedDate) {
+      patch.signedDate = todayTaipei();
+      if (!record.reviewStart) patch.reviewStart = shiftDate(patch.signedDate, -domainStore.get().contractSettings.reviewDays);
+    }
+    if (Object.keys(patch).length) domainStore.update((data) => Object.assign(findCase(data, id), patch));
+  },
   create(name: string, phone: string) {
     if (!canManageCases()) throw new Error("目前角色不能建立案件。");
     if (!name.trim() || !phone.trim()) throw new Error("請填寫媽媽姓名與聯絡電話。");
@@ -113,7 +144,12 @@ export const caseActions = {
       if (patch.deposit !== undefined && (!Number.isFinite(patch.deposit) || patch.deposit < 0)) throw new Error("訂金金額不正確。");
       if (patch.contractNo && data.cases.some((item) => item.id !== id && item.contractNo === patch.contractNo)) throw new Error("收字號已由另一案件使用，請核對原案件。");
       if (record.actualAdmission && record.stage >= 5 && patch.room !== undefined && patch.room !== record.room) throw new Error("入住後換房請使用合約變更單。");
-      if (record.signed && patch.signedDate !== undefined && patch.signedDate !== record.signedDate) throw new Error("已簽合約的簽約日不可直接修改。");
+      if (record.signed && patch.signedDate !== undefined && patch.signedDate !== record.signedDate) {
+        const reviewStart = patch.reviewStart ?? record.reviewStart;
+        const reviewDays = record.contractSnapshot ? JSON.parse(record.contractSnapshot).reviewDays ?? data.contractSettings.reviewDays : data.contractSettings.reviewDays;
+        if (!patch.signedDate || !reviewStart || Date.parse(patch.signedDate) - Date.parse(reviewStart) < reviewDays * 86_400_000) throw new Error("簽約日修改後仍須符合合約審閱期。");
+        caseLog(record, `簽約日修改：${record.signedDate} → ${patch.signedDate}；原簽署快照保留`);
+      }
       if (record.stage >= 5 && patch.actualAdmission !== undefined && patch.actualAdmission !== record.actualAdmission) throw new Error("已入住日期須由主管透過變更紀錄處理。");
       if (record.signed && ("proxySigned" in patch || "proxyName" in patch)) throw new Error("已簽署的代簽資訊不可修改。");
       if (record.signed && patch.reviewStart && record.reviewStart && patch.reviewStart > record.reviewStart) throw new Error("審閱日起算日只能往前調整。");
@@ -185,7 +221,7 @@ export const caseActions = {
       } else {
         const row = dailyCharges(record).find((item) => item.date === date && item.amount > 0 && item.label.includes("原合約"));
         if (!row) throw new Error("這一天沒有可轉為贈送的房費。");
-        record.ledger.push({ id: crypto.randomUUID(), date, label: `${date} 指定贈送日折讓`, amount: -row.amount, giftDate: date });
+        record.ledger.push({ id: crypto.randomUUID(), date, label: `${date} 指定贈送日折讓`, amount: -row.amount, giftDate: date, actor: currentActor(), at: new Date().toISOString() });
         caseLog(record, `指定 ${date} 為贈送日，折讓 ${row.amount.toLocaleString("zh-TW")} 元`);
       }
       audit(data, "調整贈送日", `${id}:${date}`);
@@ -212,6 +248,7 @@ export const caseActions = {
     if (!image) throw new Error("請先完成簽名。");
     domainStore.update((data) => {
       const record = findCase(data, id);
+      if (record.staffSignature) (record.signatureRevisions ??= []).push({ kind: "staff", image: record.staffSignature, at: new Date().toISOString(), actor: currentActor() });
       record.staffSignature = image;
       caseLog(record, `經辦人員簽名：${currentActor()}`);
       audit(data, "經辦人員簽名", id);
@@ -293,15 +330,15 @@ export const caseActions = {
       const record = findCase(data, id);
       const total = returnTotal(record, data.checkoutItems ?? DEFAULT_CHECKOUT_ITEMS);
       if (total <= 0) throw new Error("目前沒有應收金額，不需寫入帳務。");
-      const date = data.demoAt.slice(0, 10);
+      const date = todayTaipei();
       const label = "返家指導單應付款項與未歸還品項";
       const existing = record.returnChargeEntryId ? record.ledger.find((item) => item.id === record.returnChargeEntryId) : undefined;
       if (existing) {
         if (existing.amount === total) throw new Error("金額與已寫入的帳務相同，不需重複寫入。");
         caseLog(record, `返家應收更新：${existing.amount} → ${total} 元`);
-        existing.amount = total; existing.date = date;
+        existing.amount = total; existing.date = date; existing.at = new Date().toISOString(); existing.actor = currentActor();
       } else {
-        const entry = { id: crypto.randomUUID(), date, label, amount: total };
+        const entry = { id: crypto.randomUUID(), date, label, amount: total, actor: currentActor(), at: new Date().toISOString() };
         record.ledger.push(entry); record.returnChargeEntryId = entry.id;
         caseLog(record, `返家應收 ${total} 元已寫入帳務`);
       }
@@ -333,9 +370,17 @@ export const caseActions = {
   note(id: string, text: string) { if (!text.trim()) throw new Error("請填寫追蹤內容。"); domainStore.update((data) => { const record = findCase(data, id, true); caseLog(record, text.trim()); audit(data, "新增案件追蹤", id); }); },
   removeDraft(id: string) { domainStore.update((data) => { const record = findCase(data, id); if (record.signed || record.stage >= 2) throw new Error("案件已有下訂或入住歷程，請使用強制結案保留紀錄。"); data.cases = data.cases.filter((item) => item.id !== id); audit(data, "移除尚未下訂的預約草稿", id); }); },
   sign(id: string, image: string) {
+    if (!image) throw new Error("請先完成簽名。");
     domainStore.update((data) => {
-      const record = findCase(data, id); if (record.stage !== 3) throw new Error("請在合約階段完成簽名。");
-      if (record.signed) throw new Error("原合約已簽署，請保留簽名與快照，條件異動另開變更單。");
+      const record = findCase(data, id);
+      if (record.signed && record.stage >= 3) {
+        if (record.signature) (record.signatureRevisions ??= []).push({ kind: "subject", image: record.signature, at: new Date().toISOString(), actor: currentActor() });
+        record.signature = image;
+        caseLog(record, "確認對象重新簽名；原簽署快照與舊簽名保留");
+        audit(data, "確認對象重新簽名", id);
+        return;
+      }
+      if (record.stage !== 3) throw new Error("請在合約階段完成簽名。");
       // 需求確認期間只提醒、照樣簽（客戶 2026-10-30）；要擋回去把 guard 換回 throw。
       guard(Boolean(record.contractNo && record.reviewStart && record.signedDate && record.reviewStart <= record.signedDate), "收字號、簽約日或攜回審閱日尚未填妥。");
       guard(!record.signedDate || !record.reviewStart || Date.parse(record.signedDate) - Date.parse(record.reviewStart) >= data.contractSettings.reviewDays * 86_400_000, `審閱期不足 ${data.contractSettings.reviewDays} 天。`);
@@ -398,11 +443,26 @@ export const caseActions = {
     if (!label.trim() || !Number.isFinite(amount) || !date) throw new Error("請填寫項目、日期與有效金額。");
     domainStore.update((data) => {
       const record = findCase(data, id);
-      const today = data.demoAt.slice(0, 10);
+      const today = todayTaipei();
       if (date < today && (!["護理長 婉真", "管理者"].includes(getCurrentRole()) || !exceptionReason.trim())) throw new Error("今日以前帳務須主管授權並填寫急診例外原因。");
-      record.ledger.push({ id: crypto.randomUUID(), date, label, amount, ...(extra.category ? { category: extra.category } : {}), ...(Number.isFinite(extra.qty) ? { qty: extra.qty } : {}), ...(Number.isFinite(extra.unitPrice) ? { unitPrice: extra.unitPrice } : {}) });
+      if (extra.qty !== undefined && (!Number.isInteger(extra.qty) || extra.qty < 1)) throw new Error("數量請填大於 0 的整數。");
+      record.ledger.push({ id: crypto.randomUUID(), date, label: label.trim(), amount, kind: "charge", actor: currentActor(), at: new Date().toISOString(), ...(extra.category ? { category: extra.category } : {}), ...(Number.isFinite(extra.qty) ? { qty: extra.qty } : {}), ...(Number.isFinite(extra.unitPrice) ? { unitPrice: extra.unitPrice } : {}) });
       caseLog(record, `新增費用：${extra.category ? `${extra.category}／` : ""}${label}${extra.qty ? ` ×${extra.qty}` : ""}，${amount.toLocaleString("zh-TW")} 元${exceptionReason ? `；主管例外：${exceptionReason}` : ""}`);
       audit(data, "新增自費費用", id);
+    });
+  },
+  updateCharge(id: string, entryId: string, label: string, amount: number, date: string, reason: string, extra: { category: string; qty: number; unitPrice?: number }) {
+    if (!label.trim() || !reason.trim() || !date || !Number.isFinite(amount) || !Number.isInteger(extra.qty) || extra.qty < 1) throw new Error("請填寫項目、日期、有效金額與數量，以及修改原因。");
+    domainStore.update((data) => {
+      const record = findCase(data, id);
+      const entry = record.ledger.find((item) => item.id === entryId);
+      if (!entry || !(entry.kind === "charge" || entry.category) || entry.adjustsId || entry.before !== undefined) throw new Error("此筆項目請使用原本的合約或帳務調整流程。");
+      if ((entry.date < todayTaipei() || date < todayTaipei()) && !["護理長 婉真", "管理者"].includes(getCurrentRole())) throw new Error("今日以前帳務須主管授權並填寫修改原因。");
+      const before = `${entry.date}｜${entry.label}｜${entry.amount} 元`;
+      // 主管另列的差額仍保留；表單修改的是本筆原收費金額。
+      Object.assign(entry, { label: label.trim(), amount, date, category: extra.category, qty: extra.qty, unitPrice: extra.unitPrice, actor: currentActor(), at: new Date().toISOString() });
+      caseLog(record, `修改費用：${before} → ${date}｜${label.trim()}｜${amount} 元；原因：${reason.trim()}`);
+      audit(data, "修改自費費用", id);
     });
   },
   /** 自費品項主檔維護（後台「基礎主檔設定」）。 */
@@ -461,29 +521,32 @@ export const caseActions = {
       audit(data, "刪除自費品項", target.name);
     });
   },
-  change(id: string, days: number, roomType: CaseRecord["roomType"], reason: string, room?: string) {
+  change(id: string, days: number, roomType: CaseRecord["roomType"], reason: string, room?: string, extra: { hospital?: string; childcareDays?: number; childcareRange?: string; revisesId?: string } = {}) {
     if (!reason.trim() || !Number.isInteger(days) || days < 1 || days > 365 || !["精緻", "VIP", "VILLA"].includes(roomType)) throw new Error("請填寫變更原因、1 至 365 天與有效房型。");
     if (!["護理長 婉真", "管理者"].includes(getCurrentRole())) throw new Error("合約變更需由主管授權。");
     domainStore.update((data) => {
       const record = findCase(data, id); if (!record.signed) throw new Error("尚未簽約請直接調整試算。");
-      if (room && room !== record.room) {
-        if (!record.actualAdmission || record.dischargedAt || !data.rooms.some((item) => item.room === room && item.enabled)) throw new Error("換房須為入住中個案並選擇有效房號。");
-        if (data.cases.some((item) => item.id !== id && item.room === room && item.actualAdmission && !item.dischargedAt)) throw new Error("此房已有入住個案。");
-        (record.roomMoves ??= []).push({ from: record.room, to: room, at: data.demoAt, reason: reason.trim(), actor: currentActor() });
-        caseLog(record, `換房 ${record.room} → ${room}；${reason.trim()}`); record.room = room;
-        data.subjects.filter((subject) => subject.caseId === id && !subject.historical).forEach((subject) => { subject.room = room; });
-        data.bindings.filter((binding) => binding.caseId === id && !binding.ended).forEach((binding) => { binding.room = room; binding.internalTicket = crypto.randomUUID(); binding.familyTicket = crypto.randomUUID(); closeViewingHistory(data, binding.id, "換房重發"); binding.sessions = []; });
-      }
-      const before = casePrice(record); const next = casePrice({ ...record, days, roomType }); record.ledger.push({ id: crypto.randomUUID(), date: data.demoAt.slice(0, 10), label: `合約變更 ${record.days} → ${days} 天；${record.roomType} → ${roomType}；${reason.trim()}`, amount: next - before, before, after: next, actor: currentActor(), at: new Date().toISOString() }); record.days = days; record.roomType = roomType; caseLog(record, `變更單：前次試算 ${before}；目前試算 ${next}；${reason.trim()}`); audit(data, "合約變更單", id);
+      if (extra.childcareDays !== undefined && (!Number.isInteger(extra.childcareDays) || extra.childcareDays < 0 || extra.childcareDays > 365)) throw new Error("托嬰天數請填 0 至 365 的整數。");
+      if (extra.revisesId && !record.ledger.some((entry) => entry.id === extra.revisesId && (entry.kind === "contract-change" || entry.label.startsWith("合約變更")))) throw new Error("找不到原變更單。");
+      if (room && room !== record.room) moveCaseRoom(data, record, room, reason);
+      const hospital = extra.hospital ?? record.hospital;
+      if (!hospital.trim() || hospital === "其他") throw new Error("請選擇實際生產醫院。");
+      const before = casePrice(record);
+      const next = casePrice({ ...record, days, roomType, hospital });
+      const childcare = `${extra.childcareDays !== undefined ? `；托嬰 ${extra.childcareDays} 天` : ""}${extra.childcareRange ? `（${extra.childcareRange}）` : ""}`;
+      record.ledger.push({ id: crypto.randomUUID(), date: todayTaipei(), kind: "contract-change", revisesId: extra.revisesId, label: `合約變更 ${record.days} → ${days} 天；${record.roomType} → ${roomType}；${hospital}${record.room ? `；房號 ${record.room}` : ""}；${reason.trim()}${childcare}`, amount: next - before, before, after: next, actor: currentActor(), at: new Date().toISOString(), change: { days, roomType, hospital, room: record.room, reason: reason.trim(), childcareDays: extra.childcareDays, childcareRange: extra.childcareRange } });
+      record.days = days; record.roomType = roomType; record.hospital = hospital;
+      caseLog(record, `${extra.revisesId ? "修訂" : "新增"}變更單：前次試算 ${before}；目前試算 ${next}；${reason.trim()}${childcare}；原簽署快照保留`);
+      audit(data, "合約變更單", id);
     });
   },
   adjustCharge(id: string, entryId: string, newAmount: number, reason: string) {
     if (!["護理長 婉真", "管理者"].includes(getCurrentRole()) || !reason.trim() || !Number.isFinite(newAmount)) throw new Error("帳務例外調整須主管授權、有效金額與原因。");
-    domainStore.update((data) => { const record = findCase(data, id); const entry = record.ledger.find((item) => item.id === entryId && !item.adjustsId); if (!entry) throw new Error("找不到原收費項目。"); const before = entry.amount + record.ledger.filter((item) => item.adjustsId === entryId).reduce((sum, item) => sum + item.amount, 0); if (before === newAmount) return; record.ledger.push({ id: crypto.randomUUID(), date: entry.date, label: `主管例外：${entry.label} ${before} → ${newAmount}；${reason.trim()}`, amount: newAmount - before, adjustsId: entryId }); caseLog(record, `帳務例外調整 ${before} → ${newAmount}；${reason.trim()}（原項目保留）`); audit(data, "主管帳務例外調整", id); });
+    domainStore.update((data) => { const record = findCase(data, id); const entry = record.ledger.find((item) => item.id === entryId && !item.adjustsId); if (!entry) throw new Error("找不到原收費項目。"); const before = entry.amount + record.ledger.filter((item) => item.adjustsId === entryId).reduce((sum, item) => sum + item.amount, 0); if (before === newAmount) return; record.ledger.push({ id: crypto.randomUUID(), date: entry.date, label: `主管例外：${entry.label} ${before} → ${newAmount}；${reason.trim()}`, amount: newAmount - before, adjustsId: entryId, actor: currentActor(), at: new Date().toISOString() }); caseLog(record, `帳務例外調整 ${before} → ${newAmount}；${reason.trim()}（原項目保留）`); audit(data, "主管帳務例外調整", id); });
   },
   contractAmount(id: string, amount: number, reason: string) {
     if (!["護理長 婉真", "管理者"].includes(getCurrentRole()) || !reason.trim() || !Number.isFinite(amount) || amount < 0) throw new Error("合約金額變更須主管、有效金額與原因。");
-    domainStore.update((data) => { const record = findCase(data, id); if (!record.signed) throw new Error("尚未簽約請回原案件試算。"); const before = (record.overrideAmount ?? record.quotedAmount) + record.ledger.filter((entry) => /^(合約變更|合約金額調整)/.test(entry.label)).reduce((sum, entry) => sum + entry.amount, 0); if (before === amount) return; record.ledger.push({ id: crypto.randomUUID(), date: data.demoAt.slice(0, 10), label: `合約金額調整；${reason.trim()}`, amount: amount - before, before, after: amount, actor: currentActor(), at: new Date().toISOString() }); caseLog(record, `合約金額調整 ${before} → ${amount}；${reason.trim()}`); audit(data, "合約金額變更單", id); });
+    domainStore.update((data) => { const record = findCase(data, id); if (!record.signed) throw new Error("尚未簽約請回原案件試算。"); const before = (record.overrideAmount ?? record.quotedAmount) + record.ledger.filter((entry) => /^(合約變更|合約金額調整)/.test(entry.label)).reduce((sum, entry) => sum + entry.amount, 0); if (before === amount) return; record.ledger.push({ id: crypto.randomUUID(), date: todayTaipei(), label: `合約金額調整；${reason.trim()}`, amount: amount - before, before, after: amount, actor: currentActor(), at: new Date().toISOString() }); caseLog(record, `合約金額調整 ${before} → ${amount}；${reason.trim()}`); audit(data, "合約金額變更單", id); });
   },
   meal(id: string, people: number, content: string) {
     domainStore.update((data) => { const record = findCase(data, id); if (record.actualAdmission !== data.demoAt.slice(0, 10)) throw new Error("餐飲人數／內容僅於入住當天可直接修改。"); if (!Number.isInteger(people) || people < 1 || people > 10 || !content.trim()) throw new Error("請填 1 至 10 位餐飲人數及內容。"); record.meal = { people, content: content.trim(), at: data.demoAt, actor: currentActor() }; caseLog(record, `入住當天餐飲：${people} 人；${content.trim()}`); });

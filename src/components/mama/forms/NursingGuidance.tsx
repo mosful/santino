@@ -1,3 +1,4 @@
+import { todayTaipei } from "@/lib/dates";
 import SignatureBox from "@/components/ui/SignatureBox";
 import PrototypeFormActions from "@/components/ui/PrototypeFormActions";
 
@@ -53,7 +54,7 @@ export default function NursingGuidance({ room, caseLabel }: { room: string; cas
         </div>
         <div>
           <label className="mb-1 block text-xs text-stone-500">複核日期</label>
-          <input className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm" placeholder="待複核" />
+          <input aria-label="複核日期" type="date" defaultValue={todayTaipei()} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm" />
         </div>
       </div>
       <PrototypeFormActions accent="rose" />

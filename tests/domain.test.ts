@@ -17,6 +17,9 @@ import { babyDisplayName } from "../src/lib/babycam/wristband";
 import { activeDisinfection } from "../src/lib/babycam/disinfection";
 import { labelValues } from "../src/lib/babycam/wristband-print";
 import { caseTransitionErrors } from "../src/lib/domain/rules";
+import { shiftDate, todayTaipei } from "../src/lib/dates";
+import { demoNow } from "../src/lib/babycam/clock";
+import { familyCapacityMessage, leaveViewer } from "../src/lib/babycam/viewerSession";
 
 const storage = new Map<string, string>(); const events = new EventTarget();
 Object.defineProperty(globalThis, "window", { value: { localStorage: { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => storage.set(key, value), removeItem: (key: string) => storage.delete(key) }, dispatchEvent: events.dispatchEvent.bind(events), addEventListener: events.addEventListener.bind(events), removeEventListener: events.removeEventListener.bind(events) }, configurable: true });
@@ -29,6 +32,70 @@ function readyCase() {
   caseActions.update(id, { signedDate: "2026-10-20", reviewStart: "2026-10-15", milkConsent: true }); caseActions.sign(id, "data:image/png;base64,demo"); caseActions.advance(id);
   return id;
 }
+test("表單日期依台北跨日，案件預設日期不覆蓋已修改的值", () => {
+  reset();
+  assert.equal(todayTaipei(new Date("2026-10-31T16:30:00Z")), "2026-11-01");
+  assert.equal(shiftDate("2026-11-01", -5), "2026-10-27");
+  const id = caseActions.create("日期測試媽媽", "展示手機");
+  domainStore.update((data) => { data.cases.find((item) => item.id === id)!.stage = 3; });
+  caseActions.defaultDates(id);
+  let record = domainStore.get().cases.find((item) => item.id === id)!;
+  assert.equal(record.signedDate, todayTaipei());
+  assert.equal(record.reviewStart, shiftDate(todayTaipei(), -domainStore.get().contractSettings.reviewDays));
+  caseActions.update(id, { signedDate: "2026-10-20" });
+  caseActions.defaultDates(id);
+  assert.equal(domainStore.get().cases.find((item) => item.id === id)!.signedDate, "2026-10-20");
+  const doc = caseDoc("tcm-survey")!;
+  assert.equal(docValues(record, doc).filledAt, todayTaipei());
+  caseActions.saveDocument(id, doc.key, { ...docValues(record, doc), filledAt: "2026-10-15" });
+  record = domainStore.get().cases.find((item) => item.id === id)!;
+  assert.equal(docValues(record, doc).filledAt, "2026-10-15");
+});
+
+test("雙方簽名可重簽並保留舊簽名、版本與原快照，簽約日仍可修改", () => {
+  reset(); const id = readyCase();
+  const original = domainStore.get().cases.find((item) => item.id === id)!;
+  caseActions.signStaff(id, "staff-old"); caseActions.signStaff(id, "staff-new");
+  caseActions.sign(id, "subject-new");
+  caseActions.update(id, { signedDate: "2026-10-21" });
+  const record = domainStore.get().cases.find((item) => item.id === id)!;
+  assert.equal(record.staffSignature, "staff-new"); assert.equal(record.signature, "subject-new");
+  assert.equal(record.contractSnapshot, original.contractSnapshot); assert.equal(record.contractVersion, original.contractVersion);
+  assert.equal(record.signatureRevisions?.length, 2); assert.equal(record.signatureRevisions?.[0].image, "staff-old");
+  assert.equal(record.signedDate, "2026-10-21");
+  assert.throws(() => caseActions.update(id, { signedDate: "2026-10-16" }), /審閱期/);
+});
+
+test("費用修改不新增重複帳款，修改原因與過去帳務授權均保留", () => {
+  reset(); const id = domainStore.get().cases.find((item) => item.stage === 5)!.id;
+  const extra = { category: "其他備品", qty: 1 };
+  caseActions.charge(id, "測試自費", 500, todayTaipei(), "", extra);
+  const original = domainStore.get().cases.find((item) => item.id === id)!;
+  const entry = original.ledger.at(-1)!;
+  assert.ok(entry.at); assert.ok(entry.actor);
+  assert.throws(() => caseActions.updateCharge(id, entry.id, "修正自費", 650, todayTaipei(), "", extra), /修改原因/);
+  caseActions.updateCharge(id, entry.id, "修正自費", 650, todayTaipei(), "數量核對", { ...extra, qty: 2 });
+  const updated = domainStore.get().cases.find((item) => item.id === id)!;
+  assert.equal(updated.ledger.length, original.ledger.length); assert.equal(caseBalance(updated), caseBalance(original) + 150);
+  assert.match(updated.log[0].text, /500.*650.*數量核對/);
+  caseActions.charge(id, "補登", 10, "2026-10-01", "主管補登", extra);
+  const past = domainStore.get().cases.find((item) => item.id === id)!.ledger.at(-1)!;
+  setCurrentRole("櫃台");
+  assert.throws(() => caseActions.updateCharge(id, past.id, "補登修改", 20, todayTaipei(), "核對", extra), /主管授權/);
+});
+
+test("合約變更修訂保留明細，只計新差額，失敗不留下換房副作用", () => {
+  reset(); const original = domainStore.get().cases.find((item) => item.stage === 5)!;
+  caseActions.change(original.id, 25, "精緻", "首次變更");
+  const first = domainStore.get().cases.find((item) => item.id === original.id)!.ledger.at(-1)!;
+  caseActions.change(original.id, 26, "精緻", "修訂天數", undefined, { revisesId: first.id, hospital: "奇美", childcareDays: 3, childcareRange: "11/01～11/03" });
+  const record = domainStore.get().cases.find((item) => item.id === original.id)!;
+  assert.equal(record.contractSnapshot, original.contractSnapshot); assert.equal(record.hospital, "奇美");
+  assert.equal(record.ledger.at(-1)?.revisesId, first.id); assert.equal(record.ledger.at(-1)?.change?.childcareDays, 3);
+  assert.equal(caseBalance(record) - caseBalance(original), casePrice(record) - casePrice(original));
+  assert.throws(() => caseActions.change(record.id, 26, "精緻", "不完整修訂", "303", { hospital: "其他" }), /生產醫院/);
+  assert.equal(domainStore.get().cases.find((item) => item.id === record.id)!.room, original.room);
+});
 test("案件從預約到實際入住，共用媽媽資料與待指派視訊只建立一次", () => {
   reset(); const id = readyCase(); caseActions.update(id, { actualAdmission: "2026-10-21", room: "303" }); caseActions.advance(id);
   assert.equal(domainStore.get().cases.find((item) => item.id === id)!.stage, 5);
@@ -415,9 +482,70 @@ test("消毒排程依星期、日期與房號生效，跨午夜不判錯", () =>
   // 跨午夜與停用
   data.disinfections = [{ id: "x", label: "夜間消毒", kind: "環境", weekday: null, date: "2026-10-16", start: "22:00", end: "02:00", rooms: [], enabled: true }];
   assert.ok(activeDisinfection(data, "", at("2026-10-16T23:30:00+08:00")), "跨午夜的前半段要算在內");
+  assert.ok(activeDisinfection(data, "", at("2026-10-17T01:30:00+08:00")), "跨午夜的後半段屬於前一天排程");
+  assert.equal(activeDisinfection(data, "", at("2026-10-16T01:30:00+08:00")), null, "排程開始前的凌晨不可提早遮蔽");
+  assert.equal(activeDisinfection(data, "", at("2026-10-17T02:00:00+08:00")), null, "結束時間到點就恢復");
   assert.equal(activeDisinfection(data, "", at("2026-10-16T12:00:00+08:00")), null);
   data.disinfections[0].enabled = false;
   assert.equal(activeDisinfection(data, "", at("2026-10-16T23:30:00+08:00")), null, "停用就不生效");
+});
+
+test("合約帶入視訊入住登記，資料可修改，實際入住保留自行修改期間", () => {
+  reset(); const id = readyCase();
+  caseActions.update(id, { dueDate: "2027-01-18" });
+  caseActions.change(id, 28, "精緻", "測試合約天數調整");
+  const bindingId = babycamActions.register(id);
+  let binding = domainStore.get().bindings.find((item) => item.id === bindingId)!;
+  assert.equal(binding.validFrom, "2027-01-18"); assert.equal(binding.validTo, shiftDate("2027-01-18", 29));
+  assert.equal(binding.motherName, "示範媽媽");
+  babycamActions.registration(bindingId, { motherName: "修改展示媽媽", phone: "展示手機-修改", room: "303" });
+  babycamActions.updateBinding(bindingId, { validTo: "2027-03-01" });
+  caseActions.update(id, { actualAdmission: "2027-01-20" }); caseActions.advance(id);
+  const data = domainStore.get(); binding = data.bindings.find((item) => item.id === bindingId)!;
+  assert.equal(data.bindings.filter((item) => item.caseId === id).length, 1);
+  assert.equal(binding.validFrom, "2027-01-20"); assert.equal(binding.validTo, "2027-03-01");
+  assert.equal(data.cases.find((item) => item.id === id)!.name, "修改展示媽媽");
+  assert.equal(data.subjects.find((item) => item.caseId === id && item.kind === "mama")!.name, "修改展示媽媽");
+  assert.match(data.cases.find((item) => item.id === id)!.contractSnapshot!, /示範媽媽/);
+});
+
+test("入住登記換房保留既有主管限制、占房檢查與連結失效", () => {
+  reset(); const binding = domainStore.get().bindings.find((item) => item.babies.length)!;
+  setCurrentRole("櫃台");
+  assert.throws(() => babycamActions.registration(binding.id, { motherName: binding.motherName, phone: binding.phone, room: "303" }, "核對換房"), /主管/);
+  setCurrentRole("管理者");
+  babycamActions.registration(binding.id, { motherName: binding.motherName, phone: binding.phone, room: "303" }, "核對換房");
+  const data = domainStore.get(); const updated = data.bindings.find((item) => item.id === binding.id)!;
+  assert.equal(updated.room, "303"); assert.notEqual(updated.familyTicket, binding.familyTicket);
+  assert.ok(data.subjects.filter((item) => item.caseId === binding.caseId && !item.historical).every((item) => item.room === "303"));
+});
+
+test("展示時鐘持續前進，消毒結束保留原本的照護與設備設定", () => {
+  reset(); const data = structuredClone(domainStore.get());
+  data.demoAt = "2026-10-16T09:59:58+08:00"; data.demoClockStartedAt = "2026-11-02T00:00:00Z";
+  assert.equal(demoNow(data, Date.parse(data.demoClockStartedAt) + 3000).toISOString(), "2026-10-16T02:00:01.000Z");
+  data.disinfections = [{ id: "auto", label: "測試消毒", kind: "環境", weekday: null, date: "2026-10-16", start: "10:00", end: "10:01", rooms: [], enabled: true }];
+  const binding = data.bindings.find((item) => item.babies.length)!; const baby = binding.babies[0];
+  baby.careMode = true; const original = structuredClone(baby);
+  const during = demoNow(data, Date.parse(data.demoClockStartedAt) + 3000);
+  const after = demoNow(data, Date.parse(data.demoClockStartedAt) + 62_000);
+  assert.match(viewingBlock(data, binding, baby, "family", during)!, /消毒/);
+  assert.equal(viewingBlock(data, binding, baby, "family", after), "寶寶照護中");
+  assert.deepEqual(baby, original);
+});
+
+test("觀看額滿預先提示、重複登入不占兩位、登出與逾期釋出名額", () => {
+  reset(); const data = domainStore.get(); const binding = data.bindings.find((item) => item.babies.length)!;
+  enterViewer("family", binding.phone, binding.passcode, binding.familyTicket, "first");
+  enterViewer("family", binding.phone, binding.passcode, binding.familyTicket, "second");
+  let current = domainStore.get(); let target = current.bindings.find((item) => item.id === binding.id)!;
+  assert.match(familyCapacityMessage(current, target)!, /上限 2 位/);
+  assert.equal(familyCapacityMessage(current, target, "first"), null);
+  assert.equal(familyCapacityMessage(current, target, "", new Date(Date.parse(current.demoAt) + 36_000)), null);
+  assert.throws(() => enterViewer("family", binding.phone, binding.passcode, binding.familyTicket, "third"), /無法開啟監視器畫面/);
+  assert.equal(domainStore.get().viewingHistory.length, current.viewingHistory.length);
+  leaveViewer(binding.id, "second"); current = domainStore.get(); target = current.bindings.find((item) => item.id === binding.id)!;
+  assert.equal(familyCapacityMessage(current, target), null);
 });
 
 test("消毒期間觀看一律擋下，與授權與時段無關", () => {

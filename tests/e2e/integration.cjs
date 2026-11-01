@@ -36,11 +36,13 @@ async function decodeQr(locator, label = false) {
   await page.getByLabel("訂金", { exact: true }).fill("30000");
   await page.getByRole("button", { name: /^下訂完成/ }).click();
   await page.getByRole("button", { name: "3. 審閱期與入住日", exact: true }).click();
+  assert.equal(await page.getByLabel("簽約日", { exact: true }).inputValue(), new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" }));
   await page.getByLabel("簽約日", { exact: true }).fill("2026-10-20");
   await page.getByRole("button", { name: "4. 簽名", exact: true }).click();
   await page.getByRole("checkbox", { name: /母乳哺育意願書已完成確認/ }).check();
   await page.getByRole("button", { name: "確認對象並簽名", exact: true }).click();
   const canvas = page.getByLabel("手寫簽名區"); await canvas.scrollIntoViewIfNeeded(); const rect = await canvas.boundingBox();
+  assert.ok(rect.height >= 600, "桌機簽名區應接近裝置高度的三分之二");
   await page.mouse.move(rect.x + 30, rect.y + 40); await page.mouse.down(); await page.mouse.move(rect.x + 120, rect.y + 80, { steps: 8 }); await page.mouse.up();
   await page.getByRole("button", { name: "確認本筆簽名", exact: true }).click();
   /* 簽名一次多處帶入（客戶 2026-10-30）。
@@ -53,12 +55,21 @@ async function decodeQr(locator, label = false) {
   await page.mouse.move(staffRect.x + 40, staffRect.y + 50); await page.mouse.down(); await page.mouse.move(staffRect.x + 150, staffRect.y + 90, { steps: 8 }); await page.mouse.up();
   await page.getByRole("button", { name: "確認本筆簽名", exact: true }).click();
   await page.getByRole("status").filter({ hasText: "經辦人員簽名已保存" }).waitFor();
+  assert.equal(await page.getByAltText("確認對象簽名", { exact: true }).count(), 1);
+  assert.equal(await page.getByAltText("經辦人員簽名", { exact: true }).count(), 1);
   await page.getByRole("button", { name: "重新簽名（經辦人員）", exact: true }).click();
   await page.getByRole("button", { name: "帶入上次簽名", exact: true }).click();
   await page.getByRole("button", { name: "改成重新手寫", exact: true }).click();
   await page.getByRole("button", { name: "帶入上次簽名", exact: true }).click();
   await page.getByRole("button", { name: "確認帶入這個簽名", exact: true }).click();
   await page.getByRole("status").filter({ hasText: "經辦人員簽名已保存" }).waitFor();
+  const snapshotBeforeResign = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1")).cases.find((item) => item.name === "整合測試媽媽").contractSnapshot);
+  await page.getByRole("button", { name: "重新簽名（確認對象）", exact: true }).click();
+  await page.getByRole("button", { name: "帶入上次簽名", exact: true }).click();
+  await page.getByRole("button", { name: "確認帶入這個簽名", exact: true }).click();
+  const resigned = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1")).cases.find((item) => item.name === "整合測試媽媽"));
+  assert.equal(resigned.contractSnapshot, snapshotBeforeResign);
+  assert.equal(resigned.signatureRevisions.filter((item) => item.kind === "subject").length, 1);
   await page.getByRole("button", { name: /^合約完成/ }).click();
   await page.getByLabel("實際入住日", { exact: true }).fill("2026-10-16");
   await page.getByLabel("入住房號", { exact: true }).fill("303");
@@ -83,10 +94,12 @@ async function decodeQr(locator, label = false) {
   await page.getByRole("button", { name: "登錄這 1 位寶寶", exact: true }).click();
   const assigned = await page.evaluate((id) => JSON.parse(localStorage.getItem("santino_domain_v1")).bindings.find((item) => item.id === id), binding.id);
   assert.equal(assigned.babies.length, 1);
+  await page.getByRole("button", { name: "標籤預覽與列印", exact: true }).click();
   await page.getByRole("button", { name: "產生標籤預覽", exact: true }).click();
   await page.getByAltText("寶寶 1 標籤預覽", { exact: true }).waitFor();
   const labelQr = await decodeQr(page.getByAltText("寶寶 1 標籤預覽", { exact: true }), true); assert.equal(labelQr.pathname, new URL(`${base}/babycam/scan/`).pathname); assert.equal(labelQr.searchParams.get("code"), assigned.babies[0].identityCode); assert.equal(labelQr.searchParams.has("ticket"), false);
   await page.screenshot({ path: `${output}/labels-desktop.png`, fullPage: true });
+  await page.getByRole("dialog", { name: "手圈與嬰兒車標籤", exact: true }).getByRole("button", { name: "關閉", exact: true }).click();
   await page.getByRole("link", { name: "入住登記", exact: true }).click(); await page.getByRole("button", { name: "入住登記", exact: true }).click(); // 櫃台只交付親友觀看連結（客戶 2026-10-29）；院內那張與「踢除親友登入」都已下架。
   const ticketQr = await decodeQr(page.getByAltText("可掃描的展示 QRCode", { exact: true }).first()); assert.equal(ticketQr.pathname, new URL(`${base}/view/family/`).pathname); assert.equal(ticketQr.searchParams.get("ticket"), assigned.familyTicket);
   assert.equal(await page.getByRole("button", { name: "踢除親友登入", exact: true }).count(), 0);

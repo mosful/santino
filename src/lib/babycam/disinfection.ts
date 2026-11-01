@@ -1,4 +1,4 @@
-import { isWithinSchedule } from "./schedule";
+import { shiftDate } from "../dates";
 import type { DemoDomain } from "../domain/types";
 
 export type Disinfection = DemoDomain["disinfections"][number];
@@ -33,9 +33,14 @@ export function activeDisinfection(data: DemoDomain, room: string, at = new Date
   const clock = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Taipei", hour: "2-digit", minute: "2-digit", hour12: false }).format(at);
   for (const item of data.disinfections ?? []) {
     if (!item.enabled) continue;
-    if (item.weekday === null ? item.date !== date : item.weekday !== weekday) continue;
+    // 跨午夜的後半段屬於前一天開始的排程；結束時間到點即解除遮蔽。
+    const crossesMidnight = item.start > item.end;
+    const previousDay = crossesMidnight && clock < item.end;
+    const scheduledDate = previousDay ? shiftDate(date, -1) : date;
+    const scheduledWeekday = previousDay ? (weekday + 6) % 7 : weekday;
+    if (item.weekday === null ? item.date !== scheduledDate : item.weekday !== scheduledWeekday) continue;
     if (item.rooms.length && !item.rooms.includes(room)) continue;
-    if (isWithinSchedule({ mode: "scheduled", start: item.start, end: item.end }, clock)) return item;
+    if (crossesMidnight ? clock >= item.start || clock < item.end : clock >= item.start && clock < item.end) return item;
   }
   return null;
 }

@@ -7,11 +7,12 @@ import Pagination from "./Pagination";
 import { useAccess } from "@/lib/roleStore";
 import { rowMatchesQuery } from "@/lib/fuzzySearch";
 import { buttonStyles } from "@/components/ui/buttonStyles";
+import { todayTaipei } from "@/lib/dates";
 
 export type FieldSchema = {
   key: string;
   label: string;
-  type?: "text" | "number" | "select";
+  type?: "text" | "number" | "select" | "date";
   options?: string[];
 };
 
@@ -58,7 +59,7 @@ export default function EditableList({
   function openAdd() {
     setError("");
     setEditing({ id: 0 } as Row);
-    setDraft(Object.fromEntries(fields.map((f) => [f.key, ""])));
+    setDraft(Object.fromEntries(fields.map((f) => [f.key, f.type === "date" || /^(填表|填寫|紀錄|通報|發佈|簽約|清潔|通知|評估|複核)日期$/.test(f.label) ? todayTaipei() : ""])));
   }
 
   function openEdit(row: Row) {
@@ -199,7 +200,7 @@ export default function EditableList({
                 <input
                   id={fieldId}
                   name={f.key}
-                  type={f.type === "number" ? "number" : "text"}
+                  type={f.type === "number" ? "number" : f.type === "date" || /^(填表|填寫|紀錄|通報|發佈|簽約|清潔|通知|評估|複核)日期$/.test(f.label) ? "date" : "text"}
                   value={draft[f.key] ?? ""}
                   onChange={(e) => setDraft((d) => ({ ...d, [f.key]: e.target.value }))}
                   className="w-full rounded-lg border border-stone-200 px-2 py-1.5 text-sm"

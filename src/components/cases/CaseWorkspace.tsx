@@ -18,6 +18,8 @@ import CareSignature from "@/components/care/CareSignature";
 import PageHeader from "@/components/ui/PageHeader";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import ContractSteps from "./ContractSteps";
+import { todayTaipei } from "@/lib/dates";
+import CaseLedgerRecords from "./CaseLedgerRecords";
 import CaseAmountSummary from "./CaseAmountSummary";
 import { ActionDock, ResultCard, StatusSummary, SummaryRow } from "@/components/ui/Workspace";
 import RoomServicePanel from "./RoomServicePanel";
@@ -41,7 +43,7 @@ const corporateCompanies = [...CORPORATE_COMPANIES];
  * 程式與頁籤全部保留，要開回把這個旗標改成 true 即可。
  */
 const SHOW_ROOM_SERVICE = false;
-const emptyReservation = (): ReservationInput => ({ category: "懷孕", name: DEMO_MOTHER_NAME, phone: DEMO_PHONE, dueDate: "", parity: "第 1 胎", deliveryMethod: "未定", hospital: HOSPITALS[0], visitDate: "", visitTime: "14:00", source: "網路推薦", receptionist: "林小姐", note: "" });
+const emptyReservation = (): ReservationInput => ({ category: "懷孕", name: DEMO_MOTHER_NAME, phone: DEMO_PHONE, dueDate: "", parity: "第 1 胎", deliveryMethod: "未定", hospital: HOSPITALS[0], visitDate: todayTaipei(), visitTime: "14:00", source: "網路推薦", receptionist: "林小姐", note: "" });
 
 // required 會在標題右邊加紅色 *：客戶回報按下儲存才跳「請完成必填欄位」，卻看不出哪幾欄要填。
 function Field({ label, value, type = "text", options, onChange, required = false }: { label: string; value: string | number; type?: string; options?: string[]; onChange: (value: string) => void; required?: boolean }) {
@@ -51,7 +53,7 @@ function Field({ label, value, type = "text", options, onChange, required = fals
 function PaymentRecords({ record, editable }: { record: CaseRecord; editable: boolean }) {
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("轉帳");
-  const [date, setDate] = useState(new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" }));
+  const [date, setDate] = useState(todayTaipei);
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
   // 收款科目、發票／收據與卡號末四碼：舊系統收款記錄本來就有這幾欄（手冊第 25 頁）。
@@ -65,7 +67,7 @@ function PaymentRecords({ record, editable }: { record: CaseRecord; editable: bo
   const [editingId, setEditingId] = useState("");
   const [removingId, setRemovingId] = useState("");
   const [reason, setReason] = useState("");
-  const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" });
+  const today = todayTaipei;
   function resetForm() { setEditingId(""); setRemovingId(""); setReason(""); setAmount(""); setNote(""); setMethod("轉帳"); setDate(today()); setSubject("尾款"); setInvoice(""); setCardLast4(""); }
   function run(action: () => void, success: string) {
     try { action(); resetForm(); setMessage(success); }
@@ -76,7 +78,7 @@ function PaymentRecords({ record, editable }: { record: CaseRecord; editable: bo
     setAmount(String(item.amount)); setMethod(item.method); setDate(item.date); setNote(item.note);
     setSubject(item.subject ?? "尾款"); setInvoice(item.invoice ?? ""); setCardLast4(item.cardLast4 ?? "");
   }
-  return <CollapsibleSection id="case-payments" title="付款紀錄" summary={`${record.payments.length} 筆`} bodyClassName="space-y-4">
+  return <section id="case-payments" className="space-y-4 border-t border-stone-200 pt-6"><h3 className="font-semibold">付款紀錄・{record.payments.length} 筆</h3>
     <p className="text-sm text-stone-500">訂金另列於下訂階段；此處記錄後續分次付款並保留經手人。每一筆都可再次編輯或刪除，異動需填原因並寫入案件歷程。</p>
     {editable && <div className="form-grid">
       <Field required label="付款金額" type="number" value={amount} onChange={setAmount} />
@@ -124,7 +126,7 @@ function PaymentRecords({ record, editable }: { record: CaseRecord; editable: bo
       <p role="status" className="text-sm">{message}</p>
       <button type="button" className={button} onClick={() => window.print()}>列印付款通知單</button>
     </div>
-  </CollapsibleSection>;
+  </section>;
 }
 
 export default function CaseWorkspace() {
@@ -164,11 +166,15 @@ export default function CaseWorkspace() {
   }
   const [operation, setOperation] = useState<"force" | "reopen" | "override" | "change" | "charge" | "sign" | "sign-staff" | "end-childcare" | null>(null);
   const operationPanel = useRef<HTMLElement>(null);
-  useEffect(() => { if (operation) operationPanel.current?.scrollIntoView({ block: "start", behavior: "instant" }); }, [operation]);
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState("0");
+  const [editingChargeId, setEditingChargeId] = useState("");
+  const [editingChangeId, setEditingChangeId] = useState("");
+  const [editReason, setEditReason] = useState("");
+  const [changeHospital, setChangeHospital] = useState("");
+  const [accountTab, setAccountTab] = useState("帳務");
   const [changeDays, setChangeDays] = useState("24");
   const [changeType, setChangeType] = useState<CaseRecord["roomType"]>("精緻");
-  const [chargeDate, setChargeDate] = useState(data.demoAt.slice(0, 10));
+  const [chargeDate, setChargeDate] = useState(todayTaipei);
   // 合約變更單（手冊第 24 頁 S-F-010）本來就有托嬰天數與期間兩欄，寫進變更原因一起留存。
   const [changeChildcareDays, setChangeChildcareDays] = useState("");
   const [changeChildcareRange, setChangeChildcareRange] = useState("");
@@ -184,7 +190,7 @@ export default function CaseWorkspace() {
   function pickSaleItem(name: string) {
     setChargeItemName(name);
     const item = saleItems.find((row) => row.category === chargeCategory && row.name === name);
-    if (!item) return;
+    if (!item) { setAmount("0"); setReason(""); return; }
     setReason(item.name);
     setAmount(String(item.price * (Number(chargeQty) || 1)));
   }
@@ -194,8 +200,27 @@ export default function CaseWorkspace() {
   }
   const [changeRoom, setChangeRoom] = useState("");
   const [exceptionReason, setExceptionReason] = useState("");
+  useEffect(() => { if (operation) operationPanel.current?.scrollIntoView({ block: "start", behavior: "instant" }); }, [operation, editingChargeId, editingChangeId]);
   const selectedId = selected ?? params.get("id");
   const record = data.cases.find((item) => item.id === selectedId);
+  const recordId = record?.id;
+  const recordStage = record?.stage;
+  useEffect(() => { if (recordId) caseActions.defaultDates(recordId); }, [recordId, recordStage]);
+  const manager = ["護理長 婉真", "管理者"].includes(role);
+  function openCharge(entry?: CaseRecord["ledger"][number]) {
+    setEditingChargeId(entry?.id ?? ""); setEditingChangeId(""); setEditReason(""); setExceptionReason("");
+    setAmount(entry ? String(entry.amount) : "0"); setReason(entry?.label ?? "");
+    setChargeCategory(entry?.category ?? SALE_CATEGORIES[0]); setChargeItemName(""); setChargeQty(String(entry?.qty ?? 1));
+    setChargeDate(entry?.date ?? todayTaipei()); setAccountTab("帳務"); setOperation("charge");
+  }
+  function openChange(entry?: CaseRecord["ledger"][number]) {
+    if (!record) return;
+    setEditingChangeId(entry?.id ?? ""); setEditingChargeId(""); setReason(entry?.change?.reason ?? "");
+    setChangeDays(String(entry?.change?.days ?? record.days)); setChangeType(entry?.change?.roomType ?? record.roomType);
+    setChangeHospital(entry?.change?.hospital ?? record.hospital); setChangeRoom(entry?.change?.room ?? "");
+    setChangeChildcareDays(entry?.change?.childcareDays !== undefined ? String(entry.change.childcareDays) : "");
+    setChangeChildcareRange(entry?.change?.childcareRange ?? ""); setAccountTab("帳務"); setOperation("change");
+  }
   const transitionErrors = record ? caseTransitionErrors(record, data.contractSettings.reviewDays) : [];
   const permitted = canUseCaseFlow(role);
   const edit = permitted && !!record && !record.closed;
@@ -225,6 +250,30 @@ export default function CaseWorkspace() {
   // 筆數不套搜尋條件：那是「這個分頁總共有幾件」，搜尋後數字跟著跳反而看不出全貌。
   const tabCount = (label: string) => data.cases.filter((item) => inTab(item, label)).length;
   const matches = data.cases.filter((item) => inTab(item, tab)).filter((item) => [item.name, item.phone, item.contractNo, item.room].join(" ").includes(query));
+
+  const operationContent = record && operation && <section ref={operationPanel} className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4" aria-label="案件操作確認"><h2 className="font-semibold">{editingChargeId && operation === "charge" ? "修改費用" : editingChangeId && operation === "change" ? "修訂合約變更單" : ({ force: "強制結案", reopen: "重新開啟", override: "覆寫報價", change: "合約變更單（主管授權）", charge: "新增費用", sign: "合約簽名", "sign-staff": "經辦人員簽名", "end-childcare": "確認寶寶已接回" })[operation]}</h2>
+        {operation === "sign-staff" ? <CareSignature expanded identity={`經辦人員｜合約 ${record.contractNo}`} carryKey={staffKey(role)} carryLabel={role} onCancel={() => setOperation(null)} onConfirm={(image) => run(() => caseActions.signStaff(record.id, image), "經辦人員簽名已保存。")} /> : operation === "sign" ? <CareSignature expanded identity={`${record.name}｜合約 ${record.contractNo}`} carryKey={subjectKey(record.customerId)} carryLabel={record.name} onCancel={() => setOperation(null)} onConfirm={(image) => run(() => caseActions.sign(record.id, image), record.signed ? "確認對象簽名已更新，原合約快照已保留。" : "已簽署 v1，原合約快照已保留。")} /> : <>
+          {operation !== "end-childcare" && <Field required label={operation === "charge" ? "項目／原因" : "原因"} value={reason} onChange={setReason} />}
+          {["override", "charge"].includes(operation) && <Field required label="金額" type="number" value={amount} onChange={setAmount} />}
+          {operation === "charge" && <><Field label="分類" value={chargeCategory} options={[...SALE_CATEGORIES]} onChange={(value) => { setChargeCategory(value); setChargeItemName(""); setAmount("0"); setReason(""); }} /><Field label="品項（留白則自訂）" value={chargeItemName} options={["", ...saleItemsOf(saleItems, chargeCategory).map((item) => item.name)]} onChange={pickSaleItem} /><Field label="數量" type="number" value={chargeQty} onChange={changeChargeQty} />{chargeItem && <ResultCard title="本筆自費金額" value={money(chargeItem.price * (Number(chargeQty) || 0))} description={`單價 ${money(chargeItem.price)} × ${Number(chargeQty) || 0}`} />}<Field label="記帳日期" type="date" value={chargeDate} onChange={setChargeDate} />{chargeDate < todayTaipei() && !editingChargeId && <Field required label="主管急診例外原因" value={exceptionReason} onChange={setExceptionReason} />}</>}
+          {operation === "change" && <div className="case-change-grid"><HospitalSelect label="變更後生產醫院" value={changeHospital} onChange={setChangeHospital} /><Field required label="變更後天數" type="number" value={changeDays} onChange={setChangeDays} /><Field label="變更後房型" value={changeType} options={["精緻", "VIP", "VILLA"]} onChange={(value) => setChangeType(value as CaseRecord["roomType"])} /><Field label="換房至（選填）" value={changeRoom} options={["", ...data.rooms.filter((room) => room.enabled).map((room) => room.room)]} onChange={setChangeRoom} /><Field label="托嬰天數（選填）" type="number" value={changeChildcareDays} onChange={setChangeChildcareDays} /><Field label="托嬰期間（選填）" value={changeChildcareRange} onChange={setChangeChildcareRange} /><ResultCard title="變更後金額" value={money(casePrice({ ...record, days: Number(changeDays) || record.days, roomType: changeType, hospital: changeHospital }))}><SummaryRow label="原金額" value={money(casePrice(record))} /><SummaryRow label="差額" value={money(casePrice({ ...record, days: Number(changeDays) || record.days, roomType: changeType, hospital: changeHospital }) - casePrice(record))} /><SummaryRow label="預估尾款" value={money(caseBalance(record) + casePrice({ ...record, days: Number(changeDays) || record.days, roomType: changeType, hospital: changeHospital }) - casePrice(record))} /></ResultCard></div>}
+          {editingChargeId && <Field required label="費用修改原因" value={editReason} onChange={setEditReason} />}
+          {editingChangeId && <p className="text-sm text-stone-600">儲存時建立修訂單，保留前次明細，依目前合約計算新差額。</p>}
+          <div className="flex gap-2"><button type="button" className={button} onClick={() => setOperation(null)}>取消</button><button type="button" className={button} onClick={() => run(() => {
+            if (operation === "force") caseActions.forceClose(record.id, reason);
+            if (operation === "reopen") caseActions.reopen(record.id, reason);
+            if (operation === "override") caseActions.override(record.id, Number(amount), reason);
+            if (operation === "charge") {
+              if (!amount.trim()) throw new Error("請填寫金額，可填 0。");
+              const extra = { category: chargeCategory, qty: Number(chargeQty), unitPrice: chargeItem?.price };
+              if (editingChargeId) caseActions.updateCharge(record.id, editingChargeId, reason, Number(amount), chargeDate, editReason, extra);
+              else caseActions.charge(record.id, reason, Number(amount), chargeDate, exceptionReason, extra);
+            }
+            if (operation === "change") caseActions.change(record.id, Number(changeDays), changeType, reason, changeRoom || undefined, { hospital: changeHospital, childcareDays: changeChildcareDays ? Number(changeChildcareDays) : undefined, childcareRange: changeChildcareRange, revisesId: editingChangeId || undefined });
+            if (operation === "end-childcare") caseActions.endChildcare(record.id);
+          })}>確認</button></div>
+        </>}
+      </section>;
 
   if (!permitted) return <div className="p-8"><h1 className="text-xl font-semibold">櫃台案件流程</h1><p className="mt-4 text-sm text-stone-600">目前身分「{role}」沒有櫃台案件作業權限，可操作的角色為 {CASE_FLOW_ROLE_HINT}。</p></div>;
   return <div className="case-workspace w-full space-y-5 px-4 py-4 sm:px-6">
@@ -273,29 +322,14 @@ export default function CaseWorkspace() {
         ]}
       />
       <CollapsibleSection id="case-common" className="case-common" title={`${record.name}・共通資料`} summary={record.closed ? "已結案" : CASE_STAGES[record.stage]} action={record.closed ? <button type="button" className={button} onClick={() => setOperation("reopen")}>重新開啟案件</button> : <button type="button" className={button} onClick={() => setOperation("force")}>強制結案</button>}><fieldset disabled={!edit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Field required label="媽媽姓名" value={record.name} onChange={(name) => patch({ name })} /><Field required label="聯絡電話" value={record.phone} onChange={(phone) => patch({ phone })} /><Field label="預產期" type="date" value={record.dueDate} onChange={(dueDate) => patch({ dueDate })} /><Field label="身分證字號（展示）" value={record.idNo} onChange={(idNo) => patch({ idNo })} /><Field label="醫院病歷號" value={record.hospitalChartNo ?? ""} onChange={(hospitalChartNo) => patch({ hospitalChartNo })} /></fieldset>{record.closed && <p className="mt-3 text-sm text-stone-600">案件已結案，所有階段唯讀。{record.forced ? "行政強制結案不代表實際退房。" : ""}</p>}</CollapsibleSection>
-      {operation && <section ref={operationPanel} className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4" aria-label="案件操作確認"><h2 className="font-semibold">{({ force: "強制結案", reopen: "重新開啟", override: "覆寫報價", change: "合約變更單（主管授權）", charge: "新增費用", sign: "合約簽名", "sign-staff": "經辦人員簽名", "end-childcare": "確認寶寶已接回" })[operation]}</h2>
-        {operation === "sign-staff" ? <CareSignature identity={`經辦人員｜合約 ${record.contractNo}`} carryKey={staffKey(role)} carryLabel={role} onCancel={() => setOperation(null)} onConfirm={(image) => run(() => caseActions.signStaff(record.id, image), "經辦人員簽名已保存。")} /> : operation === "sign" ? <CareSignature identity={`${record.name}｜合約 ${record.contractNo}`} carryKey={subjectKey(record.customerId)} carryLabel={record.name} onCancel={() => setOperation(null)} onConfirm={(image) => run(() => caseActions.sign(record.id, image), "已簽署 v1，原合約快照已保留。")} /> : <>
-          {operation !== "end-childcare" && <Field required label={operation === "charge" ? "項目／原因" : "原因"} value={reason} onChange={setReason} />}
-          {["override", "charge"].includes(operation) && <Field required label="金額" type="number" value={amount} onChange={setAmount} />}
-          {operation === "charge" && <><Field label="分類" value={chargeCategory} options={[...SALE_CATEGORIES]} onChange={(value) => { setChargeCategory(value); setChargeItemName(""); }} /><Field label="品項（留白則自訂）" value={chargeItemName} options={["", ...saleItemsOf(saleItems, chargeCategory).map((item) => item.name)]} onChange={pickSaleItem} /><Field label="數量" type="number" value={chargeQty} onChange={changeChargeQty} />{chargeItem && <ResultCard title="本筆自費金額" value={money(chargeItem.price * (Number(chargeQty) || 0))} description={`單價 ${money(chargeItem.price)} × ${Number(chargeQty) || 0}`} />}<Field label="記帳日期" type="date" value={chargeDate} onChange={setChargeDate} />{chargeDate < data.demoAt.slice(0, 10) && <Field required label="主管急診例外原因" value={exceptionReason} onChange={setExceptionReason} />}</>}
-          {operation === "change" && <div className="case-change-grid"><Field required label="變更後天數" type="number" value={changeDays} onChange={setChangeDays} /><Field label="變更後房型" value={changeType} options={["精緻", "VIP", "VILLA"]} onChange={(value) => setChangeType(value as CaseRecord["roomType"])} /><Field label="換房至（選填）" value={changeRoom} options={["", ...data.rooms.filter((room) => room.enabled).map((room) => room.room)]} onChange={setChangeRoom} /><Field label="托嬰天數（選填）" type="number" value={changeChildcareDays} onChange={setChangeChildcareDays} /><Field label="托嬰期間（選填）" value={changeChildcareRange} onChange={setChangeChildcareRange} /><ResultCard title="變更後金額" value={money(casePrice({ ...record, days: Number(changeDays) || record.days, roomType: changeType }))}><SummaryRow label="原金額" value={money(casePrice(record))} /><SummaryRow label="差額" value={money(casePrice({ ...record, days: Number(changeDays) || record.days, roomType: changeType }) - casePrice(record))} /><SummaryRow label="預估尾款" value={money(caseBalance(record) + casePrice({ ...record, days: Number(changeDays) || record.days, roomType: changeType }) - casePrice(record))} /></ResultCard></div>}
-          <div className="flex gap-2"><button type="button" className={button} onClick={() => setOperation(null)}>取消</button><button type="button" className={button} onClick={() => run(() => {
-            if (operation === "force") caseActions.forceClose(record.id, reason);
-            if (operation === "reopen") caseActions.reopen(record.id, reason);
-            if (operation === "override") caseActions.override(record.id, Number(amount), reason);
-            if (operation === "charge") caseActions.charge(record.id, reason, Number(amount), chargeDate, exceptionReason, { category: chargeCategory, qty: Number(chargeQty) || 1, unitPrice: chargeItem?.price });
-            if (operation === "change") caseActions.change(record.id, Number(changeDays), changeType, `${reason}${changeChildcareDays ? `；托嬰 ${changeChildcareDays} 天` : ""}${changeChildcareRange ? `（${changeChildcareRange}）` : ""}`, changeRoom || undefined);
-            if (operation === "end-childcare") caseActions.endChildcare(record.id);
-          })}>確認</button></div>
-        </>}
-      </section>}
-      <div className="work-area case-detail-area">
+      {(operation === "sign" || operation === "sign-staff" || operation === "force" || operation === "reopen" || operation === "override" || operation === "end-childcare") && operationContent}
+      <div className="space-y-4">
         <div className="min-w-0 space-y-4">{CASE_STAGES.map((stage, index) => {
           const opened = index === record.stage || expanded.includes(index);
           return <section id={`case-stage-${index}`} key={stage} data-state={record.closed ? "closed" : index < record.stage ? "complete" : index === record.stage ? "current" : "future"} className="case-stage work-surface"><button type="button" className="flex min-h-16 w-full flex-wrap items-center gap-3 p-4 text-left" aria-label={`${index + 1}. ${stage}`} aria-expanded={opened} aria-current={index === record.stage ? "step" : undefined} onClick={() => setExpanded((items) => items.includes(index) ? items.filter((item) => item !== index) : [...items, index])}><span className="case-stage-index" aria-hidden="true">{index < record.stage || record.closed ? "✓" : index + 1}</span><span className="font-semibold">{stage}</span><span className="ml-auto text-xs text-stone-500">{record.closed ? "已結案・唯讀" : index < record.stage ? (backfill ? "已完成・可修改" : "已完成・唯讀") : index === record.stage ? "進行中" : "尚未開始・預覽"}</span></button>
             {opened && <div className="case-stage-body space-y-5 border-t border-stone-200 p-4 sm:p-5"><fieldset disabled={index !== 3 && !stageEditable(index)} className="grid gap-4 sm:grid-cols-2">
-              {index === 0 && <><Field label="類別" value={record.category} options={["懷孕", "小產", "婦科術後"]} onChange={(category) => patch({ category })} /><Field label="胎次" value={record.parity} options={["第 1 胎", "第 2 胎", "第 3 胎以上"]} onChange={(parity) => patch({ parity })} /><Field label="生產方式" value={record.deliveryMethod} options={["自然產", "剖腹產", "未定"]} onChange={(deliveryMethod) => patch({ deliveryMethod })} /><HospitalSelect value={record.hospital} onChange={(hospital) => patch({ hospital })} /><Field required label="參觀日期" value={record.visitDate} type="date" onChange={(visitDate) => patch({ visitDate })} /><Field label="參觀時段" value={record.visitTime} options={["10:00", "11:00", "14:00", "15:00", "16:00"]} onChange={(visitTime) => patch({ visitTime })} /><Field label="訊息來源" value={record.source} options={["親友介紹", "網路推薦", "媽媽教室", "有入住經驗", "其他"]} onChange={(source) => patch({ source })} /><Field label="接待人員" value={record.receptionist} onChange={(receptionist) => patch({ receptionist, owner: receptionist })} /></>}
-              {index === 1 && <><Field label="參觀日期" value={record.visitDate} type="date" onChange={(visitDate) => patch({ visitDate })} /><Field label="參觀時段" value={record.visitTime} onChange={(visitTime) => patch({ visitTime })} /><Field label="接待人員" value={record.receptionist} onChange={(receptionist) => patch({ receptionist, owner: receptionist })} /><Field required label="參觀出席" value={record.visitStatus} options={["未出席", "已出席", "改期"]} onChange={(visitStatus) => patch({ visitStatus })} /><Field label="參觀後意向" value={record.visitIntent} options={["當場下訂", "考慮中", "不考慮"]} onChange={(visitIntent) => patch({ visitIntent })} /><Field label="合約影本攜回審閱日" value={record.reviewStart} type="date" onChange={(reviewStart) => patch({ reviewStart })} /><label className="sm:col-span-2 block space-y-2 text-sm">參觀紀錄<textarea className={input} value={record.visitNote} onChange={(event) => patch({ visitNote: event.target.value })} /></label><Field label="價格身分" value={record.priceClass} options={["一般", "特約企業", "員工價"]} onChange={(priceClass) => patch({ priceClass, ...(priceClass !== "特約企業" ? { corporateCompany: "" } : {}) })} />{record.priceClass === "特約企業" && <Field label="特約企業" value={record.corporateCompany} options={["", ...corporateCompanies]} onChange={(corporateCompany) => patch({ corporateCompany })} />}<Field label="房型" value={record.roomType} options={["精緻", "VIP", "VILLA"]} onChange={(roomType) => patch({ roomType: roomType as CaseRecord["roomType"] })} /><div className="space-y-2 text-sm"><Field required label="入住天數" value={record.days} type="number" onChange={(days) => patch({ days: Number(days) })} /><div className="flex flex-wrap gap-2">{COMMON_STAY_DAYS.map((days) => <button type="button" key={days} aria-pressed={record.days === days} className={buttonStyles({ size: "sm", selected: record.days === days })} onClick={() => patch({ days })}>{days} 天</button>)}</div></div><label className="flex min-h-12 items-center gap-2 text-sm"><input type="checkbox" checked={record.tasting} onChange={(event) => patch({ tasting: event.target.checked })} />試吃已收 350 元，尾款折抵一次</label><button type="button" className={button} onClick={() => setOperation("override")}>覆寫金額（需原因）</button></>}
+              {index === 0 && <><Field label="類別" value={record.category} options={["懷孕", "小產", "婦科術後"]} onChange={(category) => patch({ category })} /><Field label="胎次" value={record.parity} options={["第 1 胎", "第 2 胎", "第 3 胎以上"]} onChange={(parity) => patch({ parity })} /><Field label="生產方式" value={record.deliveryMethod} options={["自然產", "剖腹產", "未定"]} onChange={(deliveryMethod) => patch({ deliveryMethod })} /><HospitalSelect value={record.hospital} onChange={(hospital) => patch({ hospital })} /><Field required label="參觀日期" value={record.visitDate} type="date" onChange={(visitDate) => patch({ visitDate })} /><Field label="參觀時段" value={record.visitTime} options={["10:00", "11:00", "14:00", "15:00", "16:00"]} onChange={(visitTime) => patch({ visitTime })} /><Field label="訊息來源" value={record.source} options={["親友介紹", "網路推薦", "媽媽教室", "有入住經驗", "其他"]} onChange={(source) => patch({ source })} /><Field label="接待人員" options={["林小姐", "陳小姐"]} value={record.receptionist} onChange={(receptionist) => patch({ receptionist, owner: receptionist })} /></>}
+              {index === 1 && <><Field label="參觀日期" value={record.visitDate} type="date" onChange={(visitDate) => patch({ visitDate })} /><Field label="參觀時段" options={["10:00", "11:00", "14:00", "15:00", "16:00"]} value={record.visitTime} onChange={(visitTime) => patch({ visitTime })} /><Field label="接待人員" options={["林小姐", "陳小姐"]} value={record.receptionist} onChange={(receptionist) => patch({ receptionist, owner: receptionist })} /><Field required label="參觀出席" value={record.visitStatus} options={["未出席", "已出席", "改期"]} onChange={(visitStatus) => patch({ visitStatus })} /><Field label="參觀後意向" value={record.visitIntent} options={["當場下訂", "考慮中", "不考慮"]} onChange={(visitIntent) => patch({ visitIntent })} /><Field label="合約影本攜回審閱日" value={record.reviewStart} type="date" onChange={(reviewStart) => patch({ reviewStart })} /><label className="sm:col-span-2 block space-y-2 text-sm">參觀紀錄<textarea className={input} value={record.visitNote} onChange={(event) => patch({ visitNote: event.target.value })} /></label><Field label="價格身分" value={record.priceClass} options={["一般", "特約企業", "員工價"]} onChange={(priceClass) => patch({ priceClass, ...(priceClass !== "特約企業" ? { corporateCompany: "" } : {}) })} />{record.priceClass === "特約企業" && <Field label="特約企業" value={record.corporateCompany} options={["", ...corporateCompanies]} onChange={(corporateCompany) => patch({ corporateCompany })} />}<Field label="房型" value={record.roomType} options={["精緻", "VIP", "VILLA"]} onChange={(roomType) => patch({ roomType: roomType as CaseRecord["roomType"] })} /><div className="space-y-2 text-sm"><Field required label="入住天數" value={record.days} type="number" onChange={(days) => patch({ days: Number(days) })} /><div className="flex flex-wrap gap-2">{COMMON_STAY_DAYS.map((days) => <button type="button" key={days} aria-pressed={record.days === days} className={buttonStyles({ size: "sm", selected: record.days === days })} onClick={() => patch({ days })}>{days} 天</button>)}</div></div><label className="flex min-h-12 items-center gap-2 text-sm"><input type="checkbox" checked={record.tasting} onChange={(event) => patch({ tasting: event.target.checked })} />試吃已收 350 元，尾款折抵一次</label><button type="button" className={button} onClick={() => setOperation("override")}>覆寫金額（需原因）</button></>}
               {index === 2 && <><Field label="下訂日期" value={record.orderDate} type="date" onChange={(orderDate) => patch({ orderDate })} /><Field required label="收字第○號（合約編號）" value={record.contractNo} onChange={(contractNo) => patch({ contractNo })} /><Field required label="訂金" value={record.deposit} type="number" onChange={(deposit) => patch({ deposit: Number(deposit) })} /><Field label="付款方式" value={record.paymentMethod} options={["現金", "轉帳", "刷卡", "其他"]} onChange={(paymentMethod) => patch({ paymentMethod })} /><label className="sm:col-span-2 block space-y-2 text-sm">下訂備註<textarea className={input} value={record.orderNote} onChange={(event) => patch({ orderNote: event.target.value })} /></label><div className="sm:col-span-2 flex flex-wrap items-center gap-3 text-sm"><span className="text-stone-600">下訂時一併填寫：</span><CaseDocLinks record={record} editable={edit} docs={docsForStage(2)} /></div><p className="text-sm">{record.roomType} {record.days} 天｜報價 {money(record.overrideAmount ?? record.quotedAmount)}</p></>}
               {index === 3 && <ContractSteps readOnly={!stageEditable(index)} key={record.id} record={record} onChange={patch} onSign={() => setOperation("sign")} onSignStaff={() => setOperation("sign-staff")} onStampMilk={() => run(() => caseActions.stampMilkConsent(record.id), "已帶入護理人員印章。")} />}
               {index === 4 && <><div className="sm:col-span-2 space-y-2"><h3 className="font-medium">入住前時間軸</h3>{/*
@@ -304,7 +338,7 @@ export default function CaseWorkspace() {
                   資料欄位仍是各自獨立的布林值，櫃台單據存檔時照樣只勾自己那一項。
                 */}
                 {([[['prenatalContactDone'],'預產期前 1 個月｜產前關懷電話'],[['hospitalizationNoticeDone'],'住院當日｜住院與生產方式通知'],[['preAdmissionPapersDone'],'入住前 1 天｜餐飲單、嬰兒室通知單、保全資訊'],[['admissionGuidanceDone','admissionPaymentNoticeDone'],'入住當天｜入住指導單、繳款通知單'],[['dischargeNoticeDone'],'出院前 1 天｜確認實際入住日']] as const).map(([keys,label]) => <div key={label} className="rounded-lg border border-stone-200 px-3 py-2"><div className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1 text-sm"><label className="flex items-center gap-3"><input type="checkbox" checked={keys.every((key) => record[key])} onChange={(event) => run(() => keys.forEach((key) => caseActions.timeline(record.id, key, event.target.checked)), `${label}狀態已更新。`)} /><span>{label}</span></label><CaseDocLinks record={record} editable={edit} docs={docsForTimeline(keys)} /><span className="ml-auto text-xs text-stone-500">{keys.every((key) => record[key]) ? "已完成" : "待辦"}</span></div></div>)}</div><Field required label="實際入住日" type="date" value={record.actualAdmission} onChange={(actualAdmission) => patch({ actualAdmission })} /><Field required label="入住房號" value={record.room} onChange={(room) => patch({ room })} /><div className="sm:col-span-2 flex flex-wrap gap-2"><button type="button" className={button} onClick={() => window.print()}>列印入住指導單（紙本）</button></div><p className="sm:col-span-2 text-sm">完成階段後產生合約 v2，建立視訊待指派登記；護理端再指派寶寶、車號與監視器。</p></>}
-              {index === 5 && <><p className="sm:col-span-2 text-sm">每日房費以套餐計入，額外自費以下方明細加列。已簽合約原文保留，條件變動請開變更單。</p><button type="button" className={button} onClick={() => setOperation("charge")}>新增自費／費用調整</button><button type="button" className={button} onClick={() => { setChangeDays(String(record.days)); setChangeType(record.roomType); setChangeRoom(""); setOperation("change"); }}>合約變更單</button><div className="sm:col-span-2 flex flex-wrap items-center gap-3 text-sm"><span className="text-stone-600">住戶諮詢：</span><CaseDocLinks record={record} editable={edit} docs={docsForStage(5)} /></div><AdmissionMeal key={record.id} record={record} editable={edit} />{SHOW_ROOM_SERVICE && <div className="sm:col-span-2"><RoomServicePanel room={record.room} /></div>}</>}
+              {index === 5 && <><p className="sm:col-span-2 text-sm">每日房費以套餐計入，額外自費以下方明細加列。已簽合約原文保留，條件變動請開變更單。</p><a href="#case-accounting" className={button} onClick={() => setAccountTab("帳務")}>前往帳務・費用 {record.ledger.length} 筆</a><div className="sm:col-span-2 flex flex-wrap items-center gap-3 text-sm"><span className="text-stone-600">住戶諮詢：</span><CaseDocLinks record={record} editable={edit} docs={docsForStage(5)} /></div><AdmissionMeal key={record.id} record={record} editable={edit} />{SHOW_ROOM_SERVICE && <div className="sm:col-span-2"><RoomServicePanel room={record.room} /></div>}</>}
               {index === 6 && <><p className="sm:col-span-2 text-sm">應收餘額 {money(caseBalance(record))}（含訂金、試吃折抵、返家應收及付款紀錄）。</p><label className="flex min-h-12 items-center gap-2 text-sm"><input type="checkbox" checked={record.settlementDone} onChange={(event) => patch({ settlementDone: event.target.checked })} />已完成尾款結算</label><div className="sm:col-span-2 space-y-4"><ReturnGuide key={`guide-${record.id}`} record={record} editable={edit} /><ReturnInspection key={`inspect-${record.id}`} record={record} editable={edit} /><RefundCalculator key={`refund-${record.id}`} record={record} editable={edit} /></div><label className="sm:col-span-2 flex min-h-12 items-center gap-2 text-sm"><input type="checkbox" checked={record.childcare} onChange={(event) => patch({ childcare: event.target.checked })} />寶寶需要續留托嬰（選填）</label>{record.childcare && <><Field required label="托嬰車號" value={record.childcareCar} onChange={(childcareCar) => patch({ childcareCar })} /><Field required label="托嬰天數" type="number" value={record.childcareDays} onChange={(value) => patch({ childcareDays: Number(value) })} /><Field label="每日托嬰費" type="number" value={record.childcareFee} onChange={(value) => patch({ childcareFee: Number(value) })} /><Field required label="接送人／聯絡方式" value={record.childcareContact} onChange={(childcareContact) => patch({ childcareContact })} /></>}</>}
               <label className="sm:col-span-2 block space-y-2 text-sm">階段備註<textarea disabled={!stageEditable(index)} className={input} value={record.note} onChange={(event) => patch({ note: event.target.value })} /></label>
             </fieldset>
@@ -313,12 +347,20 @@ export default function CaseWorkspace() {
             </div>}
           </section>;
         })}
-        {record.actualAdmission && <DailyLedger key={record.id} record={record} editable={edit} />}
-        {record.stage >= 5 && <PaymentRecords key={`payments-${record.id}`} record={record} editable={edit} />}
         {record.stage === 6 && <ReturnPhotos key={record.id} record={record} editable={edit} />}
         {record.childcare && !record.childcareEnded && record.dischargedAt && <section className="space-y-3 rounded-xl border border-violet-300 bg-violet-50 p-4"><h2 className="font-semibold">托嬰進行中・車 {record.childcareCar}</h2><p className="text-sm">媽媽已退房，寶寶照護與觀看授權依托嬰狀態獨立維持。</p><Link href={`/contract/?tab=childcare&case=${encodeURIComponent(record.id)}`} className={button}>修改托嬰車號／期限</Link><button type="button" className={button} onClick={() => setOperation("end-childcare")}>確認已接回，結束托嬰</button></section>}
         </div>
-        <aside className="work-aside"><CaseAmountSummary record={record} /><CollapsibleSection id="case-stage-nav" title="案件階段" summary={`第 ${record.stage + 1}／7 階段`}><nav className="case-stage-nav">{CASE_STAGES.map((stage, index) => <a key={stage} href={`#case-stage-${index}`} aria-current={index === record.stage ? "step" : undefined} onClick={() => setExpanded((items) => [...new Set([...items, index])])} >{index + 1}. {stage}{index < record.stage ? " ✓" : ""}</a>)}</nav></CollapsibleSection><CollapsibleSection id="case-ledger" title="帳務明細" summary={`${record.ledger.length} 筆`}> {ledgerByCategory(record).length > 0 && <div className="mt-3 rounded-lg bg-stone-50 p-3 text-xs"><p className="font-medium">自費分類小計</p>{ledgerByCategory(record).map((group) => <p key={group.category} className="mt-1 flex justify-between gap-3"><span>{group.category}</span><span className="tabular-nums">{money(group.amount)}</span></p>)}</div>}{record.ledger.map((entry) => <p key={entry.id} className="mt-3 break-words text-xs">{entry.date} {entry.label}{entry.qty && entry.qty > 1 ? ` ×${entry.qty}` : ""}：{money(entry.amount)}</p>)}</CollapsibleSection><CollapsibleSection id="case-log" title="案件歷程" summary={`${record.log.length} 筆`}><ol className="space-y-4">{record.log.map((entry) => <li key={entry.id} className="text-sm"><p>{entry.text}</p><p className="mt-1 text-xs text-stone-500">{taipeiTimestamp(entry.at)}<br />{entry.actor}</p></li>)}</ol></CollapsibleSection></aside>
+        <section id="case-accounting" className="work-surface space-y-6 p-4 sm:p-6">
+          <div role="tablist" aria-label="案件帳務與操作歷程" className="flex flex-wrap gap-2 border-b border-stone-200 pb-4">{["帳務", "操作歷程"].map((label) => <button type="button" key={label} role="tab" id={`case-tab-${label}`} aria-controls={`case-panel-${label}`} aria-selected={accountTab === label} className={buttonStyles({ selected: accountTab === label })} onClick={() => setAccountTab(label)}>{label}{label === "操作歷程" ? `・${record.log.length}` : ""}</button>)}</div>
+          <div role="tabpanel" id="case-panel-帳務" aria-labelledby="case-tab-帳務" hidden={accountTab !== "帳務"} className="space-y-7">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]"><CaseAmountSummary record={record} /><div className="space-y-4"><h2 className="text-lg font-semibold">帳務</h2><p className="text-sm text-stone-600">集中管理自費、合約變更、逐日計費與收款。</p>{edit && <div className="flex flex-wrap gap-2"><button type="button" className={buttonStyles({ variant: "primary" })} onClick={() => openCharge()}>新增自費／費用調整</button>{record.signed && manager && <button type="button" className={button} onClick={() => openChange()}>合約變更單</button>}</div>}{ledgerByCategory(record).length > 0 && <dl className="space-y-2 text-sm">{ledgerByCategory(record).map((group) => <div key={group.category} className="flex justify-between gap-4"><dt>{group.category}</dt><dd className="tabular-nums">{money(group.amount)}</dd></div>)}</dl>}</div></div>
+            {(operation === "charge" || operation === "change") && operationContent}
+            <CaseLedgerRecords record={record} editable={edit} manager={manager} onEditCharge={openCharge} onEditChange={openChange} />
+            <DailyLedger key={record.id} record={record} editable={edit} />
+            {record.stage >= 2 && <PaymentRecords key={`payments-${record.id}`} record={record} editable={edit} />}
+          </div>
+          <div role="tabpanel" id="case-panel-操作歷程" aria-labelledby="case-tab-操作歷程" hidden={accountTab !== "操作歷程"} className="space-y-4"><h2 className="text-lg font-semibold">操作歷程</h2><p className="text-sm text-stone-600">依時間由新到舊，保留經辦人員、異動內容及原因。</p><ol className="divide-y divide-stone-200">{record.log.map((entry) => <li key={entry.id} className="grid gap-2 py-4 text-sm sm:grid-cols-[12rem_minmax(0,1fr)]"><div className="text-xs leading-6 text-stone-600"><p>{taipeiTimestamp(entry.at)}</p><p>{entry.actor}</p></div><p className="break-words leading-6">{entry.text}</p></li>)}</ol>{!record.log.length && <p className="py-4 text-sm text-stone-600">尚無操作紀錄，儲存或完成階段後會顯示在此處。</p>}</div>
+        </section>
       </div>
     </>}
     <p className="text-xs text-stone-500">純靜態展示；價格與正式欄位待院方確認，資料僅保留於本機瀏覽器。</p>

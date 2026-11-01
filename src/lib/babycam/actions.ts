@@ -1,11 +1,12 @@
 "use client";
 
-import { audit, domainStore } from "../demo/domainStore";
+import { audit, domainStore, moveCaseRoom, currentActor } from "../demo/domainStore";
 import { getCurrentRole } from "../roleStore";
 import type { BabyBinding, DemoDomain, ViewingBinding, WindowRule } from "../domain/types";
 import { validTime } from "../domain/rules";
 import { normalizeCartNo } from "./cart-no";
 import { guard } from "../demo/lenient";
+import { registrationDefaults } from "./registration";
 import { closeViewingHistory } from "./history";
 import { normalizePrintSettings } from "./wristband-print";
 import { getAccess, ROLES, type AccessLevel, type Role } from "../permissions";
@@ -48,19 +49,45 @@ function dateValid(value: string) { return /^\d{4}-\d{2}-\d{2}$/.test(value) && 
 
 export const babycamActions = {
   register(caseId: string) {
+    const id = crypto.randomUUID();
     domainStore.update((data) => {
       requireSection(data, "01");
       if (!["管理者", "櫃台"].includes(getCurrentRole())) throw new Error("入住交付須由櫃台或管理角色操作。");
       const record = data.cases.find((item) => item.id === caseId);
-      if (!record || !record.actualAdmission || record.dischargedAt) throw new Error("請先從案件流程完成實際入住。");
+      if (!record || record.stage < 3 || !record.contractNo || record.closed || record.dischargedAt) throw new Error("請先從案件流程建立合約資料。");
       if (data.bindings.some((binding) => binding.caseId === caseId && !binding.ended)) throw new Error("此案件已有視訊登記，請沿用原資料。");
       const internalWindow: WindowRule = { mode: "inherit", start: "10:00", end: "22:00" };
-      data.bindings.push({ id: crypto.randomUUID(), caseId, room: record.room, motherName: record.name, phone: record.phone, validFrom: record.actualAdmission, validTo: "2026-12-31", familyEnabled: true, familyFrom: "", familyTo: "", internalWindow, familyWindow: { ...internalWindow }, internalTicket: crypto.randomUUID(), familyTicket: crypto.randomUUID(), passcode: `DEMO-${data.bindings.length + 1}`, babies: [], sessions: [], ended: false });
+      data.bindings.push({ id, caseId, ...registrationDefaults(record), familyEnabled: true, familyFrom: "", familyTo: "", internalWindow, familyWindow: { ...internalWindow }, internalTicket: crypto.randomUUID(), familyTicket: crypto.randomUUID(), passcode: `DEMO-${data.bindings.length + 1}`, babies: [], sessions: [], ended: false });
       audit(data, "建立視訊入住登記，待護理指派", caseId);
     });
+    return id;
   },
   updateBinding(id: string, patch: Partial<ViewingBinding>) {
-    domainStore.update((data) => { requireSection(data, "01"); const binding = bindingOf(data, id); const allowed = ["validFrom", "validTo", "familyEnabled", "familyFrom", "familyTo", "internalWindow", "familyWindow"]; if (Object.keys(patch).some((key) => !allowed.includes(key))) throw new Error("請使用對應視訊操作。"); if (patch.internalWindow) checkWindow(patch.internalWindow); if (patch.familyWindow) checkWindow(patch.familyWindow); const after = { ...binding, ...patch }; if (!dateValid(after.validFrom) || !dateValid(after.validTo) || after.familyFrom && !dateValid(after.familyFrom) || after.familyTo && !dateValid(after.familyTo)) throw new Error("觀看授權日期格式不正確。"); if (after.validFrom > after.validTo || (after.familyFrom && after.familyTo && after.familyFrom > after.familyTo)) throw new Error("結束日期不能早於起始日期。"); Object.assign(binding, patch); audit(data, "修改入住觀看授權", id); });
+    domainStore.update((data) => { requireSection(data, "01"); const binding = bindingOf(data, id); const allowed = ["validFrom", "validTo", "familyEnabled", "familyFrom", "familyTo", "internalWindow", "familyWindow"]; if (Object.keys(patch).some((key) => !allowed.includes(key))) throw new Error("請使用對應視訊操作。"); if (patch.internalWindow) checkWindow(patch.internalWindow); if (patch.familyWindow) checkWindow(patch.familyWindow); const after = { ...binding, ...patch }; if (!dateValid(after.validFrom) || !dateValid(after.validTo) || after.familyFrom && !dateValid(after.familyFrom) || after.familyTo && !dateValid(after.familyTo)) throw new Error("觀看授權日期格式不正確。"); if (after.validFrom > after.validTo || (after.familyFrom && after.familyTo && after.familyFrom > after.familyTo)) throw new Error("結束日期不能早於起始日期。"); if (patch.validFrom !== undefined || patch.validTo !== undefined) binding.registrationOverrides = [...new Set([...(binding.registrationOverrides ?? []), ...(patch.validFrom !== undefined ? ["validFrom" as const] : []), ...(patch.validTo !== undefined ? ["validTo" as const] : [])])]; Object.assign(binding, patch); audit(data, "修改入住觀看授權", id); });
+  },
+  registration(id: string, patch: { motherName: string; phone: string; room: string }, reason = "") {
+    if (!patch.motherName.trim() || !patch.phone.trim()) throw new Error("請填寫媽媽姓名與聯絡電話。");
+    domainStore.update((data) => {
+      requireSection(data, "01");
+      if (!["管理者", "櫃台", "護理長 婉真"].includes(getCurrentRole())) throw new Error("目前角色不能修改入住基本資料。");
+      const binding = bindingOf(data, id);
+      const record = data.cases.find((item) => item.id === binding.caseId);
+      if (!record || record.closed) throw new Error("案件已結案或不存在，請由案件流程確認。");
+      if (patch.room !== record.room) {
+        if (record.actualAdmission) {
+          if (!["管理者", "護理長 婉真"].includes(getCurrentRole()) || !reason.trim()) throw new Error("入住後換房須主管操作，並填寫換房原因。");
+          moveCaseRoom(data, record, patch.room, reason);
+        } else {
+          if (patch.room && !data.rooms.some((item) => item.enabled && item.room === patch.room)) throw new Error("請選擇有效房號。");
+          record.room = patch.room;
+        }
+      }
+      record.name = patch.motherName.trim(); record.phone = patch.phone.trim();
+      data.bindings.filter((item) => item.caseId === record.id).forEach((item) => { item.motherName = record.name; item.phone = record.phone; if (!item.ended) item.room = record.room; });
+      data.subjects.filter((item) => item.caseId === record.id).forEach((item) => { item.motherName = record.name; if (item.kind === "mama") item.name = record.name; });
+      record.log.unshift({ id: crypto.randomUUID(), at: new Date().toISOString(), actor: currentActor(), text: `視訊入住基本資料已修改並同步姓名、電話及房號${reason.trim() ? `；原因：${reason.trim()}` : ""}；原合約快照保留` });
+      audit(data, "修改視訊入住基本資料並同步案件", id);
+    });
   },
   assign(id: string, input: { babyId?: string; name: string; cameraId: string; cartNo: string; birthDate: string; sex: "男" | "女"; birthOrder: number; reason?: string }) {
     domainStore.update((data) => {
@@ -134,7 +161,7 @@ export const babycamActions = {
     domainStore.update((data) => { requireSection(data, "03"); const camera = data.cameras.find((item) => item.id === id); if (!camera) throw new Error("找不到監視器。"); const allowed = ["enabled", "health", "baseline", "scheduleInternal", "scheduleFamily", "code", "codec", "sourceType", "sourceLabel", "resolution", "lastShotAt"]; if (Object.keys(patch).some((key) => !allowed.includes(key))) throw new Error("此監視器欄位不可變更。"); if (patch.code && (!/^[AB][0-9]{2}$/.test(patch.code) || data.cameras.some((item) => item.id !== id && item.code === patch.code))) throw new Error("監視器編號須為 A／B 加兩位數，且不可重複。"); if (patch.sourceLabel && (/:\/\/|(?:\d{1,3}\.){3}\d{1,3}/.test(patch.sourceLabel))) throw new Error("來源僅填匿名代號，不接受網址或設備位址。"); if (patch.scheduleInternal) checkWindow(patch.scheduleInternal); if (patch.scheduleFamily) checkWindow(patch.scheduleFamily); Object.assign(camera, patch); if (patch.code) camera.zone = patch.code[0] as "A" | "B"; audit(data, "修改監視器展示設定", id); });
   },
   settings(patch: Partial<DemoDomain>) {
-    domainStore.update((data) => { requireSection(data, "04"); const allowed = ["houseWindow", "internalWindow", "familyWindow", "enforceInternal", "enforceFamily", "familyLimit", "concurrencyEnforced", "demoAt", "viewScenario", "networkPrefix"]; if (Object.keys(patch).some((key) => !allowed.includes(key))) throw new Error("請使用對應設定操作。"); for (const key of ["houseWindow", "internalWindow", "familyWindow"] as const) if (patch[key]) checkWindow(patch[key]); if (patch.demoAt !== undefined && !Number.isFinite(Date.parse(patch.demoAt))) throw new Error("展示日期時間不正確。"); if (patch.familyLimit !== undefined && (!Number.isInteger(patch.familyLimit) || patch.familyLimit < 0)) throw new Error("同時觀看上限請填 0 或正整數。"); if (patch.networkPrefix !== undefined && !/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/.test(patch.networkPrefix)) throw new Error("網段前綴請填三段數字，例如 192.168.202。"); Object.assign(data, patch); audit(data, "修改展示／觀看設定", "settings"); });
+    domainStore.update((data) => { requireSection(data, "04"); const allowed = ["houseWindow", "internalWindow", "familyWindow", "enforceInternal", "enforceFamily", "familyLimit", "concurrencyEnforced", "demoAt", "viewScenario", "networkPrefix"]; if (Object.keys(patch).some((key) => !allowed.includes(key))) throw new Error("請使用對應設定操作。"); for (const key of ["houseWindow", "internalWindow", "familyWindow"] as const) if (patch[key]) checkWindow(patch[key]); if (patch.demoAt !== undefined && !Number.isFinite(Date.parse(patch.demoAt))) throw new Error("展示日期時間不正確。"); if (patch.familyLimit !== undefined && (!Number.isInteger(patch.familyLimit) || patch.familyLimit < 0)) throw new Error("同時觀看上限請填 0 或正整數。"); if (patch.networkPrefix !== undefined && !/^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/.test(patch.networkPrefix)) throw new Error("網段前綴請填三段數字，例如 192.168.202。"); if (patch.demoAt !== undefined) data.demoClockStartedAt = new Date().toISOString(); Object.assign(data, patch); audit(data, "修改展示／觀看設定", "settings"); });
   },
   display(key: string, name: string, image?: string) {
     domainStore.update((data) => { requireSection(data, image !== undefined ? "05" : "04"); const state = data.displayStates.find((item) => item.key === key); if (!state || !name.trim()) throw new Error("請填寫狀態名稱。"); if (name.trim() !== state.name) requireSection(data, "04"); state.name = name.trim(); if (image !== undefined) state.image = image; audit(data, "修改顯示狀態", key); });

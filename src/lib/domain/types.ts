@@ -41,7 +41,9 @@ export type CaseRecord = {
   childcare: boolean; childcareEnded: boolean; childcareCar: string; childcareDays: number; childcareFee: number; childcareContact: string;
   completed: number[]; draftAt?: string;
   ledger: { id: string; date: string; label: string; amount: number; adjustsId?: string; before?: number; after?: number; actor?: string; at?: string; /** 指定為贈送日而產生的折讓，值＝該日日期。 */ giftDate?: string;
-    /** 自費分類（sales.ts 的 SALE_CATEGORIES），用於帳務分類小計。 */ category?: string; qty?: number; unitPrice?: number }[];
+    /** 自費分類（sales.ts 的 SALE_CATEGORIES），用於帳務分類小計。 */ category?: string; qty?: number; unitPrice?: number;
+    kind?: "charge" | "contract-change"; revisesId?: string;
+    change?: { days: number; roomType: CaseRecord["roomType"]; hospital: string; room: string; reason: string; childcareDays?: number; childcareRange?: string } }[];
   payments: { id: string; date: string; amount: number; method: string; note: string; actor: string; at: string;
     /** 收款科目（訂金／尾款／自費／其他），手冊第 25 頁。 */ subject?: string;
     /** 發票或收據號碼。 */ invoice?: string;
@@ -57,6 +59,7 @@ export type CaseRecord = {
   roomMoves?: { from: string; to: string; at: string; reason: string; actor: string }[];
   proxySigned?: boolean; proxyName?: string; contractStamp?: string;
   /** 經辦人員（櫃台）簽名（手冊第 21 頁）。 */ staffSignature?: string;
+  signatureRevisions?: { kind: "subject" | "staff"; image: string; at: string; actor: string }[];
   /** 母乳哺育意願書上的護理人員印章（手冊第 10 頁）。 */ milkNurseStamp?: string;
 };
 /** 入住後消費（自費）品項主檔：分類、品項名、單價。 */
@@ -83,6 +86,8 @@ export type ViewingBinding = {
   sessions: { id: string; audience: "internal" | "family"; lastSeen: string }[];
   ended: boolean;
   viewingRevoked?: boolean;
+  /** 使用者自行修改的期間，實際入住時不再以預設值覆蓋。 */
+  registrationOverrides?: ("validFrom" | "validTo")[];
 };
 export type DemoDomain = {
   /** 示範資料結構版本；不符時 domainStore 會丟棄本機資料重新播種。 */
@@ -92,6 +97,8 @@ export type DemoDomain = {
   displayStates: DisplayState[]; houseWindow: WindowRule; internalWindow: WindowRule; familyWindow: WindowRule;
   enforceInternal: boolean; enforceFamily: boolean; familyLimit: number; concurrencyEnforced: boolean;
   demoAt: string; viewScenario: "normal" | "stale" | "fault" | "cart-away";
+  /** 展示時鐘的真實起算時間；不改變原設定時間，供排程自動前進。 */
+  demoClockStartedAt?: string;
   lightColors: Record<string, string>; relayChannels: Record<string, boolean>;
   audit: { id: string; at: string; actor: string; action: string; target: string }[];
   careEvents: { id: string; bindingId: string; babyId: string; start: string; end: string | null; actor: string }[];

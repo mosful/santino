@@ -1,5 +1,6 @@
 "use client";
 
+import { taipeiTimestamp } from "@/lib/care/rules";
 import { useState } from "react";
 import { report, reportFail } from "@/lib/demo/lenient";
 import { Toast, useToast } from "@/components/ui/Toast";
@@ -30,9 +31,37 @@ const button = buttonStyles();
 
 export function DailyLedger({ record, editable }: { record: CaseRecord; editable: boolean }) {
   const role = useCurrentRole();
-  const [entryId, setEntryId] = useState(""); const [amount, setAmount] = useState(""); const [reason, setReason] = useState(""); const [toast, toastProps] = useToast();
-  const rows = dailyCharges(record);
-  return <CollapsibleSection id="case-daily-ledger" title="逐日房租與自費明細" summary={`${rows.length} 列`} bodyClassName="space-y-4"><p className="text-sm text-stone-600">原合約金額按原付費日分攤，最後付費日調整尾差；贈送日為 0。變更與自費另列，不更動原合約快照。逐日可改為贈送日，系統會加一筆同額折讓，原房費保留在明細中。</p><div className="max-h-96 overflow-auto"><table className="w-full min-w-[560px] text-left text-sm"><thead><tr><th className="p-2">日期</th><th className="p-2">項目</th><th className="p-2 text-right">金額</th>{editable && <th className="p-2">計費方式</th>}</tr></thead><tbody>{rows.map((row, index) => { const gifted = record.ledger.some((entry) => entry.giftDate === row.date); const chargeable = row.amount > 0 && row.label.includes("原合約"); return <tr key={index} className="border-t border-stone-200"><td className="p-2">{row.date}</td><td className="p-2">{row.label}</td><td className="p-2 text-right tabular-nums">{row.amount.toLocaleString("zh-TW")}</td>{editable && <td className="p-2">{(chargeable || gifted) && !row.label.includes("折讓") && <button type="button" className={buttonStyles({ size: "sm", selected: gifted })} onClick={() => { try { caseActions.toggleGiftDay(record.id, row.date); toast.ok(gifted ? `已恢復 ${row.date} 的房費。` : `${row.date} 已改為贈送日。`); } catch (error) { reportFail(toast, error); } }}>{gifted ? "取消贈送" : "設為贈送"}</button>}</td>}</tr>; })}</tbody></table></div>{editable && ["護理長 婉真", "管理者"].includes(role) && <details><summary className="min-h-12 cursor-pointer text-sm">主管帳務例外調整</summary><div className="grid gap-3 sm:grid-cols-2"><label className="text-sm">原收費項目<select aria-label="例外調整項目" className={input} value={entryId} onChange={(event) => { setEntryId(event.target.value); setAmount(""); }}><option value="">請選擇自費／變更項目</option>{record.ledger.filter((entry) => !entry.adjustsId).map((entry) => <option value={entry.id} key={entry.id}>{entry.date}｜{entry.label}</option>)}</select></label><label className="text-sm">修正後金額<input aria-label="例外修正後金額" type="number" className={input} value={amount} onChange={(event) => setAmount(event.target.value)} /></label><label className="sm:col-span-2 text-sm">急診／例外原因<input aria-label="帳務例外原因" className={input} value={reason} onChange={(event) => setReason(event.target.value)} /></label><button type="button" className={button} onClick={() => { try { if (!amount.trim()) throw new Error("請填修正後金額。"); caseActions.adjustCharge(record.id, entryId, Number(amount), reason); toast.ok("已加列差額、保留原項目與主管授權紀錄。"); } catch (error) { toast.fail(error instanceof Error ? error.message : "調整失敗。"); } }}>授權並加列調整</button></div></details>}<Toast {...toastProps} /></CollapsibleSection>;
+  const [entryId, setEntryId] = useState("");
+  const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("");
+  const [toast, toastProps] = useToast();
+  const [sort, setSort] = useState<{ key: "date" | "at" | "label" | "amount"; ascending: boolean }>({ key: "date", ascending: false });
+  const rows = dailyCharges(record).sort((a, b) => {
+    const compared = sort.key === "amount" ? a.amount - b.amount : (a[sort.key] ?? "").localeCompare(b[sort.key] ?? "", "zh-Hant");
+    return sort.ascending ? compared : -compared;
+  });
+  function heading(key: typeof sort.key, label: string) {
+    return <th className="p-2" aria-sort={sort.key === key ? sort.ascending ? "ascending" : "descending" : "none"}><button type="button" className={buttonStyles({ variant: "ghost", size: "sm" })} onClick={() => setSort({ key, ascending: sort.key === key ? !sort.ascending : true })}>{label} {sort.key === key ? sort.ascending ? "↑" : "↓" : "↕"}</button></th>;
+  }
+  return <section id="case-daily-ledger" className="space-y-4 border-t border-stone-200 pt-6">
+    <div className="flex flex-wrap items-baseline justify-between gap-2"><h3 className="font-semibold">逐日房租與自費明細</h3><span className="text-sm text-stone-600">{rows.length} 列</span></div>
+    <p className="text-sm text-stone-600">原合約按付費日分攤，贈送日為 0；變更與自費另列。點選欄位標題可切換升冪／降冪。房租按日計費；舊紀錄未留時間者標示「未記錄時間」。</p>
+    <div className="max-h-[32rem] overflow-auto"><table className="w-full min-w-[720px] text-left text-sm">
+      <thead className="sticky top-0 bg-white"><tr>{heading("date", "計費日期")}{heading("at", "登錄時間")}{heading("label", "項目")}{heading("amount", "金額")}{editable && <th className="p-2">計費方式</th>}</tr></thead>
+      <tbody>{rows.map((row) => {
+        const gifted = !!row.rental && record.ledger.some((entry) => entry.giftDate === row.date);
+        const chargeable = row.rental && row.amount > 0;
+        return <tr key={row.id} className="border-t border-stone-200">
+          <td className="whitespace-nowrap p-2 tabular-nums">{row.date}</td>
+          <td className="whitespace-nowrap p-2 text-xs text-stone-600">{row.rental ? "每日計費" : row.at ? taipeiTimestamp(row.at) : "未記錄時間"}</td>
+          <td className="p-2">{row.label}</td><td className="p-2 text-right tabular-nums">{row.amount.toLocaleString("zh-TW")}</td>
+          {editable && <td className="p-2">{(chargeable || gifted) && <button type="button" className={buttonStyles({ size: "sm", selected: gifted })} onClick={() => { try { caseActions.toggleGiftDay(record.id, row.date); toast.ok(gifted ? `已恢復 ${row.date} 的房費。` : `${row.date} 已改為贈送日。`); } catch (error) { reportFail(toast, error); } }}>{gifted ? "取消贈送" : "設為贈送"}</button>}</td>}
+        </tr>;
+      })}{!rows.length && <tr><td colSpan={editable ? 5 : 4} className="p-6 text-center text-stone-600">尚無計費明細，確認入住日後會自動列出逐日房租。</td></tr>}</tbody>
+    </table></div>
+    {editable && ["護理長 婉真", "管理者"].includes(role) && <details><summary className="min-h-12 cursor-pointer text-sm">主管帳務例外調整</summary><div className="grid gap-3 sm:grid-cols-2"><label className="text-sm">原收費項目<select aria-label="例外調整項目" className={input} value={entryId} onChange={(event) => { setEntryId(event.target.value); setAmount(""); }}><option value="">請選擇自費／變更項目</option>{record.ledger.filter((entry) => !entry.adjustsId).map((entry) => <option value={entry.id} key={entry.id}>{entry.date}｜{entry.label}</option>)}</select></label><label className="text-sm">修正後金額<input aria-label="例外修正後金額" type="number" className={input} value={amount} onChange={(event) => setAmount(event.target.value)} /></label><label className="sm:col-span-2 text-sm">急診／例外原因<input aria-label="帳務例外原因" className={input} value={reason} onChange={(event) => setReason(event.target.value)} /></label><button type="button" className={button} onClick={() => { try { if (!amount.trim()) throw new Error("請填修正後金額。"); caseActions.adjustCharge(record.id, entryId, Number(amount), reason); toast.ok("已加列差額、保留原項目與主管授權紀錄。"); } catch (error) { toast.fail(error instanceof Error ? error.message : "調整失敗。"); } }}>授權並加列調整</button></div></details>}
+    <Toast {...toastProps} />
+  </section>;
 }
 
 export function AdmissionMeal({ record, editable }: { record: CaseRecord; editable: boolean }) {

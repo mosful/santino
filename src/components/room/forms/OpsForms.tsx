@@ -1,3 +1,4 @@
+import { todayTaipei } from "@/lib/dates";
 import { DEMO_BABY_NAME, DEMO_MOTHER_NAME, DEMO_PHONE } from "@/lib/demo/demoDefaults";
 import PrototypeFormActions from "@/components/ui/PrototypeFormActions";
 
@@ -13,7 +14,7 @@ function Field({ label, placeholder }: { label: string; placeholder?: string }) 
   return (
     <div>
       <label className="mb-1 block text-xs text-stone-500">{label}</label>
-      <input aria-label={label} defaultValue={demoValue(label)} placeholder={placeholder} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm" />
+      <input aria-label={label} type={label.endsWith("日期") ? "date" : "text"} defaultValue={label.endsWith("日期") ? todayTaipei() : demoValue(label)} placeholder={placeholder} className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm" />
     </div>
   );
 }

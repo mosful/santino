@@ -1,5 +1,6 @@
 "use client";
 
+import { todayTaipei } from "@/lib/dates";
 import { useState } from "react";
 import { Toast, useToast } from "@/components/ui/Toast";
 import { babycamActions } from "@/lib/babycam/actions";
@@ -7,6 +8,7 @@ import { activeDisinfection, describeDisinfection, type Disinfection } from "@/l
 import type { DemoDomain } from "@/lib/domain/types";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { SectionHeading } from "./BabycamUi";
+import { taipeiTimestamp } from "@/lib/care/rules";
 
 const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
 const button = buttonStyles();
@@ -26,7 +28,7 @@ const BLANK: Draft = { label: "環境消毒", kind: "環境", weekday: null, dat
  * ⚠️ 本專案是靜態原型，關的是畫面上的模擬狀態，不會連線任何實體設備。
  */
 export default function DisinfectionSchedule({ data, onChange }: { data: DemoDomain; onChange: () => void }) {
-  const [draft, setDraft] = useState<Draft>(BLANK);
+  const [draft, setDraft] = useState<Draft>(() => ({ ...BLANK, date: todayTaipei() }));
   const [roomText, setRoomText] = useState("");
   const [toast, toastProps] = useToast();
   const items = data.disinfections ?? [];
@@ -44,7 +46,7 @@ export default function DisinfectionSchedule({ data, onChange }: { data: DemoDom
       // 房號用頓號或逗號分隔都收，現場不會記得該用哪一種。
       const rooms = roomText.split(/[、,，\s]+/).map((item) => item.trim()).filter(Boolean);
       babycamActions.saveDisinfection({ ...draft, rooms });
-      setDraft(BLANK); setRoomText(""); toast.ok("消毒排程已儲存。"); onChange();
+      setDraft({ ...BLANK, date: todayTaipei() }); setRoomText(""); toast.ok("消毒排程已儲存。"); onChange();
     } catch (error) { toast.fail(error instanceof Error ? error.message : "儲存失敗。"); }
   }
 
@@ -57,7 +59,8 @@ export default function DisinfectionSchedule({ data, onChange }: { data: DemoDom
   const running = items.filter((item) => activeDisinfection(data, item.rooms[0] ?? "")?.id === item.id);
   return (
     <div className="space-y-4 p-4 sm:p-5">
-      <SectionHeading no={1} title="消毒排程" description="排程到點時指定房間的監視器一律關閉；觀看端會顯示消毒中，環狀燈熄滅、繼電器通道全關。" />
+      <p className="text-sm tabular-nums text-stone-600">目前展示時間：{taipeiTimestamp(data.demoAt)}（自動前進）</p>
+      <SectionHeading no={1} title="消毒排程" description="排程開始時自動遮蔽指定房間的監視器；房號留空則全院遮蔽。結束時間一到，自動恢復原本的照護狀態、開放時段與設備設定；不會把原本關閉的畫面強制打開。" />
       {running.length > 0 && <p role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
         消毒進行中，監視器暫停：{running.map((item) => `${item.label}（${item.start}–${item.end}，${item.rooms.length ? item.rooms.join("、") : "全院"}）`).join("；")}
       </p>}
@@ -102,7 +105,7 @@ export default function DisinfectionSchedule({ data, onChange }: { data: DemoDom
         </div>
         <div className="flex flex-wrap gap-3">
           <button type="button" className={buttonStyles({ variant: "primary" })} onClick={save}>{draft.id ? "儲存修改" : "新增排程"}</button>
-          {draft.id && <button type="button" className={button} onClick={() => { setDraft(BLANK); setRoomText(""); }}>取消編輯</button>}
+          {draft.id && <button type="button" className={button} onClick={() => { setDraft({ ...BLANK, date: todayTaipei() }); setRoomText(""); }}>取消編輯</button>}
         </div>
         <Toast {...toastProps} />
       </section>

@@ -65,9 +65,9 @@ export function dailyCharges(record: CaseRecord) {
   const days = original.days ?? record.days;
   const total = original.amount ?? record.overrideAmount ?? record.quotedAmount;
   const paid = Math.max(1, days - freeDays(days)); const daily = Math.floor(total / paid);
-  const rows: { date: string; label: string; amount: number }[] = [];
-  if (record.actualAdmission) for (let index = 0; index < days; index++) rows.push({ date: new Date(Date.parse(`${record.actualAdmission}T00:00:00+08:00`) + index * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" }), label: index >= paid ? "原合約贈送日" : "原合約房租／套餐分攤", amount: index >= paid ? 0 : daily + (index === paid - 1 ? total - daily * paid : 0) });
-  return [...rows, ...record.ledger.map((entry) => ({ date: entry.date, label: entry.label, amount: entry.amount }))].sort((a, b) => a.date.localeCompare(b.date));
+  const rows: { id: string; date: string; at?: string; label: string; amount: number; rental?: boolean }[] = [];
+  if (record.actualAdmission) for (let index = 0; index < days; index++) rows.push({ id: `rental-${index}`, date: new Date(Date.parse(`${record.actualAdmission}T00:00:00+08:00`) + index * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" }), rental: true, label: index >= paid ? "原合約贈送日" : "原合約房租／套餐分攤", amount: index >= paid ? 0 : daily + (index === paid - 1 ? total - daily * paid : 0) });
+  return [...rows, ...record.ledger.map((entry) => ({ id: entry.id, date: entry.date, at: entry.at, rental: false, label: entry.label, amount: entry.amount }))].sort((a, b) => a.date.localeCompare(b.date));
 }
 export function validTime(value: string) { return /^([01]\d|2[0-3]):[0-5]\d$/.test(value); }
 export function withinWindow(rule: WindowRule, at: Date) {

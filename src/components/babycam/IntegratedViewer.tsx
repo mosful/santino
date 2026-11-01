@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { LogOut, Maximize } from "lucide-react";
 import Tabs from "@/components/ui/Tabs";
-import { useDomainStore } from "@/lib/demo/domainStore";
-import { enterViewer, leaveViewer, viewerHeartbeat } from "@/lib/babycam/viewerSession";
+import { useLiveBabycamData } from "@/lib/babycam/useLiveBabycamData";
+import { enterViewer, leaveViewer, viewerHeartbeat, familyCapacityMessage } from "@/lib/babycam/viewerSession";
 import { viewingBlock } from "@/lib/babycam/viewing";
 import CamPreview from "./CamPreview";
 import ViewLoginCard from "./ViewLoginCard";
@@ -13,13 +13,15 @@ import { buttonStyles } from "@/components/ui/buttonStyles";
 
 /** 沿用既有觀看頁的登入卡、標題、頁籤及影像元件，僅替換資料與授權流程。 */
 export default function IntegratedViewer({ audience }: { audience: "internal" | "family" }) {
-  const { data } = useDomainStore();
+  const { data } = useLiveBabycamData();
   const params = useSearchParams();
   const [session, setSession] = useState<{ bindingId: string; deviceId: string; ticket: string } | null>(null);
   const [viewerMessage, setViewerMessage] = useState("");
   const frame = useRef<HTMLDivElement>(null);
   const family = audience === "family";
   const ticket = params.get("ticket");
+  const ticketBinding = ticket ? data.bindings.find((item) => item.familyTicket === ticket && !item.ended && !item.viewingRevoked) : undefined;
+  const capacityMessage = family && ticketBinding && !session ? familyCapacityMessage(data, ticketBinding) : null;
   const binding = data.bindings.find((item) => item.id === session?.bindingId);
   const accounts = data.bindings.filter((item) => !item.ended && (!ticket || ticket === (family ? item.familyTicket : item.internalTicket))).slice(0, 4).map((item) => ({ label: item.babies.length > 1 ? "多胞胎" : item.babies.length ? "一般觀看" : "待指派", room: item.room || "托嬰", phone: item.phone, code: item.passcode }));
   useEffect(() => {
@@ -30,10 +32,10 @@ export default function IntegratedViewer({ audience }: { audience: "internal" | 
     window.addEventListener("pagehide", release); window.addEventListener("santino-role-changed", changeRole);
     return () => { window.clearInterval(timer); window.removeEventListener("pagehide", release); window.removeEventListener("santino-role-changed", changeRole); release(); };
   }, [session]);
-  if (!session || !binding) return <ViewLoginCard title={family ? "寶寶影像（親友觀看）" : "寶寶即時影像"} subtitle={`聖帝諾產後護理之家 · ${family ? "親友觀看" : "媽媽專用"}`} demoHint="靜態展示：請使用院內完整功能工作區交付的展示手機與密碼。資料僅在同一瀏覽器同步，沒有真實帳號驗證或攝影機連線。" accounts={accounts} onSubmit={(phone, code) => {
+  if (!session || !binding) return <ViewLoginCard externalError={capacityMessage} title={family ? "寶寶影像（親友觀看）" : "寶寶即時影像"} subtitle={`聖帝諾產後護理之家 · ${family ? "親友觀看" : "媽媽專用"}`} demoHint="靜態展示：請使用院內完整功能工作區交付的展示手機與密碼。資料僅在同一瀏覽器同步，沒有真實帳號驗證或攝影機連線。" accounts={accounts} onSubmit={(phone, code) => {
     try {
-      let deviceId = window.sessionStorage.getItem("santino-viewer-device");
-      if (!deviceId) { deviceId = crypto.randomUUID(); window.sessionStorage.setItem("santino-viewer-device", deviceId); }
+      // 每次觀看建立獨立名額，避免複製分頁沿用 sessionStorage 而繞過人數限制。
+      const deviceId = crypto.randomUUID();
       const bindingId = enterViewer(audience, phone, code, ticket, deviceId);
       const current = data.bindings.find((item) => item.id === bindingId)!;
       setSession({ bindingId, deviceId, ticket: family ? current.familyTicket : current.internalTicket }); return null;

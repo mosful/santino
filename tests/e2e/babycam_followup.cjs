@@ -27,6 +27,7 @@ const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-res
   // 一次登錄兩位後 babies 的陣列順序不保證，明確取胎序 1 的那位（畫面上排第一、也是下面要解除的）。
   const binding = data.bindings[0]; const first = binding.babies.find((baby) => baby.birthOrder === 1);
   assert.deepEqual(binding.babies.map((baby) => baby.birthOrder).sort(), [1, 2]);
+  await page.getByRole("button", { name: "標籤預覽與列印", exact: true }).click();
   await page.getByRole("button", { name: "產生標籤預覽", exact: true }).click();
   await page.getByAltText("寶寶 2 標籤預覽").waitFor();
   await page.goto(`${base}/babycam/scan/?code=${encodeURIComponent(first.identityCode)}`);

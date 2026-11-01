@@ -1,6 +1,7 @@
 import type { CaseRecord } from "./types";
 import { HOSPITALS } from "./options";
 import { caseBalance } from "./rules";
+import { todayTaipei } from "../dates";
 import { DEMO_BABY_NAME, DEMO_MOTHER_NAME, DEMO_PHONE, orDemo } from "../demo/demoDefaults";
 
 /**
@@ -286,5 +287,8 @@ export const caseDoc = (key: string) => CASE_DOCS.find((doc) => doc.key === key)
 
 /** 表單目前的值：存過就用存的，沒存過用自動帶入值。 */
 export function docValues(record: CaseRecord, doc: CaseDoc): Record<string, string> {
-  return { ...doc.prefill(record), ...(record.documents?.[doc.key]?.values ?? {}) };
+  const dates = Object.fromEntries(doc.sections.flatMap((section) => section.fields)
+    .filter((field) => field.type === "date" && ["filledAt", "staffDate", "askedAt", "noticeDate"].includes(field.key))
+    .map((field) => [field.key, todayTaipei()]));
+  return { ...dates, ...doc.prefill(record), ...(record.documents?.[doc.key]?.values ?? {}) };
 }

@@ -4,6 +4,8 @@ import { useState } from "react";
 import Button from "@/components/ui/Button";
 import { babycamActions } from "@/lib/babycam/actions";
 import type { DemoDomain, WindowRule } from "@/lib/domain/types";
+import { effectiveViewingWindow } from "@/lib/babycam/viewing";
+import { taipeiTimestamp } from "@/lib/care/rules";
 
 /*
   04 後臺管理 ─ 開放時段與房間清單。
@@ -95,11 +97,18 @@ function ScheduleCard({
         </label>
       </div>
 
+      <p className="text-sm leading-6 text-stone-600">{{
+        inherit: title === "全院總時段" ? "全院沒有上層設定，此模式等同全天不加限制。" : "不另訂時間，沿用全院總時段；單支監視器的限制仍會套用。",
+        always: title === "全院總時段" ? "全院 24 小時不加時間限制，仍可另外限制媽媽端、親友端與個別監視器。" : "這一端不另加時間限制，仍受全院與個別監視器的設定限制。",
+        closed: "這一層全天不開放。若要讓畫面確實關閉，請確認對應的「時段外擋住畫面」已勾選。",
+        scheduled: "只在開始至結束時間內開放；開始晚於結束代表跨日，例如 22:00–06:00。",
+      }[draft.mode]}</p>
+
       {enforce && (
         <label className="flex min-h-10 items-center gap-2 rounded-lg bg-surface-muted/70 px-3 text-sm">
           <input type="checkbox" checked={enforce.checked} onChange={(event) => enforce.onChange(event.target.checked)} />
           時段外擋住畫面
-          <small className="ml-auto text-xs text-stone-500">未勾選時只影響觀看燈號</small>
+          <small className="text-xs text-stone-600">{enforce.checked ? "時段外不顯示監視器畫面" : "目前僅控制燈號，時段外仍可觀看"}</small>
         </label>
       )}
 
@@ -116,29 +125,49 @@ function ScheduleCard({
 export function SchedulePanel({ data, run }: { data: DemoDomain; run: (action: () => void, feedback?: string) => void }) {
   return (
     <div className="space-y-4">
+      <section className="space-y-4 border-b border-stone-200 pb-5" aria-label="開放時段設定說明">
+        <p className="text-sm tabular-nums text-stone-600">目前展示時間：{taipeiTimestamp(data.demoAt)}（自動前進，消毒排程與觀看時段依此時間判定）</p>
+        <h3 className="font-semibold">先決定誰可以在什麼時間觀看</h3>
+        <ol className="list-decimal space-y-2 pl-5 text-sm leading-6 text-stone-600">
+          <li>先設「全院總時段」作為範圍，再分別設定「院內開放時段」（媽媽端）與「親友開放時段」。實際時段取共同可開放的部分，下層不能延長全院時間。</li>
+          <li>需要在時間外停止影像，請勾選該端的「時段外擋住畫面」。未勾選時，時段只影響觀看燈號，影像仍可觀看；消毒、照護與授權失效仍會遮蔽。</li>
+          <li>修改模式或時間後按該區的「儲存」；勾選開關與觀看人數則立即生效。個別監視器與既有入住限制仍會套用。</li>
+        </ol>
+        <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+          <div><dt className="font-medium">依上層設定</dt><dd className="mt-1 leading-6 text-stone-600">不另訂時間，跟隨全院。全院這一層沒有上層，等同全天。</dd></div>
+          <div><dt className="font-medium">全天</dt><dd className="mt-1 leading-6 text-stone-600">本層不加限制；全院或其他限制仍有效。</dd></div>
+          <div><dt className="font-medium">關閉</dt><dd className="mt-1 leading-6 text-stone-600">本層全天不開放；搭配「時段外擋住畫面」才能停止影像。</dd></div>
+          <div><dt className="font-medium">指定時段</dt><dd className="mt-1 leading-6 text-stone-600">自行選開始與結束，例如 10:00–20:00；22:00–06:00 表示跨午夜。</dd></div>
+        </dl>
+        <p className="text-sm leading-6 text-stone-600">設定範例：媽媽全天、親友 10:00–20:00，可將全院與院內設為「全天」、親友設為「指定時段」，並勾選兩端的「時段外擋住畫面」。</p>
+        <Button size="sm" onClick={() => run(() => babycamActions.settings({ houseWindow: { mode: "always", start: "00:00", end: "23:59" }, internalWindow: { mode: "always", start: "00:00", end: "23:59" }, familyWindow: { mode: "scheduled", start: "10:00", end: "20:00" }, enforceInternal: true, enforceFamily: true }), "已套用媽媽全天、親友 10:00–20:00，並開啟時段外遮蔽。")}>套用範例：媽媽全天、親友 10:00–20:00</Button>
+      </section>
       <ScheduleCard
+        key={`house-${JSON.stringify(data.houseWindow)}`}
         title="全院總時段"
-        description="最上層限制；下面各受眾的時段都會先被它裁切過，交集為空時一律顯示全天關閉。"
+        description="全院共同的時間範圍；兩端的開放時間都不能超出此範圍。要停止影像，兩端也須勾選「時段外擋住畫面」。"
         value={data.houseWindow}
         onSave={(rule) => run(() => babycamActions.settings({ houseWindow: rule }), "全院總時段已儲存。")}
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ScheduleCard
-          title="院內受眾時段"
-          description="媽媽端可觀看的時間。設為關閉時，媽媽也會看不到畫面。"
+          key={`internal-${JSON.stringify(data.internalWindow)}`}
+          title="院內開放時段"
+          description="媽媽端適用。未勾選「時段外擋住畫面」時，下列時間只控制燈號。"
           value={data.internalWindow}
-          onSave={(rule) => run(() => babycamActions.settings({ internalWindow: rule }), "院內受眾時段已儲存。")}
+          onSave={(rule) => run(() => babycamActions.settings({ internalWindow: rule }), "院內開放時段已儲存。")}
           enforce={{
             checked: data.enforceInternal,
             onChange: (next) => run(() => babycamActions.settings({ enforceInternal: next })),
           }}
         />
         <ScheduleCard
-          title="親友受眾時段"
-          description="親友端可觀看的時間，通常比院內短。"
+          key={`family-${JSON.stringify(data.familyWindow)}`}
+          title="親友開放時段"
+          description="家屬掃碼後適用。需要在時間外停止影像，請勾選「時段外擋住畫面」。"
           value={data.familyWindow}
-          onSave={(rule) => run(() => babycamActions.settings({ familyWindow: rule }), "親友受眾時段已儲存。")}
+          onSave={(rule) => run(() => babycamActions.settings({ familyWindow: rule }), "親友開放時段已儲存。")}
           enforce={{
             checked: data.enforceFamily,
             onChange: (next) => run(() => babycamActions.settings({ enforceFamily: next })),
@@ -146,9 +175,16 @@ export function SchedulePanel({ data, run }: { data: DemoDomain; run: (action: (
         />
       </div>
 
+      <section className="space-y-2 text-sm" aria-label="目前生效的開放時段"><h3 className="font-semibold">目前生效的開放時段</h3>{data.cameras[0] && (["internal", "family"] as const).map((audience) => {
+        const camera = { ...data.cameras[0], scheduleInternal: { mode: "inherit" as const, start: "00:00", end: "23:59" }, scheduleFamily: { mode: "inherit" as const, start: "00:00", end: "23:59" } };
+        const result = effectiveViewingWindow(data, camera, audience);
+        const enforce = audience === "internal" ? data.enforceInternal : data.enforceFamily;
+        return <p key={audience} className="leading-6 text-stone-600">{audience === "internal" ? "媽媽端" : "親友端"}：{describe(result.window as WindowRule)}；{enforce ? "時段外停止影像" : "僅控制燈號，時段外仍可觀看"}。</p>;
+      })}<p className="text-xs leading-6 text-stone-600">以上為全院與兩端的共同範圍；單支監視器若另有設定，仍會再縮小。消毒期間自動暫停，結束後依原設定恢復。</p></section>
+
       <fieldset className="space-y-3 rounded-xl border border-border-subtle bg-surface-raised p-4">
         <legend className="px-1 text-sm font-bold text-stone-800">親友同時觀看</legend>
-        <p className="text-xs leading-5 text-stone-500">同一間房最多幾位親友能同時看，多胞胎共用這個額度。填 0 代表不限制。</p>
+        <p className="text-sm leading-6 text-stone-600">同一筆入住共用名額，多胞胎不會增加額度。填 2 並勾選下方開關後，第 3 位掃碼即顯示額滿提示，不開啟畫面；既有兩位可繼續觀看。填 0 或取消勾選代表不限制。</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="space-y-1 text-xs text-stone-500">
             同時觀看上限（位）

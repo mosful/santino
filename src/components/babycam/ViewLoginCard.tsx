@@ -17,6 +17,7 @@ export default function ViewLoginCard({
   demoHint,
   accounts = [],
   onSubmit,
+  externalError,
 }: {
   title: string;
   subtitle: string;
@@ -25,6 +26,7 @@ export default function ViewLoginCard({
   /** 一鍵帶入的示範帳號，每組對應一種要展示的情境 */
   accounts?: DemoAccount[];
   onSubmit: (phone: string, code: string) => string | null;
+  externalError?: string | null;
 }) {
   /* 預帶展示帳密：客戶驗收時直接按「進入觀看」即可，不必回頭查櫃台交付的那一組。
      正式版當然是空白，這裡是 DEMO 的刻意設定（見 domainSeed 的 DEMO_PHONE／DEMO_PASSCODE）。 */
@@ -81,12 +83,13 @@ export default function ViewLoginCard({
           />
         </div>
 
-        {error && (
-          <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</p>
+        {(externalError || error) && (
+          <p role="alert" className="rounded-lg bg-rose-50 px-3 py-2 text-sm leading-6 text-rose-700">{externalError || error}</p>
         )}
 
         <button
           type="submit"
+          disabled={!!externalError}
           className={buttonStyles({ variant: "primary", fullWidth: true, size: "lg" })}
         >
           進入觀看

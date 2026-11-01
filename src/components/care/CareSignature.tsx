@@ -22,6 +22,7 @@ export default function CareSignature({
   carryLabel,
   onConfirm,
   onCancel,
+  expanded = false,
 }: {
   identity: string;
   /** 簽名庫的代號（見 signatureStore）；給了才會出現「帶入上次簽名」。 */
@@ -30,6 +31,8 @@ export default function CareSignature({
   carryLabel?: string;
   onConfirm: (image: string) => void;
   onCancel: () => void;
+  /** 案件雙方簽名需要接近裝置三分之二的書寫空間。 */
+  expanded?: boolean;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
@@ -108,12 +111,12 @@ export default function CareSignature({
           <canvas
             ref={canvas}
             width={1200}
-            height={420}
+            height={expanded ? 800 : 420}
             onPointerDown={start}
             onPointerMove={move}
             onPointerUp={() => { drawing.current = false; }}
             onPointerCancel={() => { drawing.current = false; }}
-            className="h-56 w-full touch-none rounded-xl border-2 border-dashed border-stone-400 bg-white md:h-72"
+            className={`w-full touch-none rounded-xl border-2 border-dashed border-stone-400 bg-white ${expanded ? "h-[62dvh] min-h-64" : "h-56 md:h-72"}`}
             aria-label="手寫簽名區"
           />
           {/* 空白時給一條簽名線與提示；有筆跡就讓開，不要疊在簽名上。 */}

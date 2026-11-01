@@ -5,6 +5,7 @@ import { getCurrentRole } from "../roleStore";
 import { ROLE_PROFILE } from "../permissions";
 import { domainStore } from "../demo/domainStore";
 import { careForms } from "./forms";
+import { todayTaipei } from "../dates";
 import { careSubject } from "./subjects";
 import { canAuthorizeCare, canEditCare, canViewCare, documentKey, isBackfillBlocked, validateCareForm } from "./rules";
 import type { CareDocument, CareKind, CareSignatureRole, CareState, CareValues } from "./types";
@@ -32,9 +33,13 @@ function writable(state: CareState, key: string): CareDocument {
   if (document.signedAt) throw new Error("此筆已完成簽出，請新增一筆紀錄。");
   return document;
 }
-export function defaultCareValues() {
+export function defaultCareValues(formKey?: string, kind?: CareKind) {
   const at = new Date();
-  return { date: at.toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" }), time: at.toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5) };
+  const form = kind ? careForms(kind).find((item) => item.key === formKey) : undefined;
+  const dates = Object.fromEntries((form?.sections.flatMap((section) => section.fields) ?? [])
+    .filter((field) => field.type === "date" && ["date", "evaluationDate", "reviewDate"].includes(field.key))
+    .map((field) => [field.key, todayTaipei(at)]));
+  return { ...dates, date: todayTaipei(at), time: at.toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5) };
 }
 export const careActions = {
   open(subjectId: string, formKey: string) {
@@ -43,7 +48,7 @@ export const careActions = {
     if (!canViewCare(getCurrentRole(), subject.kind, formKey)) throw new Error("目前角色沒有此照護表單的權限。");
     careStore.update((state) => {
       const key = documentKey(subjectId, formKey);
-      const defaults: CareValues = { ...defaultCareValues(), ...(subject.birthDate ? { birthDate: subject.birthDate } : {}), ...(subject.gender ? { sex: subject.gender } : {}) };
+      const defaults: CareValues = { ...defaultCareValues(formKey, subject.kind), ...(subject.birthDate ? { birthDate: subject.birthDate } : {}), ...(subject.gender ? { sex: subject.gender } : {}) };
       if (subject.birthOrder !== undefined) defaults.birthOrder = String(subject.birthOrder);
       if (formKey === "feeding") for (let index = 0; index < 6; index++) defaults[`feeding-${index}`] = "通過";
       state.documents[key] ??= { key, subjectId, formKey, values: defaults, dirty: false };
@@ -171,7 +176,7 @@ export const careActions = {
       const subject = old && careSubject(old.subjectId);
       if (!subject || !canEditCare(getCurrentRole(), subject.kind, old.formKey)) throw new Error("目前角色不能新增紀錄。");
       if (!old.signedAt && old.dirty) throw new Error("請先暫存或關閉目前草稿。");
-      state.documents[key] = { key, subjectId: old.subjectId, formKey: old.formKey, values: defaultCareValues(), dirty: false };
+      state.documents[key] = { key, subjectId: old.subjectId, formKey: old.formKey, values: defaultCareValues(old.formKey, subject.kind), dirty: false };
     });
   },
   carryLast(key: string) {
@@ -179,7 +184,7 @@ export const careActions = {
       const document = writable(state, key);
       const last = state.entries.find((entry) => entry.subjectId === document.subjectId && entry.formKey === document.formKey);
       if (!last) throw new Error("此個案目前沒有上一筆紀錄。");
-      document.values = { ...structuredClone(last.values), ...defaultCareValues() }; document.dirty = true;
+      document.values = { ...structuredClone(last.values), ...defaultCareValues(document.formKey, careSubject(document.subjectId)?.kind) }; document.dirty = true;
     });
   },
   close(key: string, discard = false) {

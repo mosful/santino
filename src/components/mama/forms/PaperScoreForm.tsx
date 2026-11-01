@@ -1,3 +1,4 @@
+import { todayTaipei } from "@/lib/dates";
 import PrototypeFormActions from "@/components/ui/PrototypeFormActions";
 
 export default function PaperScoreForm({
@@ -50,7 +51,8 @@ function Field({
         <textarea className="h-16 w-full rounded border border-stone-200 p-2 text-sm" placeholder={placeholder} />
       ) : (
         <input
-          defaultValue={value}
+          type={label === "上傳日期時間" ? "datetime-local" : "text"}
+          defaultValue={value ?? (label === "上傳日期時間" ? `${todayTaipei()}T${new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5)}` : undefined)}
           placeholder={placeholder}
           className="w-full rounded border border-stone-200 px-2 py-1.5 text-sm"
         />

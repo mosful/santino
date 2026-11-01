@@ -51,7 +51,7 @@ export default function CamPreview({
   }, [mode]);
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-stone-700 bg-stone-900 shadow-inner">
+    <div data-camera-mode={mode} aria-label="監視器畫面" className="relative aspect-video w-full overflow-hidden rounded-xl border border-stone-700 bg-stone-900 shadow-inner">
       {mode === "masked" || mode === "offline" ? (
         <div className="relative flex h-full flex-col items-center justify-center gap-3 text-stone-400">
           {background && (

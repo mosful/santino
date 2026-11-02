@@ -73,4 +73,6 @@ npm run test:e2e  # Playwright 走 out/，8 支場景
 
 ## 部署
 
-`web/` 另推到獨立公開 repo `mosful/santino`；上層 monorepo 含客戶機密文件，**不可直接 push**。改用 `/sync2github`，背景見 `../Document/Processes/Process_GitHubDeploy_Guide.md`。
+`web/` 另推到獨立公開 repo `mosful/santino`；上層 monorepo 含客戶機密文件，**不得推送完整 monorepo，只推切出的 `web/` 發布分支**。使用 `/sync2github`，背景見 `../Document/Processes/Process_GitHubDeploy_Guide.md`。
+
+使用者明確要求或已授權一般 `git push` 時，代理可直接執行，不需逐次確認或改交手動操作；同一任務授權持續有效。由 monorepo 發布時只推切出的 `web/` 發布分支，不推完整 monorepo／客戶文件；`--force` 須另有明確授權。部署完成後確認 GitHub Actions 與正式站。此為 2026-11-02 使用者持續規則。

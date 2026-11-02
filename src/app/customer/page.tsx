@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Download } from "lucide-react";
+import { CalendarDays, Download } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
 import { useAccess } from "@/lib/roleStore";
@@ -60,6 +60,18 @@ const EXPORT_COLUMNS: { label: string; value: (row: Customer) => string }[] = [
 
 /** 查詢條件的空白值；「全部」用空字串表示，比對時直接跳過。 */
 const filterInput = "min-h-11 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
+
+function DateFilter({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="block min-w-0 space-y-1.5 text-sm">{label}
+      <span className="relative flex min-h-11 w-full items-center justify-between rounded-lg border border-stone-300 bg-white px-3 text-sm focus-within:outline-3 focus-within:outline-offset-2 focus-within:outline-brand-500">
+        <span aria-hidden="true">{value ? value.replaceAll("-", "/") : "年 / 月 / 日"}</span>
+        <CalendarDays aria-hidden="true" className="h-4 w-4 shrink-0" />
+        <input aria-label={label} type="date" value={value} onChange={(event) => onChange(event.target.value)} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
+      </span>
+    </label>
+  );
+}
 
 /** 查詢條件的空白值；「全部」用空字串或「全部」表示，比對時直接跳過。 */
 const BLANK_FILTERS = { level: "", staff: "", nurse: "", contract: "全部", dueFrom: "", dueTo: "" };
@@ -356,14 +368,8 @@ export default function CustomerPage() {
               {["全部", "已簽約", "尚未簽約"].map((item) => <option key={item}>{item}</option>)}
             </select>
           </label>
-          <div className="grid grid-cols-2 gap-2">
-            <label className="block space-y-1.5 text-sm">預產期起
-              <input aria-label="預產期起" type="date" className={filterInput} value={filters.dueFrom} onChange={(event) => setFilters({ ...filters, dueFrom: event.target.value })} />
-            </label>
-            <label className="block space-y-1.5 text-sm">預產期迄
-              <input aria-label="預產期迄" type="date" className={filterInput} value={filters.dueTo} onChange={(event) => setFilters({ ...filters, dueTo: event.target.value })} />
-            </label>
-          </div>
+          <DateFilter label="預產期起" value={filters.dueFrom} onChange={(value) => setFilters({ ...filters, dueFrom: value })} />
+          <DateFilter label="預產期迄" value={filters.dueTo} onChange={(value) => setFilters({ ...filters, dueTo: value })} />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => setFilters(BLANK_FILTERS)}>清除條件</button>

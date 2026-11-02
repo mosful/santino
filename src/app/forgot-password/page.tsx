@@ -73,7 +73,7 @@ export default function ForgotPasswordPage() {
               </button>
             </form>
             <div className="mt-4 text-center text-xs">
-              <Link href="/login" className="text-brand-500 underline">
+              <Link href="/login" className={buttonStyles({ variant: "link", size: "md" })}>
                 返回登入
               </Link>
             </div>

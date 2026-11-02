@@ -74,7 +74,7 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-4 text-center text-xs">
-          <Link href="/forgot-password" className="text-brand-500 underline">
+          <Link href="/forgot-password" className={buttonStyles({ variant: "link", size: "md" })}>
             忘記密碼？
           </Link>
         </div>

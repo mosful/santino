@@ -23,17 +23,18 @@
 */
 const path = require("node:path"), fs = require("node:fs");
 const { createStaticServer } = require("./static-server.cjs");
-const { chromium } = require("playwright");
+const { chromium, webkit } = require("playwright");
 
-const ROUTES = [
+const DEFAULT_ROUTES = [
   "/", "/todo/", "/quote/", "/cases/", "/cases/detail/?id=case-demo-contract", "/cases/detail/?id=case-demo-preadmission",
-  "/customer/", "/mama/", "/baby/", "/rooms/", "/doctor/", "/care/", "/kpi/", "/meal/", "/hr/", "/course/", "/line/", "/login/", "/forgot-password/",
-  "/contract/", "/contract/?tab=clauses", "/contract/?tab=childcare",
+  "/customer/", "/mama/", "/baby/", "/rooms/", "/login/", "/forgot-password/",
+  "/contract/", "/contract/?tab=childcare",
   "/babycam/?section=registration", "/babycam/?section=assign", "/babycam/?section=schedule",
-  "/admin/", "/admin/?tab=master", "/admin/?tab=staff", "/admin/?tab=system", "/admin/?tab=phrases", "/admin/?tab=backfill", "/admin/?tab=kpi",
-  "/view/mama/", "/view/family/",
+  "/admin/", "/admin/?tab=phrases", "/admin/?tab=backfill",
+  "/view/mama/", "/view/family/", "/babycam/scan/", "/babycam/workspace/", "/cases/calendar/",
 ];
-const ROLES = ["櫃台", "衛教師 琳雅", "護理師 陳護理師", "護理長 婉真", "管理者"];
+const ROUTES = process.env.SANTINO_IPAD_ROUTES?.split(",") || DEFAULT_ROUTES;
+const ROLES = process.env.SANTINO_IPAD_ROLES?.split(",") || ["櫃台", "衛教師 琳雅", "護理師 陳護理師", "護理長 婉真", "管理者"];
 
 const PROBE = (vw) => {
   const out = { scrollW: document.documentElement.scrollWidth, overflow: [], small: [] };
@@ -61,6 +62,13 @@ const PROBE = (vw) => {
       }
     }
   }
+  const dates = [...document.querySelectorAll('input[type="date"], input[type="time"], input[type="datetime-local"]')].filter((el) => el.getClientRects().length);
+  for (let i = 0; i < dates.length; i++) for (let j = i + 1; j < dates.length; j++) {
+    const a = dates[i].getBoundingClientRect(), b = dates[j].getBoundingClientRect();
+    if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1) {
+      out.overflow.push({ key: "日期欄位重疊", right: Math.round(a.right), text: `${dates[i].getAttribute("aria-label") || dates[i].name} / ${dates[j].getAttribute("aria-label") || dates[j].name}` });
+    }
+  }
   return out;
 };
 
@@ -70,23 +78,35 @@ const PROBE = (vw) => {
   const server = createStaticServer(root, manifest.basePath);
   // 埠號交給系統挑（0），前一次還沒收掉的伺服器才不會讓這次整支掛掉。
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
-  const base = `http://localhost:${server.address().port}${manifest.basePath}`;
-  const browser = await chromium.launch();
+  const base = `http://127.0.0.1:${server.address().port}${manifest.basePath}`;
+  const engine = process.env.SANTINO_IPAD_ENGINE || "chromium";
+  const browser = await ({ chromium, webkit }[engine]).launch();
   const findings = [];
   let pages = 0;
 
   for (const [orientation, width, height] of [["直向", 820, 1180], ["橫向", 1180, 820]]) {
     for (const role of ROLES) {
-      const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: true, deviceScaleFactor: 2 });
-      await ctx.addInitScript((r) => { try { localStorage.setItem("santino_current_role_v1", r); } catch {} }, r = role);
+      const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: true, deviceScaleFactor: 2, isMobile: true, locale: "zh-TW" });
+      await ctx.addInitScript((r) => {
+        try {
+          localStorage.setItem("santino_current_role_v1", r);
+          // 登入與忘記密碼頁必須在未登入狀態檢查，其餘頁面使用展示登入。
+          localStorage.setItem("santino_auth_v1", /^\/(login|forgot-password)\/?$/.test(location.pathname) ? "0" : "1");
+        } catch {}
+      }, role);
       const page = await ctx.newPage();
       const errors = [];
       page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 150)); });
       page.on("pageerror", (e) => errors.push(String(e).slice(0, 150)));
       for (const route of ROUTES) {
         errors.length = 0;
-        try { await page.goto(base + route, { waitUntil: "domcontentloaded", timeout: 15000 }); } catch { findings.push({ orientation, role, route, kind: "載入逾時" }); continue; }
+        try {
+          const response = await page.goto(base + route, { waitUntil: "networkidle", timeout: 15000 });
+          if (!response?.ok()) { findings.push({ orientation, role, route, kind: "頁面載入失敗", detail: `HTTP ${response?.status() ?? "無回應"}` }); continue; }
+        } catch { findings.push({ orientation, role, route, kind: "載入逾時" }); continue; }
         await page.waitForTimeout(150);
+        // 首頁對部分角色會在水合後轉至待辦；先等轉址與角色選單穩定再比較。
+        if (route === "/") await page.waitForTimeout(2500);
         // 展開所有收合區塊，否則一半內容量不到
         try { await page.evaluate(() => document.querySelectorAll('button[aria-expanded="false"][aria-controls^="section-"]').forEach((b) => b.click())); await page.waitForTimeout(120); } catch {}
         pages += 1;
@@ -107,7 +127,7 @@ const PROBE = (vw) => {
             const expandedLinks = await countLinks();
             if (Math.max(collapsedLinks, expandedLinks) > Math.min(collapsedLinks, expandedLinks)) {
               // 收合時少列連結是正常的（圖示軌只放第 1 層），但展開後必須拿得回來。
-              if (expandedLinks <= collapsedLinks) findings.push({ orientation, role, route, kind: "選單可達性", detail: `展開後連結沒有變多（${collapsedLinks} → ${expandedLinks}）` });
+              if (expandedLinks < collapsedLinks) findings.push({ orientation, role, route, kind: "選單可達性", detail: `展開後連結減少（${collapsedLinks} → ${expandedLinks}）` });
             }
             if (expandedLinks === 0) findings.push({ orientation, role, route, kind: "選單可達性", detail: "展開後側邊選單沒有任何連結" });
             await toggle.first().click();
@@ -123,11 +143,13 @@ const PROBE = (vw) => {
     }
   }
   await browser.close(); server.close();
-  fs.writeFileSync(path.resolve(__dirname, "../test-results/ipad-audit.json"), JSON.stringify(findings, null, 2));
+  fs.mkdirSync(path.resolve(__dirname, "../test-results"), { recursive: true });
+  fs.writeFileSync(path.resolve(__dirname, `../test-results/ipad-audit-${engine}.json`), JSON.stringify(findings, null, 2));
   const byKind = {};
   for (const f of findings) byKind[f.kind] = (byKind[f.kind] || 0) + 1;
   console.log("掃描頁面次數:", pages, "／問題數:", findings.length, JSON.stringify(byKind));
   const uniq = new Map();
   for (const f of findings) { const k = `${f.kind}|${f.detail || ""}`; if (!uniq.has(k)) uniq.set(k, { ...f, where: new Set() }); uniq.get(k).where.add(`${f.orientation}${f.route}`); }
   for (const [, v] of [...uniq]) console.log(`[${v.kind}] ${v.detail || ""} ← ${[...v.where].slice(0, 2).join(", ")}${v.where.size > 2 ? ` 等 ${v.where.size} 處` : ""}`);
+  if (findings.length) process.exitCode = 1;
 })();

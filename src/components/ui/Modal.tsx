@@ -1,6 +1,7 @@
 "use client";
 
 import { createPortal } from "react-dom";
+import { useId } from "react";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 
 export default function Modal({
@@ -16,6 +17,7 @@ export default function Modal({
   children: React.ReactNode;
   wide?: boolean;
 }) {
+  const titleId = useId();
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
@@ -26,14 +28,14 @@ export default function Modal({
       <div
         role="dialog"
         aria-modal="true"
-        aria-labelledby="modal-title"
+        aria-labelledby={titleId}
         className={
           "animate-modal-pop safe-bottom relative flex max-h-[92vh] w-full flex-col overscroll-contain rounded-t-2xl bg-surface-raised shadow-2xl sm:max-h-[85vh] sm:rounded-2xl " +
           (wide ? "sm:max-w-4xl" : "sm:max-w-xl")
         }
       >
         <div className="flex shrink-0 items-center justify-between border-b border-stone-100 px-4 py-3.5">
-          <h2 id="modal-title" className="truncate pr-2 text-sm font-bold text-stone-800">{title}</h2>
+          <h2 id={titleId} className="truncate pr-2 text-sm font-bold text-stone-800">{title}</h2>
           <button
             onClick={onClose}
             className={buttonStyles({ variant: "ghost", size: "sm", iconOnly: true, className: "rounded-full" })}

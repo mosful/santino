@@ -9,7 +9,8 @@ import { guard } from "../demo/lenient";
 import { registrationDefaults } from "./registration";
 import { closeViewingHistory } from "./history";
 import { normalizePrintSettings } from "./wristband-print";
-import { getAccess, ROLES, type AccessLevel, type Role } from "../permissions";
+import { canUseCaseFlow, getAccess, ROLES, type AccessLevel, type Role } from "../permissions";
+import { demoNow } from "./clock";
 import { initialDemoScenario, reduceDemoScenario, type DemoScenarioAction } from "./demo-scenario";
 
 /**
@@ -87,6 +88,26 @@ export const babycamActions = {
       data.subjects.filter((item) => item.caseId === record.id).forEach((item) => { item.motherName = record.name; if (item.kind === "mama") item.name = record.name; });
       record.log.unshift({ id: crypto.randomUUID(), at: new Date().toISOString(), actor: currentActor(), text: `視訊入住基本資料已修改並同步姓名、電話及房號${reason.trim() ? `；原因：${reason.trim()}` : ""}；原合約快照保留` });
       audit(data, "修改視訊入住基本資料並同步案件", id);
+    });
+  },
+  removeRegistration(id: string) {
+    domainStore.update((data) => {
+      requireSection(data, "01");
+      if (!canUseCaseFlow(getCurrentRole())) throw new Error("目前角色不能刪除入住登記。");
+      const binding = bindingOf(data, id);
+      const stamp = demoNow(data).toISOString();
+      closeViewingHistory(data, id, "刪除視訊入住登記");
+      binding.ended = true;
+      binding.deletedAt = stamp;
+      binding.viewingRevoked = true;
+      binding.sessions = [];
+      data.careEvents.filter((event) => event.bindingId === id && !event.end).forEach((event) => { event.end = stamp; });
+      data.cameraIntervals.filter((interval) => interval.bindingId === id && !interval.end).forEach((interval) => { interval.end = stamp; });
+      for (const baby of binding.babies) {
+        if (!data.bindings.some((item) => !item.ended && item.babies.some((target) => target.cameraId === baby.cameraId))) delete data.demoScenarios[baby.cameraId];
+      }
+      // 保留原登記及寶寶資料供歷史查詢；ended 會釋出目前的鏡頭、車號與標籤指派。
+      audit(data, "刪除視訊入住登記，停止觀看並釋出指派；案件與歷史保留", id);
     });
   },
   assign(id: string, input: { babyId?: string; name: string; cameraId: string; cartNo: string; birthDate: string; sex: "男" | "女"; birthOrder: number; reason?: string }) {

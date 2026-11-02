@@ -31,10 +31,27 @@ let browser;
   await page.getByRole("link", { name: "設定與維運", exact: true }).click();
   await page.getByRole("button", { name: "開放時段", exact: true }).click();
   assert.equal(await page.getByText("院內受眾時段", { exact: true }).count(), 0);
-  await page.getByRole("button", { name: "套用範例：媽媽全天、親友 10:00–20:00", exact: true }).click();
-  assert.equal(await page.getByLabel("院內開放時段模式", { exact: true }).inputValue(), "always");
-  assert.equal(await page.getByLabel("親友開放時段模式", { exact: true }).inputValue(), "scheduled");
-  await page.screenshot({ path: `${output}/schedule-desktop.png`, fullPage: true });
+  const schedule = page.getByRole("form", { name: "開放時段設定", exact: true });
+  assert.equal(await schedule.locator("select").count(), 0);
+  assert.equal(await page.getByRole("region", { name: "開放時段設定說明", exact: true }).count(), 0);
+  for (const [title, end] of [["全院開放觀看時間", "22:00"], ["院內開放時段", "22:00"], ["親友開放時段", "20:00"]]) {
+    assert.equal(await page.getByLabel(`${title}開始`, { exact: true }).inputValue(), "10:00");
+    assert.equal(await page.getByLabel(`${title}結束`, { exact: true }).inputValue(), end);
+  }
+  assert.equal(await page.getByLabel("同時觀看上限（位）", { exact: true }).inputValue(), "2");
+  await page.getByLabel("親友開放時段結束", { exact: true }).fill("19:00");
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1")).familyWindow.end), "20:00");
+  await page.getByRole("button", { name: "儲存設定", exact: true }).click();
+  await page.getByRole("status").filter({ hasText: "開放時段與觀看人數已儲存" }).waitFor();
+  await page.reload();
+  assert.equal(await page.getByLabel("親友開放時段結束", { exact: true }).inputValue(), "19:00");
+  await page.getByLabel("親友開放時段結束", { exact: true }).fill("20:00");
+  await page.getByRole("button", { name: "儲存設定", exact: true }).click();
+  for (const [name, width, height] of [["desktop", 1440, 1000], ["ipad-portrait", 820, 1180], ["ipad-landscape", 1180, 820], ["mobile", 390, 844]]) {
+    await page.setViewportSize({ width, height });
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+    await page.screenshot({ path: `${output}/schedule-${name}.png`, fullPage: true });
+  }
 
   await page.goto(base + "/babycam/?section=assign");
   assert.equal(await page.getByRole("heading", { name: "監視器歷程", exact: true }).count(), 0);
@@ -115,7 +132,7 @@ let browser;
   assert.deepEqual(restored, preserved);
   await first.screenshot({ path: `${output}/disinfection-restored.png`, fullPage: true });
   assert.deepEqual(errors, []);
-  const result = { checks: ["合約帶入與修改同步", "隱藏入住覆寫", "開放時段說明與範例", "滿寬指派及三裝置標籤彈窗", "第三位掃碼自動額滿且不開影像", "登出釋出名額", "消毒自動開始及結束並保留原設定"], errors };
+  const result = { checks: ["合約帶入與修改同步", "隱藏入住覆寫", "精簡開放時段、預設值、儲存與重整", "滿寬指派及三裝置標籤彈窗", "第三位掃碼自動額滿且不開影像", "登出釋出名額", "消毒自動開始及結束並保留原設定"], errors };
   await fs.writeFile(`${output}/result.json`, JSON.stringify(result, null, 2)); console.log(JSON.stringify(result));
   await browser.close();
 })().catch(async (error) => { console.error(error); await browser?.close(); process.exitCode = 1; });

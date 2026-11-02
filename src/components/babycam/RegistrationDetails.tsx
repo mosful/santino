@@ -9,7 +9,7 @@ import { Toast, useToast } from "@/components/ui/Toast";
 const input = "min-h-11 w-full rounded-lg border border-border-subtle bg-surface-raised px-3 py-2 text-sm";
 
 /** 合約帶入值仍可修改，儲存後與案件及照護對象同步。 */
-export default function RegistrationDetails({ data, binding }: { data: DemoDomain; binding: ViewingBinding }) {
+export default function RegistrationDetails({ data, binding, onSaved }: { data: DemoDomain; binding: ViewingBinding; onSaved?: () => void }) {
   const record = data.cases.find((item) => item.id === binding.caseId);
   const [draft, setDraft] = useState({ motherName: binding.motherName, phone: binding.phone, room: binding.room });
   const [reason, setReason] = useState("");
@@ -23,7 +23,7 @@ export default function RegistrationDetails({ data, binding }: { data: DemoDomai
       <label className="space-y-1.5 text-sm">房號<select aria-label="入住登記房號" className={input} value={draft.room} onChange={(event) => setDraft({ ...draft, room: event.target.value })}><option value="">尚未排房／托嬰</option>{rooms.map((room) => <option key={room}>{room}</option>)}</select></label>
       {record?.actualAdmission && draft.room !== binding.room && <label className="space-y-1.5 text-sm sm:col-span-2 xl:col-span-3">換房原因（入住後須主管操作）<input aria-label="入住登記換房原因" className={input} value={reason} onChange={(event) => setReason(event.target.value)} /></label>}
     </div>
-    <Button size="sm" onClick={() => { try { babycamActions.registration(binding.id, draft, reason); toast.ok("入住基本資料已儲存，並同步案件與照護資料。"); } catch (error) { toast.fail(error instanceof Error ? error.message : "儲存失敗。"); } }}>儲存入住基本資料</Button>
+    <Button size="sm" onClick={() => { try { babycamActions.registration(binding.id, draft, reason); if (onSaved) onSaved(); else toast.ok("入住基本資料已儲存，並同步案件與照護資料。"); } catch (error) { toast.fail(error instanceof Error ? error.message : "儲存失敗。"); } }}>儲存入住基本資料</Button>
     <Toast {...toastProps} />
   </section>;
 }

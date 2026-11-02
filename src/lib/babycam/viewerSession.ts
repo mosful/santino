@@ -17,7 +17,8 @@ export function familyCapacityMessage(data: DemoDomain, binding: ViewingBinding,
 export function enterViewer(audience: "internal" | "family", phone: string, passcode: string, ticket: string | null, deviceId: string) {
   let bindingId = "";
   domainStore.update((data) => {
-    const binding = data.bindings.find((item) => item.phone === phone && item.passcode === passcode && (!ticket || ticket === (audience === "internal" ? item.internalTicket : item.familyTicket)));
+    const matches = data.bindings.filter((item) => item.phone === phone && item.passcode === passcode && (!ticket || ticket === (audience === "internal" ? item.internalTicket : item.familyTicket)));
+    const binding = matches.find((item) => !item.ended && !item.viewingRevoked) ?? matches[0];
     if (!binding) throw new Error("展示手機、密碼或觀看連結不正確，請使用最新交付資訊。");
     const at = demoNow(data); const day = taipeiDate(at); const stamp = at.toISOString();
     if (binding.ended || binding.viewingRevoked || day < binding.validFrom || day > binding.validTo || (audience === "family" && !binding.familyEnabled)) throw new Error("觀看授權尚未開放或已結束。");

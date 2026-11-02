@@ -85,6 +85,8 @@ export type ViewingBinding = {
   internalTicket: string; familyTicket: string; passcode: string; babies: BabyBinding[];
   sessions: { id: string; audience: "internal" | "family"; lastSeen: string }[];
   ended: boolean;
+  /** 視訊入住登記刪除時間；原案件與歷史紀錄仍保留。 */
+  deletedAt?: string;
   viewingRevoked?: boolean;
   /** 使用者自行修改的期間，實際入住時不再以預設值覆蓋。 */
   registrationOverrides?: ("validFrom" | "validTo")[];
@@ -95,6 +97,8 @@ export type DemoDomain = {
   /** 監視器與繼電器板的網段前綴；真值不進版控，見 lib/babycam/network.ts 的說明。 */
   networkPrefix?: string;
   displayStates: DisplayState[]; houseWindow: WindowRule; internalWindow: WindowRule; familyWindow: WindowRule;
+  /** 開放時段預設的局部升級版本，不影響其他示範資料。 */
+  viewingSettingsRevision?: 1;
   enforceInternal: boolean; enforceFamily: boolean; familyLimit: number; concurrencyEnforced: boolean;
   demoAt: string; viewScenario: "normal" | "stale" | "fault" | "cart-away";
   /** 展示時鐘的真實起算時間；不改變原設定時間，供排程自動前進。 */

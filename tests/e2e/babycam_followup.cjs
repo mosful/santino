@@ -42,7 +42,10 @@ const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-res
   await page.getByRole("status").filter({ hasText: "此識別標籤已失效" }).waitFor();
   assert.equal(await page.getByRole("button", { name: "核對並歸位", exact: true }).count(), 0);
   await page.getByLabel("選擇入住案件", { exact: true }).selectOption(binding.id);
-  await page.getByLabel("應歸位的寶寶", { exact: true }).selectOption({ index: 1 });
+  // 解除其中一位後剩單胞胎，應自動帶入；切換案件會清除先前的掃碼內容。
+  assert.equal(await page.locator('select[aria-label="應歸位的寶寶"]').count(), 0);
+  assert.ok(await page.getByRole("group", { name: "應歸位的寶寶", exact: true }).getByRole("radio").isChecked());
+  await page.getByLabel("掃碼結果／手動輸入識別碼", { exact: true }).fill(first.identityCode);
   await page.getByRole("button", { name: "核對並歸位", exact: true }).click();
   // 失敗訊息改走浮出提示（Toast 的 error 是 role="alert"，成功才是 status）。
   await page.getByRole("alert").filter({ hasText: "識別不符" }).waitFor();

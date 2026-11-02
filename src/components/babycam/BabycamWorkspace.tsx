@@ -7,9 +7,9 @@ import Link from "next/link";
 import { Toast, useToast } from "@/components/ui/Toast";
 import { useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "qrcode";
-import { ExternalLink, Printer, QrCode } from "lucide-react";
+import { Printer, QrCode } from "lucide-react";
 import { BASE_PATH } from "@/lib/basePath";
-import Button, { ButtonLink } from "@/components/ui/Button";
+import Button from "@/components/ui/Button";
 import { useLiveBabycamData } from "@/lib/babycam/useLiveBabycamData";
 import { activeDisinfection } from "@/lib/babycam/disinfection";
 import Modal from "@/components/ui/Modal";
@@ -47,6 +47,9 @@ import {
   ZoneFilter,
 } from "./BabycamUi";
 import { StatusSummary } from "@/components/ui/Workspace";
+import { expectedReturnBaby, readIdentityCode } from "@/lib/babycam/scan";
+import IdentityScanner from "./IdentityScanner";
+import { viewingSettingsOf } from "@/lib/babycam/viewingSettings";
 
 /*
   寶寶視訊管理工作區。
@@ -242,11 +245,14 @@ export default function BabycamWorkspace({
   const [tabOverrides, setTabOverrides] = useState<Partial<Record<GroupId, string>>>({});
   const tabs: Record<GroupId, string> = { ...DEFAULT_TAB, [group]: legacy.tab, ...tabOverrides };
   const [registrationCaseId, setRegistrationCaseId] = useState("");
+  const [deleteRegistrationId, setDeleteRegistrationId] = useState("");
   const [bindingId, setBindingId] = useState(initialBindingId);
   const [cameraId, setCameraId] = useState("");
   const [toast, toastProps] = useToast();
   const [scanCode, setScanCode] = useState(initialScanCode);
   const [scanBaby, setScanBaby] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const scanInputRef = useRef<HTMLInputElement>(null);
   const [labelDialog, setLabelDialog] = useState(false);
   const [printDialog, setPrintDialog] = useState(false);
   const labelGeneration = useRef(0);
@@ -284,7 +290,9 @@ export default function BabycamWorkspace({
     scannedBinding ??
     (initialScanCode ? undefined : data.bindings.find((item) => !item.ended));
   const pendingRegistrations = data.cases.filter((item) => item.stage >= 3 && item.contractNo && !item.closed && !item.dischargedAt && !data.bindings.some((target) => target.caseId === item.id && !target.ended));
-  const expectedBabyId = scanBaby || scannedBinding?.babies.find((baby) => baby.identityCode === initialScanCode)?.babyId || "";
+  const deleteRegistration = data.bindings.find((item) => item.id === deleteRegistrationId);
+  const expectedBaby = expectedReturnBaby(binding, scanBaby, bindingId ? "" : initialScanCode);
+  const expectedBabyId = expectedBaby?.babyId ?? "";
   const camera = data.cameras.find((item) => item.id === cameraId) ?? data.cameras[0];
   const zoneCameras = data.cameras.filter((item) => zone === "全部" || item.code.startsWith(zone));
   const cameraDisinfecting = activeDisinfection(data, data.bindings.find((item) => !item.ended && item.babies.some((baby) => baby.cameraId === camera.id))?.room ?? "");
@@ -394,14 +402,18 @@ export default function BabycamWorkspace({
       選擇入住案件
       <select
         aria-label="選擇入住案件"
-        className={input}
+        className={active.id === "scan" ? "min-h-12 w-full rounded-lg border border-border-subtle bg-surface-raised px-3 py-3 text-base" : input}
         value={binding?.id ?? ""}
         onChange={(event) => {
           setBindingId(event.target.value);
+          setScanBaby("");
+          setScanCode("");
+          setScannerOpen(false);
+          toast.clear();
           labelGeneration.current++; setLabelImages([]);
         }}
       >
-        <option value="">請選擇正確入住案件</option>
+        <option value="" disabled>請選擇正確入住案件</option>
         {data.bindings
           .filter((item) => !item.ended)
           .map((item) => (
@@ -410,7 +422,7 @@ export default function BabycamWorkspace({
             </option>
           ))}
       </select>
-      {binding && (
+      {binding && activeGroup.id !== "02" && (
         <Link href={`/cases/detail/?id=${encodeURIComponent(binding.caseId)}`} className="block text-xs font-normal text-brand-600 underline underline-offset-4">
           開啟同一筆案件流程
         </Link>
@@ -434,7 +446,7 @@ export default function BabycamWorkspace({
       )}
 
       {/*
-        導覽全部走頁首下方那一列（第 3 層）：群組名 → 群組內頁籤 → 右側外部連結。
+        導覽全部走頁首下方那一列（第 3 層）；掃碼核對頁的動作留在表單內。
 
         ⚠️ 工作區內**不要再畫群組列**：四個功能群組（入住登記／寶寶登錄／後臺管理／
         系統設定）2026-10-21 已移到左側主選單第 2 層（lib/modules.ts 模組 17 的
@@ -454,26 +466,6 @@ export default function BabycamWorkspace({
           ) : (
             <span className="shrink-0 text-sm font-semibold text-stone-700">{active.label}</span>
           )}
-          {/* 群組說明靠右（客戶指定）；群組名已在頁首標題，這裡不重複。 */}
-          <span className="ml-auto hidden max-w-[48ch] shrink-0 truncate pl-4 text-xs text-stone-500 xl:block" title={activeGroup.description}>
-            {activeGroup.description}
-          </span>
-        </div>
-      </HeaderSlot>
-      <HeaderSlot slot="below">
-        <div className="header-page-actions flex flex-wrap items-center gap-2">
-          <ButtonLink href="/babycam/scan/" size="sm">
-            <QrCode className="h-3.5 w-3.5" aria-hidden="true" />
-            QR 掃描
-          </ButtonLink>
-          <ButtonLink href="/view/mama" size="sm">
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-            媽媽端畫面
-          </ButtonLink>
-          <ButtonLink href="/view/family" size="sm">
-            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-            親友端畫面
-          </ButtonLink>
         </div>
       </HeaderSlot>
 
@@ -509,7 +501,7 @@ export default function BabycamWorkspace({
                       {binding.motherName}｜{binding.room || "無房號托嬰"}｜
                       {binding.babies.length ? "已完成護理指派" : "櫃台已登記，待護理指派"}
                     </p>
-                    <RegistrationDetails key={`${binding.id}-${binding.motherName}-${binding.phone}-${binding.room}`} data={data} binding={binding} />
+                    <RegistrationDetails key={`${binding.id}-${binding.motherName}-${binding.phone}-${binding.room}`} data={data} binding={binding} onSaved={() => toast.ok("入住基本資料已儲存，並同步案件與照護資料。")} />
                     <div className="grid gap-3 sm:grid-cols-2">
                       <label className="space-y-1.5 text-sm">
                         觀看起日
@@ -638,14 +630,15 @@ export default function BabycamWorkspace({
         )}
 
         {active.id === "list" && (
-          <div className="space-y-4 p-4 sm:p-5">
+          <div className="@container space-y-4 p-4 sm:p-5">
             <SectionHeading no={1} title="入住中的視訊授權" description="顯示狀態會即時反映到媽媽端與親友端；設為照護中會遮蔽畫面。" />
+            <p className="text-xs leading-5 text-stone-600 @min-[960px]:hidden">左右滑動可查看完整狀態與觀看期間，編輯與刪除保留在左側。</p>
             <div className="overflow-x-auto rounded-xl border border-border-subtle">
-              <table className="w-full min-w-[640px] text-left text-sm">
+              <table aria-label="入住狀態" className="w-full min-w-240 text-left text-sm">
                 <thead className="bg-surface-muted">
                   <tr>
                     {["房號／媽媽", "寶寶・車號・監視器", "顯示狀態", "照護", "觀看期間"].map((label) => (
-                      <th key={label} className="p-3 font-semibold text-stone-600">
+                      <th key={label} className={"whitespace-nowrap p-3 font-semibold text-stone-600 " + (label === "房號／媽媽" ? "sticky left-0 z-10 bg-surface-muted" : "")}>
                         {label}
                       </th>
                     ))}
@@ -658,10 +651,22 @@ export default function BabycamWorkspace({
                       (item.babies.length ? item.babies : [null]).map((baby, index) => (
                         <tr key={`${item.id}-${baby?.babyId ?? "none"}`} className="border-t border-border-subtle align-middle">
                           {index === 0 && (
-                            <td className="p-3" rowSpan={Math.max(1, item.babies.length)}>
+                            <td className="sticky left-0 z-10 w-44 bg-surface-raised p-3" rowSpan={Math.max(1, item.babies.length)}>
                               <strong className="text-stone-800">{item.room || "托嬰"}</strong>
                               <br />
                               <span className="text-stone-500">{item.motherName}</span>
+                              {canUseCaseFlow(role) && (
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  <Button size="sm" aria-label={`編輯 ${item.motherName} 的入住登記`} onClick={() => {
+                                    setBindingId(item.id);
+                                    setRegistrationCaseId("");
+                                    setScanBaby("");
+                                    setScanCode("");
+                                    selectTab("desk");
+                                  }}>編輯</Button>
+                                  <Button size="sm" variant="danger" aria-label={`刪除 ${item.motherName} 的入住登記`} onClick={() => setDeleteRegistrationId(item.id)}>刪除</Button>
+                                </div>
+                              )}
                             </td>
                           )}
                           <td className="p-3">
@@ -703,7 +708,7 @@ export default function BabycamWorkspace({
                             )}
                           </td>
                           {index === 0 && (
-                            <td className="p-3 text-stone-500" rowSpan={Math.max(1, item.babies.length)}>
+                            <td className="whitespace-nowrap p-3 text-stone-500" rowSpan={Math.max(1, item.babies.length)}>
                               {item.validFrom} ～ {item.validTo}
                               {item.viewingRevoked && <span className="ml-1 text-rose-600">（已作廢）</span>}
                             </td>
@@ -784,30 +789,57 @@ export default function BabycamWorkspace({
         )}
 
         {active.id === "scan" && (
-          <div className="space-y-4 p-4 sm:p-5">
-            <SectionHeading no={3} title="掃碼歸位核對" description="平板可用相機 App 掃標籤再於此核對；瀏覽器相機不可用時手動輸入識別碼即可。" />
-            {caseSelector}
-            {binding && (
-              <>
-                <label className="block space-y-1.5 text-sm">
-                  應歸位的寶寶
-                  <select aria-label="應歸位的寶寶" className={input} value={expectedBabyId} onChange={(event) => setScanBaby(event.target.value)}>
-                    <option value="">請選擇</option>
-                    {binding.babies.map((baby) => (
-                      <option key={baby.babyId} value={baby.babyId}>
-                        {data.subjects.find((subject) => subject.id === baby.babyId)?.name}｜車 {baby.cartNo}｜展示短碼 {baby.identityCode}
-                      </option>
+          <div className="@container space-y-6 p-4 sm:p-6">
+            <div>
+              <h2 className="text-lg font-bold text-stone-800">掃碼歸位核對</h2>
+              <p className="mt-1 text-sm leading-6 text-stone-600">確認案件與寶寶後，掃描手圈或嬰兒車標籤，再核對歸位。</p>
+            </div>
+            <div className="space-y-5">
+              {caseSelector}
+              {binding && (
+                <fieldset className="min-w-0 space-y-2" aria-describedby={!expectedBabyId ? "return-baby-hint" : undefined}>
+                  <legend className="mb-2 text-sm font-semibold text-stone-700">應歸位的寶寶</legend>
+                  <div className="flex flex-wrap gap-3">
+                    {binding.babies.map((baby, index) => (
+                      <label key={baby.babyId} className={"flex min-h-14 min-w-0 flex-[1_1_240px] cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 transition-colors focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand-600 " + (expectedBabyId === baby.babyId ? "border-brand-600 bg-brand-50" : "border-border-subtle bg-surface-raised hover:border-brand-300")}>
+                        <input
+                          type="radio"
+                          name="expected-return-baby"
+                          value={baby.babyId}
+                          checked={expectedBabyId === baby.babyId}
+                          onChange={() => { setScanBaby(baby.babyId); setScanCode(""); toast.clear(); }}
+                          className="h-5 min-h-0 w-5 shrink-0"
+                        />
+                        <span className="min-w-0 space-y-1">
+                          <span className="block break-words text-base font-semibold text-stone-800">
+                            {data.subjects.find((subject) => subject.id === baby.babyId)?.name || "寶寶"}
+                            {binding.babies.length > 1 && <span className="ml-2 text-sm font-normal text-stone-600">第 {baby.birthOrder || index + 1} 胎</span>}
+                          </span>
+                          <span className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-600">
+                            <span>車號 {baby.cartNo || "未設定"}</span>
+                            <span>監視器 {data.cameras.find((item) => item.id === baby.cameraId)?.code || "未指派"}</span>
+                          </span>
+                        </span>
+                      </label>
                     ))}
-                  </select>
-                </label>
-                <label className="block space-y-1.5 text-sm">
+                  </div>
+                  {!expectedBabyId && <p id="return-baby-hint" className="text-sm leading-6 text-stone-600">{binding.babies.length ? "多胞胎請先選擇本次要歸位的寶寶。" : "請先至「寶寶登錄與標籤」完成登錄與指派。"}</p>}
+                </fieldset>
+              )}
+            </div>
+            {binding && binding.babies.length > 0 && (
+              <div className="space-y-4 border-t border-border-subtle pt-5">
+                <label className="block space-y-2 text-sm font-semibold text-stone-700">
                   掃碼結果／手動輸入識別碼
-                  <input aria-label="掃碼結果／手動輸入識別碼" className={input} value={scanCode} onChange={(event) => setScanCode(event.target.value)} />
+                  <input ref={scanInputRef} aria-label="掃碼結果／手動輸入識別碼" aria-describedby="return-scan-hint" className="min-h-12 w-full rounded-lg border border-border-subtle bg-surface-raised px-3 py-3 text-base" placeholder="掃碼後自動帶入，也可手動輸入" autoComplete="off" autoCapitalize="off" spellCheck={false} value={scanCode} onChange={(event) => setScanCode(event.target.value)} />
                 </label>
-                <Button variant="primary" onClick={() => run(() => babycamActions.scan(scanCode, expectedBabyId), "身分核對通過，寶寶已歸位並結束照護。")}>
-                  核對並歸位
-                </Button>
-              </>
+                <p id="return-scan-hint" className="text-sm leading-6 text-stone-600">按「掃碼」開啟相機，再於視窗按「確認」帶入掃碼結果，核對通過後才會結束照護。</p>
+                <div className="grid grid-cols-2 gap-3 sm:ml-auto sm:max-w-md">
+                  <Button size="lg" disabled={!expectedBabyId} onClick={() => { setScanCode(""); setScannerOpen(true); }}><QrCode className="h-5 w-5" aria-hidden="true" />掃碼</Button>
+                  <Button size="lg" variant="primary" disabled={!expectedBabyId || !scanCode.trim()} onClick={() => run(() => babycamActions.scan(readIdentityCode(scanCode), expectedBabyId), "身分核對通過，寶寶已歸位並結束照護。")}>核對並歸位</Button>
+                </div>
+                {scannerOpen && expectedBaby && <IdentityScanner key={`${binding.id}-${expectedBabyId}`} demoIdentityCode={expectedBaby.identityCode} onRead={(code) => { setScanCode(code); setScannerOpen(false); toast.ok("已帶入掃碼結果，請確認寶寶後按「核對並歸位」。"); }} onClose={() => { setScannerOpen(false); requestAnimationFrame(() => scanInputRef.current?.focus()); }} />}
+              </div>
             )}
           </div>
         )}
@@ -816,13 +848,8 @@ export default function BabycamWorkspace({
         {active.id === "disinfect" && <DisinfectionSchedule data={data} onChange={() => toast.clear()} />}
 
         {active.id === "schedule" && (
-          <div className="space-y-4 p-4 sm:p-5">
-            <SectionHeading
-              no={1}
-              title="開放時段"
-              description="依序設定全院、媽媽端與親友端的開放時間；下方提供模式比較與設定範例。"
-            />
-            <SchedulePanel data={data} run={run} />
+          <div className="p-4 sm:p-6">
+            <SchedulePanel key={JSON.stringify(viewingSettingsOf(data))} data={data} run={run} />
           </div>
         )}
 
@@ -1113,6 +1140,22 @@ export default function BabycamWorkspace({
           </div>
         )}
       </Panel>
+      <Modal open={Boolean(deleteRegistration)} title="刪除入住登記" onClose={() => setDeleteRegistrationId("")}>
+        {deleteRegistration && <div className="space-y-4">
+          <p className="text-base font-semibold text-stone-800">{deleteRegistration.room || "托嬰"}｜{deleteRegistration.motherName}</p>
+          <p className="text-sm leading-7 text-stone-700">刪除後會停止此筆觀看授權，並釋出寶寶、車號與監視器的使用中指派。原案件、合約、照護及觀看歷史會保留。</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Button size="lg" onClick={() => setDeleteRegistrationId("")}>取消</Button>
+            <Button size="lg" variant="danger" onClick={() => run(() => {
+              babycamActions.removeRegistration(deleteRegistration.id);
+              if (bindingId === deleteRegistration.id) setBindingId("");
+              setScanBaby("");
+              setScanCode("");
+              setDeleteRegistrationId("");
+            }, "入住登記已刪除，觀看授權及使用中指派已停止，原案件與歷史紀錄保留。")}>確認刪除</Button>
+          </div>
+        </div>}
+      </Modal>
     </div>
   );
 }

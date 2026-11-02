@@ -2,6 +2,7 @@ import { CARE_SUBJECTS } from "../care/seed";
 import { MAMA_ROOMS } from "../mock/mamaRoom";
 import { ROOM_MASTER } from "../mock/roomMaster";
 import { cameraCodec, DEFAULT_NETWORK_PREFIX } from "../babycam/network";
+import { DEFAULT_VIEWING_SETTINGS } from "../babycam/viewingSettings";
 /*
   展示用的手機與密碼。
 
@@ -104,7 +105,7 @@ export const DOMAIN_SEED: DemoDomain = {
   })),
   networkPrefix: DEFAULT_NETWORK_PREFIX,
   displayStates: DISPLAY_STATE_SEED,
-  houseWindow: { mode: "always", start: "00:00", end: "23:59" }, internalWindow: { mode: "scheduled", start: "10:00", end: "22:00" }, familyWindow: { mode: "scheduled", start: "10:00", end: "20:00" }, enforceInternal: false, enforceFamily: false, familyLimit: 2, concurrencyEnforced: true,
+  ...structuredClone(DEFAULT_VIEWING_SETTINGS), viewingSettingsRevision: 1,
   demoAt: "2026-10-16T12:00:00+08:00", viewScenario: "normal", lightColors: { empty: "熄滅", care: "熄滅", idle: "白", internal: "紅", family: "洋紅" }, relayChannels: {}, audit: [], careEvents: [],
   staff: [{ id: "demo-admin", name: "展示管理員", role: "管理者", enabled: true }, { id: "demo-nurse", name: "展示護理師", role: "護理師 陳護理師", enabled: true }],
   /*

@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    // 本機驗收輸出與臨時探測腳本，不屬於應用程式原始碼。
+    "test-results/**",
     "next-env.d.ts",
   ]),
 ]);

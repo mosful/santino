@@ -320,11 +320,17 @@ html { --app-header-h: 3.5rem; }
   input,
   select,
   textarea {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
     min-height: 2.5rem;
     font-size: 16px; /* 避免iOS Safari自動放大 */
   }
   textarea {
     min-height: 4.5rem;
+  }
+  .grid > :is(label, fieldset) {
+    min-width: 0;
   }
   input:focus-visible,
   select:focus-visible,
@@ -370,6 +376,97 @@ html { --app-header-h: 3.5rem; }
   td {
     font-variant-numeric: tabular-nums;
   }
+}
+
+/* 單行表單共用尺寸：原生 select 在 iPad 上不一定遵守 min-height，須明定高度。
+   保留原生選單／日期挑選行為，只正規化欄位外觀；textarea 仍可依內容增高。 */
+:is(input, select, textarea).form-control {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+input.form-control,
+select.form-control:not([multiple]):not([size]) {
+  height: 3rem;
+  min-height: 3rem;
+}
+
+select.form-control:not([multiple]):not([size]) {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2353666d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+}
+
+/* 標題換行時以欄位底部對齊，避免窄平板上的長標題把單邊輸入框往下推。 */
+.case-workspace :is(.grid, .case-entry-grid, .case-document-fields) > label:has(> .form-control) {
+  align-self: end;
+}
+
+/* 預約與共通資料同樣依工作區可用寬度分欄，避免 iPad 展開側欄後仍硬塞四欄。 */
+.case-workspace { container-type: inline-size; }
+.case-entry-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+.case-entry-grid > * { min-width: 0; }
+.case-form-wide { grid-column: 1 / -1; }
+@container (min-width: 34rem) {
+  .case-entry-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (min-width: 62rem) {
+  .case-entry-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* iOS 日期欄位會把 100% 寬度再加上左右 padding（WebKit #301648）。
+   將內距移至日期內容，避免空值、有值及 disabled 時擠進相鄰欄位。 */
+input:is([type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"]) {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  max-width: 100%;
+}
+
+@supports (-webkit-touch-callout: none) {
+  input:is([type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"]) {
+    padding-inline: 0;
+  }
+  input::-webkit-date-and-time-value {
+    min-height: 1.5em;
+    padding-inline: 0.75rem;
+    text-align: left;
+  }
+  input::-webkit-datetime-edit {
+    min-width: 0;
+    padding-inline: 0.75rem;
+  }
+}
+
+/* 單據依本身可用寬度重排，避免視窗達 xl、側欄卻仍占寬時硬塞三欄。 */
+.case-document {
+  container-type: inline-size;
+}
+.case-document-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+.case-document-wide {
+  grid-column: 1 / -1;
+}
+@container (min-width: 34rem) {
+  .case-document-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (min-width: 54rem) {
+  .case-document-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* 細滾動條，橫向捲動（導覽列/表格）更好看 */

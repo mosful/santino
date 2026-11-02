@@ -63,7 +63,7 @@ import { viewingSettingsOf } from "@/lib/babycam/viewingSettings";
   權限判斷見 lib/babycam/actions.ts 的 getBabycamSectionAccess（只回 edit／none）。
 */
 
-const input = "min-h-11 w-full rounded-lg border border-border-subtle bg-surface-raised px-3 py-2 text-sm";
+const input = "form-control min-h-11 w-full rounded-lg border border-border-subtle bg-surface-raised px-3 py-2 text-sm";
 const subPanel = "space-y-4 rounded-xl border border-border-subtle bg-surface-raised p-4";
 
 type GroupId = "01" | "02" | "04";
@@ -402,7 +402,7 @@ export default function BabycamWorkspace({
       選擇入住案件
       <select
         aria-label="選擇入住案件"
-        className={active.id === "scan" ? "min-h-12 w-full rounded-lg border border-border-subtle bg-surface-raised px-3 py-3 text-base" : input}
+        className={input}
         value={binding?.id ?? ""}
         onChange={(event) => {
           setBindingId(event.target.value);

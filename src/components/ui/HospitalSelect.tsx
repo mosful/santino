@@ -6,7 +6,7 @@ import { caseActions } from "@/lib/demo/domainStore";
 import { hospitalOptions, OTHER_HOSPITAL } from "@/lib/domain/options";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 
-const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
+const input = "form-control min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
 
 /**
  * 生產醫院欄位。
@@ -38,7 +38,7 @@ export default function HospitalSelect({ label = "生產醫院", required = fals
   }
 
   return (
-    <div className="space-y-2 text-sm">
+    <div className="min-w-0 space-y-2 text-sm">
       <label className="block space-y-2">
         <span>{label}{required && <em className="ml-0.5 not-italic font-semibold text-rose-600" aria-hidden="true">*</em>}</span>
         <select aria-label={label} className={input} value={value} onChange={(event) => { setError(""); onChange(event.target.value); }}>

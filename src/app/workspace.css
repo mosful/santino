@@ -46,7 +46,8 @@
 .query-panel table { font-variant-numeric: tabular-nums; }
 .module-content { min-width: 0; }
 .module-content > .work-surface + .work-surface { margin-top: 20px; }
-.module-content :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]), select, textarea), .query-panel :is(input:not([type="checkbox"]):not([type="radio"]), select), .form-section :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]), select, textarea), .case-workspace :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea), .auth-card input { min-height: 48px; border-radius: 8px; border-color: var(--neutral-300); background-color: var(--surface-raised); padding: 10px 12px; font-size: 14px; line-height: 1.5; }
+/* 基礎外觀使用低優先度，讓共用欄位尺寸及 iOS 日期內距修正能生效。 */
+.module-content :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]), select, textarea), .query-panel :where(input:not([type="checkbox"]):not([type="radio"]), select), .form-section :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]), select, textarea), .case-workspace :where(input:not([type="checkbox"]):not([type="radio"]), select, textarea), .auth-card input { min-height: 48px; border-radius: 8px; border-color: var(--neutral-300); background-color: var(--surface-raised); padding: 10px 12px; font-size: 14px; line-height: 1.5; }
 .module-content textarea, .form-section textarea { min-height: 112px; }
 .module-content label, .form-section label { line-height: 1.6; }
 .module-content :is(input, select, textarea):disabled, .case-workspace :is(input, select, textarea):disabled { background: var(--surface-muted); }
@@ -83,6 +84,13 @@
 .babycam-form > .space-y-6 { display: flex; flex-direction: column; gap: 24px; }
 .babycam-form label { color: var(--neutral-700); line-height: 1.6; }
 .babycam-form :is(input:not([type="checkbox"]):not([type="radio"]), select), .babycam-delivery input { min-height: 48px; }
+/* 出生日期與監視器分區各自成組，依登錄表單可用寬度重排。 */
+.baby-binding-editor { container-type: inline-size; }
+.baby-binding-toolbar, .baby-binding-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: end; }
+.baby-binding-fields > label { min-width: 0; }
+@container (min-width: 34rem) {
+  .baby-binding-toolbar, .baby-binding-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .customer-detail [role="tabpanel"] > .grid { gap: 20px; }
 .customer-detail [role="tabpanel"] > .grid > div > :first-child { margin-bottom: 6px; color: var(--text-muted); }
 .customer-detail [role="tabpanel"] > .grid > div > :last-child { line-height: 1.6; }

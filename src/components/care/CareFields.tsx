@@ -8,7 +8,7 @@ import styles from "./CareWorkspace.module.css";
 import { usePhraseLibrary } from "@/hooks/usePhraseLibrary";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 
-export const inputClass = "w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm disabled:bg-stone-100";
+export const inputClass = "form-control w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm disabled:bg-stone-100";
 /** 照護模組沿用的按鈕樣式；實作在 components/ui/Button，這裡只是再匯出。 */
 export const buttonClass = buttonStyles();
 export const valueText = (value: string | string[] | undefined) => Array.isArray(value) ? value.join("、") : value ?? "";
@@ -49,7 +49,8 @@ export default function CareFieldInput({ field, values, onChange, personal, addP
   const id = `care-field-${field.key}`;
   const value = values[field.key];
   const phrases = (phraseTab === "system" ? library.filter((item) => [item.text, item.category, ...item.tags].join(" ").includes(query)).map((item) => item.text) : personal.filter((item) => item.includes(query)));
-  return <div className={field.type === "textarea" || field.type === "photo" || field.type === "multiple" ? "sm:col-span-2" : ""}>
+  const wide = field.type === "textarea" || field.type === "photo" || field.type === "multiple";
+  return <div data-care-field={field.key} className={`${styles.field} ${wide ? styles.wideField : styles.singleField}`}>
     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
       <label htmlFor={field.type === "multiple" || field.type === "photo" ? undefined : id} className="text-sm font-medium">{field.label}{field.required && <span className="ml-1 text-rose-700">（必填）</span>}</label>
       {field.type === "textarea" && <button type="button" onClick={() => setPhraseOpen(!phraseOpen)} aria-expanded={phraseOpen} className="text-sm underline underline-offset-4">常用片語</button>}

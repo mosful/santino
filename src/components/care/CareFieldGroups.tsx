@@ -1,5 +1,6 @@
 import type { CareField, CareValues } from "@/lib/care/types";
 import CareFieldInput from "./CareFields";
+import styles from "./CareWorkspace.module.css";
 
 const GROUPS: Record<string, { title: string; keys: string[] }[]> = {
   io: [
@@ -29,6 +30,6 @@ export default function CareFieldGroups({ formKey, fields, values, onChange, per
   if (rest.length) groups.push({ title: groups.length ? "補充紀錄" : "", fields: rest });
   return <div className="care-field-groups">{groups.map((group) => <div key={group.title} className="care-field-group">
     {group.title && <h4 className="mb-4 text-sm font-semibold text-stone-700">{group.title}</h4>}
-    <div className="grid gap-x-5 gap-y-6 sm:grid-cols-2">{group.fields.map((field) => <CareFieldInput key={field.key} field={field} values={values} onChange={onChange} personal={personal} addPhrase={addPhrase} />)}</div>
+    <div className={styles.fieldGrid}>{group.fields.map((field) => <CareFieldInput key={field.key} field={field} values={values} onChange={onChange} personal={personal} addPhrase={addPhrase} />)}</div>
   </div>)}</div>;
 }

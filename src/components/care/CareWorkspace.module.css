@@ -9,7 +9,6 @@
 .workspace :global(.btn-sm) { height: 40px; }
 .workspace :global(.btn-md) { height: 48px; }
 .workspace :global(.btn-lg) { height: 52px; }
-.workspace input:not([type="checkbox"]):not([type="radio"]), .workspace select { min-height: 50px; }
 .workspace input[type="checkbox"] { min-height: 20px; width: 20px; height: 20px; flex-shrink: 0; }
 .workspace textarea { min-height: 112px; }
 .workspace :is(input, textarea)::placeholder { color: var(--text-muted); opacity: 1; }
@@ -17,14 +16,24 @@
 .workspace :is(button, input, select, textarea, a):focus-visible { outline: 3px solid color-mix(in srgb, var(--focus-ring) 72%, transparent); outline-offset: 3px; }
 .workspace input, .workspace textarea { caret-color: var(--brand); }
 .workspace ::selection { background: var(--brand-200); color: var(--brand-900); }
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 20px; align-items: start; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
 /*
   右側欄**不要 sticky**（客戶兩次回報「右邊上方空一塊」）。
   sticky 元素一旦被頁首推下去，就會在格線容器裡留下一段空白，而這一欄只有
   「同案件媽媽／寶寶」和「最近操作歷程」兩小塊，釘住的價值遠小於那塊空白的突兀。
   真正需要常駐的東西（對象識別列、表單與房間分頁）都已經在頁首了。
 */
-.sidebar { position: static; }
+.sidebar { position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: 20px; }
+.form { container-type: inline-size; }
+.fieldGrid { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 20px; row-gap: 24px; }
+.field { min-width: 0; }
+.singleField { display: flex; flex-direction: column; }
+.singleField > :last-child { margin-top: auto; }
+.wideField { grid-column: 1 / -1; }
+/* 依表單實際可用寬度分欄，側欄展開或 iPad 分割畫面時不硬塞雙欄。 */
+@container (min-width: 34rem) {
+  .fieldGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .form fieldset:disabled { opacity: .75; }
 .sectionNav { display: flex; gap: 8px; margin: 0 -4px 20px; overflow-x: auto; padding: 4px; overscroll-behavior-inline: contain; scrollbar-width: thin; }
 .sectionNav > button { flex: 0 0 auto; }

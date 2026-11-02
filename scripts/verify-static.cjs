@@ -7,7 +7,7 @@ const webRoot = path.resolve(__dirname, "..");
 const outRoot = path.resolve(process.env.SANTINO_STATIC_OUT || path.join(webRoot, "out"));
 const basePath = (process.env.SANTINO_STATIC_BASE_PATH || "").replace(/\/$/, "");
 const reportRoot = path.resolve(process.env.SANTINO_QA_OUTPUT || path.join(webRoot, "test-results", `${basePath ? "subpath" : "root"}-${new Date().toISOString().replace(/[:.]/g, "-")}`));
-const scripts = process.env.SANTINO_E2E_SCENARIOS?.split(",") || ["integration", "case_followup", "babycam_followup", "babycam_maintenance", "babycam_runtime", "babycam_scan", "babycam_registration", "care_workspace", "care_settings", "contract_settings", "static_smoke"];
+const scripts = process.env.SANTINO_E2E_SCENARIOS?.split(",") || ["integration", "case_followup", "case_form_layout", "care_form_layout", "babycam_form_layout", "babycam_followup", "babycam_maintenance", "babycam_runtime", "babycam_scan", "babycam_registration", "care_workspace", "care_settings", "contract_settings", "static_smoke"];
 
 const server = createStaticServer(outRoot, basePath);
 

@@ -10,7 +10,7 @@ import type { CaseRecord } from "@/lib/domain/types";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { taipeiTimestamp } from "@/lib/care/rules";
 
-const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
+const input = "form-control min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
 const button = buttonStyles();
 
 /**
@@ -32,7 +32,7 @@ export function CaseDocPanel({ record, doc, editable, onClose }: { record: CaseR
     set(key, next.join("、"));
   }
   return (
-    <section className="mt-2 space-y-4 rounded-xl border border-brand-200 bg-brand-50/40 p-4" aria-label={doc.label}>
+    <section className="case-document order-last mt-2 min-w-0 w-full basis-full space-y-4 rounded-xl border border-brand-200 bg-brand-50/40 p-4" aria-label={doc.label}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h4 className="font-semibold">{doc.label}</h4>
@@ -46,12 +46,12 @@ export function CaseDocPanel({ record, doc, editable, onClose }: { record: CaseR
       {doc.sections.map((section) => (
         <section key={section.label} className="space-y-3">
           <h5 className="font-medium">{section.label}</h5>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="case-document-fields">
             {section.fields.map((field) => {
               const value = values[field.key] ?? "";
               // 生產醫院的選項是主檔不是定義：櫃台在新增預約加的院所，這裡也要看得到。
               const options = field.key === "hospital" && field.type === "select" ? hospitalOptions(data.hospitals) : field.options ?? [];
-              const span = field.wide || field.type === "textarea" || field.type === "multiple" ? "sm:col-span-2 xl:col-span-3" : "";
+              const span = field.wide || field.type === "textarea" || field.type === "multiple" ? "case-document-wide" : "";
               if (field.type === "multiple") {
                 const picked = value.split("、").filter(Boolean);
                 return (

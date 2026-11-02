@@ -9,7 +9,7 @@ import { DEMO_BABY_NAME, orDemo } from "@/lib/demo/demoDefaults";
 import { babyDisplayName } from "@/lib/babycam/wristband";
 import { Toast, useToast } from "@/components/ui/Toast";
 
-const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
+const input = "form-control min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
 // 按鈕樣式一律取自 components/ui/Button，不在此另開複本（見該檔開頭說明）。
 const button = buttonStyles();
 /* 換鏡頭的常見情境（客戶 2026-10-29）：寶寶感冒移到隔離房、好了推回原位、
@@ -176,7 +176,7 @@ export default function BindingEditor({ data, binding, onChange }: { data: DemoD
     .map((baby) => baby.cameraId);
   const zoneCameras = data.cameras.filter((camera) => camera.enabled && (zone === "全部" || camera.code.startsWith(zone)));
 
-  return <section className="min-w-0 space-y-5 border-t border-stone-200 pt-5">
+  return <section aria-label="寶寶登錄表單" className="baby-binding-editor min-w-0 space-y-5 border-t border-stone-200 pt-5">
     <Toast {...toastProps} />
     <h2 className="font-semibold">登錄寶寶、車號與監視器</h2>
 
@@ -189,7 +189,7 @@ export default function BindingEditor({ data, binding, onChange }: { data: DemoD
         {birthKind === "多胞胎" && (
           <label className="flex items-center gap-2 border-l border-stone-200 pl-3 text-sm text-stone-600">
             共
-            <select aria-label="多胞胎人數" className="min-h-12 w-20 rounded-lg border border-stone-300 bg-white px-2 text-sm" value={drafts.length} onChange={(event) => pickKind("多胞胎", Number(event.target.value))}>
+            <select aria-label="多胞胎人數" className={`${input} !w-20`} value={drafts.length} onChange={(event) => pickKind("多胞胎", Number(event.target.value))}>
               {[3, 4, 5, 6].map((size) => <option key={size} value={size}>{size}</option>)}
             </select>
             位
@@ -199,9 +199,9 @@ export default function BindingEditor({ data, binding, onChange }: { data: DemoD
       </div>
     </fieldset>
 
-    <div className="flex flex-wrap items-end gap-3">
-      <label className="block max-w-xs flex-1 text-sm">出生日期（同一胎共用）<input aria-label="出生日期" type="date" className={input} value={birthDate} onChange={(event) => setBirthDate(event.target.value)} /></label>
-      <ZoneFilter zones={["全部", "A", "B"]} active={zone} onSelect={setZone} />
+    <div className="baby-binding-toolbar">
+      <label className="block min-w-0 space-y-2 text-sm">出生日期（同一胎共用）<input aria-label="出生日期" type="date" className={input} value={birthDate} onChange={(event) => setBirthDate(event.target.value)} /></label>
+      <fieldset className="min-w-0" aria-label="監視器分區"><legend className="pb-2 text-sm">監視器分區</legend><ZoneFilter zones={["全部", "A", "B"]} active={zone} onSelect={setZone} /></fieldset>
     </div>
 
     {drafts.map((draft, index) => (
@@ -210,7 +210,7 @@ export default function BindingEditor({ data, binding, onChange }: { data: DemoD
           {drafts.length > 1 ? `第 ${index + 1} 位（標籤印 ${String.fromCharCode(65 + index)}）` : "寶寶資料"}
           {draft.babyId && <span className="ml-2 text-xs font-normal text-stone-500">已登錄</span>}
         </legend>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="baby-binding-fields">
           <label className="text-sm">寶寶姓名<input aria-label={`第 ${index + 1} 位寶寶姓名`} className={input} value={draft.name} onChange={(event) => patch(index, { name: event.target.value, renamed: true })} /></label>
           <label className="text-sm">車號<input aria-label={`第 ${index + 1} 位車號`} className={input} value={draft.cartNo} onChange={(event) => patch(index, { cartNo: event.target.value })} /></label>
           <label className="text-sm">性別<select aria-label={`第 ${index + 1} 位性別`} className={input} value={draft.sex} onChange={(event) => patch(index, { sex: event.target.value as "男" | "女" })}><option>男</option><option>女</option></select></label>
@@ -240,7 +240,7 @@ export default function BindingEditor({ data, binding, onChange }: { data: DemoD
     ))}
 
     <div className="flex flex-wrap items-center gap-3">
-      {changedCamera && <label className="flex items-center gap-2 text-sm">更換原因<select aria-label="更換原因" className="min-h-12 rounded-lg border border-stone-300 bg-white px-3 text-sm" value={reason} onChange={(event) => setReason(event.target.value)}>{CHANGE_REASONS.map((item) => <option key={item}>{item}</option>)}</select></label>}
+      {changedCamera && <label className="block min-w-0 flex-1 space-y-2 text-sm">更換原因<select aria-label="更換原因" className={input} value={reason} onChange={(event) => setReason(event.target.value)}>{CHANGE_REASONS.map((item) => <option key={item}>{item}</option>)}</select></label>}
       <button type="button" className={buttonStyles({ variant: "primary", className: "ml-auto" })} onClick={save}>
         {binding.babies.length ? `儲存這 ${drafts.length} 位的資料` : `登錄這 ${drafts.length} 位寶寶`}
       </button>

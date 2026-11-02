@@ -11,7 +11,7 @@ import HospitalSelect from "@/components/ui/HospitalSelect";
 import { CORPORATE_COMPANIES } from "@/lib/domain/options";
 import { DEMO_PHONE } from "@/lib/demo/demoDefaults";
 
-const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
+const input = "form-control min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
 // 按鈕樣式一律取自 components/ui/Button，不在此另開複本（見該檔開頭說明）。
 const button = buttonStyles();
 const steps = ["基本資料", "套餐與加購", "審閱期與入住日", "簽名", "產生合約"];

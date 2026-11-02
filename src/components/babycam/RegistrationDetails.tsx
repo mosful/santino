@@ -6,7 +6,7 @@ import { babycamActions } from "@/lib/babycam/actions";
 import Button from "@/components/ui/Button";
 import { Toast, useToast } from "@/components/ui/Toast";
 
-const input = "min-h-11 w-full rounded-lg border border-border-subtle bg-surface-raised px-3 py-2 text-sm";
+const input = "form-control min-h-11 w-full rounded-lg border border-border-subtle bg-surface-raised px-3 py-2 text-sm";
 
 /** 合約帶入值仍可修改，儲存後與案件及照護對象同步。 */
 export default function RegistrationDetails({ data, binding, onSaved }: { data: DemoDomain; binding: ViewingBinding; onSaved?: () => void }) {

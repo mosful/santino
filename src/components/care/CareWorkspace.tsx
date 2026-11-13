@@ -11,6 +11,7 @@ import RequireAccess from "@/components/ui/RequireAccess";
 import PageHeader from "@/components/ui/PageHeader";
 import HeaderSlot from "@/components/layout/HeaderSlot";
 import { useCurrentRole } from "@/lib/roleStore";
+import { ROLE_PROFILE } from "@/lib/permissions";
 import { careForms } from "@/lib/care/forms";
 import { careSubject } from "@/lib/care/subjects";
 import { useDomainStore } from "@/lib/demo/domainStore";
@@ -56,7 +57,7 @@ function identity(subject: CareSubject) {
     : `車號 ${subject.carNo || "待指派"}${subject.previousRoom ? `｜原 ${subject.previousRoom} 房` : ""}`;
   return `${location}｜${subject.name}｜${subject.chartNo}`;
 }
-const signatureRoles: { key: CareSignatureRole; label: string }[] = [{ key: "recipient", label: "媽媽／家屬簽名" }, { key: "executor", label: "執行者簽名" }, { key: "evaluator", label: "評值者簽名" }];
+const signatureRoles: { key: CareSignatureRole; label: string }[] = [{ key: "recipient", label: "媽媽／家屬簽名" }];
 const hydrationSubscribe = () => () => {};
 
 export default function CareWorkspace({ kind }: { kind: CareKind }) {
@@ -257,19 +258,19 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
             {form.key === "mood" && moodNeedsAttention(document.values) && <p role="status" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">達 v24 示範關注門檻，請記錄後續處理。此為護理長提醒情境，未發送通知。</p>}
             <fieldset disabled={!editable} className="space-y-5">
               <legend className="sr-only">{form.label}欄位</legend>
-              {form.layout ? <CareSheetEditor key={document.key} form={form} sectionIndex={sectionIndex} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value), "已加入目前角色的常用語。")} subjectEntries={subjectEntries} onCarryFeeding={() => run(() => careActions.carryLastFeeding(document.key), "已帶入上一筆奶別與奶量。")} /> : form.sections.map((section, index) => <section key={section.label} className={index !== Math.min(sectionIndex, form.sections.length - 1) ? styles.hiddenSection : ""}><h3 className="mb-4 font-medium">{section.label}</h3><CareFieldGroups key={`${document.key}-${section.label}`} formKey={form.key} fields={section.fields} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value), "已加入目前角色的常用語。")} /></section>)}
+              {form.layout ? <CareSheetEditor key={document.key} form={form} sectionIndex={sectionIndex} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value), "已加入目前角色的常用語。")} subjectEntries={subjectEntries} onCarryFeeding={() => run(() => careActions.carryLastFeeding(document.key), "已帶入上一筆奶別與奶量。")} kind={kind} signature={document.signature} currentUser={ROLE_PROFILE[role].name} notify={run} /> : form.sections.map((section, index) => <section key={section.label} className={index !== Math.min(sectionIndex, form.sections.length - 1) ? styles.hiddenSection : ""}><h3 className="mb-4 font-medium">{section.label}</h3><CareFieldGroups key={`${document.key}-${section.label}`} formKey={form.key} fields={section.fields} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value), "已加入目前角色的常用語。")} /></section>)}
               {form.key === "feeding" && needsFeedingReassessment(document.values) && <section className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-4"><h3 className="font-semibold">媽媽護理紀錄（再評估）</h3><p className="text-sm">{subject.motherName}｜請於此直接補充評估與處理內容。</p><CareFieldInput field={{ key: "reassessmentNote", label: "再評估護理紀錄", type: "textarea", required: true }} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value))} /></section>}
             </fieldset>
             {form.signature && <div className="mt-6 space-y-3"><h3 className="font-medium">本筆簽名與員工署名</h3><p className="text-sm text-stone-600">對象：{identity(subject)}。簽出時記錄實際操作者；此為靜態原型簽名。</p>
 
-              {form.key === "guidance" ? <div className="grid gap-3 sm:grid-cols-3">{signatureRoles.map((roleItem) => <section key={roleItem.key} className="rounded-lg border border-stone-200 p-3"><h4 className="text-sm font-medium">{roleItem.label}</h4>{document.signatures?.[roleItem.key] ? <img src={document.signatures[roleItem.key]} alt={roleItem.label} className={styles.signedImage} /> : <p className="my-3 text-xs text-stone-500">尚未簽名</p>}{editable && !signing && <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { setSigningRole(roleItem.key); setSigning(true); }}>簽署{roleItem.label}</button>}</section>)}</div> : <>{document.signature && <img src={document.signature} alt={`${subject.name}本筆簽名`} className={styles.signedImage} />}{editable && !signing && <button type="button" className={buttonClass} onClick={() => { setSigningRole("recipient"); setSigning(true); }}>確認對象並簽名</button>}</>}
+              <>{document.signature && <img src={document.signature} alt={`${subject.name}本筆簽名`} className={styles.signedImage} />}{editable && !signing && <button type="button" className={buttonClass} onClick={() => { setSigningRole("recipient"); setSigning(true); }}>確認對象並簽名</button>}</>
               {editable && !signing && <button type="button" className={`${buttonClass} ml-2`} onClick={() => run(() => careActions.carryContractSignature(document.key), "已確認同一案件媽媽，帶入合約簽名。")}>
                 帶入本案合約媽媽簽名
               </button>}
               {editable && !signing && <button type="button" className={buttonClass} onClick={() => run(() => careActions.carrySubjectSignature(document.key), "已確認相同照護對象，帶入上一筆媽媽簽名。")}>帶入此對象上一筆簽名</button>}
               <p className="text-sm text-stone-600">完成簽出時加蓋實際操作者員工印章及時間。</p>
               {editable && signing && <CareSignature
-                identity={`${identity(subject)}｜${form.key === "guidance" ? signatureRoles.find((item) => item.key === signingRole)?.label : "媽媽本人"}`}
+                identity={`${identity(subject)}｜媽媽本人`}
                 /* 帶入的來源依「簽的是誰」分開：媽媽／家屬跟著病歷號（只帶到同一位個案的其他表單），
                    執行者與評值者是當班人員自己的簽名，跟著登入角色走，每一張都能帶。 */
                 carryKey={form.key === "guidance" && signingRole !== "recipient" ? staffKey(role) : subjectKey(subject.chartNo)}

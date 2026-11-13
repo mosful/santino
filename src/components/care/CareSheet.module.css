@@ -63,3 +63,24 @@
 .summaryTable { width: 100%; min-width: 46rem; border-collapse: collapse; font-size: .8125rem; }
 .summaryTable th, .summaryTable td { border: 1px solid var(--sheet-line); padding: 8px 6px; text-align: center; white-space: nowrap; }
 .summaryTable thead th { background: var(--surface-alt, #fafaf9); font-weight: 600; }
+.guidanceBar { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; padding: 12px 16px; }
+.guidanceField { display: grid; gap: 4px; font-size: .8125rem; }
+.guidanceField input { min-height: 44px; padding: 0 10px; border: 1px solid var(--sheet-line); border-radius: 8px; }
+.guidanceAlert { margin: 0 16px 12px; padding: 12px; border-radius: 8px; background: #fffbeb; color: #78350f; font-size: .875rem; }
+.guidanceScroll { overflow-x: auto; }
+.guidanceTable { width: 100%; min-width: 60rem; border-collapse: collapse; font-size: .8125rem; }
+.guidanceTable th, .guidanceTable td { border: 1px solid var(--sheet-line); padding: 8px; vertical-align: top; text-align: left; }
+.guidanceTable thead th { background: var(--surface-alt, #fafaf9); font-weight: 600; white-space: nowrap; }
+.guidanceTable tbody th { font-weight: 400; min-width: 12rem; }
+.guidanceTable input[type="date"], .guidanceTable input[type="text"], .guidanceTable select { display: block; width: 100%; min-height: 44px; margin-bottom: 6px; padding: 0 8px; border: 1px solid var(--sheet-line); border-radius: 8px; }
+.guidanceWays { display: grid; gap: 2px; white-space: nowrap; }
+.guidanceWays label, .guidanceSign { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+.guidanceSignImage { max-height: 40px; }
+.guidanceNote { width: 100%; min-height: 120px; padding: 10px; border: 1px solid var(--sheet-line); border-radius: 8px; }
+.guidanceNewItem { flex: 1 1 16rem; min-height: 44px; padding: 0 10px; border: 1px solid var(--sheet-line); border-radius: 8px; }
+.guidancePrint { width: 100%; border-collapse: collapse; margin-top: 3mm; table-layout: fixed; font-size: 7.5pt; }
+.guidancePrint th, .guidancePrint td { border: 1px solid #333; padding: 1mm; vertical-align: middle; overflow-wrap: anywhere; }
+.guidancePrint thead { display: table-header-group; }
+.guidancePrint tr { break-inside: avoid; }
+.guidancePrint th { font-weight: 400; }
+.guidancePrint img { max-height: 10mm; max-width: 28mm; }

@@ -68,17 +68,17 @@ test("簽出只建立一筆歷史，完成表單唯讀且帶上一筆不複製�
   assert.equal(careStore.get().documents[key].signature, undefined);
   assert.equal(careStore.get().entries.length, 1);
 });
-test("護理指導單須保留媽媽、執行者與評值者三方簽名", () => {
+test("護理指導單仍須產婦手寫簽名，執行者與評值者改記文字姓名", () => {
   reset(); careActions.open(first.id, "guidance"); const key = `${first.id}:guidance`;
-  careActions.change(key, { date: "2026-10-18" });
-  careActions.signRole(key, "recipient", "data:image/png;base64,recipient");
+  careActions.change(key, { date: "2026-10-18", executor: "示範護理師" });
   /* 照護簽出刻意保留硬擋（見 care/store.ts 的說明）：簽出會把這筆鎖成唯讀，
      放行會產生「缺簽名卻已簽出」且補不回來的表單。 */
-  assert.throws(() => careActions.complete(key), /三方簽名/);
-  careActions.signRole(key, "executor", "data:image/png;base64,executor");
-  careActions.signRole(key, "evaluator", "data:image/png;base64,evaluator");
+  assert.throws(() => careActions.complete(key), /簽名/);
+  // 需求 G02：不再要求執行者與評值者另外簽一張圖，姓名以文字保存。
+  careActions.signRole(key, "recipient", "data:image/png;base64,recipient");
   careActions.complete(key);
-  assert.deepEqual(Object.keys(careStore.get().entries[0].signatures!).sort(), ["evaluator", "executor", "recipient"]);
+  assert.deepEqual(Object.keys(careStore.get().entries[0].signatures!), ["recipient"]);
+  assert.equal(careStore.get().entries[0].values.executor, "示範護理師");
 });
 test("衛教師只能編輯指定寶寶表單，action 直接呼叫也不能繞過", () => {
   reset(); setCurrentRole("衛教師 琳雅");

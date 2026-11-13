@@ -3,6 +3,7 @@ import { Fragment } from "react";
 import type { CareDocument, CareEntry, CareField, CareForm, CareSubject, CareValues } from "@/lib/care/types";
 import { FEEDING_GROUPS, RED_BOTTOM, SHIFTS, sectionRows } from "@/lib/care/sheetDefinitions";
 import { growthDays, type GrowthDay } from "@/lib/care/summary";
+import { GUIDANCE_WAYS, guidanceGroups, guidanceKeys } from "@/lib/care/guidance";
 import { legacySheetFields, normalizeSheetValues } from "@/lib/care/sheetValues";
 import styles from "./CareSheet.module.css";
 
@@ -139,6 +140,31 @@ export default function CarePrintSheet({ form, document, subject, history, subje
       <p className={styles.printNote}>身長與頭圍一週量一次，未量測日留白。本表供家屬帶回，院內每日照護另有完整評估。</p>
       {!blank && text(document.values.note) && <p className={styles.printNote}>成長紀錄：{text(document.values.note)}</p>}
     </section></div>;
+  }
+  if (form.layout === "guidance") {
+    const sheets = guidanceGroups(subject.kind);
+    return <div className={styles.printDocument}>{sheets.map((group) => <section className={styles.printPage} key={group.label}>
+      {header(group.label)}
+      <table className={styles.guidancePrint}><thead><tr><th>衛教指導內容</th><th>指導方式</th><th>執行日期／執行者</th><th>產婦簽名</th><th>評值日期／評值者</th><th>結果評值</th><th>瞭解日期</th></tr></thead><tbody>
+        {group.items.map((entry, index) => {
+          const keys = guidanceKeys(entry.key);
+          const ways = blank ? [] : (Array.isArray(values[keys.ways]) ? values[keys.ways] as string[] : []);
+          const signed = !blank && (Array.isArray(values[keys.signed]) ? values[keys.signed] as string[] : []).includes("已簽名");
+          return <tr key={entry.key}>
+            <th>{index + 1}. {entry.label}</th>
+            <td>{GUIDANCE_WAYS[subject.kind].map((way) => <span className={styles.printOption} key={way}>{ways.includes(way) ? "●" : "○"}{way}</span>)}</td>
+            <td>{blank ? "" : <>{text(values[keys.date])}<br />{text(values[keys.executor])}</>}</td>
+            <td>{signed && document.signature ? <img src={document.signature} alt={entry.label + " 產婦簽名"} /> : ""}</td>
+            <td>{blank ? "" : <>{text(values[keys.evalDate])}<br />{text(values[keys.evaluator])}</>}</td>
+            <td>{blank ? "" : text(values[keys.result])}</td>
+            <td>{blank ? "" : text(values[keys.understandDate])}</td>
+          </tr>;
+        })}
+      </tbody></table>
+      <p className={styles.printNote}>執行日期：{blank ? "　　　　　" : text(values.date)}　執行者：{blank ? "　　　　" : text(values.executor) || document.author}</p>
+    </section>)}
+    {subject.kind === "baby" && <section className={styles.printPage}>{header("備註")}<p className={styles.printValue}>{blank ? "" : text(values.baby_note)}</p></section>}
+  </div>;
   }
   const groups = form.printGroups ?? [form.sections.map((_, i) => i)];
   return <div className={styles.printDocument}>{groups.map((indexes, page) => <section className={styles.printPage} key={page}>

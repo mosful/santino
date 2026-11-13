@@ -1,14 +1,16 @@
-import type { CareEntry, CareForm, CareValues } from "@/lib/care/types";
+import type { CareEntry, CareForm, CareKind, CareValues } from "@/lib/care/types";
 import { growthDays } from "@/lib/care/summary";
 import { FEEDING_GROUPS, sectionRows } from "@/lib/care/sheetDefinitions";
 import { legacySheetFields } from "@/lib/care/sheetValues";
+import CareGuidanceSheet from "./CareGuidanceSheet";
 import CareFieldInput from "./CareFields";
 import styles from "./CareSheet.module.css";
 
-type Props = { form: CareForm; sectionIndex: number; values: CareValues; onChange: (patch: CareValues) => void; personal: string[]; addPhrase: (value: string) => void; subjectEntries?: CareEntry[]; onCarryFeeding?: () => void };
+type Props = { form: CareForm; sectionIndex: number; values: CareValues; onChange: (patch: CareValues) => void; personal: string[]; addPhrase: (value: string) => void; subjectEntries?: CareEntry[]; onCarryFeeding?: () => void; kind: CareKind; signature?: string; currentUser: string; notify: (action: () => void, message?: string) => void };
 
 export default function CareSheetEditor(props: Props) {
-  const { form, values, onChange, sectionIndex, personal, addPhrase, subjectEntries = [], onCarryFeeding } = props;
+  const { form, values, onChange, sectionIndex, personal, addPhrase, subjectEntries = [], onCarryFeeding, kind, signature, currentUser, notify } = props;
+  if (form.layout === "guidance") return <CareGuidanceSheet kind={kind} values={values} onChange={onChange} signature={signature} currentUser={currentUser} notify={notify} />;
   const summary = form.layout === "growth" ? growthDays(subjectEntries) : [];
   const fields = form.sections.flatMap((section) => section.fields);
   const input = (key: string) => {

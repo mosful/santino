@@ -80,4 +80,4 @@ export type CareField = {
 };
 export type CareRow = { label: string; keys: string[]; note?: string };
 export type CareSection = { label: string; fields: CareField[]; rows?: CareRow[] };
-export type CareForm = { key: string; label: string; sections: CareSection[]; signature?: boolean; layout?: "assessment" | "feeding" | "daily" | "io" | "growth"; printTitle?: string; printGroups?: number[][] };
+export type CareForm = { key: string; label: string; sections: CareSection[]; signature?: boolean; layout?: "assessment" | "feeding" | "daily" | "io" | "growth" | "guidance"; printTitle?: string; printGroups?: number[][] };

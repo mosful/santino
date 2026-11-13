@@ -2,7 +2,7 @@
 /* 本機簽名與照片直接使用 data／Blob URL，不經伺服器圖片服務。 */
 /* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { staffKey, subjectKey } from "@/lib/signatureStore";
 import { report, reportFail } from "@/lib/demo/lenient";
 import Link from "next/link";
@@ -99,8 +99,11 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   const guidanceExtras = guidanceExtraStore.useStore().data;
   /* 衛教指導單的欄位依院方自訂項目而定，所以要用當下的項目清單重建；
      forms 是模組載入時算好的，不含使用者後來新增的項目（歷次紀錄會顯示代號而非名稱）。 */
+  // useMemo 不只是省算：form 每次 render 都換新物件的話，依賴 form 的 effect 會不停重跑
+  // （實際造成 WebKit 下點房卡開不了第二間房）。
+  const guidance = useMemo(() => guidanceForm(kind, guidanceExtras), [kind, guidanceExtras]);
   const base = forms.find((item) => item.key === document?.formKey);
-  const form = base?.key === "guidance" ? guidanceForm(kind, guidanceExtras) : base;
+  const form = base?.key === "guidance" ? guidance : base;
   const hasActive = !!document && !!subject && !!form && !listVisible;
   /*
     「已逾期」與「不能編輯」是兩件事（客戶 2026-10-22）：逾期後護理長與管理者

@@ -167,14 +167,21 @@ async function check(panel, name) {
           page.on("pageerror", (error) => errors.push(error.message));
           await page.goto(`${base}/mama/`);
           await page.waitForLoadState("networkidle");
+          // 先等「開啟中的照護對象」出現，代表前面開的房間已載回且事件已掛上；
+          // networkidle 之後馬上點，WebKit 偶爾會點在還沒 hydrate 的按鈕上而無效。
+          const roomNav = page.getByRole("navigation", { name: "開啟中的照護對象", exact: true });
+          await roomNav.waitFor();
           await page.getByRole("button", { name: "回列表", exact: true }).click();
-          await page.getByRole("button", { name: "入住評估", exact: true }).nth(1).click();
+          /* 只點房卡清單裡的「入住評估」：頁首的開啟中表單頁籤同名，
+             在回列表狀態下仍在畫面上，用全頁 nth(1) 會點到第一間房自己的頁籤。 */
+          await page.locator("main").getByRole("button", { name: "入住評估", exact: true }).nth(1).click();
+          await roomNav.locator('button[title^="切換到"]').nth(1).waitFor();
           const unlock = page.getByRole("button", { name: "解鎖此對象", exact: true });
           if (await unlock.count()) {
             await unlock.click();
             await page.getByLabel("頁內操作確認").getByRole("button", { name: "確認", exact: true }).click();
           }
-          const rooms = page.getByRole("navigation", { name: "開啟中的照護對象", exact: true }).locator('button[title^="切換到"]');
+          const rooms = roomNav.locator('button[title^="切換到"]');
           assert.equal(await rooms.count(), 2, "應保留兩間媽媽的房間");
           await rooms.first().click();
           assert.equal(await page.getByRole("button", { name: "解鎖此對象", exact: true }).count(), 1, "切回第一間應為唯讀");

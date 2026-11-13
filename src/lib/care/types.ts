@@ -26,6 +26,7 @@ export type CareSubject = {
   dischargedAt?: string;
 };
 export type CareDocument = {
+  templateVersion?: string;
   key: string;
   subjectId: string;
   formKey: string;
@@ -42,6 +43,7 @@ export type CareDocument = {
   editingEntryId?: string;
 };
 export type CareEntry = {
+  templateVersion?: string;
   id: string;
   subjectId: string;
   formKey: string;
@@ -80,4 +82,5 @@ export type CareField = {
 };
 export type CareRow = { label: string; keys: string[]; note?: string };
 export type CareSection = { label: string; fields: CareField[]; rows?: CareRow[] };
-export type CareForm = { key: string; label: string; sections: CareSection[]; signature?: boolean; layout?: "assessment" | "feeding" | "daily" | "io" | "growth" | "guidance"; printTitle?: string; printGroups?: number[][] };
+export type PaperTemplateId = "mama-admission" | "mama-daily" | "baby-admission" | "baby-daily" | "mood" | "social";
+export type CareForm = { key: string; label: string; sections: CareSection[]; signature?: boolean; layout?: "assessment" | "feeding" | "daily" | "io" | "growth" | "guidance"; printTitle?: string; printGroups?: number[][]; paperTemplate?: PaperTemplateId; templateVersion?: string; supplementalKeys?: string[] };

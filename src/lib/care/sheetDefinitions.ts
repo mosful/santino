@@ -1,5 +1,6 @@
 import type { CareField, CareForm, CareRow, CareSection } from "./types";
 import { HOSPITALS_SHORT } from "../domain/options";
+import { alignPaperForms } from "./paperForms";
 
 const text = (key: string, label: string): CareField => ({ key, label });
 const note = (key: string, label: string, required = false): CareField => ({ key, label, type: "textarea", required });
@@ -130,7 +131,7 @@ const headed = (section: CareSection, withTime = true): CareSection => ({
 
 export const SHIFTS = ["白班 07–15", "小夜 15–23", "大夜 23–07"];
 /** 紅臀分級沿用院方原表說明，不改成單純代號。 */
-export const RED_BOTTOM = ["0 無", "A 臀部發紅", "B 發紅且範圍擴大", "C 破皮或潰瘍"];
+export const RED_BOTTOM = ["0 無紅疹", "1 輕度紅疹", "2 中度紅疹及破皮", "3 重度及滲出物"];
 const STOOL_FORMS = ["黃糊便", "綠糊便", "黃滲便", "綠滲便", "水便", "胎便", "血便", "其他"];
 const measurement = [number("height", "身長（cm）", 10, 100), number("weight", "體重（g）", 300, 15000), number("head", "頭圍（cm）", 10, 70)];
 
@@ -200,3 +201,6 @@ export const MAMA_RECORD: CareForm = {
     row("三 身心異常及特殊狀況處理", note("abnormal", "身心異常、特殊狀況與後續追蹤")),
   ]))],
 };
+
+// 本批紙本為目前版型來源；保留舊定義中的額外欄位與既有資料。
+alignPaperForms(MAMA_ADMISSION, BABY_ADMISSION, MAMA_DAILY, BABY_DAILY);

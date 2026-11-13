@@ -16,6 +16,46 @@ const first = CARE_SUBJECTS.find((subject) => subject.kind === "mama" && !subjec
 const second = CARE_SUBJECTS.find((subject) => subject.kind === "mama" && !subject.historical && subject.caseId !== first.caseId)!;
 function reset() { setCurrentRole("管理者"); careStore.reset(); }
 
+test("紙本暫存及簽出保留評估時間並保存母版版本",()=>{
+  reset(); careActions.open(first.id,"ongoing");
+  const key=`${first.id}:ongoing`;
+  careActions.change(key,{date:"2026-11-13",time:"03:45",note:"評估時間與輸入時間不同"});
+  careActions.save(key);
+  assert.equal(careStore.get().documents[key].values.time,"03:45");
+  careActions.complete(key);
+  const entry=careStore.get().entries[0];
+  assert.equal(entry.values.time,"03:45");
+  assert.equal(entry.templateVersion,"20261113");
+  careActions.editEntry(entry.id);
+  assert.equal(careStore.get().documents[key].templateVersion,"20261113");
+});
+
+test("疫情表填表人身分變更清除簽名，先生不能帶入媽媽簽名",()=>{
+  reset(); careActions.open(first.id,"admission");
+  const key=`${first.id}:admission`;
+  assert.throws(()=>careActions.sign(key,"data:image/png;base64,QA"),/填表人身分/);
+  careActions.change(key,{respondentIdentity:"先生",respondent:"王○○先生"});
+  assert.throws(()=>careActions.carryContractSignature(key),/先生或親友/);
+  assert.throws(()=>careActions.carrySubjectSignature(key),/非孕婦本人/);
+  careActions.sign(key,"data:image/png;base64,QA");
+  assert.ok(careStore.get().documents[key].signature);
+  careActions.change(key,{respondentIdentity:"孕婦本人"});
+  assert.equal(careStore.get().documents[key].signature,undefined);
+});
+
+test("非本人修改及刪除他人紀錄由 action 拒絕，主管可處理",()=>{
+  reset(); setCurrentRole("衛教師 琳雅"); careActions.open(first.id,"record");
+  const key=`${first.id}:record`;
+  careActions.change(key,{note:"原填寫者紀錄"});careActions.complete(key);
+  const id=careStore.get().entries[0].id;
+  setCurrentRole("護理師 陳護理師");
+  assert.throws(()=>careActions.editEntry(id),/原填寫者/);
+  assert.throws(()=>careActions.deleteEntry(id,"修正錯誤"),/原填寫者/);
+  assert.equal(careStore.get().entries.length,1);
+  setCurrentRole("護理長 婉真");careActions.editEntry(id);
+  assert.equal(careStore.get().documents[key].editingEntryId,id);
+});
+
 test("v24 媽媽六項與寶寶八項功能皆有獨立表單", () => {
   assert.equal(MAMA_FORMS.length, 6); assert.equal(BABY_FORMS.length, 8);
   assert.notDeepEqual(MAMA_FORMS.find((form) => form.key === "ongoing"), MAMA_FORMS.find((form) => form.key === "record"));

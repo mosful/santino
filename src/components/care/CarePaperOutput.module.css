@@ -1,0 +1,35 @@
+.output { margin-block: 20px 28px; padding-block: 18px; border-block: 1px solid var(--line, #d6d3d1); scroll-margin-top: 180px; min-width: 0; }
+.heading { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: baseline; justify-content: space-between; }
+.heading h3 { font-size: 1rem; font-weight: 700; }
+.heading span, .description, .note { font-size: .875rem; line-height: 1.65; color: var(--text-muted, #57534e); }
+.description { margin-block: 8px 16px; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; margin-bottom: 16px; }
+.controls p { flex-basis: 100%; font-size: .8125rem; color: var(--text-muted, #57534e); }
+.actions { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.actions a:not(:has(svg)) { min-height: 44px; display: inline-flex; align-items: center; text-decoration: underline; text-underline-offset: 4px; }
+.output label { display: grid; gap: 6px; font-size: .875rem; }
+.output input, .output select { min-height: 44px; padding: 8px 10px; border: 1px solid var(--line, #a8a29e); border-radius: 8px; background: var(--surface, white); color: var(--foreground); min-width: 0; max-width: 100%; font-size: 1rem; }
+.output .check { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.check input { width: 20px; height: 20px; min-height: 20px; }
+.conflicts { display: grid; gap: 12px; margin-top: 20px; }
+.conflicts label { max-width: 38rem; }
+.note { margin-top: 12px; }
+.note summary, .reference summary, .result summary { min-height: 44px; cursor: pointer; padding-block: 10px; }
+.note p { margin-block: 8px; }
+.error { margin-top: 16px; color: #991b1b; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+.result { margin-top: 20px; }
+.result p { margin-bottom: 12px; font-size: .875rem; line-height: 1.65; }
+.result iframe { display: block; width: 100%; height: min(75vh, 900px); border: 1px solid var(--line, #d6d3d1); background: white; }
+.reference { margin-top: 16px; }
+.pages { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 20px; }
+.pages a { min-width: 0; }
+.pages img { display: block; width: 100%; height: auto; background: white; border: 1px solid var(--line, #d6d3d1); }
+.reference ol { list-style: decimal; margin: 16px 0 16px 24px; line-height: 1.8; }
+.reference p { font-size: .875rem; line-height: 1.7; }
+@media (max-width: 640px) {
+  .actions { align-items: stretch; }
+  .actions label { flex-basis: 100%; }
+  .controls > label:not(.check) { flex: 1 1 10rem; }
+  .controls .check { flex-basis: 100%; }
+  .output { scroll-margin-top: 230px; }
+}

@@ -117,6 +117,11 @@
   編輯中那一間加淡綠底圈，同時開四五間時一眼就找得到。
 */
 .printOutput { display: none; }
+.paperLayout { display: block; }
+.paperLayout :global(.action-dock) { flex-wrap: wrap; }
+.paperLayout :global(.action-dock-copy) { flex: 1 1 auto; min-width: min(100%, 14rem); }
+.paperLayout :global(.action-dock-actions) { flex-wrap: wrap; }
+.paperLayout > aside { position: static; margin-top: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: 24px; }
 .printPreview { display: block; margin-bottom: 24px; padding: 16px; border: 1px solid var(--border-subtle); overflow-x: auto; }
 @media print {
   .form:has(.printOutput) { padding: 0 !important; border: 0; box-shadow: none; }

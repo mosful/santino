@@ -48,6 +48,16 @@ npm run preview
 
 ## 驗證
 
+### 紙本表格母版
+
+六種照護表單使用五份空白 PDF 共八頁套版。2026-11-13 使用者授權網站發布後，僅將逐頁確認無填寫姓名、簽名、註記或附件的空白版本放入 `public/care-paper/templates/`。該版本移除文件中繼資料與 JPEG 附加註解，保持原壓縮影像、頁框及版面，八頁渲染與原紙本逐像素一致。原 `Document/`、會議素材及已填紀錄不公開。
+
+母版及預覽已隨純 `web/` 原碼備妥，GitHub CI 不依賴本機 `Document/` 或 Python；建置前自動核對五份檔案、八頁、預覽、頁框與 SHA256，缺件即中止。重新產生時才需在本機使用具備 `pypdf`、`pypdfium2`、`Pillow` 的 Python 執行 `python scripts/prepare-care-paper.py --publish-blank`。來源雜湊不同時禁止自動套用，須重做無個資與版面核對。
+
+`npx tsx scripts/audit-care-paper.ts` 檢查主表欄位對照；`npx tsx scripts/sample-care-paper.ts` 產生匿名樣張。指定 `SANTINO_PAPER_QA` 可將樣張放至專案外的內部驗收目錄；勿提交填寫後 PDF。完成本機母版準備及建置後，將 `SANTINO_E2E_SCENARIOS` 設為 `care_paper`，再執行 `npm run test:e2e`，可檢查 Chromium／WebKit 的 PDF 下載、分頁及各裝置版面。
+
+列印請由「產生填寫紙本 PDF」或「產生空白紙本 PDF」，接著「開啟 PDF 列印」。提供原尺寸及 A4 等比例置中；實體印表機可印區與院方 iPad 仍須現場驗收。
+
 本輪驗證環境為 Node.js 24.19.0。Playwright 已納入 Santino 開發相依，無須 BabyCam 專案或其服務。
 
 ```powershell

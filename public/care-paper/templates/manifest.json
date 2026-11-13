@@ -1,0 +1,109 @@
+[
+  {
+    "id": "scales",
+    "sha256": "5307cf90e01d1e798ec0b39e2992ac27d4bbf9a6db4970e523ca9ecb2b1b4207",
+    "version": "20261113",
+    "pages": [
+      {
+        "page": 1,
+        "width": 578.1599731445312,
+        "height": 824.4000244140625,
+        "previewSize": [
+          954,
+          1361
+        ]
+      },
+      {
+        "page": 2,
+        "width": 578.1599731445312,
+        "height": 824.4000244140625,
+        "previewSize": [
+          954,
+          1361
+        ]
+      }
+    ]
+  },
+  {
+    "id": "baby-admission",
+    "sha256": "c06095b853d8a83e1850513f31b92691e0c23d3d1f52e5b115e5ce1e069598cd",
+    "version": "20261113",
+    "pages": [
+      {
+        "page": 1,
+        "width": 578.1599731445312,
+        "height": 824.4000244140625,
+        "previewSize": [
+          954,
+          1361
+        ]
+      },
+      {
+        "page": 2,
+        "width": 578.1599731445312,
+        "height": 824.4000244140625,
+        "previewSize": [
+          954,
+          1361
+        ]
+      }
+    ]
+  },
+  {
+    "id": "baby-daily",
+    "sha256": "8a9862aa9f9e310996db5b32a0106cf3b242c9da579402f2b70145b5e69d2b03",
+    "version": "20261113",
+    "pages": [
+      {
+        "page": 1,
+        "width": 578.1599731445312,
+        "height": 824.4000244140625,
+        "previewSize": [
+          954,
+          1361
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mama-admission",
+    "sha256": "fa1da8f4d5ae0648dc578b7ffa3c5c2dcc8cdadd3f57ddfd8259a56ff7a6dbab",
+    "version": "20261113",
+    "pages": [
+      {
+        "page": 1,
+        "width": 578.1599731445312,
+        "height": 824.4000244140625,
+        "previewSize": [
+          954,
+          1361
+        ]
+      },
+      {
+        "page": 2,
+        "width": 578.1599731445312,
+        "height": 824.4000244140625,
+        "previewSize": [
+          954,
+          1361
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mama-daily",
+    "sha256": "3befee90a23d9520623c6ae06d418e27f9ea4691ec056090d41ac233f582bc9b",
+    "version": "20261113",
+    "pages": [
+      {
+        "page": 1,
+        "width": 578.1599731445312,
+        "height": 824.4000244140625,
+        "previewSize": [
+          954,
+          1361
+        ]
+      }
+    ]
+  }
+]

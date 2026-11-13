@@ -9,7 +9,7 @@ import { todayTaipei } from "../dates";
 import { normalizeSheetValues } from "./sheetValues";
 import { applyDailyDefaults, applyIoDefaults, lastFeeding, latestMeasurement } from "./summary";
 import { careSubject } from "./subjects";
-import { canAuthorizeCare, canEditCare, canViewCare, documentKey, isBackfillBlocked, validateCareForm } from "./rules";
+import { canAuthorizeCare, canEditCare, canReviseCareEntry, canViewCare, documentKey, isBackfillBlocked, validateCareForm } from "./rules";
 import type { CareDocument, CareKind, CareSignatureRole, CareState, CareValues } from "./types";
 
 const initial: CareState = { version: 1, documents: {}, open: [], active: { mama: null, baby: null }, unlockedCase: null, entries: [], events: [], authorizations: {}, personalPhrases: {}, backfillDays: 3 };
@@ -22,6 +22,12 @@ export const careStore = createPersistentStore("santino_care_workspace_v1", init
 export const useCareStore = careStore.useStore;
 const author = () => `${ROLE_PROFILE[getCurrentRole()].name}（${getCurrentRole()}）`;
 const now = () => new Date().toISOString();
+
+function confirmPaperRecipient(document:CareDocument) {
+  const subject=careSubject(document.subjectId);
+  if(subject?.kind !== "mama" || document.formKey !== "admission") return;
+  if(!document.values.respondentIdentity || document.values.respondentIdentity !== "孕婦本人" && !String(document.values.respondent??"").trim()) throw new Error("請先選擇填表人身分，先生或親友另請填寫姓名，再確認簽名。");
+}
 
 function stamp(state: CareState, subjectId: string, action: string) {
   state.events.unshift({ id: crypto.randomUUID(), at: now(), subjectId, action, author: author() });
@@ -60,7 +66,7 @@ export const careActions = {
       if (subject.kind === "baby" && ["io", "growth"].includes(formKey)) {
         Object.assign(defaults, latestMeasurement(state.entries.filter((entry) => entry.subjectId === subjectId), String(defaults.date)));
       }
-      state.documents[key] ??= { key, subjectId, formKey, values: defaults, dirty: false };
+      state.documents[key] ??= { key, subjectId, formKey, values: defaults, dirty: false, templateVersion: careForms(subject.kind).find((form) => form.key === formKey)?.templateVersion };
       state.documents[key].values = normalizeSheetValues(subject.kind, formKey, state.documents[key].values);
       if (!state.open.includes(key)) state.open.push(key);
       state.active[subject.kind] = key;
@@ -76,6 +82,9 @@ export const careActions = {
       const subject = careSubject(document.subjectId);
       Object.assign(document.values, document.formKey === "io" ? applyIoDefaults(patch, document.values)
         : document.formKey === "daily" && subject?.kind === "baby" ? applyDailyDefaults(patch, document.values) : patch);
+      if (subject?.kind === "mama" && document.formKey === "admission" && ["respondentIdentity", "respondent", "respondentRelation"].some((key) => key in patch)) {
+        delete document.signature; delete document.signatures;
+      }
       document.dirty = true;
     });
   },
@@ -100,18 +109,28 @@ export const careActions = {
     });
   },
   save(key: string) {
-    careStore.update((state) => { const document = writable(state, key); document.savedAt = now(); document.values.time = new Date(document.savedAt).toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5); document.author = author(); document.dirty = false; stamp(state, document.subjectId, `暫存 ${document.formKey}`); });
+    careStore.update((state) => {
+      const document = writable(state, key);
+      const subject = careSubject(document.subjectId)!;
+      const form = careForms(subject.kind).find((item) => item.key === document.formKey)!;
+      document.savedAt = now();
+      if (!form.paperTemplate) document.values.time = new Date(document.savedAt).toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5);
+      document.templateVersion = form.templateVersion;
+      document.author = author(); document.dirty = false;
+      stamp(state, document.subjectId, `暫存 ${document.formKey}`);
+    });
   },
   sign(key: string, signature: string) {
-    careStore.update((state) => { const document = writable(state, key); document.signature = signature; document.signatures = { ...document.signatures, recipient: signature }; document.dirty = true; });
+    careStore.update((state) => { const document = writable(state, key); confirmPaperRecipient(document); document.signature = signature; document.signatures = { ...document.signatures, recipient: signature }; document.dirty = true; });
   },
   signRole(key: string, role: CareSignatureRole, signature: string) {
-    careStore.update((state) => { const document = writable(state, key); document.signatures = { ...document.signatures, [role]: signature }; if (role === "recipient") document.signature = signature; document.dirty = true; });
+    careStore.update((state) => { const document = writable(state, key); if(role === "recipient") confirmPaperRecipient(document); document.signatures = { ...document.signatures, [role]: signature }; if (role === "recipient") document.signature = signature; document.dirty = true; });
   },
   carryContractSignature(key: string) {
     careStore.update((state) => {
       const document = writable(state, key);
       const subject = careSubject(document.subjectId)!;
+      if (subject.kind === "mama" && document.formKey === "admission" && document.values.respondentIdentity !== "孕婦本人") throw new Error("請先確認填表人為孕婦本人；先生或親友請以自己的身分現場簽名。");
       const record = domainStore.get().cases.find((item) => item.id === subject.caseId);
       if (!record?.signed || !record.signature) throw new Error("本案尚無已簽署的合約媽媽簽名，請在本頁簽名。");
       if (record.proxySigned) throw new Error("本案合約由家屬代簽，請於本頁確認媽媽本人簽名。");
@@ -120,6 +139,8 @@ export const careActions = {
     });
   },
   carrySubjectSignature(key: string) {
+    const active=careStore.get().documents[key];
+    if(active && careSubject(active.subjectId)?.kind === "mama" && active.formKey === "admission" && active.values.respondentIdentity !== "孕婦本人") throw new Error("填表人非孕婦本人，請確認身分後現場簽名，不帶入媽媽簽名。");
     careStore.update((state) => { const document = writable(state, key); const previous = state.entries.find((entry) => entry.subjectId === document.subjectId && entry.signature); if (!previous?.signature) throw new Error("此照護對象尚無已簽出簽名，請於本頁簽名。"); document.signature = previous.signature; document.signatures = { ...document.signatures, recipient: previous.signature }; document.dirty = true; stamp(state, document.subjectId, "確認相同照護對象，帶入上一筆媽媽簽名"); });
   },
   complete(key: string) {
@@ -135,7 +156,8 @@ export const careActions = {
          要在缺項狀態下繼續 DEMO，用「暫存」留草稿，填齊再簽出。 */
       if (errors.length) throw new Error(errors.join("\n"));
       const at = now();
-      document.values.time = new Date(at).toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5);
+      if (!form.paperTemplate) document.values.time = new Date(at).toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5);
+      document.templateVersion = form.templateVersion;
       document.signedAt = at; document.savedAt = at; document.author = author(); document.dirty = false;
       document.staffStamp = { author: author(), at };
       const editing = document.editingEntryId ? state.entries.find((entry) => entry.id === document.editingEntryId) : undefined;
@@ -149,11 +171,12 @@ export const careActions = {
         editing.signature = document.signature;
         editing.signatures = structuredClone(document.signatures ?? {});
         editing.staffStamp = document.staffStamp;
+        editing.templateVersion = document.templateVersion;
         editing.revisions = [...(editing.revisions ?? []), { at, author: author(), note: `修改並重新簽出${subject.historical ? "（退房回補）" : ""}` }];
         delete document.editingEntryId;
         stamp(state, subject.id, `${form.label}修改已簽出紀錄並重新簽出`);
       } else {
-        state.entries.unshift({ id: crypto.randomUUID(), subjectId: subject.id, formKey: form.key, at, author: author(), values: structuredClone(document.values), signature: document.signature, signatures: structuredClone(document.signatures ?? {}), staffStamp: document.staffStamp, historical: !!subject.historical });
+        state.entries.unshift({ id: crypto.randomUUID(), subjectId: subject.id, formKey: form.key, at, author: author(), values: structuredClone(document.values), signature: document.signature, signatures: structuredClone(document.signatures ?? {}), staffStamp: document.staffStamp, historical: !!subject.historical, templateVersion: document.templateVersion });
         stamp(state, subject.id, `${form.label}完成簽出${subject.historical ? "（退房回補）" : ""}`);
       }
     });
@@ -168,13 +191,14 @@ export const careActions = {
     careStore.update((state) => {
       const entry = state.entries.find((item) => item.id === entryId);
       if (!entry) throw new Error("找不到這筆紀錄。");
+      if (!canReviseCareEntry(getCurrentRole(), entry)) throw new Error("僅原填寫者或護理長／管理者可修改這筆紀錄。");
       const subject = careSubject(entry.subjectId);
       if (!subject || !canEditCare(getCurrentRole(), subject.kind, entry.formKey)) throw new Error("目前角色不能編輯此表單。");
       if (isBackfillBlocked(getCurrentRole(), subject, state.backfillDays, !!state.authorizations[subject.id])) throw new Error("已超過回補期限，請由護理長或管理者修改，或請其填寫原因授權。");
       const key = documentKey(entry.subjectId, entry.formKey);
       const current = state.documents[key];
       if (current && !current.signedAt && (current.dirty || current.savedAt) && current.editingEntryId !== entryId) throw new Error("目前有尚未簽出的草稿，請先完成或捨棄草稿再修改既有紀錄。");
-      state.documents[key] = { key, subjectId: entry.subjectId, formKey: entry.formKey, values: normalizeSheetValues(subject.kind, entry.formKey, entry.values), dirty: false, editingEntryId: entryId };
+      state.documents[key] = { key, subjectId: entry.subjectId, formKey: entry.formKey, values: normalizeSheetValues(subject.kind, entry.formKey, entry.values), dirty: false, editingEntryId: entryId, templateVersion: entry.templateVersion };
       if (!state.open.includes(key)) state.open.push(key);
       state.active[subject.kind] = key;
       state.unlockedCase = subject.caseId;
@@ -187,6 +211,7 @@ export const careActions = {
     careStore.update((state) => {
       const entry = state.entries.find((item) => item.id === entryId);
       if (!entry) throw new Error("找不到這筆紀錄。");
+      if (!canReviseCareEntry(getCurrentRole(), entry)) throw new Error("僅原填寫者或護理長／管理者可刪除這筆紀錄。");
       const subject = careSubject(entry.subjectId);
       if (!subject || !canEditCare(getCurrentRole(), subject.kind, entry.formKey)) throw new Error("目前角色不能刪除此表單的紀錄。");
       if (isBackfillBlocked(getCurrentRole(), subject, state.backfillDays, !!state.authorizations[subject.id])) throw new Error("已超過回補期限，請由護理長或管理者處理，或請其填寫原因授權。");
@@ -202,7 +227,7 @@ export const careActions = {
       const subject = old && careSubject(old.subjectId);
       if (!subject || !canEditCare(getCurrentRole(), subject.kind, old.formKey)) throw new Error("目前角色不能新增紀錄。");
       if (!old.signedAt && old.dirty) throw new Error("請先暫存或關閉目前草稿。");
-      state.documents[key] = { key, subjectId: old.subjectId, formKey: old.formKey, values: defaultCareValues(old.formKey, subject.kind), dirty: false };
+      state.documents[key] = { key, subjectId: old.subjectId, formKey: old.formKey, values: defaultCareValues(old.formKey, subject.kind), dirty: false, templateVersion: careForms(subject.kind).find((form) => form.key === old.formKey)?.templateVersion };
     });
   },
   carryLast(key: string) {

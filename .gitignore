@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 /test-results/
+
+# 院方原始檔及本機預覽不公開；已核對無個資的發布版另放 templates/。
+/public/care-paper/private/

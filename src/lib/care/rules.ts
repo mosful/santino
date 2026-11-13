@@ -1,8 +1,12 @@
-import type { Role } from "../permissions";
-import type { CareForm, CareKind, CareSubject, CareValues } from "./types";
+import { ROLE_PROFILE, type Role } from "../permissions";
+import type { CareEntry, CareForm, CareKind, CareSubject, CareValues } from "./types";
 
 export function documentKey(subjectId: string, formKey: string) { return `${subjectId}:${formKey}`; }
 export function canAuthorizeCare(role: Role) { return role === "管理者" || role === "護理長 婉真"; }
+/** 依會議 G06，已簽紀錄由本人或主管修正；模組權限仍須另外通過。 */
+export function canReviseCareEntry(role: Role, entry: CareEntry) {
+  return canAuthorizeCare(role) || [role, ROLE_PROFILE[role].name, `${ROLE_PROFILE[role].name}（${role}）`].includes(entry.author);
+}
 export function canEditCare(role: Role, kind: CareKind, formKey: string) {
   if (canAuthorizeCare(role)) return true;
   if (role === "護理師 陳護理師") return true;

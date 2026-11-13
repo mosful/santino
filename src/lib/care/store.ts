@@ -7,7 +7,7 @@ import { domainStore } from "../demo/domainStore";
 import { careForms } from "./forms";
 import { todayTaipei } from "../dates";
 import { normalizeSheetValues } from "./sheetValues";
-import { applyIoDefaults, lastFeeding, latestMeasurement } from "./summary";
+import { applyDailyDefaults, applyIoDefaults, lastFeeding, latestMeasurement } from "./summary";
 import { careSubject } from "./subjects";
 import { canAuthorizeCare, canEditCare, canViewCare, documentKey, isBackfillBlocked, validateCareForm } from "./rules";
 import type { CareDocument, CareKind, CareSignatureRole, CareState, CareValues } from "./types";
@@ -70,7 +70,9 @@ export const careActions = {
   change(key: string, patch: CareValues) {
     careStore.update((state) => {
       const document = writable(state, key);
-      Object.assign(document.values, document.formKey === "io" ? applyIoDefaults(patch, document.values) : patch);
+      const subject = careSubject(document.subjectId);
+      Object.assign(document.values, document.formKey === "io" ? applyIoDefaults(patch, document.values)
+        : document.formKey === "daily" && subject?.kind === "baby" ? applyDailyDefaults(patch, document.values) : patch);
       document.dirty = true;
     });
   },

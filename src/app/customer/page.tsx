@@ -240,7 +240,10 @@ export default function CustomerPage() {
     if (filters.dueFrom && (!row.dueDate || row.dueDate < filters.dueFrom)) return false;
     if (filters.dueTo && (!row.dueDate || row.dueDate > filters.dueTo)) return false;
     return true;
-  });
+  })
+    /* 需求 F07：客戶資料優先依預產期排列，沒有預產期的排最後。
+       已過預產期與同日案件的次排序院方尚未核定，目前同日依姓名。 */
+    .sort((a, b) => (a.dueDate ? 0 : 1) - (b.dueDate ? 0 : 1) || a.dueDate.localeCompare(b.dueDate) || a.name.localeCompare(b.name, "zh-Hant"));
 
   function exportExcel() {
     if (!matched.length) {

@@ -139,10 +139,13 @@ export const caseActions = {
   update(id: string, patch: Partial<CaseRecord>) {
     domainStore.update((data) => {
       const record = findCase(data, id);
-      const allowed = ["name", "phone", "dueDate", "idNo", "hospitalChartNo", "owner", "room", "roomType", "days", "contractNo", "deposit", "tasting", "visitDate", "visitStatus", "source", "hospital", "priceClass", "corporateCompany", "note", "category", "parity", "deliveryMethod", "visitTime", "receptionist", "visitIntent", "visitNote", "orderDate", "paymentMethod", "orderNote", "reviewStart", "signedDate", "actualAdmission", "settlementDone", "checkoutNote", "childcare", "childcareCar", "childcareDays", "childcareFee", "childcareContact", "customerDetails", "addOns", "bossGift", "milkConsent", "milkChoice", "chineseConsent", "proxySigned", "proxyName"];
+      const allowed = ["name", "phone", "dueDate", "idNo", "hospitalChartNo", "owner", "room", "roomType", "days", "contractNo", "deposit", "tasting", "visitDate", "visitStatus", "source", "hospital", "priceClass", "corporateCompany", "note", "category", "parity", "deliveryMethod", "giftDays", "visitTime", "receptionist", "visitIntent", "visitNote", "orderDate", "paymentMethod", "orderNote", "reviewStart", "signedDate", "actualAdmission", "settlementDone", "checkoutNote", "childcare", "childcareCar", "childcareDays", "childcareFee", "childcareContact", "customerDetails", "addOns", "bossGift", "milkConsent", "milkChoice", "chineseConsent", "proxySigned", "proxyName"];
       if (Object.keys(patch).some((key) => !allowed.includes(key))) throw new Error("此欄位須使用對應的案件操作。");
-      if (record.signed && ["roomType", "days", "deposit", "contractNo", "hospital", "priceClass", "corporateCompany", "addOns", "bossGift"].some((key) => key in patch)) throw new Error("已簽合約的條件異動請使用合約變更單。");
-      if (patch.days !== undefined && (!Number.isInteger(patch.days) || patch.days < 1 || patch.days > 365)) throw new Error("入住天數請填 1 至 365 的整數。");
+      if (record.signed && ["roomType", "days", "giftDays", "deposit", "contractNo", "hospital", "priceClass", "corporateCompany", "addOns", "bossGift"].some((key) => key in patch)) throw new Error("已簽合約的條件異動請使用合約變更單。");
+      // 需求 F01：參觀階段還沒決定天數就留白（0＝未定），確定天數移到下訂階段才必填。
+      if (patch.days !== undefined && (!Number.isInteger(patch.days) || patch.days < 0 || patch.days > 365)) throw new Error("入住天數請填 0（未定）至 365 的整數。");
+      // 需求 F02：贈送天數由人員決定，可以是 0；不因住滿門檻就一律送。
+      if (patch.giftDays !== undefined && patch.giftDays !== null && (!Number.isInteger(patch.giftDays) || patch.giftDays < 0 || patch.giftDays > 365)) throw new Error("贈送天數請填 0 至 365 的整數。");
       if (patch.deposit !== undefined && (!Number.isFinite(patch.deposit) || patch.deposit < 0)) throw new Error("訂金金額不正確。");
       if (patch.contractNo && data.cases.some((item) => item.id !== id && item.contractNo === patch.contractNo)) throw new Error("收字號已由另一案件使用，請核對原案件。");
       if (record.actualAdmission && record.stage >= 5 && patch.room !== undefined && patch.room !== record.room) throw new Error("入住後換房請使用合約變更單。");

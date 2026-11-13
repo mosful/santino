@@ -76,3 +76,22 @@ export function applyIoDefaults(patch: CareValues, values: CareValues): CareValu
   if (patch.stool === "未解") { next.stoolTimes = ""; next.stoolAmount = ""; next.stoolForm = []; }
   return next;
 }
+
+/**
+ * 親子同室時數（需求 B05）：有開始也有結束才算，跨午夜（大夜班）往後加一天。
+ * 只有一邊時回 undefined，讓畫面標示「未完成事件」，不假算時數。
+ */
+export function roomingHours(start: string, end: string) {
+  if (!/^\d{2}:\d{2}$/.test(start) || !/^\d{2}:\d{2}$/.test(end)) return undefined;
+  const minutes = (value: string) => Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 5));
+  const span = (minutes(end) - minutes(start) + 1440) % 1440;
+  return Math.round((span / 60) * 10) / 10;
+}
+
+/** 每日照護填好親子同室起訖就自動帶出時數；人員仍可改，清掉其中一邊就把時數清掉。 */
+export function applyDailyDefaults(patch: CareValues, values: CareValues): CareValues {
+  if (!("roomingStart" in patch) && !("roomingEnd" in patch)) return patch;
+  const next = { ...values, ...patch };
+  const hours = roomingHours(String(next.roomingStart ?? ""), String(next.roomingEnd ?? ""));
+  return { ...patch, roomingHours: hours === undefined ? "" : String(hours) };
+}

@@ -5,7 +5,7 @@ import { useState } from "react";
 import { report, reportFail } from "@/lib/demo/lenient";
 import { Toast, useToast } from "@/components/ui/Toast";
 import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
-import { freeDays, roomDailyRate } from "@/lib/domain/rules";
+import { caseGiftDays, roomDailyRate } from "@/lib/domain/rules";
 import {
   DEFAULT_CHECKOUT_ITEMS,
   INSPECTION_ITEMS,
@@ -179,7 +179,7 @@ export function ReturnGuide({ record, editable }: { record: CaseRecord; editable
  */
 export function RefundCalculator({ record, editable }: { record: CaseRecord; editable: boolean }) {
   const contractDays = record.days;
-  const gifted = freeDays(contractDays);
+  const gifted = caseGiftDays(record);
   const daily = roomDailyRate(record.roomType, record.hospital);
   const [stayedDays, setStayedDays] = useState(String(contractDays));
   const [babyDays, setBabyDays] = useState(String(contractDays));

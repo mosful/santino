@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { BABY_DAILY, BABY_IO, MAMA_DAILY, MAMA_RECORD, RED_BOTTOM, SHIFTS, sectionRows } from "../src/lib/care/sheetDefinitions";
-import { applyIoDefaults, growthDays, lastFeeding, latestMeasurement } from "../src/lib/care/summary";
+import { applyDailyDefaults, applyIoDefaults, growthDays, lastFeeding, latestMeasurement, roomingHours } from "../src/lib/care/summary";
 import { validateCareForm } from "../src/lib/care/rules";
 import type { CareEntry, CareValues } from "../src/lib/care/types";
 
@@ -93,4 +93,17 @@ test("量測與上一筆餵食只帶該帶的欄位", () => {
   // 帶入只複製奶別與奶量，排尿與時間仍要按本次實況填。
   assert.deepEqual(lastFeeding(entries), { milkType: "配方奶", bottleAmount: "60" });
   assert.equal(lastFeeding([entry("daily", { date: "2026-11-13", weight: "3200" })]), undefined);
+});
+
+test("親子同室起訖都有才算時數，跨午夜不算成負數，缺一邊不假算", () => {
+  assert.equal(roomingHours("09:00", "17:30"), 8.5);
+  // 大夜班跨午夜。
+  assert.equal(roomingHours("22:00", "02:00"), 4);
+  assert.equal(roomingHours("09:00", ""), undefined);
+  assert.equal(roomingHours("", "17:00"), undefined);
+  assert.deepEqual(applyDailyDefaults({ roomingEnd: "17:00" }, { roomingStart: "09:00" }), { roomingEnd: "17:00", roomingHours: "8" });
+  // 清掉其中一邊就把時數清掉，不留下對不上的數字。
+  assert.deepEqual(applyDailyDefaults({ roomingStart: "" }, { roomingStart: "09:00", roomingEnd: "17:00", roomingHours: "8" }), { roomingStart: "", roomingHours: "" });
+  // 與親子同室無關的欄位原樣通過。
+  assert.deepEqual(applyDailyDefaults({ temperature: "36.8" }, {}), { temperature: "36.8" });
 });

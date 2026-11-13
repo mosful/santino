@@ -38,6 +38,8 @@ const text = (key: string, label: string, wide = false): DocField => ({ key, lab
 const date = (key: string, label: string): DocField => ({ key, label, type: "date" });
 const select = (key: string, label: string, options: string[]): DocField => ({ key, label, type: "select", options });
 const multiple = (key: string, label: string, options: string[]): DocField => ({ key, label, type: "multiple", options, wide: true });
+/** 需求 F06：新增或初次開啟時全部勾選，人員仍可逐項取消；取消後存檔不會被預設勾回來。 */
+const SUPPLIES = ["個人衛生用品", "個人盥洗用具", "個人衣物", "寶寶返家衣物"] as const;
 const note = (key: string, label: string): DocField => ({ key, label, type: "textarea", wide: true });
 
 /** 入住期間字串；沒有實際入住日時用預產期提示，不要印出空白。 */
@@ -73,7 +75,7 @@ export const CASE_DOCS: CaseDoc[] = [
           date("deliveryDate", "待產／剖腹日"),
           text("checkupHospital", "產檢醫院"),
           text("checkupDoctor", "產檢醫師"),
-          multiple("supplies", "坐月子所需物品", ["個人衛生用品", "個人盥洗用具", "個人衣物", "寶寶返家衣物"]),
+          multiple("supplies", "坐月子所需物品", [...SUPPLIES]),
           select("feeding", "Baby 餵食計畫", ["母乳", "配方奶", "母乳＋配方奶"]),
         ],
       },
@@ -101,6 +103,7 @@ export const CASE_DOCS: CaseDoc[] = [
       dueDate: record.dueDate,
       hospital: record.hospital,
       delivery: record.deliveryMethod === "自然產" ? "NSD 自然產" : record.deliveryMethod === "剖腹產" ? "C/S 剖腹產" : "未定",
+      supplies: SUPPLIES.join("、"),
       plannedAdmission: record.actualAdmission,
       butler: record.owner,
       staff: record.receptionist,

@@ -17,6 +17,8 @@ export type CaseRecord = {
   /** 醫院病歷號（手冊第 3 頁標示要保留的欄位）。 */ hospitalChartNo?: string;
   stage: CaseStage; closed: boolean; forced: boolean; previousStage?: CaseStage;
   owner: string; room: string; roomType: "精緻" | "VIP" | "VILLA"; days: number;
+  /** 本案實際贈送天數；undefined＝沿用 21+1／28+2 自動建議，填 0＝這案不贈送（需求 F02）。 */
+  giftDays?: number | null;
   contractNo: string; deposit: number; tasting: boolean; visitDate: string; visitStatus: string;
   source: string; hospital: string; priceClass: string; corporateCompany: string; note: string;
   category: string; parity: string; deliveryMethod: string; visitTime: string; receptionist: string;

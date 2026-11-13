@@ -21,20 +21,30 @@ export function roomDailyRate(roomType: CaseRecord["roomType"], hospital: string
   return ROOM_RATES[roomType][hospitalTier(hospital)];
 }
 
-export function casePrice(record: Pick<CaseRecord, "roomType" | "days" | "hospital" | "priceClass" | "addOns">) {
+/**
+ * 這個案件實際贈送幾天（需求 F02）。
+ *
+ * 沒有指定就沿用 21+1／28+2 的自動建議；人員填了（含填 0）就以填的為準，
+ * 不是住滿門檻就每案都送。
+ */
+export function caseGiftDays(record: Pick<CaseRecord, "days"> & { giftDays?: number | null }) {
+  return record.giftDays === undefined || record.giftDays === null ? freeDays(record.days) : record.giftDays;
+}
+
+export function casePrice(record: Pick<CaseRecord, "roomType" | "days" | "hospital" | "priceClass" | "addOns"> & { giftDays?: number | null }) {
   const base = ROOM_RATES[record.roomType].院內;
   const hospital = roomDailyRate(record.roomType, record.hospital) - base;
   const multiplier = record.priceClass === "員工價" ? 0.9 : record.priceClass === "特約企業" ? 0.95 : 1;
-  const paid = Math.max(0, record.days - freeDays(record.days));
+  const paid = Math.max(0, record.days - caseGiftDays(record));
   const addOns = record.addOns ?? [];
   const upgrade = addOns.includes("升等房間") && record.roomType !== "VILLA";
   return Math.round((base + hospital) * paid * multiplier + (upgrade ? 1000 * paid : 0) + (upgrade && addOns.includes("餐點一併升等") ? 300 * paid : 0) + (addOns.includes("紅蟳火鍋") ? 1200 : 0));
 }
-export function casePriceBreakdown(record: Pick<CaseRecord, "roomType" | "days" | "hospital" | "priceClass" | "addOns">) {
+export function casePriceBreakdown(record: Pick<CaseRecord, "roomType" | "days" | "hospital" | "priceClass" | "addOns"> & { giftDays?: number | null }) {
   const baseDaily = ROOM_RATES[record.roomType].院內;
   const hospitalDaily = roomDailyRate(record.roomType, record.hospital) - baseDaily;
   const multiplier = record.priceClass === "員工價" ? 0.9 : record.priceClass === "特約企業" ? 0.95 : 1;
-  const giftedDays = freeDays(record.days); const paidDays = Math.max(0, record.days - giftedDays);
+  const giftedDays = caseGiftDays(record); const paidDays = Math.max(0, record.days - giftedDays);
   const upgradeDaily = (record.addOns ?? []).includes("升等房間") && record.roomType !== "VILLA" ? 1000 : 0;
   const mealUpgradeDaily = upgradeDaily && (record.addOns ?? []).includes("餐點一併升等") ? 300 : 0;
   const oneTime = (record.addOns ?? []).includes("紅蟳火鍋") ? 1200 : 0;
@@ -61,10 +71,10 @@ export function caseBalance(record: CaseRecord) {
   return (record.overrideAmount ?? record.quotedAmount) + record.ledger.reduce((sum, item) => sum + item.amount, 0) - record.deposit - (record.tasting ? 350 : 0) - (record.payments ?? []).reduce((sum, item) => sum + item.amount, 0);
 }
 export function dailyCharges(record: CaseRecord) {
-  const original = record.contractSnapshot ? JSON.parse(record.contractSnapshot) as { days?: number; amount?: number } : {};
+  const original = record.contractSnapshot ? JSON.parse(record.contractSnapshot) as { days?: number; amount?: number; giftDays?: number | null } : {};
   const days = original.days ?? record.days;
   const total = original.amount ?? record.overrideAmount ?? record.quotedAmount;
-  const paid = Math.max(1, days - freeDays(days)); const daily = Math.floor(total / paid);
+  const paid = Math.max(1, days - caseGiftDays({ days, giftDays: original.giftDays ?? record.giftDays })); const daily = Math.floor(total / paid);
   const rows: { id: string; date: string; at?: string; label: string; amount: number; rental?: boolean }[] = [];
   if (record.actualAdmission) for (let index = 0; index < days; index++) rows.push({ id: `rental-${index}`, date: new Date(Date.parse(`${record.actualAdmission}T00:00:00+08:00`) + index * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" }), rental: true, label: index >= paid ? "原合約贈送日" : "原合約房租／套餐分攤", amount: index >= paid ? 0 : daily + (index === paid - 1 ? total - daily * paid : 0) });
   return [...rows, ...record.ledger.map((entry) => ({ id: entry.id, date: entry.date, at: entry.at, rental: false, label: entry.label, amount: entry.amount }))].sort((a, b) => a.date.localeCompare(b.date));

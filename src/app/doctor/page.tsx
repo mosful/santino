@@ -59,8 +59,8 @@ function DeptTab({ showTcmConsent }: { showTcmConsent?: boolean } = {}) {
        </>} fields={doctorFields} initialRows={SAMPLE} searchPlaceholder="醫師姓名" />
       {showTcmConsent && (
         <div className="rounded border border-stone-200 p-3">
-          <div className="mb-2 text-xs font-medium text-stone-600">中醫看診同意書（6.3.1，新規劃）</div>
-          <PlaceholderNotice text="中醫看診除預約掛號外，另需一份獨立的同意書文件；實際欄位內容尚未與客戶確認，先保留版位（見規格文件8.2節待確認事項）。" />
+          <div className="mb-2 text-xs font-medium text-stone-600">中醫看診調查單（6.3.1，新規劃）</div>
+          <PlaceholderNotice text="中醫看診除預約掛號外，另需一份獨立的調查單（2026-11-12 需求 F05 由「同意書」更名，此次用途不列印）；實際欄位內容尚未與客戶確認，先保留版位（見規格文件8.2節待確認事項）。" />
         </div>
       )}
     </div>

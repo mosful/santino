@@ -75,7 +75,6 @@ export const DEFAULT_CHECKOUT_ITEMS: CheckoutItem[] = [
   { id: "bottlecard", name: "奶瓶借用卡", unit: "張", price: 200, defaultQty: 1 },
   { id: "slipper", name: "室內拖鞋", unit: "雙", price: 250, defaultQty: 1 },
   { id: "lockerkey", name: "櫃子鑰匙", unit: "個", price: 100, defaultQty: 1 },
-  { id: "milkbag", name: "母乳提袋", unit: "個", price: 600, defaultQty: 1 },
 ];
 
 /** 這一案每個品項實際發出／歸還幾個；沒填過就用主檔的預設發出數。 */

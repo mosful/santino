@@ -19,8 +19,10 @@ test("每日照護保留院方紙本的評估項目、班別與新增的身長�
   assert.deepEqual(fields.find((field) => field.key === "redBottom")!.options, RED_BOTTOM);
   assert.equal(RED_BOTTOM.length, 4);
   assert.ok(!keys.includes("phototherapy"), "黃疸照光欄依新範本移整，不留在每日照護");
+  // 紀錄日期與時間由表頭呈現，不重複出現在表格列裡。
   const visible = BABY_DAILY.sections.flatMap((section) => sectionRows(section).flatMap((row) => row.keys));
-  assert.deepEqual([...new Set(visible)].sort(), keys.sort());
+  assert.deepEqual([...new Set(visible)].sort(), keys.filter((key) => !["date", "time"].includes(key)).sort());
+  assert.ok(keys.includes("date") && keys.includes("time"), "日期與時間仍要是表單欄位（必填驗證靠它）");
 });
 
 test("媽媽每日照護改名並讓可並存的狀況複選、宮底改選單", () => {

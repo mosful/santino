@@ -12,6 +12,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import HeaderSlot from "@/components/layout/HeaderSlot";
 import { useCurrentRole } from "@/lib/roleStore";
 import { ROLE_PROFILE } from "@/lib/permissions";
+import { guidanceExtraStore, guidanceForm } from "@/lib/care/guidance";
 import { careForms } from "@/lib/care/forms";
 import { careSubject } from "@/lib/care/subjects";
 import { useDomainStore } from "@/lib/demo/domainStore";
@@ -95,7 +96,11 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   const sectionIndex = document?.viewport?.sectionIndex ?? 0;
   function setSectionIndex(index: number) { if (activeKey) careActions.viewport(activeKey, { sectionIndex: index }); }
   const subject = document ? subjectFor(document.subjectId) : undefined;
-  const form = forms.find((item) => item.key === document?.formKey);
+  const guidanceExtras = guidanceExtraStore.useStore().data;
+  /* 衛教指導單的欄位依院方自訂項目而定，所以要用當下的項目清單重建；
+     forms 是模組載入時算好的，不含使用者後來新增的項目（歷次紀錄會顯示代號而非名稱）。 */
+  const base = forms.find((item) => item.key === document?.formKey);
+  const form = base?.key === "guidance" ? guidanceForm(kind, guidanceExtras) : base;
   const hasActive = !!document && !!subject && !!form && !listVisible;
   /*
     「已逾期」與「不能編輯」是兩件事（客戶 2026-10-22）：逾期後護理長與管理者

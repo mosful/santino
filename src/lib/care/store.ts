@@ -50,8 +50,11 @@ export const careActions = {
     if (!canViewCare(getCurrentRole(), subject.kind, formKey)) throw new Error("目前角色沒有此照護表單的權限。");
     careStore.update((state) => {
       const key = documentKey(subjectId, formKey);
-      const defaults: CareValues = { ...defaultCareValues(formKey, subject.kind), ...(subject.birthDate ? { birthDate: subject.birthDate } : {}), ...(subject.gender ? { sex: subject.gender } : {}) };
-      if (subject.birthOrder !== undefined) defaults.birthOrder = String(subject.birthOrder);
+      // 出生日期、性別、胎序只有入住評估在用；帶到別張表會被當成「原有資料補充」列出來。
+      const identity = formKey === "admission"
+        ? { ...(subject.birthDate ? { birthDate: subject.birthDate } : {}), ...(subject.gender ? { sex: subject.gender } : {}), ...(subject.birthOrder !== undefined ? { birthOrder: String(subject.birthOrder) } : {}) }
+        : {};
+      const defaults: CareValues = { ...defaultCareValues(formKey, subject.kind), ...identity };
       if (subject.kind === "baby" && formKey === "daily") defaults.stayDay = String(subject.stayDay);
       // 同一天的量測只輸入一次，I/O 與成長日記自動帶入（需求 G05）；已填的值不覆寫。
       if (subject.kind === "baby" && ["io", "growth"].includes(formKey)) {

@@ -14,7 +14,9 @@ let browser;
     await context.addInitScript((current) => { localStorage.setItem("santino_auth_v1", "1"); localStorage.setItem("santino_current_role_v1", current); }, role);
     return context;
   }
-  async function visit(page, url) { await page.goto(url); await page.waitForLoadState("networkidle"); }
+  // networkidle 不保證示範資料已寫進 localStorage（store 只有在實際 update 時才寫），
+  // 直接讀會偶發拿到 null；等 key 出現再往下做。
+  async function visit(page, url) { await page.goto(url); await page.waitForLoadState("networkidle"); await page.waitForFunction(() => !!localStorage.getItem("santino_domain_v1")); }
 
   for (const [engine, launcher] of [["chromium", chromium], ["webkit", webkit]]) {
     browser = await launcher.launch({ headless: true });

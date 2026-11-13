@@ -23,6 +23,6 @@ const legacyLabels: Record<string, string> = {
   urineDetail: "原排尿說明", stoolDetail: "原排便說明", bath: "原沐浴紀錄", phototherapy: "原黃疸照光紀錄",
 };
 export function legacySheetFields(form: CareForm, values: CareValues) {
-  const known = new Set([...form.sections.flatMap((section) => section.fields.map((field) => field.key)), "reassessmentNote", "photo"]);
+  const known = new Set([...form.sections.flatMap((section) => section.fields.map((field) => field.key)), "date", "time", "reassessmentNote", "photo"]);
   return Object.entries(values).filter(([key, value]) => !known.has(key) && (Array.isArray(value) ? value.length : value?.trim())).map(([key]) => ({ key, label: legacyLabels[key] ?? `原有補充（${key}）`, type: "textarea" as const }));
 }

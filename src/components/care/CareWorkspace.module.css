@@ -116,6 +116,13 @@
   ⚠️ 單靠圖形分辨不出來（客戶實際回報），所以一定要配色：
   編輯中那一間加淡綠底圈，同時開四五間時一眼就找得到。
 */
+.printOutput { display: none; }
+.printPreview { display: block; margin-bottom: 24px; padding: 16px; border: 1px solid var(--border-subtle); overflow-x: auto; }
+@media print {
+  .form:has(.printOutput) { padding: 0 !important; border: 0; box-shadow: none; }
+  .form:has(.printOutput) > :not(.printOutput) { display: none !important; }
+  .form > .printOutput { display: block; margin: 0; padding: 0; border: 0; overflow: visible; }
+}
 .roomChipLock {
   flex: none;
   border-radius: 999px;

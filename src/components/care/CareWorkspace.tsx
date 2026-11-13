@@ -21,6 +21,8 @@ import type { CareKind, CareSignatureRole, CareSubject } from "@/lib/care/types"
 import CareFieldInput, { GrowthChart, buttonClass, inputClass, valueText } from "./CareFields";
 import CareSignature from "./CareSignature";
 import CareFieldGroups from "./CareFieldGroups";
+import CareSheetEditor from "./CareSheetEditor";
+import CarePrintSheet from "./CarePrintSheet";
 import styles from "./CareWorkspace.module.css";
 import LocalMedia from "../babycam/LocalMedia";
 import { buttonStyles } from "@/components/ui/buttonStyles";
@@ -232,7 +234,9 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
               <h2 className="text-xl font-semibold">{form.label}</h2>
               <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => setBlankSheet((value) => !value)}>{blankSheet ? "回到填寫畫面" : "列印空白表格"}</button>
             </div>
-            {blankSheet && <section className="mb-6 space-y-4 rounded-xl border border-stone-300 p-4">
+            {form.layout && <div className={`${styles.printOutput} ${blankSheet ? styles.printPreview : ""}`}><CarePrintSheet form={form} document={document} subject={subject} history={history} blank={blankSheet} /></div>}
+            {blankSheet && form.layout && <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => window.print()}>列印空白表格</button>}
+            {blankSheet && !form.layout && <section className="mb-6 space-y-4 rounded-xl border border-stone-300 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="font-semibold">{form.label}（空白表格）</h3>
                 <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => window.print()}>列印</button>
@@ -251,7 +255,7 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
             {form.key === "mood" && moodNeedsAttention(document.values) && <p role="status" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">達 v24 示範關注門檻，請記錄後續處理。此為護理長提醒情境，未發送通知。</p>}
             <fieldset disabled={!editable} className="space-y-5">
               <legend className="sr-only">{form.label}欄位</legend>
-              {form.sections.map((section, index) => <section key={section.label} className={index !== Math.min(sectionIndex, form.sections.length - 1) ? styles.hiddenSection : ""}><h3 className="mb-4 font-medium">{section.label}</h3><CareFieldGroups key={`${document.key}-${section.label}`} formKey={form.key} fields={section.fields} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value), "已加入目前角色的常用語。")} /></section>)}
+              {form.layout ? <CareSheetEditor key={document.key} form={form} sectionIndex={sectionIndex} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value), "已加入目前角色的常用語。")} /> : form.sections.map((section, index) => <section key={section.label} className={index !== Math.min(sectionIndex, form.sections.length - 1) ? styles.hiddenSection : ""}><h3 className="mb-4 font-medium">{section.label}</h3><CareFieldGroups key={`${document.key}-${section.label}`} formKey={form.key} fields={section.fields} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value), "已加入目前角色的常用語。")} /></section>)}
               {form.key === "feeding" && needsFeedingReassessment(document.values) && <section className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-4"><h3 className="font-semibold">媽媽護理紀錄（再評估）</h3><p className="text-sm">{subject.motherName}｜請於此直接補充評估與處理內容。</p><CareFieldInput field={{ key: "reassessmentNote", label: "再評估護理紀錄", type: "textarea", required: true }} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value))} /></section>}
             </fieldset>
             {form.signature && <div className="mt-6 space-y-3"><h3 className="font-medium">本筆簽名與員工署名</h3><p className="text-sm text-stone-600">對象：{identity(subject)}。簽出時記錄實際操作者；此為靜態原型簽名。</p>

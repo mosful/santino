@@ -50,9 +50,11 @@ export default function CareFieldInput({ field, values, onChange, personal, addP
   const value = values[field.key];
   const phrases = (phraseTab === "system" ? library.filter((item) => [item.text, item.category, ...item.tags].join(" ").includes(query)).map((item) => item.text) : personal.filter((item) => item.includes(query)));
   const wide = field.type === "textarea" || field.type === "photo" || field.type === "multiple";
+  const selectedValues = Array.isArray(value) ? value : value ? [value] : [];
+  const oldOptions = field.options ? selectedValues.filter((item) => !field.options!.includes(item)) : [];
   return <div data-care-field={field.key} className={`${styles.field} ${wide ? styles.wideField : styles.singleField}`}>
     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-      <label htmlFor={field.type === "multiple" || field.type === "photo" ? undefined : id} className="text-sm font-medium">{field.label}{field.required && <span className="ml-1 text-rose-700">（必填）</span>}</label>
+      <label htmlFor={["multiple", "radio", "photo"].includes(field.type ?? "") ? undefined : id} className="text-sm font-medium">{field.label}{field.required && <span className="ml-1 text-rose-700">（必填）</span>}</label>
       {field.type === "textarea" && <button type="button" onClick={() => setPhraseOpen(!phraseOpen)} aria-expanded={phraseOpen} className="text-sm underline underline-offset-4">常用片語</button>}
     </div>
     {phraseOpen && <div className="mb-3 space-y-2 rounded-lg border border-stone-200 bg-stone-50 p-3" aria-label="頁內常用片語" data-no-print>
@@ -64,12 +66,15 @@ export default function CareFieldInput({ field, values, onChange, personal, addP
     </div>}
     {field.type === "textarea" ? <textarea id={id} value={valueText(value)} onChange={(event) => onChange({ [field.key]: event.target.value })} className={inputClass} />
       : field.type === "multiple" ? <div className="flex flex-wrap gap-2" role="group" aria-label={field.label}>{field.options?.map((option) => {
-        const selected = Array.isArray(value) ? value : [];
-        return <label key={option} data-selected={selected.includes(option)} className="care-option flex min-h-12 items-center gap-2 rounded-lg border border-stone-300 px-3 text-sm"><input type="checkbox" checked={selected.includes(option)} onChange={() => onChange({ [field.key]: selected.includes(option) ? selected.filter((item) => item !== option) : [...selected, option] })} />{option}</label>;
+        const selected = Array.isArray(value) ? value : value ? [value] : [];
+        const exclusive = ["無", "正常", "無URI症狀"];
+        return <label key={option} data-selected={selected.includes(option)} className="care-option flex min-h-12 items-center gap-2 rounded-lg border border-stone-300 px-3 text-sm"><input type="checkbox" checked={selected.includes(option)} onChange={() => onChange({ [field.key]: selected.includes(option) ? selected.filter((item) => item !== option) : exclusive.includes(option) ? [option] : [...selected.filter((item) => !exclusive.includes(item)), option] })} />{option}</label>;
       })}</div>
+      : field.type === "radio" ? <div role="radiogroup" aria-label={field.label} className="flex flex-wrap gap-x-4 gap-y-1">{field.options?.map((option) => <label key={option} className="flex min-h-11 items-center gap-2 text-sm"><input type="radio" name={id} value={option} checked={value === option} onChange={() => onChange({ [field.key]: option })} />{option}</label>)}<button type="button" className="min-h-11 px-2 text-xs underline underline-offset-4" onClick={() => onChange({ [field.key]: "" })}>清除</button></div>
       : field.type === "select" ? <select id={id} value={valueText(value)} onChange={(event) => onChange({ [field.key]: event.target.value })} className={inputClass}><option value="">請選擇</option>{field.options?.map((option) => <option key={option}>{option}</option>)}</select>
       : field.type === "photo" ? <PhotoField key={valueText(value)} id={valueText(value)} label={field.label} onChange={(next) => onChange({ [field.key]: next })} />
       : <input id={id} type={field.type ?? "text"} min={field.min} max={field.max} step={field.type === "number" ? "any" : undefined} value={valueText(value)} onChange={(event) => onChange({ [field.key]: event.target.value })} className={inputClass} />}
+    {oldOptions.length > 0 && <p className="mt-2 text-sm text-amber-900">原有內容：{oldOptions.join("、")}。選擇新選項時請核對。</p>}
   </div>;
 }
 

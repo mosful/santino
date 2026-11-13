@@ -19,6 +19,7 @@ const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-res
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(base + "/mama/");
   await page.getByRole("button", { name: "入住評估", exact: true }).first().click();
+  await page.getByRole("navigation", { name: "表單區段" }).getByRole("button", { name: "入住護理紀錄", exact: true }).click();
   await page.getByLabel("入住護理紀錄（必填）", { exact: true }).fill("完整頁面測試：已完成入住護理評估。");
   assert.equal(await page.getByRole("dialog").count(), 0);
   await page.getByRole("button", { name: "暫存", exact: true }).click();
@@ -37,7 +38,7 @@ const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-res
     await unlock.click();
     await page.getByLabel("頁內操作確認").getByRole("button", { name: "確認", exact: true }).click();
   }
-  await page.getByLabel("含乳姿勢", { exact: true }).selectOption("再評估");
+  await page.getByRole("radiogroup", { name: "身體姿勢 1", exact: true }).getByLabel("肩膀僵硬，身體傾向新生兒", { exact: true }).check();
   await page.getByLabel("再評估護理紀錄（必填）", { exact: true }).fill("再評估情境：已於同頁記錄媽媽護理內容。");
   assert.equal(await page.getByRole("dialog").count(), 0);
   await page.getByRole("button", { name: "暫存", exact: true }).click();

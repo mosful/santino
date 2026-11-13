@@ -6,6 +6,7 @@ import { ROLE_PROFILE } from "../permissions";
 import { domainStore } from "../demo/domainStore";
 import { careForms } from "./forms";
 import { todayTaipei } from "../dates";
+import { normalizeSheetValues } from "./sheetValues";
 import { careSubject } from "./subjects";
 import { canAuthorizeCare, canEditCare, canViewCare, documentKey, isBackfillBlocked, validateCareForm } from "./rules";
 import type { CareDocument, CareKind, CareSignatureRole, CareState, CareValues } from "./types";
@@ -50,8 +51,8 @@ export const careActions = {
       const key = documentKey(subjectId, formKey);
       const defaults: CareValues = { ...defaultCareValues(formKey, subject.kind), ...(subject.birthDate ? { birthDate: subject.birthDate } : {}), ...(subject.gender ? { sex: subject.gender } : {}) };
       if (subject.birthOrder !== undefined) defaults.birthOrder = String(subject.birthOrder);
-      if (formKey === "feeding") for (let index = 0; index < 6; index++) defaults[`feeding-${index}`] = "通過";
       state.documents[key] ??= { key, subjectId, formKey, values: defaults, dirty: false };
+      state.documents[key].values = normalizeSheetValues(subject.kind, formKey, state.documents[key].values);
       if (!state.open.includes(key)) state.open.push(key);
       state.active[subject.kind] = key;
       if (!state.unlockedCase) state.unlockedCase = subject.caseId;
@@ -148,7 +149,7 @@ export const careActions = {
       const key = documentKey(entry.subjectId, entry.formKey);
       const current = state.documents[key];
       if (current && !current.signedAt && (current.dirty || current.savedAt) && current.editingEntryId !== entryId) throw new Error("目前有尚未簽出的草稿，請先完成或捨棄草稿再修改既有紀錄。");
-      state.documents[key] = { key, subjectId: entry.subjectId, formKey: entry.formKey, values: structuredClone(entry.values), dirty: false, editingEntryId: entryId };
+      state.documents[key] = { key, subjectId: entry.subjectId, formKey: entry.formKey, values: normalizeSheetValues(subject.kind, entry.formKey, entry.values), dirty: false, editingEntryId: entryId };
       if (!state.open.includes(key)) state.open.push(key);
       state.active[subject.kind] = key;
       state.unlockedCase = subject.caseId;

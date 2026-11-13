@@ -47,7 +47,7 @@ export function isBackfillBlocked(role: Role, subject: CareSubject, days: number
   return isBackfillExpired(subject, days, at) && !authorized && !canAuthorizeCare(role);
 }
 export function needsFeedingReassessment(values: CareValues) {
-  return Object.entries(values).some(([key, value]) => key.startsWith("feeding-") && value === "再評估");
+  return values.feedingResult === "再評估" || Object.entries(values).some(([key, value]) => (key.startsWith("feeding-") && value === "再評估") || (key.startsWith("breast-") && value === "困難"));
 }
 export function moodNeedsAttention(values: CareValues) {
   return (values.score !== undefined && Number(values.score) >= 13) || (values.question10 !== undefined && Number(values.question10) >= 2);

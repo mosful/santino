@@ -1,6 +1,7 @@
 import type { CareField, CareForm, CareKind } from "./types";
 import { DEFAULT_ASSESSMENT_FIELDS, getAssessmentFields, type AssessmentField } from "../assessmentConfigStore";
 import { HOSPITALS_SHORT } from "../domain/options";
+import { BABY_ADMISSION, FEEDING_FORM, MAMA_ADMISSION } from "./sheetDefinitions";
 
 const text = (key: string, label: string, required = false): CareField => ({ key, label, required });
 const note = (key: string, label: string, required = false): CareField => ({ key, label, type: "textarea", required });
@@ -60,6 +61,11 @@ export const BABY_FORMS: CareForm[] = [
   { key: "io", label: "I/O", sections: [{ label: "餵食與排泄", fields: [date, time, select("feeding", "餵奶", ["母奶 左", "母奶 右", "瓶餵母奶", "配方奶"]), number("amount", "分鐘／奶量（cc）", 0, 500), select("condition", "餵食情況", ["可", "溢奶", "吐奶"]), select("sucking", "吸吮力", ["佳", "中等", "弱"]), select("urine", "尿", ["未解", "自解"]), text("urineDetail", "尿次數／顏色"), select("stool", "便", ["未解", "自解"]), text("stoolDetail", "便次數／量／性質"), note("note", "備註")] }] },
   guidance(true),
 ];
+
+// 原型既有表單代號不變，讓草稿、房間分頁與已簽紀錄繼續使用同一份狀態。
+MAMA_FORMS[0] = MAMA_ADMISSION;
+BABY_FORMS[0] = BABY_ADMISSION;
+BABY_FORMS[BABY_FORMS.findIndex((form) => form.key === "feeding")] = FEEDING_FORM;
 
 /** v24 基本欄位保留，管理端新增或修改的題目併入對應區段。 */
 export function careForms(kind: CareKind, configured: AssessmentField[] = getAssessmentFields()) {

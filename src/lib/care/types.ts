@@ -72,11 +72,12 @@ export type CareState = {
 export type CareField = {
   key: string;
   label: string;
-  type?: "text" | "number" | "date" | "time" | "textarea" | "select" | "multiple" | "photo";
+  type?: "text" | "number" | "date" | "time" | "textarea" | "select" | "radio" | "multiple" | "photo";
   options?: string[];
   required?: boolean;
   min?: number;
   max?: number;
 };
-export type CareSection = { label: string; fields: CareField[] };
-export type CareForm = { key: string; label: string; sections: CareSection[]; signature?: boolean };
+export type CareRow = { label: string; keys: string[]; note?: string };
+export type CareSection = { label: string; fields: CareField[]; rows?: CareRow[] };
+export type CareForm = { key: string; label: string; sections: CareSection[]; signature?: boolean; layout?: "assessment" | "feeding"; printTitle?: string; printGroups?: number[][] };

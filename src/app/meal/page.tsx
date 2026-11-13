@@ -1,5 +1,7 @@
 "use client";
 
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
+
 import { useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
@@ -97,11 +99,12 @@ function CycleTeaTab() {
 function DailyMealTab() {
   const MEALS = useMealRows();
   const rows = MEALS.filter((row) => row.name !== "（空房）").slice(0, 6);
+  const { sorted: sortedRows, sort, toggle } = useTableSort(rows);
   return (
     <div className="work-surface overflow-x-auto">
       <table className="w-full min-w-max text-left text-sm">
-        <thead className="bg-stone-50 text-xs text-stone-500"><tr><th className="px-3 py-2">房號</th><th className="px-3 py-2">媽媽</th><th className="px-3 py-2">早餐</th><th className="px-3 py-2">午餐</th><th className="px-3 py-2">晚餐</th><th className="px-3 py-2">備註</th></tr></thead>
-        <tbody>{rows.map((row) => <tr key={row.id} className="border-t border-stone-100"><td className="px-3 py-2">{String(row.room)}</td><td className="px-3 py-2">{String(row.name)}</td><td className="px-3 py-2 text-emerald-600">已出餐</td><td className="px-3 py-2 text-amber-600">備餐中</td><td className="px-3 py-2 text-stone-400">待備餐</td><td className="px-3 py-2">{String(row.restriction)}</td></tr>)}</tbody>
+        <thead className="bg-stone-50 text-xs text-stone-500"><tr><SortableHeader columnKey="room" label="房號" sort={sort} onToggle={toggle} className="px-3 py-2" /><SortableHeader columnKey="name" label="媽媽" sort={sort} onToggle={toggle} className="px-3 py-2" /><SortableHeader columnKey="breakfast" label="早餐" sort={sort} onToggle={toggle} sortable={false} className="px-3 py-2" /><SortableHeader columnKey="lunch" label="午餐" sort={sort} onToggle={toggle} sortable={false} className="px-3 py-2" /><SortableHeader columnKey="dinner" label="晚餐" sort={sort} onToggle={toggle} sortable={false} className="px-3 py-2" /><SortableHeader columnKey="restriction" label="備註" sort={sort} onToggle={toggle} className="px-3 py-2" /></tr></thead>
+        <tbody>{sortedRows.map((row) => <tr key={row.id} className="border-t border-stone-100"><td className="px-3 py-2">{String(row.room)}</td><td className="px-3 py-2">{String(row.name)}</td><td className="px-3 py-2 text-emerald-600">已出餐</td><td className="px-3 py-2 text-amber-600">備餐中</td><td className="px-3 py-2 text-stone-400">待備餐</td><td className="px-3 py-2">{String(row.restriction)}</td></tr>)}</tbody>
       </table>
     </div>
   );

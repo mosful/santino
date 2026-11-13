@@ -1,5 +1,7 @@
 "use client";
 
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
+
 import Link from "next/link";
 import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -104,7 +106,7 @@ export default function JourneyDashboard() {
     return priority[a.urgency] - priority[b.urgency];
   });
   // 首頁只呈現目前條件下最需要關注的 5 筆；完整搜尋與翻頁統一回案件清單。
-  const visibleStageMothers = stageMothers.slice(0, 5);
+  const { sorted: visibleStageMothers, sort, toggle } = useTableSort(stageMothers.slice(0, 5));
 
   function selectStage(stage: JourneyStageKey) {
     setSelectedStage(stage);
@@ -214,12 +216,12 @@ export default function JourneyDashboard() {
           <table className="w-full min-w-[820px] text-left text-sm">
             <thead className="bg-stone-50 text-xs text-stone-500">
               <tr>
-                <th className="whitespace-nowrap px-3 py-2.5 font-medium">媽媽</th>
-                <th className="whitespace-nowrap px-3 py-2.5 font-medium">房位／預產期</th>
-                <th className="whitespace-nowrap px-3 py-2.5 font-medium">狀態</th>
-                <th className="whitespace-nowrap px-3 py-2.5 font-medium">下一步</th>
-                <th className="whitespace-nowrap px-3 py-2.5 font-medium">負責</th>
-                <th className="px-3 py-2.5 font-medium"><span className="sr-only">開啟案件</span></th>
+                <SortableHeader columnKey="name" label="媽媽" sort={sort} onToggle={toggle} />
+                <SortableHeader columnKey="room" label="房位／預產期" sort={sort} onToggle={toggle} />
+                <SortableHeader columnKey="status" label="狀態" sort={sort} onToggle={toggle} />
+                <SortableHeader columnKey="nextAction" label="下一步" sort={sort} onToggle={toggle} />
+                <SortableHeader columnKey="owner" label="負責" sort={sort} onToggle={toggle} />
+                <SortableHeader columnKey="open" sort={sort} onToggle={toggle} sortable={false} className="px-3 py-2.5 font-medium"><span className="sr-only">開啟案件</span></SortableHeader>
               </tr>
             </thead>
             <tbody>

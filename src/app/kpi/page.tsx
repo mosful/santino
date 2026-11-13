@@ -1,5 +1,7 @@
 "use client";
 
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
+
 import { useMemo, useState } from "react";
 import PageHeader from "@/components/ui/PageHeader";
 import RequireAccess from "@/components/ui/RequireAccess";
@@ -93,6 +95,7 @@ function RedRashStatistics() {
   const settings = useKpiSettings();
   const [gradeFilter, setGradeFilter] = useState<RedRashGrade | "全部">("全部");
   const filtered = gradeFilter === "全部" ? RASH_CASES : RASH_CASES.filter((item) => item.grade === gradeFilter);
+  const { sorted: sortedRash, sort, toggle } = useTableSort(filtered);
   const includedCount = RASH_CASES.filter((item) => settings.includedRashGrades.includes(item.grade)).length;
   const rashRule = settings.rules.find((rule) => rule.id === "rash");
 
@@ -128,8 +131,8 @@ function RedRashStatistics() {
 
       <div className="overflow-x-auto rounded-lg border border-stone-200">
         <table className="w-full min-w-[620px] text-left text-sm">
-          <thead className="bg-stone-50 text-xs text-stone-500"><tr><th className="px-3 py-2">日期</th><th className="px-3 py-2">病歷號</th><th className="px-3 py-2">寶寶</th><th className="px-3 py-2">分級</th><th className="px-3 py-2">是否納入</th><th className="px-3 py-2">記錄者</th></tr></thead>
-          <tbody>{filtered.map((item) => <tr key={item.id} className="border-t border-stone-100"><td className="px-3 py-2">{item.date}</td><td className="px-3 py-2 text-stone-500">{item.chartNo}</td><td className="px-3 py-2">{item.baby}</td><td className="px-3 py-2 font-medium text-rose-600">{item.grade}</td><td className="px-3 py-2">{settings.includedRashGrades.includes(item.grade) ? "是" : "否"}</td><td className="px-3 py-2">{item.recorder}</td></tr>)}</tbody>
+          <thead className="bg-stone-50 text-xs text-stone-500"><tr><SortableHeader columnKey="date" label="日期" sort={sort} onToggle={toggle} className="px-3 py-2" /><SortableHeader columnKey="chartNo" label="病歷號" sort={sort} onToggle={toggle} className="px-3 py-2" /><SortableHeader columnKey="baby" label="寶寶" sort={sort} onToggle={toggle} className="px-3 py-2" /><SortableHeader columnKey="grade" label="分級" sort={sort} onToggle={toggle} className="px-3 py-2" /><SortableHeader columnKey="included" label="是否納入" sort={sort} onToggle={toggle} className="px-3 py-2" /><SortableHeader columnKey="recorder" label="記錄者" sort={sort} onToggle={toggle} className="px-3 py-2" /></tr></thead>
+          <tbody>{sortedRash.map((item) => <tr key={item.id} className="border-t border-stone-100"><td className="px-3 py-2">{item.date}</td><td className="px-3 py-2 text-stone-500">{item.chartNo}</td><td className="px-3 py-2">{item.baby}</td><td className="px-3 py-2 font-medium text-rose-600">{item.grade}</td><td className="px-3 py-2">{settings.includedRashGrades.includes(item.grade) ? "是" : "否"}</td><td className="px-3 py-2">{item.recorder}</td></tr>)}</tbody>
         </table>
       </div>
     </section>

@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Inbox } from "lucide-react";
 import Modal from "./Modal";
 import Pagination from "./Pagination";
+import SortableHeader, { useTableSort } from "./SortableHeader";
 import { useAccess } from "@/lib/roleStore";
 import { rowMatchesQuery } from "@/lib/fuzzySearch";
 import { buttonStyles } from "@/components/ui/buttonStyles";
@@ -52,9 +53,10 @@ export default function EditableList({
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const filtered = q ? activeRows.filter((r) => rowMatchesQuery(r, q)) : activeRows;
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const { sorted, sort, toggle } = useTableSort(filtered);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const safePage = Math.min(page, totalPages);
-  const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const paged = sorted.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   function openAdd() {
     setError("");
@@ -125,11 +127,9 @@ export default function EditableList({
           <thead className="bg-stone-50 text-xs text-stone-500">
             <tr>
               {fields.map((f) => (
-                <th key={f.key} className="whitespace-nowrap px-3 py-2.5 font-medium">
-                  {f.label}
-                </th>
+                <SortableHeader key={f.key} columnKey={f.key} label={f.label} sort={sort} onToggle={toggle} />
               ))}
-              {canEdit && <th className="px-3 py-2.5 font-medium">操作</th>}
+              {canEdit && <SortableHeader columnKey="actions" label="操作" sort={sort} onToggle={toggle} sortable={false} />}
             </tr>
           </thead>
           <tbody>

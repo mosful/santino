@@ -1,5 +1,7 @@
 "use client";
 
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
+
 import { todayTaipei } from "@/lib/dates";
 import { useState } from "react";
 import { Toast, useToast } from "@/components/ui/Toast";
@@ -32,6 +34,7 @@ export default function DisinfectionSchedule({ data, onChange }: { data: DemoDom
   const [roomText, setRoomText] = useState("");
   const [toast, toastProps] = useToast();
   const items = data.disinfections ?? [];
+  const { sorted: sortedItems, sort, toggle } = useTableSort(items);
 
   function patch(next: Partial<Draft>) { setDraft((current) => ({ ...current, ...next })); }
 
@@ -67,9 +70,9 @@ export default function DisinfectionSchedule({ data, onChange }: { data: DemoDom
 
       <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
         <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="bg-stone-50"><tr>{["項目", "方式", "排程", "狀態", ""].map((label) => <th key={label} className="whitespace-nowrap p-3 font-medium">{label}</th>)}</tr></thead>
+          <thead className="bg-stone-50"><tr>{([["room", "項目"], ["mode", "方式"], ["schedule", "排程"], ["state", "狀態"]] as const).map(([key, label]) => <SortableHeader key={key} columnKey={key} label={label} sort={sort} onToggle={toggle} className="whitespace-nowrap p-3 font-medium" />)}<SortableHeader columnKey="actions" label="操作" sort={sort} onToggle={toggle} sortable={false} className="whitespace-nowrap p-3 font-medium" /></tr></thead>
           <tbody>
-            {items.map((item) => {
+            {sortedItems.map((item) => {
               const running = activeDisinfection(data, item.rooms[0] ?? "")?.id === item.id;
               return <tr key={item.id} className="border-t border-stone-200">
                 <td className="p-3 font-medium">{item.label}</td>

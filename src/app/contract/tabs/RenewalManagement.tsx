@@ -5,11 +5,14 @@ import Badge from "@/components/ui/Badge";
 import Link from "next/link";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { buttonStyles } from "@/components/ui/buttonStyles";
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
 
 export default function RenewalManagement() {
   const [thresholdDays, setThresholdDays] = useState(30);
   const { data } = useDomainStore();
   const CANDIDATES = data.cases.filter((record) => record.actualAdmission && !record.dischargedAt).map((record) => { const end = Date.parse(`${record.actualAdmission}T00:00:00+08:00`) + record.days * 86_400_000; return { id: record.id, contractNo: record.contractNo, motherName: record.name, expireDate: new Date(end).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" }), daysLeft: Math.ceil((end - Date.parse(data.demoAt)) / 86_400_000) }; });
+
+  const { sorted: sortedCandidates, sort, toggle } = useTableSort(CANDIDATES.filter((c) => c.daysLeft <= thresholdDays));
 
   return (
     <div className="space-y-4 text-sm">
@@ -30,15 +33,15 @@ export default function RenewalManagement() {
       <table className="w-full text-left text-sm">
         <thead className="bg-stone-50 text-xs text-stone-500">
           <tr>
-            <th className="px-3 py-2">合約編號</th>
-            <th className="px-3 py-2">媽媽姓名</th>
-            <th className="px-3 py-2">到期日</th>
-            <th className="px-3 py-2">剩餘天數</th>
-            <th className="px-3 py-2">操作</th>
+            <SortableHeader columnKey="contractNo" label="合約編號" sort={sort} onToggle={toggle} className="px-3 py-2" />
+            <SortableHeader columnKey="motherName" label="媽媽姓名" sort={sort} onToggle={toggle} className="px-3 py-2" />
+            <SortableHeader columnKey="expireDate" label="到期日" sort={sort} onToggle={toggle} className="px-3 py-2" />
+            <SortableHeader columnKey="daysLeft" label="剩餘天數" sort={sort} onToggle={toggle} className="px-3 py-2" />
+            <SortableHeader columnKey="actions" label="操作" sort={sort} onToggle={toggle} sortable={false} className="px-3 py-2" />
           </tr>
         </thead>
         <tbody>
-          {CANDIDATES.filter((c) => c.daysLeft <= thresholdDays).map((c) => (
+          {sortedCandidates.map((c) => (
             <tr key={c.id} className="border-t border-stone-100">
               <td className="px-3 py-2">{c.contractNo}</td>
               <td className="px-3 py-2">{c.motherName}</td>

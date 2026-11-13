@@ -1,5 +1,7 @@
 "use client";
 
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
+
 import { useState } from "react";
 import Tabs from "@/components/ui/Tabs";
 import Badge from "@/components/ui/Badge";
@@ -13,18 +15,19 @@ const TEMPLATES: MsgTemplate[] = [
 ];
 
 function TemplateTab() {
+  const { sorted, sort, toggle } = useTableSort(TEMPLATES);
   return (
     <div className="query-panel space-y-4 text-sm">
       <div className="overflow-x-auto"><table className="w-full min-w-[480px] text-left text-xs">
         <thead className="text-stone-500">
           <tr>
-            <th className="px-2 py-1">範本名稱</th>
-            <th className="px-2 py-1">類型</th>
-            <th className="px-2 py-1">操作</th>
+            <SortableHeader columnKey="name" label="範本名稱" sort={sort} onToggle={toggle} className="px-2 py-1" />
+            <SortableHeader columnKey="type" label="類型" sort={sort} onToggle={toggle} className="px-2 py-1" />
+            <SortableHeader columnKey="actions" label="操作" sort={sort} onToggle={toggle} sortable={false} className="px-2 py-1" />
           </tr>
         </thead>
         <tbody>
-          {TEMPLATES.map((t) => (
+          {sorted.map((t) => (
             <tr key={t.id} className="border-t border-stone-100">
               <td className="px-2 py-1.5">{t.name}</td>
               <td className="px-2 py-1.5">
@@ -96,6 +99,7 @@ const RECORDS: SendRecord[] = [
 ];
 
 function ScheduleTab() {
+  const { sorted: sortedRecords, sort: recordsort, toggle: recordtoggle } = useTableSort(RECORDS);
   return (
     <WorkArea aside={<ResultCard title="排程摘要" value={`${RECORDS.length} 筆`} description="目前已建立的發送排程"><SummaryRow label="最近一次" value={RECORDS[0].time} /><SummaryRow label="狀態" value={RECORDS[0].status} /></ResultCard>}>
       <FormSection title="新增排程" description="選擇訊息範本、受眾與預定發送時間。" className="text-sm">
@@ -115,14 +119,14 @@ function ScheduleTab() {
       <div className="query-panel overflow-x-auto"><table className="w-full min-w-[540px] text-left text-xs">
         <thead className="text-stone-500">
           <tr>
-            <th className="px-2 py-1">範本</th>
-            <th className="px-2 py-1">受眾</th>
-            <th className="px-2 py-1">時間</th>
-            <th className="px-2 py-1">狀態</th>
+            <SortableHeader columnKey="template" label="範本" sort={recordsort} onToggle={recordtoggle} className="px-2 py-1" />
+            <SortableHeader columnKey="audience" label="受眾" sort={recordsort} onToggle={recordtoggle} className="px-2 py-1" />
+            <SortableHeader columnKey="time" label="時間" sort={recordsort} onToggle={recordtoggle} className="px-2 py-1" />
+            <SortableHeader columnKey="status" label="狀態" sort={recordsort} onToggle={recordtoggle} className="px-2 py-1" />
           </tr>
         </thead>
         <tbody>
-          {RECORDS.map((r) => (
+          {sortedRecords.map((r) => (
             <tr key={r.id} className="border-t border-stone-100">
               <td className="px-2 py-1.5">{r.template}</td>
               <td className="px-2 py-1.5">{r.audience}</td>

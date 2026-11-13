@@ -49,6 +49,7 @@ import {
 import { StatusSummary } from "@/components/ui/Workspace";
 import { expectedReturnBaby, readIdentityCode } from "@/lib/babycam/scan";
 import IdentityScanner from "./IdentityScanner";
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
 import { viewingSettingsOf } from "@/lib/babycam/viewingSettings";
 
 /*
@@ -289,6 +290,8 @@ export default function BabycamWorkspace({
     data.bindings.find((item) => item.id === bindingId && !item.ended) ??
     scannedBinding ??
     (initialScanCode ? undefined : data.bindings.find((item) => !item.ended));
+  // 入住狀態表以「房」為排序單位（同一房的寶寶用 rowSpan 併列），房號空白的托嬰排最後。
+  const stayState = useTableSort(data.bindings.filter((item) => !item.ended), (item, key) => key === "room" ? `${item.room || ""} ${item.motherName}` : (item as unknown as Record<string, unknown>)[key]);
   const pendingRegistrations = data.cases.filter((item) => item.stage >= 3 && item.contractNo && !item.closed && !item.dischargedAt && !data.bindings.some((target) => target.caseId === item.id && !target.ended));
   const deleteRegistration = data.bindings.find((item) => item.id === deleteRegistrationId);
   const expectedBaby = expectedReturnBaby(binding, scanBaby, bindingId ? "" : initialScanCode);
@@ -352,6 +355,8 @@ export default function BabycamWorkspace({
     const date = new Date(raw).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" });
     return row.join(" ").includes(keyword) && (!dateFrom || date >= dateFrom) && (!dateTo || date <= dateTo);
   });
+  // 報表列是字串陣列，欄位鍵用索引。
+  const reportState = useTableSort(filteredRows, (row, key) => row[Number(key)]);
 
   async function generateLabels() {
     if (!binding) return;
@@ -637,16 +642,18 @@ export default function BabycamWorkspace({
               <table aria-label="入住狀態" className="w-full min-w-240 text-left text-sm">
                 <thead className="bg-surface-muted">
                   <tr>
-                    {["房號／媽媽", "寶寶・車號・監視器", "顯示狀態", "照護", "觀看期間"].map((label) => (
-                      <th key={label} className={"whitespace-nowrap p-3 font-semibold text-stone-600 " + (label === "房號／媽媽" ? "sticky left-0 z-10 bg-surface-muted" : "")}>
+                    {/* 這張表用 rowSpan 把同一房的寶寶併在一起，所以排序的單位是「房」不是「列」；
+                        其餘欄位是每位寶寶各自的值，併列後排序沒有明確語意，維持不可排序。 */}
+                    <SortableHeader columnKey="room" label="房號／媽媽" sort={stayState.sort} onToggle={stayState.toggle} className="whitespace-nowrap p-3 font-semibold text-stone-600 sticky left-0 z-10 bg-surface-muted" />
+                    {["寶寶・車號・監視器", "顯示狀態", "照護", "觀看期間"].map((label) => (
+                      <th key={label} className="whitespace-nowrap p-3 font-semibold text-stone-600">
                         {label}
                       </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {data.bindings
-                    .filter((item) => !item.ended)
+                  {stayState.sorted
                     .flatMap((item) =>
                       (item.babies.length ? item.babies : [null]).map((baby, index) => (
                         <tr key={`${item.id}-${baby?.babyId ?? "none"}`} className="border-t border-border-subtle align-middle">
@@ -942,15 +949,13 @@ export default function BabycamWorkspace({
               <table className="w-full min-w-[600px] text-left text-sm">
                 <thead className="bg-surface-muted">
                   <tr>
-                    {reportHeaders.map((item) => (
-                      <th className="p-2.5 font-semibold text-stone-600" key={item}>
-                        {item}
-                      </th>
+                    {reportHeaders.map((item, index) => (
+                      <SortableHeader key={item} columnKey={String(index)} label={item} sort={reportState.sort} onToggle={reportState.toggle} className="p-2.5 font-semibold text-stone-600" />
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRows.slice((reportPage - 1) * 10, reportPage * 10).map((row, index) => (
+                  {reportState.sorted.slice((reportPage - 1) * 10, reportPage * 10).map((row, index) => (
                     <tr key={index} className="border-t border-border-subtle">
                       {row.map((value, cell) => (
                         <td className="p-2.5" key={cell}>

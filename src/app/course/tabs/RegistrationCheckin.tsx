@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Badge from "@/components/ui/Badge";
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
 
 type Enrollee = { id: number; name: string; phone: string; checkedIn: boolean };
 
@@ -18,6 +19,7 @@ export default function RegistrationCheckin() {
     setEnrollees((es) => es.map((e) => (e.id === id ? { ...e, checkedIn: !e.checkedIn } : e)));
   }
 
+  const { sorted: sortedEnrollees, sort, toggle } = useTableSort(enrollees);
   const noShow = enrollees.filter((e) => !e.checkedIn).length;
 
   return (
@@ -30,13 +32,13 @@ export default function RegistrationCheckin() {
       <table className="w-full text-left text-xs">
         <thead className="text-stone-500">
           <tr>
-            <th className="px-2 py-1">姓名</th>
-            <th className="px-2 py-1">電話</th>
-            <th className="px-2 py-1">簽到狀態</th>
+            <SortableHeader columnKey="name" label="姓名" sort={sort} onToggle={toggle} className="px-2 py-1" />
+            <SortableHeader columnKey="phone" label="電話" sort={sort} onToggle={toggle} className="px-2 py-1" />
+            <SortableHeader columnKey="checkedIn" label="簽到狀態" sort={sort} onToggle={toggle} className="px-2 py-1" />
           </tr>
         </thead>
         <tbody>
-          {enrollees.map((e) => (
+          {sortedEnrollees.map((e) => (
             <tr key={e.id} className="border-t border-stone-100">
               <td className="px-2 py-1.5">{e.name}</td>
               <td className="px-2 py-1.5">{e.phone}</td>

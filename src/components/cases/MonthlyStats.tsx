@@ -1,5 +1,7 @@
 "use client";
 
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
+
 import { useState } from "react";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import { buttonStyles } from "@/components/ui/buttonStyles";
@@ -18,6 +20,9 @@ export default function MonthlyStats() {
   const [year, setYear] = useState(() => data.demoAt.slice(0, 4));
 
   const { rows, totals } = buildMonthlyStats(data.cases, year);
+  // 天數級距存在 row.buckets 底下，月份欄排序用原本的 1–12 月順序而不是字串。
+  const { sorted: sortedRows, sort, toggle } = useTableSort(rows, (row, key) =>
+    key === "month" ? rows.indexOf(row) : key in row ? (row as unknown as Record<string, unknown>)[key] : (row.buckets as Record<string, number>)[key]);
 
   return (
     <CollapsibleSection id="case-monthly-stats" title="月統計表" summary={`${year} 年共 ${totals.total} 件`} bodyClassName="space-y-4">
@@ -52,13 +57,13 @@ export default function MonthlyStats() {
           <caption className="sr-only">{year} 年月統計表</caption>
           <thead className="bg-stone-50">
             <tr>
-              {["月份", "接單數", "精緻房", "VIP", "VILLA", ...DAY_BUCKETS].map((label) => (
-                <th key={label} scope="col" className={"whitespace-nowrap p-2 font-medium " + (label === "月份" ? "sticky left-0 z-10 bg-stone-50 text-left print:static" : "")}>{label}</th>
+              {([["month", "月份"], ["total", "接單數"], ["精緻", "精緻房"], ["VIP", "VIP"], ["VILLA", "VILLA"], ...DAY_BUCKETS.map((bucket) => [bucket, bucket] as [string, string])] as [string, string][]).map(([key, label]) => (
+                <SortableHeader key={key} columnKey={key} label={label} sort={sort} onToggle={toggle} className={"whitespace-nowrap p-2 font-medium " + (key === "month" ? "sticky left-0 z-10 bg-stone-50 text-left print:static" : "")} />
               ))}
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {sortedRows.map((row) => (
               <tr key={row.month} className="border-t border-stone-200">
                 <th scope="row" className="sticky left-0 bg-surface-raised p-2 text-left font-normal print:static">{row.month}</th>
                 <td className="p-2 tabular-nums font-semibold">{row.total}</td>

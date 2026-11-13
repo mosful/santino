@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Badge from "@/components/ui/Badge";
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
 import Switch from "@/components/ui/Switch";
 
 type Binding = {
@@ -18,6 +19,8 @@ export default function MemberBinding() {
     { id: 1, name: "邱o乾", userId: "U1a2b3c...", method: "LIFF", boundAt: "2026-08-05", consent: true },
     { id: 2, name: "林o臻", userId: "U9x8y7z...", method: "LINE Login", boundAt: "2026-08-16", consent: false },
   ]);
+  const { sorted, sort, toggle } = useTableSort(rows);
+
 
   function toggleConsent(id: number) {
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, consent: !r.consent } : r)));
@@ -35,16 +38,16 @@ export default function MemberBinding() {
       <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-xs">
         <thead className="text-stone-500">
           <tr>
-            <th className="px-2 py-1">會員姓名</th>
-            <th className="px-2 py-1">LINE userId</th>
-            <th className="px-2 py-1">綁定方式</th>
-            <th className="px-2 py-1">綁定時間</th>
-            <th className="px-2 py-1">同意接收通知</th>
-            <th className="px-2 py-1">操作</th>
+            <SortableHeader columnKey="name" label="會員姓名" sort={sort} onToggle={toggle} className="px-2 py-1" />
+            <SortableHeader columnKey="userId" label="LINE userId" sort={sort} onToggle={toggle} className="px-2 py-1" />
+            <SortableHeader columnKey="method" label="綁定方式" sort={sort} onToggle={toggle} className="px-2 py-1" />
+            <SortableHeader columnKey="boundAt" label="綁定時間" sort={sort} onToggle={toggle} className="px-2 py-1" />
+            <SortableHeader columnKey="consent" label="同意接收通知" sort={sort} onToggle={toggle} className="px-2 py-1" />
+            <SortableHeader columnKey="actions" label="操作" sort={sort} onToggle={toggle} sortable={false} className="px-2 py-1" />
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
+          {sorted.map((r) => (
             <tr key={r.id} className="border-t border-stone-100">
               <td className="px-2 py-1.5">{r.name}</td>
               <td className="px-2 py-1.5 font-mono text-[11px] text-stone-400">{r.userId}</td>

@@ -1,6 +1,7 @@
 "use client";
 
 import DemoActionButton from "@/components/ui/DemoActionButton";
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
 
 export default function ReportTemplate({
   title,
@@ -11,6 +12,8 @@ export default function ReportTemplate({
   columns: string[];
   sampleRows?: string[][];
 }) {
+  // 報表列是字串陣列，欄位鍵就用索引。
+  const { sorted, sort, toggle } = useTableSort(sampleRows ?? [], (row, key) => row[Number(key)]);
   return (
     <div className="query-panel space-y-4 text-sm">
       <div className="query-controls">
@@ -25,15 +28,13 @@ export default function ReportTemplate({
         <table className="w-full min-w-max text-left text-xs">
           <thead className="bg-stone-50 text-stone-500">
             <tr>
-              {columns.map((c) => (
-                <th key={c} className="whitespace-nowrap px-3 py-2 font-medium">
-                  {c}
-                </th>
+              {columns.map((c, index) => (
+                <SortableHeader key={c} columnKey={String(index)} label={c} sort={sort} onToggle={toggle} className="whitespace-nowrap px-3 py-2 font-medium" />
               ))}
             </tr>
           </thead>
           <tbody>
-            {(sampleRows ?? []).map((row, i) => (
+            {sorted.map((row, i) => (
               <tr key={i} className="border-t border-stone-100">
                 {row.map((cell, j) => (
                   <td key={j} className="whitespace-nowrap px-3 py-2">

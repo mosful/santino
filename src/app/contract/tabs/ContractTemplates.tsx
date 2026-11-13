@@ -5,6 +5,7 @@ import { report, reportFail } from "@/lib/demo/lenient";
 import { Toast, useToast } from "@/components/ui/Toast";
 import Switch from "@/components/ui/Switch";
 import Badge from "@/components/ui/Badge";
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
 import { domainStore, useDomainStore } from "@/lib/demo/domainStore";
 import { contractSettingActions } from "@/lib/domain/contractSettings";
 import { buttonStyles } from "@/components/ui/buttonStyles";
@@ -28,6 +29,7 @@ const CLAUSES = [
 
 export default function ContractTemplates() {
   const { data } = useDomainStore(); const templates = data.contractSettings.templates;
+  const { sorted: sortedTemplates, sort, toggle } = useTableSort(templates);
   const [toast, toastProps] = useToast();
   const [editing, setEditing] = useState<Template | null>(null);
 
@@ -44,15 +46,15 @@ export default function ContractTemplates() {
       <table className="w-full text-left text-sm">
         <thead className="bg-stone-50 text-xs text-stone-500">
           <tr>
-            <th className="px-3 py-2">範本名稱</th>
-            <th className="px-3 py-2">版本</th>
-            <th className="px-3 py-2">建立日期</th>
-            <th className="px-3 py-2">啟用中</th>
-            <th className="px-3 py-2">操作</th>
+            <SortableHeader columnKey="name" label="範本名稱" sort={sort} onToggle={toggle} className="px-3 py-2" />
+            <SortableHeader columnKey="version" label="版本" sort={sort} onToggle={toggle} className="px-3 py-2" />
+            <SortableHeader columnKey="createdAt" label="建立日期" sort={sort} onToggle={toggle} className="px-3 py-2" />
+            <SortableHeader columnKey="active" label="啟用中" sort={sort} onToggle={toggle} className="px-3 py-2" />
+            <SortableHeader columnKey="actions" label="操作" sort={sort} onToggle={toggle} sortable={false} className="px-3 py-2" />
           </tr>
         </thead>
         <tbody>
-          {templates.map((t) => (
+          {sortedTemplates.map((t) => (
             <tr key={t.id} className="border-t border-stone-100">
               <td className="px-3 py-2">{t.name}</td>
               <td className="px-3 py-2">

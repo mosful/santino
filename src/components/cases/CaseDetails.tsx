@@ -6,6 +6,7 @@ import { report, reportFail } from "@/lib/demo/lenient";
 import { Toast, useToast } from "@/components/ui/Toast";
 import { caseActions, useDomainStore } from "@/lib/demo/domainStore";
 import { caseGiftDays, roomDailyRate } from "@/lib/domain/rules";
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
 import {
   DEFAULT_CHECKOUT_ITEMS,
   INSPECTION_ITEMS,
@@ -35,19 +36,13 @@ export function DailyLedger({ record, editable }: { record: CaseRecord; editable
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [toast, toastProps] = useToast();
-  const [sort, setSort] = useState<{ key: "date" | "at" | "label" | "amount"; ascending: boolean }>({ key: "date", ascending: false });
-  const rows = dailyCharges(record).sort((a, b) => {
-    const compared = sort.key === "amount" ? a.amount - b.amount : (a[sort.key] ?? "").localeCompare(b[sort.key] ?? "", "zh-Hant");
-    return sort.ascending ? compared : -compared;
-  });
-  function heading(key: typeof sort.key, label: string) {
-    return <th className="p-2" aria-sort={sort.key === key ? sort.ascending ? "ascending" : "descending" : "none"}><button type="button" className={buttonStyles({ variant: "ghost", size: "sm" })} onClick={() => setSort({ key, ascending: sort.key === key ? !sort.ascending : true })}>{label} {sort.key === key ? sort.ascending ? "↑" : "↓" : "↕"}</button></th>;
-  }
+  // 預設維持日期由新到舊；點第三下回到這個預設，不是回到未排序。
+  const { sorted: rows, sort, toggle } = useTableSort(dailyCharges(record), undefined, { key: "date", direction: "desc" });
   return <section id="case-daily-ledger" className="space-y-4 border-t border-stone-200 pt-6">
     <div className="flex flex-wrap items-baseline justify-between gap-2"><h3 className="font-semibold">逐日房租與自費明細</h3><span className="text-sm text-stone-600">{rows.length} 列</span></div>
     <p className="text-sm text-stone-600">原合約按付費日分攤，贈送日為 0；變更與自費另列。點選欄位標題可切換升冪／降冪。房租按日計費；舊紀錄未留時間者標示「未記錄時間」。</p>
     <div className="max-h-[32rem] overflow-auto"><table className="w-full min-w-[720px] text-left text-sm">
-      <thead className="sticky top-0 bg-white"><tr>{heading("date", "計費日期")}{heading("at", "登錄時間")}{heading("label", "項目")}{heading("amount", "金額")}{editable && <th className="p-2">計費方式</th>}</tr></thead>
+      <thead className="sticky top-0 bg-white"><tr><SortableHeader columnKey="date" label="計費日期" sort={sort} onToggle={toggle} className="p-2" /><SortableHeader columnKey="at" label="登錄時間" sort={sort} onToggle={toggle} className="p-2" /><SortableHeader columnKey="label" label="項目" sort={sort} onToggle={toggle} className="p-2" /><SortableHeader columnKey="amount" label="金額" sort={sort} onToggle={toggle} className="p-2" />{editable && <SortableHeader columnKey="mode" label="計費方式" sort={sort} onToggle={toggle} sortable={false} className="p-2" />}</tr></thead>
       <tbody>{rows.map((row) => {
         const gifted = !!row.rental && record.ledger.some((entry) => entry.giftDate === row.date);
         const chargeable = row.rental && row.amount > 0;

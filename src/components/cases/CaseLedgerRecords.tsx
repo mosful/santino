@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import type { CaseRecord } from "@/lib/domain/types";
 import { taipeiTimestamp } from "@/lib/care/rules";
 import { buttonStyles } from "@/components/ui/buttonStyles";
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
 
 type Entry = CaseRecord["ledger"][number];
 
@@ -12,16 +12,10 @@ export default function CaseLedgerRecords({ record, editable, manager, onEditCha
   record: CaseRecord; editable: boolean; manager: boolean;
   onEditCharge: (entry: Entry) => void; onEditChange: (entry: Entry) => void;
 }) {
-  const [sort, setSort] = useState<{ key: "date" | "label" | "amount"; ascending: boolean }>({ key: "date", ascending: false });
-  function heading(key: typeof sort.key, label: string) {
-    return <th className="p-2" aria-sort={sort.key === key ? sort.ascending ? "ascending" : "descending" : "none"}>
-      <button type="button" className={buttonStyles({ variant: "ghost", size: "sm" })} onClick={() => setSort({ key, ascending: sort.key === key ? !sort.ascending : true })}>{label} {sort.key === key ? sort.ascending ? "↑" : "↓" : "↕"}</button>
-    </th>;
-  }
-  const entries = [...record.ledger].sort((a, b) => {
-    const compared = sort.key === "amount" ? a.amount - b.amount : sort.key === "date" ? a.date.localeCompare(b.date) || (a.at ?? "").localeCompare(b.at ?? "") : a.label.localeCompare(b.label, "zh-Hant");
-    return sort.ascending ? compared : -compared;
-  });
+  // 同一天多筆仍依登錄時間再排一次，所以日期欄的比較值帶上 at；預設維持日期由新到舊。
+  const { sorted: entries, sort, toggle } = useTableSort(record.ledger,
+    (entry, key) => key === "date" ? `${entry.date} ${entry.at ?? ""}` : key === "at" ? `${entry.at ?? ""} ${entry.actor ?? ""}` : (entry as unknown as Record<string, unknown>)[key],
+    { key: "date", direction: "desc" });
   function editAction(entry: Entry) {
     if (!editable) return null;
     const change = entry.kind === "contract-change" || entry.label.startsWith("合約變更");
@@ -43,7 +37,7 @@ export default function CaseLedgerRecords({ record, editable, manager, onEditCha
     </li>)}{!entries.length && <li className="py-4 text-sm text-stone-600">尚無新增費用或合約變更，儲存後會顯示在此處。</li>}</ul>
     <div className="hidden overflow-x-auto sm:block">
       <table className="w-full min-w-[720px] text-left text-sm">
-        <thead><tr className="border-b border-stone-200">{heading("date", "計費日期")}{heading("label", "項目／變更內容")}{heading("amount", "金額")}<th className="p-2">登錄時間／經辦</th>{editable && <th className="p-2">操作</th>}</tr></thead>
+        <thead><tr className="border-b border-stone-200"><SortableHeader columnKey="date" label="計費日期" sort={sort} onToggle={toggle} className="p-2" /><SortableHeader columnKey="label" label="項目／變更內容" sort={sort} onToggle={toggle} className="p-2" /><SortableHeader columnKey="amount" label="金額" sort={sort} onToggle={toggle} className="p-2" /><SortableHeader columnKey="at" label="登錄時間／經辦" sort={sort} onToggle={toggle} className="p-2" />{editable && <SortableHeader columnKey="actions" label="操作" sort={sort} onToggle={toggle} sortable={false} className="p-2" />}</tr></thead>
         <tbody>{entries.map((entry) => {
           const revised = record.ledger.some((item) => item.revisesId === entry.id);
           return <tr key={entry.id} className="border-b border-stone-100 align-top">

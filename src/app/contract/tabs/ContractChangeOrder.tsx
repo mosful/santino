@@ -7,10 +7,12 @@ import LegacyCaseScope from "@/components/cases/LegacyCaseScope";
 import { caseActions } from "@/lib/demo/domainStore";
 import type { CaseRecord } from "@/lib/domain/types";
 import { buttonStyles } from "@/components/ui/buttonStyles";
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
 
 export default function ContractChangeOrder() { return <LegacyCaseScope filter="signed">{(record) => <ChangePanel key={record.id} record={record} />}</LegacyCaseScope>; }
 function ChangePanel({ record }: { record: CaseRecord }) {
   const logs = record.ledger.filter((entry) => entry.before !== undefined).map((entry) => ({ id: entry.id, contractNo: record.contractNo, reason: entry.label, operator: entry.actor ?? "歷史展示資料", time: new Date(entry.at ?? `${entry.date}T00:00:00+08:00`).toLocaleString("zh-TW", { timeZone: "Asia/Taipei" }), before: entry.before ?? 0, after: entry.after ?? 0 }));
+  const { sorted: sortedLogs, sort, toggle } = useTableSort(logs);
   const [toast, toastProps] = useToast();
   const [detail, setDetail] = useState("");
   const [reason, setReason] = useState("房型變更");
@@ -71,16 +73,16 @@ function ChangePanel({ record }: { record: CaseRecord }) {
         <table className="w-full text-left text-xs">
           <thead className="text-stone-500">
             <tr>
-              <th className="px-2 py-1">合約編號</th>
-              <th className="px-2 py-1">變更原因</th>
-              <th className="px-2 py-1">操作人</th>
-              <th className="px-2 py-1">時間</th>
-              <th className="px-2 py-1">改前</th>
-              <th className="px-2 py-1">改後</th>
+              <SortableHeader columnKey="contractNo" label="合約編號" sort={sort} onToggle={toggle} className="px-2 py-1" />
+              <SortableHeader columnKey="reason" label="變更原因" sort={sort} onToggle={toggle} className="px-2 py-1" />
+              <SortableHeader columnKey="operator" label="操作人" sort={sort} onToggle={toggle} className="px-2 py-1" />
+              <SortableHeader columnKey="time" label="時間" sort={sort} onToggle={toggle} className="px-2 py-1" />
+              <SortableHeader columnKey="before" label="改前" sort={sort} onToggle={toggle} className="px-2 py-1" />
+              <SortableHeader columnKey="after" label="改後" sort={sort} onToggle={toggle} className="px-2 py-1" />
             </tr>
           </thead>
           <tbody>
-            {logs.map((l) => (
+            {sortedLogs.map((l) => (
               <tr key={l.id} className="border-t border-stone-100">
                 <td className="px-2 py-1.5">{l.contractNo}</td>
                 <td className="px-2 py-1.5">

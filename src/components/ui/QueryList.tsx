@@ -1,15 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Inbox } from "lucide-react";
 import { rowMatchesQuery } from "@/lib/fuzzySearch";
 import Pagination from "./Pagination";
 import DemoActionButton from "./DemoActionButton";
+import SortableHeader, { useTableSort } from "./SortableHeader";
 
 export type Column<T> = {
   key: string;
   label: string;
   render?: (row: T) => React.ReactNode;
+  /** 合併顯示的欄位用它決定排序依據；沒給就用 row[key]。 */
+  sortValue?: (row: T) => string | number;
+  sortable?: boolean;
 };
 
 export default function QueryList<T extends { id: string | number }>({
@@ -28,9 +32,14 @@ export default function QueryList<T extends { id: string | number }>({
   const [pageSize, setPageSize] = useState(10);
 
   const filtered = q ? rows.filter((r) => rowMatchesQuery(r as Record<string, unknown>, q)) : rows;
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const valueOf = useCallback((row: T, key: string) => {
+    const column = columns.find((item) => item.key === key);
+    return column?.sortValue ? column.sortValue(row) : (row as Record<string, unknown>)[key];
+  }, [columns]);
+  const { sorted, sort, toggle } = useTableSort(filtered, valueOf);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const safePage = Math.min(page, totalPages);
-  const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+  const paged = sorted.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
     <div className="query-panel space-y-4">
@@ -68,9 +77,7 @@ export default function QueryList<T extends { id: string | number }>({
           <thead className="bg-stone-50 text-xs text-stone-500">
             <tr>
               {columns.map((c) => (
-                <th key={c.key} className="whitespace-nowrap px-3 py-2.5 font-medium">
-                  {c.label}
-                </th>
+                <SortableHeader key={c.key} columnKey={c.key} label={c.label} sort={sort} onToggle={toggle} sortable={c.sortable !== false} />
               ))}
             </tr>
           </thead>

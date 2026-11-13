@@ -28,6 +28,7 @@ import { CaseDocLinks } from "./CaseDocs";
 import type { QuotePreset } from "./PricingCalculator";
 import { docsForStage, docsForTimeline } from "@/lib/domain/caseDocs";
 import MonthlyStats from "./MonthlyStats";
+import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { CASE_FLOW_ROLE_HINT, canEditCompletedStage, canUseCaseFlow } from "@/lib/permissions";
 import { Toast, useToast } from "@/components/ui/Toast";
@@ -64,6 +65,8 @@ function PaymentRecords({ record, editable }: { record: CaseRecord; editable: bo
     既有付款可以改、可以刪（客戶 2026-10-22：清單都要能再次編輯儲存），
     但帳務異動一律要填原因，原值與新值都會寫進案件歷程，帳面才追得回來。
   */
+  const { sorted: sortedPayments, sort: paymentSort, toggle: paymentToggle } = useTableSort(record.payments ?? [],
+    (item, key) => key === "receipt" ? item.invoice ?? "" : key === "actor" ? `${item.actor ?? ""} ${item.note ?? ""}` : (item as unknown as Record<string, unknown>)[key]);
   const [editingId, setEditingId] = useState("");
   const [removingId, setRemovingId] = useState("");
   const [reason, setReason] = useState("");
@@ -100,8 +103,8 @@ function PaymentRecords({ record, editable }: { record: CaseRecord; editable: bo
     </div>}
     <div className="overflow-x-auto">
       <table className="w-full min-w-[620px] text-left text-sm">
-        <thead><tr className="border-b border-stone-200"><th className="p-2">日期</th><th className="p-2">科目</th><th className="p-2">方式</th><th className="p-2 text-right">金額</th><th className="p-2">發票／收據</th><th className="p-2">經手／備註</th>{editable && <th className="p-2">操作</th>}</tr></thead>
-        <tbody>{record.payments.map((item) => <tr key={item.id} className="border-b border-stone-100">
+        <thead><tr className="border-b border-stone-200"><SortableHeader columnKey="date" label="日期" sort={paymentSort} onToggle={paymentToggle} className="p-2" /><SortableHeader columnKey="subject" label="科目" sort={paymentSort} onToggle={paymentToggle} className="p-2" /><SortableHeader columnKey="method" label="方式" sort={paymentSort} onToggle={paymentToggle} className="p-2" /><SortableHeader columnKey="amount" label="金額" sort={paymentSort} onToggle={paymentToggle} className="p-2 text-right" /><SortableHeader columnKey="receipt" label="發票／收據" sort={paymentSort} onToggle={paymentToggle} className="p-2" /><SortableHeader columnKey="actor" label="經手／備註" sort={paymentSort} onToggle={paymentToggle} className="p-2" />{editable && <SortableHeader columnKey="actions" label="操作" sort={paymentSort} onToggle={paymentToggle} sortable={false} className="p-2" />}</tr></thead>
+        <tbody>{sortedPayments.map((item) => <tr key={item.id} className="border-b border-stone-100">
           <td className="p-2">{item.date}</td>
           <td className="p-2">{item.subject ?? "—"}</td>
           <td className="p-2">{item.method}{item.cardLast4 ? `（****${item.cardLast4}）` : ""}</td>
@@ -250,6 +253,9 @@ export default function CaseWorkspace() {
   // 筆數不套搜尋條件：那是「這個分頁總共有幾件」，搜尋後數字跟著跳反而看不出全貌。
   const tabCount = (label: string) => data.cases.filter((item) => inTab(item, label)).length;
   const matches = data.cases.filter((item) => inTab(item, tab)).filter((item) => [item.name, item.phone, item.contractNo, item.room].join(" ").includes(query));
+  // 「下一步」是算出來的，不是欄位；其餘欄位照 CaseRecord 本身的值排。
+  const { sorted: sortedMatches, sort: caseSort, toggle: caseToggle } = useTableSort(matches,
+    (item, key) => key === "nextAction" ? caseNextAction(item) : (item as unknown as Record<string, unknown>)[key]);
 
   const operationContent = record && operation && <section ref={operationPanel} className="space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4" aria-label="案件操作確認"><h2 className="font-semibold">{editingChargeId && operation === "charge" ? "修改費用" : editingChangeId && operation === "change" ? "修訂合約變更單" : ({ force: "強制結案", reopen: "重新開啟", override: "覆寫報價", change: "合約變更單（主管授權）", charge: "新增費用", sign: "合約簽名", "sign-staff": "經辦人員簽名", "end-childcare": "確認寶寶已接回" })[operation]}</h2>
         {operation === "sign-staff" ? <CareSignature expanded identity={`經辦人員｜合約 ${record.contractNo}`} carryKey={staffKey(role)} carryLabel={role} onCancel={() => setOperation(null)} onConfirm={(image) => run(() => caseActions.signStaff(record.id, image), "經辦人員簽名已保存。")} /> : operation === "sign" ? <CareSignature expanded identity={`${record.name}｜合約 ${record.contractNo}`} carryKey={subjectKey(record.customerId)} carryLabel={record.name} onCancel={() => setOperation(null)} onConfirm={(image) => run(() => caseActions.sign(record.id, image), record.signed ? "確認對象簽名已更新，原合約快照已保留。" : "已簽署 v1，原合約快照已保留。")} /> : <>
@@ -306,7 +312,7 @@ export default function CaseWorkspace() {
       {/* 「入住前」同時是分頁名與階段名（v24 §4.2／§4.3 皆如此用字），
           iPad 上沒有滑鼠提示，所以把涵蓋範圍直接寫出來，避免被讀成只有該階段。 */}
       <p className="text-xs text-stone-500">由預約開始，沿案件流程的七個階段追蹤。入住前＝預約～入住前階段　·　入住後＝入住中～退房階段　·　已結案＝媽媽已退房（含寶寶續留托嬰）</p>
-      <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white"><table className="case-list-table w-full min-w-[960px] text-left text-sm"><thead className="bg-stone-50"><tr>{["媽媽／聯絡方式", tab === "入住前" ? "預產期／房型" : "房號／房型", "目前階段", "下一步", "負責人", ""].map((label) => <th key={label} className="p-3 font-medium">{label}</th>)}</tr></thead><tbody>{matches.map((item) => <tr key={item.id} className="border-t border-stone-200"><td className="p-3">{item.name}<br /><span className="text-stone-500">{item.phone}｜{item.contractNo || "尚未下訂"}</span></td><td className="p-3">{item.room || item.dueDate || "尚未排房"}<br />{item.roomType} {item.days} 天</td><td className="p-3"><span className="inline-flex rounded-full bg-stone-100 px-2 py-1 text-xs font-medium">{item.closed ? "已結案" : CASE_STAGES[item.stage]}</span><div className="mt-2 flex gap-1" aria-label={`案件流程進度 ${item.stage + 1}／7`}>{CASE_STAGES.map((stageName, index) => <span key={stageName} title={stageName} className={`h-2.5 w-2.5 rounded-full border ${index < item.stage || item.closed ? "border-emerald-600 bg-emerald-500" : index === item.stage ? "border-brand-600 bg-brand-600" : "border-stone-300 bg-white"}`} />)}</div>{item.draftAt && <span className="mt-2 inline-flex rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">草稿</span>}</td><td className="p-3 text-stone-600">{caseNextAction(item)}</td><td className="p-3">{item.owner}</td><td className="p-3"><Link href={`/cases/detail/?id=${encodeURIComponent(item.id)}`} className={button}>開啟案件</Link></td></tr>)}</tbody></table>{!matches.length && <p className="p-6 text-sm">沒有符合條件的案件。</p>}</div>
+      <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white"><table className="case-list-table w-full min-w-[960px] text-left text-sm"><thead className="bg-stone-50"><tr>{([["name", "媽媽／聯絡方式"], [tab === "入住前" ? "dueDate" : "room", tab === "入住前" ? "預產期／房型" : "房號／房型"], ["stage", "目前階段"], ["nextAction", "下一步"], ["owner", "負責人"]] as const).map(([key, label]) => <SortableHeader key={key} columnKey={key} label={label} sort={caseSort} onToggle={caseToggle} className="p-3 font-medium" />)}<SortableHeader columnKey="open" sort={caseSort} onToggle={caseToggle} sortable={false} className="p-3 font-medium" /></tr></thead><tbody>{sortedMatches.map((item) => <tr key={item.id} className="border-t border-stone-200"><td className="p-3">{item.name}<br /><span className="text-stone-500">{item.phone}｜{item.contractNo || "尚未下訂"}</span></td><td className="p-3">{item.room || item.dueDate || "尚未排房"}<br />{item.roomType} {item.days} 天</td><td className="p-3"><span className="inline-flex rounded-full bg-stone-100 px-2 py-1 text-xs font-medium">{item.closed ? "已結案" : CASE_STAGES[item.stage]}</span><div className="mt-2 flex gap-1" aria-label={`案件流程進度 ${item.stage + 1}／7`}>{CASE_STAGES.map((stageName, index) => <span key={stageName} title={stageName} className={`h-2.5 w-2.5 rounded-full border ${index < item.stage || item.closed ? "border-emerald-600 bg-emerald-500" : index === item.stage ? "border-brand-600 bg-brand-600" : "border-stone-300 bg-white"}`} />)}</div>{item.draftAt && <span className="mt-2 inline-flex rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">草稿</span>}</td><td className="p-3 text-stone-600">{caseNextAction(item)}</td><td className="p-3">{item.owner}</td><td className="p-3"><Link href={`/cases/detail/?id=${encodeURIComponent(item.id)}`} className={button}>開啟案件</Link></td></tr>)}</tbody></table>{!matches.length && <p className="p-6 text-sm">沒有符合條件的案件。</p>}</div>
       <MonthlyStats />
       </CollapsibleSection>
     </> : <>

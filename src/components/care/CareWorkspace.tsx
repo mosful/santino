@@ -23,6 +23,7 @@ import CareSignature from "./CareSignature";
 import CareFieldGroups from "./CareFieldGroups";
 import CareSheetEditor from "./CareSheetEditor";
 import CarePrintSheet from "./CarePrintSheet";
+import { growthDays } from "@/lib/care/summary";
 import styles from "./CareWorkspace.module.css";
 import LocalMedia from "../babycam/LocalMedia";
 import { buttonStyles } from "@/components/ui/buttonStyles";
@@ -123,6 +124,7 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   );
   const drafts = Object.values(data.documents).filter((item) => !item.signedAt && (item.savedAt || item.dirty) && subjectFor(item.subjectId)?.kind === kind && forms.some((available) => available.key === item.formKey));
   const history = data.entries.filter((entry) => entry.subjectId === subject?.id && entry.formKey === document?.formKey);
+  const subjectEntries = data.entries.filter((entry) => entry.subjectId === subject?.id);
   const completionErrors = form && document ? validateCareForm(form, document.values) : [];
   if (form?.signature && document && !document.signature) completionErrors.push("尚未完成本筆簽名。");
   if (form?.key === "guidance" && document && ["recipient", "executor", "evaluator"].some((key) => !document.signatures?.[key as CareSignatureRole])) completionErrors.push("三方簽名尚未完成。");
@@ -234,7 +236,7 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
               <h2 className="text-xl font-semibold">{form.label}</h2>
               <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => setBlankSheet((value) => !value)}>{blankSheet ? "回到填寫畫面" : "列印空白表格"}</button>
             </div>
-            {form.layout && <div className={`${styles.printOutput} ${blankSheet ? styles.printPreview : ""}`}><CarePrintSheet form={form} document={document} subject={subject} history={history} blank={blankSheet} /></div>}
+            {form.layout && <div className={`${styles.printOutput} ${blankSheet ? styles.printPreview : ""}`}><CarePrintSheet form={form} document={document} subject={subject} history={history} subjectEntries={subjectEntries} blank={blankSheet} /></div>}
             {blankSheet && form.layout && <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => window.print()}>列印空白表格</button>}
             {blankSheet && !form.layout && <section className="mb-6 space-y-4 rounded-xl border border-stone-300 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -251,11 +253,11 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
             <p className="mb-4 text-sm text-stone-600">{document.savedAt ? `${document.dirty ? "有未完成暫存的修改｜" : ""}儲存 ${taipeiTimestamp(document.savedAt)}｜${document.author}` : "尚未暫存；欄位變更會保留於本機草稿。"}</p>
             {document.editingEntryId && <p role="status" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">正在修改一筆已簽出的紀錄：完成後請重新簽名並簽出，系統會覆蓋原紀錄並記下修改者與時間。想保留原紀錄請改用「新增一筆」。</p>}
             {form.sections.length > 1 && <nav aria-label="表單區段" className={styles.sectionNav} data-no-print>{form.sections.map((section, index) => <button type="button" key={section.label} aria-label={section.label} aria-pressed={index === sectionIndex} className={buttonStyles({ selected: index === sectionIndex })} onClick={() => setSectionIndex(index)}><span className={styles.sectionNo} aria-hidden="true">{index + 1}</span>{section.label}</button>)}</nav>}
-            {form.key === "growth" && <div className="mb-6"><h3 className="mb-3 font-medium">體重趨勢</h3><GrowthChart points={history.filter((entry) => Number(entry.values.weight) > 0).slice(0, 8).reverse().map((entry) => ({ date: valueText(entry.values.date), weight: Number(entry.values.weight) }))} /></div>}
+            {form.key === "growth" && <div className="mb-6"><h3 className="mb-3 font-medium">體重趨勢</h3><GrowthChart points={growthDays(subjectEntries).filter((day) => day.weight).slice(0, 8).reverse().map((day) => ({ date: day.date, weight: day.weight! }))} /></div>}
             {form.key === "mood" && moodNeedsAttention(document.values) && <p role="status" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">達 v24 示範關注門檻，請記錄後續處理。此為護理長提醒情境，未發送通知。</p>}
             <fieldset disabled={!editable} className="space-y-5">
               <legend className="sr-only">{form.label}欄位</legend>
-              {form.layout ? <CareSheetEditor key={document.key} form={form} sectionIndex={sectionIndex} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value), "已加入目前角色的常用語。")} /> : form.sections.map((section, index) => <section key={section.label} className={index !== Math.min(sectionIndex, form.sections.length - 1) ? styles.hiddenSection : ""}><h3 className="mb-4 font-medium">{section.label}</h3><CareFieldGroups key={`${document.key}-${section.label}`} formKey={form.key} fields={section.fields} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value), "已加入目前角色的常用語。")} /></section>)}
+              {form.layout ? <CareSheetEditor key={document.key} form={form} sectionIndex={sectionIndex} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value), "已加入目前角色的常用語。")} subjectEntries={subjectEntries} onCarryFeeding={() => run(() => careActions.carryLastFeeding(document.key), "已帶入上一筆奶別與奶量。")} /> : form.sections.map((section, index) => <section key={section.label} className={index !== Math.min(sectionIndex, form.sections.length - 1) ? styles.hiddenSection : ""}><h3 className="mb-4 font-medium">{section.label}</h3><CareFieldGroups key={`${document.key}-${section.label}`} formKey={form.key} fields={section.fields} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value), "已加入目前角色的常用語。")} /></section>)}
               {form.key === "feeding" && needsFeedingReassessment(document.values) && <section className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-4"><h3 className="font-semibold">媽媽護理紀錄（再評估）</h3><p className="text-sm">{subject.motherName}｜請於此直接補充評估與處理內容。</p><CareFieldInput field={{ key: "reassessmentNote", label: "再評估護理紀錄", type: "textarea", required: true }} values={document.values} onChange={(patch) => run(() => careActions.change(document.key, patch))} personal={data.personalPhrases[role] ?? []} addPhrase={(value) => run(() => careActions.addPhrase(value))} /></section>}
             </fieldset>
             {form.signature && <div className="mt-6 space-y-3"><h3 className="font-medium">本筆簽名與員工署名</h3><p className="text-sm text-stone-600">對象：{identity(subject)}。簽出時記錄實際操作者；此為靜態原型簽名。</p>

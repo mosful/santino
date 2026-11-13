@@ -52,3 +52,14 @@
   .printDocument { width: 100%; }
   .printPage { margin: 0; padding: 0; }
 }
+.matrixPrint { width: 100%; border-collapse: collapse; margin-top: 3mm; table-layout: fixed; font-size: 7pt; }
+.matrixPrint th, .matrixPrint td { border: 1px solid #333; padding: 1mm 0.6mm; text-align: center; vertical-align: middle; overflow-wrap: anywhere; }
+.matrixPrint thead { display: table-header-group; }
+.matrixPrint th { font-weight: 400; }
+.matrixPrint tr { break-inside: avoid; }
+.printNote { margin-top: 2mm; font-size: 7.5pt; }
+.carry { min-height: 44px; padding: 0 14px; border: 1px solid var(--sheet-line); border-radius: 8px; font-size: .875rem; }
+.summaryScroll { overflow-x: auto; padding: 0 16px 16px; }
+.summaryTable { width: 100%; min-width: 46rem; border-collapse: collapse; font-size: .8125rem; }
+.summaryTable th, .summaryTable td { border: 1px solid var(--sheet-line); padding: 8px 6px; text-align: center; white-space: nowrap; }
+.summaryTable thead th { background: var(--surface-alt, #fafaf9); font-weight: 600; }

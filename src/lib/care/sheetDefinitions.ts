@@ -119,3 +119,82 @@ export function sectionRows(section: CareSection): CareRow[] {
   const used = new Set(defined.flatMap((item) => item.keys));
   return [...defined, ...section.fields.filter((field) => !used.has(field.key) && !["date", "time"].includes(field.key)).map((field) => ({ label: field.label, keys: [field.key] }))];
 }
+
+/* ───────── 每日照護、I/O 與成長日記（需求規格 B03–B08、G05、M02–M05） ───────── */
+
+export const SHIFTS = ["白班 07–15", "小夜 15–23", "大夜 23–07"];
+/** 紅臀分級沿用院方原表說明，不改成單純代號。 */
+export const RED_BOTTOM = ["0 無", "A 臀部發紅", "B 發紅且範圍擴大", "C 破皮或潰瘍"];
+const STOOL_FORMS = ["黃糊便", "綠糊便", "黃滲便", "綠滲便", "水便", "胎便", "血便", "其他"];
+const measurement = [number("height", "身長（cm）", 10, 100), number("weight", "體重（g）", 300, 15000), number("head", "頭圍（cm）", 10, 70)];
+
+/** 新生兒每日評估照護單：一筆＝一個班別，列印以連續五天呈現各班。 */
+export const BABY_DAILY: CareForm = {
+  key: "daily", label: "每日照護", layout: "daily", printTitle: "新生兒每日評估照護單",
+  sections: [section("每日評估照護", [
+    row("紀錄", { ...date("date", "紀錄日期"), required: true }, text("stayDay", "入住日數"), { ...choice("shift", "班別", SHIFTS), required: true }, { key: "time", label: "紀錄時間", type: "time", required: true }),
+    row("生命徵象", number("temperature", "體溫（℃）", 30, 45), number("pulse", "心跳（次／分）", 0, 300), number("respiration", "呼吸（次／分）", 0, 150)),
+    row("活動與吸吮", choice("activity", "活動力", ["佳", "可", "差"]), choice("sucking", "吸吮力", ["佳", "可", "差"])),
+    row("皮膚與臍帶", multiple("skin", "皮膚", ["正常", "黃疸", "紅疹", "脫皮", "瘀青", "其他"]), text("skinNote", "皮膚說明"), choice("cord", "臍帶", ["未脫落乾燥", "未脫落滲液", "發紅", "已脫落"])),
+    row("紅臀", { key: "redBottom", label: "紅臀分級", type: "select", options: RED_BOTTOM }, text("redBottomNote", "部位與處理")),
+    row("親子同室", { key: "roomingStart", label: "開始時間", type: "time" }, { key: "roomingEnd", label: "結束時間", type: "time" }, number("roomingHours", "時數（小時）", 0, 24)),
+    row("量測", ...measurement),
+    row("照護問題", note("careIssue", "照護問題與處置")),
+  ])],
+};
+
+/** 新生兒照護紀錄單：餵食與排泄逐筆記錄，量測與成長日記共用同一筆數值。 */
+export const BABY_IO: CareForm = {
+  key: "io", label: "I/O", layout: "io", printTitle: "新生兒照護紀錄單",
+  sections: [section("餵食與排泄", [
+    row("紀錄", { ...date("date", "紀錄日期"), required: true }, { key: "time", label: "紀錄時間", type: "time", required: true }),
+    row("量測", number("temperature", "體溫（℃）", 30, 45), number("weight", "體重（g）", 300, 15000)),
+    row("親餵", number("leftMinutes", "左乳（分鐘）", 0, 120), number("rightMinutes", "右乳（分鐘）", 0, 120)),
+    row("瓶餵", choice("milkType", "奶別", ["母乳", "配方奶", "母乳加配方奶"]), number("bottleAmount", "瓶餵量（cc）", 0, 500)),
+    row("餵食情形", choice("condition", "餵食情形", ["可", "溢奶", "吐奶"]), choice("sucking", "吸吮力", ["佳", "可", "差"])),
+    row("排尿", choice("urine", "排尿", ["未解", "自解"]), number("urineTimes", "次數", 0, 30), choice("urineColor", "顏色", ["淡黃", "深黃", "結晶尿", "其他"])),
+    row("排便", choice("stool", "排便", ["未解", "自解"]), number("stoolTimes", "次數", 0, 30), choice("stoolAmount", "量", ["少量", "中量", "多量"]), multiple("stoolForm", "性狀", STOOL_FORMS)),
+    row("備註", note("note", "備註")),
+  ])],
+};
+
+/** 成長日記：量測與餵食排泄由每日照護及 I/O 帶入，家屬版不列體溫心跳呼吸。 */
+export const BABY_GROWTH: CareForm = {
+  key: "growth", label: "成長日記", layout: "growth", printTitle: "寶寶成長紀錄（家屬版）",
+  sections: [section("今日量測與紀錄", [
+    row("紀錄", { ...date("date", "紀錄日期"), required: true }),
+    row("量測", ...measurement),
+    row("成長紀錄", note("note", "成長紀錄")),
+  ])],
+};
+
+const mamaSymptom = ["無", "發燒", "頭痛", "頭暈", "噁心", "嘔吐", "腹瀉", "咳嗽", "有痰", "流鼻水", "喉嚨痛", "其他"];
+/** 媽媽每日照護（原「持續護理」）：可並存的狀況改複選，宮底改選單。 */
+export const MAMA_DAILY: CareForm = {
+  key: "ongoing", label: "每日照護", layout: "assessment", printTitle: "產婦每日照護紀錄",
+  sections: [
+    section("每日評估", [
+      row("紀錄", { ...date("date", "紀錄日期"), required: true }, { key: "time", label: "紀錄時間", type: "time", required: true }),
+      row("生命徵象", number("temperature", "體溫（℃）", 30, 45), number("pulse", "脈搏（次／分）", 0, 250), number("respiration", "呼吸（次／分）", 0, 100), text("bloodPressure", "血壓（mmHg）")),
+      row("精神與睡眠", multiple("mood", "精神狀態", mental), multiple("sleep", "睡眠狀態", sleeping)),
+      row("症狀", multiple("symptoms", "症狀", mamaSymptom), text("symptomNote", "症狀說明")),
+      row("子宮情形", { key: "fundus", label: "宮底 U−（Fb）", type: "select", options: ["一", "二", "三", "四", "五", "摸不到", "其他"] }, text("fundusNote", "宮底補充"), choice("contraction", "宮縮", ["硬", "鬆軟", "摸不到"]), multiple("lochiaAmount", "產後排出物量", ["微量", "少", "中", "血塊"]), multiple("lochiaColor", "顏色", ["鮮紅", "暗紅", "褐色", "淡紅", "黃色", "無"])),
+      row("乳房與泌乳", multiple("breast", "乳房", ["軟", "充盈", "親哺（擠奶）後有硬塊", "脹硬", "退奶"]), multiple("nippleLeft", "左側乳頭", nipple), multiple("nippleRight", "右側乳頭", nipple), multiple("lactation", "哺餵方式", ["親餵", "手擠瓶餵"]), number("pumping", "擠乳次數／日", 0, 30)),
+      row("傷口", multiple("perinealWound", "NSD 會陰傷口", ["無傷口", "平整", "紅腫", "滲液", "異味", "使用藥膏"]), multiple("abdominalWound", "C/S 腹部傷口", ["無傷口", "平整", "紅腫", "滲液", "敷料覆蓋"])),
+      row("排泄", multiple("urinary", "排尿狀況", ["正常", "失禁", "頻尿", "需加壓", "解尿疼痛或有灼熱感", "尿管留置"]), multiple("bowel", "排便", ["未解", "軟", "硬", "水便", "血便"]), choice("hemorrhoid", "痔瘡", ["無", "有，無不適", "有不適"])),
+      row("疼痛", multiple("painSites", "疼痛部位", ["無", "乳房", "會陰傷口", "腹部傷口", "腹痛", "頭痛", "其他"]), number("painScore", "疼痛分數（0–10）", 0, 10)),
+    ]),
+    section("敘述性護理", [row("敘述性護理", note("note", "敘述性護理紀錄", true))]),
+  ],
+};
+
+/** 媽媽護理紀錄：移除產後週數，分執行性護理、產後持續照護、身心異常三類。 */
+export const MAMA_RECORD: CareForm = {
+  key: "record", label: "媽媽護理紀錄", layout: "assessment", printTitle: "產婦護理紀錄",
+  sections: [section("護理紀錄", [
+    row("紀錄", { ...date("date", "紀錄日期"), required: true }, { key: "time", label: "紀錄時間", type: "time", required: true }),
+    row("一 執行性護理紀錄", note("executionNote", "入住、退房等作業及執行性護理")),
+    row("二 產後持續照護紀錄", note("continuousNote", "產後持續問題的觀察與處置")),
+    row("三 身心異常及特殊狀況處理", note("abnormal", "身心異常、特殊狀況與後續追蹤")),
+  ])],
+};

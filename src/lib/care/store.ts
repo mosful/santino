@@ -7,6 +7,7 @@ import { domainStore } from "../demo/domainStore";
 import { careForms } from "./forms";
 import { todayTaipei } from "../dates";
 import { normalizeSheetValues } from "./sheetValues";
+import { applyIoDefaults, lastFeeding, latestMeasurement } from "./summary";
 import { careSubject } from "./subjects";
 import { canAuthorizeCare, canEditCare, canViewCare, documentKey, isBackfillBlocked, validateCareForm } from "./rules";
 import type { CareDocument, CareKind, CareSignatureRole, CareState, CareValues } from "./types";
@@ -51,6 +52,11 @@ export const careActions = {
       const key = documentKey(subjectId, formKey);
       const defaults: CareValues = { ...defaultCareValues(formKey, subject.kind), ...(subject.birthDate ? { birthDate: subject.birthDate } : {}), ...(subject.gender ? { sex: subject.gender } : {}) };
       if (subject.birthOrder !== undefined) defaults.birthOrder = String(subject.birthOrder);
+      if (subject.kind === "baby" && formKey === "daily") defaults.stayDay = String(subject.stayDay);
+      // 同一天的量測只輸入一次，I/O 與成長日記自動帶入（需求 G05）；已填的值不覆寫。
+      if (subject.kind === "baby" && ["io", "growth"].includes(formKey)) {
+        Object.assign(defaults, latestMeasurement(state.entries.filter((entry) => entry.subjectId === subjectId), String(defaults.date)));
+      }
       state.documents[key] ??= { key, subjectId, formKey, values: defaults, dirty: false };
       state.documents[key].values = normalizeSheetValues(subject.kind, formKey, state.documents[key].values);
       if (!state.open.includes(key)) state.open.push(key);
@@ -62,7 +68,22 @@ export const careActions = {
     careStore.update((state) => { const subject = careSubject(state.documents[key]?.subjectId); if (subject && state.open.includes(key)) state.active[subject.kind] = key; });
   },
   change(key: string, patch: CareValues) {
-    careStore.update((state) => { const document = writable(state, key); Object.assign(document.values, patch); document.dirty = true; });
+    careStore.update((state) => {
+      const document = writable(state, key);
+      Object.assign(document.values, document.formKey === "io" ? applyIoDefaults(patch, document.values) : patch);
+      document.dirty = true;
+    });
+  },
+  /** I/O 帶入同一寶寶上一筆的奶別與奶量；其餘欄位仍按本次實況填（需求 B08）。 */
+  carryLastFeeding(key: string) {
+    careStore.update((state) => {
+      const document = writable(state, key);
+      const feeding = lastFeeding(state.entries.filter((entry) => entry.subjectId === document.subjectId));
+      if (!feeding) throw new Error("此寶寶尚無已簽出的餵食紀錄可帶入。");
+      Object.assign(document.values, feeding);
+      document.dirty = true;
+      stamp(state, document.subjectId, "I/O 帶入上一筆奶別與奶量");
+    });
   },
   unlock(key: string) {
     careStore.update((state) => {

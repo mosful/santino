@@ -7,7 +7,7 @@ const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-res
 const screenshots = process.env.SANTINO_LAYOUT_SCREENSHOTS === "1";
 const layouts = [["桌機", 1440, 1000, false], ["iPad橫向", 1180, 820, true], ["iPad直向", 820, 1180, true], ["平板窄幅", 768, 1024, true], ["手機", 390, 844, true]];
 const forms = {
-  mama: ["入住評估", "持續護理", "媽媽護理紀錄", "社會支持", "心情量表", "護理指導單"],
+  mama: ["入住評估", "每日照護", "媽媽護理紀錄", "社會支持", "心情量表", "護理指導單"],
   baby: ["入住評估", "寶寶護理紀錄", "每日照護", "哺餵母乳評估", "成長日記", "寶寶身體照片", "I/O", "護理指導單"],
 };
 const results = [];

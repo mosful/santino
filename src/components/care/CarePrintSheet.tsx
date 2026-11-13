@@ -1,6 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
+import { Fragment } from "react";
 import type { CareDocument, CareEntry, CareField, CareForm, CareSubject, CareValues } from "@/lib/care/types";
-import { FEEDING_GROUPS, sectionRows } from "@/lib/care/sheetDefinitions";
+import { FEEDING_GROUPS, RED_BOTTOM, SHIFTS, sectionRows } from "@/lib/care/sheetDefinitions";
+import { growthDays, type GrowthDay } from "@/lib/care/summary";
 import { legacySheetFields, normalizeSheetValues } from "@/lib/care/sheetValues";
 import styles from "./CareSheet.module.css";
 
@@ -15,16 +17,22 @@ function PrintField({ field, values, blank }: { field: CareField; values: CareVa
   </span>;
 }
 
-export default function CarePrintSheet({ form, document, subject, history, blank = false }: { form: CareForm; document: CareDocument; subject: CareSubject; history: CareEntry[]; blank?: boolean }) {
+type PrintItem = { id: string; values: CareValues; author: string };
+/** 歷次已簽出紀錄加上目前草稿，依日期時間排序；修改中的那一筆不重複列出。 */
+function printItems(history: CareEntry[], document: CareDocument, blank: boolean): PrintItem[] {
+  const items: PrintItem[] = history.filter((entry) => entry.id !== document.editingEntryId).map((entry) => ({ id: entry.id, values: entry.values, author: entry.author }));
+  if (!document.signedAt && !blank) items.push({ id: "draft", values: document.values, author: document.author ? `${document.author}（未簽出）` : "未簽出" });
+  return items.sort((a, b) => `${text(a.values.date)} ${text(a.values.time)}`.localeCompare(`${text(b.values.date)} ${text(b.values.time)}`));
+}
+
+export default function CarePrintSheet({ form, document, subject, history, subjectEntries = [], blank = false }: { form: CareForm; document: CareDocument; subject: CareSubject; history: CareEntry[]; subjectEntries?: CareEntry[]; blank?: boolean }) {
   const values = normalizeSheetValues(subject.kind, form.key, document.values);
   function legacy(extra: CareValues) { const fields = legacySheetFields(form, extra); return !blank && fields.length > 0 ? <div className={styles.legacyPrint}>原有資料補充：{fields.map((field) => <PrintField key={field.key} field={field} values={extra} blank={false} />)}</div> : null; }
   function header(title = form.printTitle ?? form.label) {
     return <><h2 className={styles.printTitle}>聖帝諾產後護理之家</h2><h3 className={styles.printSubtitle}>{title}</h3><p className={styles.printIdentity}>房號／車號：{subject.room || subject.carNo}　姓名：{subject.name}　病歷號：{subject.chartNo}</p><p className={styles.printIdentity}>填寫日期：{blank ? "　　　　　" : text(document.values.date)}　時間：{blank ? "　　　" : text(document.values.time)}　{subject.motherName !== subject.name ? `媽媽：${subject.motherName}` : ""}</p></>;
   }
   if (form.layout === "feeding") {
-    const entries = history.filter((entry) => entry.id !== document.editingEntryId).map((entry) => ({ id: entry.id, values: entry.values, author: entry.author }));
-    if (!document.signedAt && !blank) entries.push({ id: "draft", values: document.values, author: document.author ? `${document.author}（未簽出）` : "未簽出" });
-    entries.sort((a, b) => `${text(a.values.date)} ${text(a.values.time)}`.localeCompare(`${text(b.values.date)} ${text(b.values.time)}`));
+    const entries = printItems(history, document, blank);
     const pages = Array.from({ length: Math.max(1, Math.ceil(entries.length / 7)) }, (_, index) => entries.slice(index * 7, index * 7 + 7));
     return <div className={styles.printDocument}>{pages.map((items, page) => <section className={styles.printPage} key={page}>
       {header("哺餵母乳觀察紀錄總表")}
@@ -37,6 +45,100 @@ export default function CarePrintSheet({ form, document, subject, history, blank
       </tbody></table>
       {!blank && items.map((item) => <div key={item.id}>{legacy(item.values)}</div>)}
     </section>)}</div>;
+  }
+  if (form.layout === "daily") {
+    const items = printItems(history, document, blank);
+    // 院方紙本是一面連續五天、每天各班：取最近五個有紀錄的日期，不足的留空白欄位。
+    const dates = blank ? [] : [...new Set(items.map((item) => text(item.values.date)))].slice(-5);
+    while (dates.length < 5) dates.push("");
+    const at = (date: string, shift: string) => date ? items.find((entry) => text(entry.values.date) === date && text(entry.values.shift) === shift) : undefined;
+    const cell = (date: string, shift: string, key: string) => text(at(date, shift)?.values[key]);
+    const join = (...parts: string[]) => parts.filter(Boolean).join(" ");
+    const rows: { label: string; render: (date: string, shift: string) => string }[] = [
+      { label: "入住日數", render: (d, s) => cell(d, s, "stayDay") },
+      { label: "時間", render: (d, s) => cell(d, s, "time") },
+      { label: "體溫 ℃", render: (d, s) => cell(d, s, "temperature") },
+      { label: "心跳 次／分", render: (d, s) => cell(d, s, "pulse") },
+      { label: "呼吸 次／分", render: (d, s) => cell(d, s, "respiration") },
+      { label: "活動力", render: (d, s) => cell(d, s, "activity") },
+      { label: "吸吮力", render: (d, s) => cell(d, s, "sucking") },
+      { label: "皮膚", render: (d, s) => join(cell(d, s, "skin"), cell(d, s, "skinNote")) },
+      { label: "臍帶", render: (d, s) => cell(d, s, "cord") },
+      { label: "紅臀", render: (d, s) => join(cell(d, s, "redBottom"), cell(d, s, "redBottomNote")) },
+      { label: "親子同室", render: (d, s) => join(cell(d, s, "roomingStart") && cell(d, s, "roomingEnd") ? cell(d, s, "roomingStart") + "–" + cell(d, s, "roomingEnd") : "", cell(d, s, "roomingHours") && cell(d, s, "roomingHours") + " 小時") },
+      { label: "身長 cm", render: (d, s) => cell(d, s, "height") },
+      { label: "體重 g", render: (d, s) => cell(d, s, "weight") },
+      { label: "頭圍 cm", render: (d, s) => cell(d, s, "head") },
+      { label: "照護問題", render: (d, s) => cell(d, s, "careIssue") },
+      { label: "護理簽章", render: (d, s) => at(d, s)?.author ?? "" },
+    ];
+    return <div className={styles.printDocument}><section className={styles.printPage}>
+      {header()}
+      <table className={styles.matrixPrint}><thead>
+        <tr><th rowSpan={2}>項目</th>{dates.map((date, index) => <th key={index} colSpan={SHIFTS.length}>{date || "第 " + (index + 1) + " 天"}</th>)}</tr>
+        <tr>{dates.flatMap((date, index) => SHIFTS.map((shift) => <th key={index + "-" + shift}>{shift.split(" ")[0]}</th>))}</tr>
+      </thead><tbody>
+        {rows.map((row) => <tr key={row.label}><th className={styles.printRowLabel}>{row.label}</th>{dates.flatMap((date, index) => SHIFTS.map((shift) => <td key={index + "-" + shift}>{row.render(date, shift)}</td>))}</tr>)}
+      </tbody></table>
+      <p className={styles.printNote}>紅臀分級：{RED_BOTTOM.join("／")}。</p>
+    </section></div>;
+  }
+  if (form.layout === "io") {
+    const items = printItems(history, document, blank);
+    const dates = blank ? [""] : [...new Set(items.map((item) => text(item.values.date)))].slice(-3);
+    const columns: { label: string; render: (values: CareValues) => string }[] = [
+      { label: "時間", render: (v) => text(v.time) },
+      { label: "體溫 ℃", render: (v) => text(v.temperature) },
+      { label: "體重 g", render: (v) => text(v.weight) },
+      { label: "親餵 左／右 分", render: (v) => text(v.leftMinutes) || text(v.rightMinutes) ? (text(v.leftMinutes) || "0") + "／" + (text(v.rightMinutes) || "0") : "" },
+      { label: "奶別", render: (v) => text(v.milkType) },
+      { label: "瓶餵 cc", render: (v) => text(v.bottleAmount) },
+      { label: "餵食情形", render: (v) => [text(v.condition), text(v.sucking) && "吸吮" + text(v.sucking)].filter(Boolean).join(" ") },
+      { label: "小便", render: (v) => text(v.urine) === "自解" ? [(text(v.urineTimes) || "1") + " 次", text(v.urineColor)].filter(Boolean).join(" ") : text(v.urine) },
+      { label: "大便", render: (v) => text(v.stool) === "自解" ? [(text(v.stoolTimes) || "1") + " 次", text(v.stoolAmount), text(v.stoolForm)].filter(Boolean).join(" ") : text(v.stool) },
+      { label: "備註", render: (v) => text(v.note) },
+      { label: "紀錄人", render: () => "" },
+    ];
+    return <div className={styles.printDocument}><section className={styles.printPage}>
+      {header()}
+      <table className={styles.matrixPrint}><thead><tr>{columns.map((column) => <th key={column.label}>{column.label}</th>)}</tr></thead><tbody>
+        {dates.map((date) => {
+          const rows = blank ? [] : items.filter((item) => text(item.values.date) === date);
+          return <Fragment key={date}>
+            <tr><th className={styles.printRowLabel} colSpan={columns.length}>{date || "　"}</th></tr>
+            {rows.map((item) => <tr key={item.id}>{columns.map((column) => <td key={column.label}>{column.label === "紀錄人" ? item.author : column.render(item.values)}</td>)}</tr>)}
+            {Array.from({ length: Math.max(0, 6 - rows.length) }, (_, index) => <tr key={"blank-" + index}>{columns.map((column) => <td key={column.label}>　</td>)}</tr>)}
+          </Fragment>;
+        })}
+      </tbody></table>
+    </section></div>;
+  }
+  if (form.layout === "growth") {
+    const draft: CareEntry[] = document.signedAt || blank ? [] : [{ id: "draft", subjectId: document.subjectId, formKey: form.key, at: "", author: "", values: document.values, historical: false }];
+    const days = blank ? [] : growthDays([...draft, ...subjectEntries]).slice(0, 14);
+    const columns: { label: string; render: (day: GrowthDay) => string }[] = [
+      { label: "日期", render: (day) => day.date },
+      { label: "體重 g", render: (day) => day.weight ? String(day.weight) : "" },
+      { label: "身長 cm", render: (day) => day.height ? String(day.height) : "" },
+      { label: "頭圍 cm", render: (day) => day.head ? String(day.head) : "" },
+      { label: "母乳 cc", render: (day) => String(day.breastMilk) },
+      { label: "配方奶 cc", render: (day) => String(day.formula) },
+      { label: "總奶量 cc", render: (day) => String(day.totalMilk) },
+      { label: "親餵 分鐘", render: (day) => String(day.breastMinutes) },
+      { label: "排尿 次", render: (day) => String(day.urine) },
+      { label: "糊便 次", render: (day) => String(day.stoolPaste) },
+      { label: "滲便 次", render: (day) => String(day.stoolLeak) },
+      { label: "其他便 次", render: (day) => String(day.stoolOther) },
+    ];
+    return <div className={styles.printDocument}><section className={styles.printPage}>
+      {header()}
+      <table className={styles.matrixPrint}><thead><tr>{columns.map((column) => <th key={column.label}>{column.label}</th>)}</tr></thead><tbody>
+        {days.map((day) => <tr key={day.date}>{columns.map((column) => <td key={column.label}>{column.render(day)}</td>)}</tr>)}
+        {Array.from({ length: Math.max(0, 10 - days.length) }, (_, index) => <tr key={"blank-" + index}>{columns.map((column) => <td key={column.label}>　</td>)}</tr>)}
+      </tbody></table>
+      <p className={styles.printNote}>身長與頭圍一週量一次，未量測日留白。本表供家屬帶回，院內每日照護另有完整評估。</p>
+      {!blank && text(document.values.note) && <p className={styles.printNote}>成長紀錄：{text(document.values.note)}</p>}
+    </section></div>;
   }
   const groups = form.printGroups ?? [form.sections.map((_, i) => i)];
   return <div className={styles.printDocument}>{groups.map((indexes, page) => <section className={styles.printPage} key={page}>

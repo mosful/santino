@@ -3,7 +3,7 @@ import type { QuickKey } from "@/lib/quickKeys";
 // 對照系統功能清單v17「開發優先順序」欄：核心=Phase 1，其餘=Phase 2
 export const MAMA_QUICK_KEYS: QuickKey[] = [
   { key: "admission", label: "入住評估", core: true },
-  { key: "ongoing", label: "持續護理", core: true },
+  { key: "ongoing", label: "每日照護", core: true },
   { key: "record", label: "媽媽護理紀錄", core: true },
   { key: "pumping", label: "擠奶紀錄", core: false },
   { key: "handover", label: "交班單", core: false },

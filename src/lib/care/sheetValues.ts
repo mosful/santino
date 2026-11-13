@@ -19,6 +19,8 @@ export function normalizeSheetValues(kind: CareKind, formKey: string, original: 
 const legacyLabels: Record<string, string> = {
   parity: "原胎次", apgar: "原 Apgar 紀錄", wound: "原傷口紀錄", lochia: "原惡露紀錄", support: "原支持系統", redBottom: "原紅臀紀錄",
   "feeding-0": "原含乳姿勢", "feeding-1": "原吸吮節律", "feeding-2": "原吞嚥聲", "feeding-3": "原乳頭疼痛", "feeding-4": "原餵奶時間", "feeding-5": "原餵後滿足",
+  week: "原產後週數", note: "原紀錄內容", uri: "原 URI 症狀", feeding: "原餵奶方式", amount: "原分鐘／奶量",
+  urineDetail: "原排尿說明", stoolDetail: "原排便說明", bath: "原沐浴紀錄", phototherapy: "原黃疸照光紀錄",
 };
 export function legacySheetFields(form: CareForm, values: CareValues) {
   const known = new Set([...form.sections.flatMap((section) => section.fields.map((field) => field.key)), "reassessmentNote", "photo"]);

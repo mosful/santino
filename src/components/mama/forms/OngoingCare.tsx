@@ -64,7 +64,7 @@ export default function OngoingCare({ room }: { room: string }) {
   return (
     <div>
       <div className="mb-3 text-xs text-stone-400">
-        房號 {room}｜「持續護理」與「媽媽護理紀錄」共用同一頁面（mama_record）
+        房號 {room}｜「每日照護」與「媽媽護理紀錄」共用同一頁面（mama_record）
       </div>
       <Tabs
         tabs={[

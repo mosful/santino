@@ -66,6 +66,8 @@ export function validateCareForm(form: CareForm, values: CareValues): string[] {
     }
   }
   if (form.key === "feeding" && needsFeedingReassessment(values) && !String(values.reassessmentNote ?? "").trim()) errors.push("有再評估項目，請填寫下方媽媽護理紀錄。");
+  // 護理紀錄分三類後不再逐欄必填，但整筆不能全空（原本的單一必填紀錄不降低門檻）。
+  if (form.key === "record" && !["executionNote", "continuousNote", "abnormal", "note"].some((key) => String(values[key] ?? "").trim())) errors.push("請至少填寫一類護理紀錄。");
   return errors;
 }
 

@@ -108,7 +108,7 @@ export const DISCHARGED_MAMA_RECORDS: MamaRoom[] = [
     stayRange: "08/20~09/11",
     stayDay: 23,
     babyCount: 1,
-    alert: "持續護理紀錄待確認",
+    alert: "每日照護紀錄待確認",
     dischargedAt: "2026-09-11 10:05",
     historical: true,
   },

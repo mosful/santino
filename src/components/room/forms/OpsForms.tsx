@@ -1,10 +1,10 @@
 import { todayTaipei } from "@/lib/dates";
-import { DEMO_BABY_NAME, DEMO_MOTHER_NAME, DEMO_PHONE } from "@/lib/demo/demoDefaults";
+import { DEMO_BABY_NAME, DEMO_MOTHER_NAME } from "@/lib/demo/demoDefaults";
 import PrototypeFormActions from "@/components/ui/PrototypeFormActions";
 
 /** 欄位名稱帶「姓名」「電話」就先填 DEMO 預設值（客戶 2026-10-22：展示時不要每次重打）。 */
 function demoValue(label: string) {
-  if (label.includes("電話") || label.includes("手機")) return DEMO_PHONE;
+  if (label.includes("電話") || label.includes("手機")) return ""; // 需求 F03：電話不帶示範值
   if (label.includes("寶寶") || label.includes("嬰兒")) return DEMO_BABY_NAME;
   if (label.includes("媽媽") || label.includes("產婦")) return DEMO_MOTHER_NAME;
   return undefined;

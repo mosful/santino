@@ -8,7 +8,7 @@ import { SummaryRow as DetailRow } from "@/components/ui/Workspace";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { casePriceBreakdown, gifts } from "@/lib/domain/rules";
 import { CORPORATE_COMPANIES, COMMON_STAY_DAYS, HOSPITALS, hospitalOptions } from "@/lib/domain/options";
-import { DEMO_MOTHER_NAME, DEMO_PHONE } from "@/lib/demo/demoDefaults";
+import { DEMO_MOTHER_NAME } from "@/lib/demo/demoDefaults";
 import { quoteActions, useSavedQuotes } from "@/lib/quoteStore";
 import type { CaseRecord } from "@/lib/domain/types";
 
@@ -45,7 +45,7 @@ const star = <em className="ml-0.5 not-italic font-semibold text-rose-600" aria-
 
 export default function PricingCalculator({ onUse }: { onUse: (name: string, phone: string, preset: QuotePreset) => void }) {
   const [name, setName] = useState(DEMO_MOTHER_NAME);
-  const [phone, setPhone] = useState(DEMO_PHONE);
+  const [phone, setPhone] = useState("");
   const [roomType, setRoomType] = useState<CaseRecord["roomType"]>("精緻");
   const [days, setDays] = useState(30);
   const [hospital, setHospital] = useState<string>(HOSPITALS[0]);

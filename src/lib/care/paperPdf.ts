@@ -13,6 +13,9 @@ export class PaperPrintError extends Error {
   constructor(public issues: PaperIssue[]) { super(issues.map((item) => `第 ${item.page} 頁：${item.message}`).join("\n")); }
 }
 
+/** 組合欄位（$ 開頭）沒有對應表單欄名，錯誤訊息改用人看得懂的名稱。 */
+const SLOT_LABELS: Record<string, string> = { $uri: "URI 症狀", $vitals: "生命徵象", $author: "護理人員", $room: "房號", $name: "姓名", $birth: "生產日期", $columnDate: "日期" };
+
 function wrapped(value: string, font: PDFFont, size: number, width: number) {
   const lines: string[] = [];
   for (const paragraph of value.replace(/\r/g, "").split("\n")) {
@@ -107,7 +110,7 @@ export async function createPaperPdf(request: PaperRequest, load: PaperAssetLoad
       const lines = wrapped(text.replace(/\t/g, " "), font, size, width);
       const lineHeight = size * 1.25;
       if (lines.length * lineHeight > height + .1 || lines.some((line) => font!.widthOfTextAtSize(line, size) > width + .1)) {
-        issue(slot, `「${request.form.sections.flatMap((section) => section.fields).find((field) => field.key === slot.key)?.label ?? slot.key}」超出紙本原框，完整內容仍保留；請使用對應護理紀錄或核定補頁，不截字輸出。`); return;
+        issue(slot, `「${request.form.sections.flatMap((section) => section.fields).find((field) => field.key === slot.key)?.label ?? SLOT_LABELS[slot.key] ?? slot.key}」超出紙本原框，完整內容仍保留；請使用對應護理紀錄或核定補頁，不截字輸出。`); return;
       }
       lines.forEach((line, i) => page.drawText(line, { x: slot.x * sx, y: page.getHeight() - slot.y * sy - size - i * lineHeight, font, size, color: rgb(0, 0, 0) }));
     }

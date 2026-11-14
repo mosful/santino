@@ -2,7 +2,7 @@ import type { CaseRecord } from "./types";
 import { HOSPITALS } from "./options";
 import { caseBalance } from "./rules";
 import { todayTaipei } from "../dates";
-import { DEMO_BABY_NAME, DEMO_MOTHER_NAME, DEMO_PHONE, orDemo } from "../demo/demoDefaults";
+import { DEMO_BABY_NAME, DEMO_MOTHER_NAME, orDemo } from "../demo/demoDefaults";
 
 /**
  * 櫃台在案件流程裡要填、要印的紙本單據 —— 欄位全部照客戶手冊抄。
@@ -29,6 +29,8 @@ export type CaseDoc = {
   >;
   /** 沒有對應時間軸項目的單據，掛在案件第幾階段（CASE_STAGES 的索引）。 */
   stage?: number;
+  /** 不提供列印（例如中醫看診調查單，需求 F05）。 */
+  noPrint?: boolean;
   hint: string;
   sections: DocSection[];
   prefill: (record: CaseRecord) => Record<string, string>;
@@ -98,8 +100,9 @@ export const CASE_DOCS: CaseDoc[] = [
     ],
     prefill: (record) => ({
       motherName: orDemo(record.name, DEMO_MOTHER_NAME),
-      motherPhone: orDemo(record.phone, DEMO_PHONE),
-      husbandPhone: DEMO_PHONE,
+      // 需求 F03：電話沒有真實資料就留白，不帶示範值。
+      motherPhone: record.phone ?? "",
+      husbandPhone: "",
       dueDate: record.dueDate,
       hospital: record.hospital,
       delivery: record.deliveryMethod === "自然產" ? "NSD 自然產" : record.deliveryMethod === "剖腹產" ? "C/S 剖腹產" : "未定",
@@ -225,6 +228,7 @@ export const CASE_DOCS: CaseDoc[] = [
   },
   {
     key: "tcm-survey",
+    noPrint: true,
     label: "中醫看診調查單",
     stage: 2,
     hint: "下訂時填寫；入住前如有變更再填一張（手冊第 23 頁）。",

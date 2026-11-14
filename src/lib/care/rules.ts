@@ -69,6 +69,8 @@ export function validateCareForm(form: CareForm, values: CareValues): string[] {
       }
     }
   }
+  if (form.key === "io" && values.milkType === "母乳加配方奶" && String(values.bottleAmount ?? "") !== "" && !String(values.bottleBreastAmount ?? "").trim()) errors.push("奶別為母乳加配方奶時，請填寫其中母乳量。");
+  if (form.key === "io" && Number(values.bottleBreastAmount) > Number(values.bottleAmount || 0)) errors.push("其中母乳量不可大於瓶餵量。");
   if (form.key === "feeding" && needsFeedingReassessment(values) && !String(values.reassessmentNote ?? "").trim()) errors.push("有再評估項目，請填寫下方媽媽護理紀錄。");
   // 護理紀錄分三類後不再逐欄必填，但整筆不能全空（原本的單一必填紀錄不降低門檻）。
   if (form.key === "record" && !["executionNote", "continuousNote", "abnormal", "note"].some((key) => String(values[key] ?? "").trim())) errors.push("請至少填寫一類護理紀錄。");
@@ -78,3 +80,12 @@ export function validateCareForm(form: CareForm, values: CareValues): string[] {
 export function taipeiTimestamp(value: string) {
   return new Date(value).toLocaleString("zh-TW", { timeZone: "Asia/Taipei", hour12: false });
 }
+
+/** 會互相矛盾的選項（需求 M03：並存症狀可複選，但「未解」與「有排便」、上肢正常與上肢水腫等不能同時成立）。 */
+const CONFLICT_GROUPS: [string[], string[]][] = [
+  [["未解"], ["有，正常", "有，軟", "有，硬", "軟", "硬", "水便", "血便", "腹瀉"]],
+  [["有，正常"], ["腹瀉"]],
+  [["上肢正常"], ["上肢水腫"]],
+  [["下肢正常"], ["下肢水腫"]],
+];
+export const conflicts = (a: string, b: string) => CONFLICT_GROUPS.some(([x, y]) => (x.includes(a) && y.includes(b)) || (y.includes(a) && x.includes(b)));

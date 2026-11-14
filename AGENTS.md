@@ -34,7 +34,7 @@ Next.js 16 與訓練資料中的版本有破壞性差異 —— **寫任何程�
 
 ## 路由即模組
 
-`src/app/` 下各路由對應各模組：`todo`（待辦，選單第一項）／`quote`（套餐速算，櫃台服務第一個子項）／`mama`／`baby`／`babycam`／`customer`／`doctor`／`care`／`kpi`／`meal`／`hr`／`contract`／`course`／`line`／`admin`／`cases`，另有 `login`／`forgot-password`／`view`。**沒有 `room` 路由**（房況收回首頁總覽）；`/cases/calendar` 僅保留舊連結，實際轉導 `/todo`。
+`src/app/` 下各路由對應各模組：`todo`（待辦，選單第一項）／`quote`（套餐速算，2026-11-12 會議要求移除，選單已 hidden，網址仍可直達）／`mama`／`baby`／`babycam`／`customer`／`doctor`／`care`／`kpi`／`meal`／`hr`／`contract`／`course`／`line`／`admin`／`cases`，另有 `login`／`forgot-password`／`view`。**沒有 `room` 路由**（房況收回首頁總覽）；`/cases/calendar` 僅保留舊連結，實際轉導 `/todo`。
 
 ## 按鈕樣式只有一個來源
 
@@ -63,8 +63,8 @@ Next.js 16 與訓練資料中的版本有破壞性差異 —— **寫任何程�
 ```powershell
 npm run lint      # Next.js ESLint 規則
 npm run build     # 型別檢查並靜態輸出至 out/
-npm test          # 39 項 node:test 單元測試
-npm run test:e2e  # Playwright 走 out/，8 支場景
+npm test          # node:test 單元測試（2026-11-14 為 120 項）
+npm run test:e2e  # Playwright 走 out/，scripts/verify-static.cjs 列出的全部場景
 ```
 
 再人工檢查受影響路由、角色權限、**桌面與 iPad／手機版面**（雙平台為開發總則之一）。

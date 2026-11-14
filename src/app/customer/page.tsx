@@ -12,7 +12,7 @@ import Tabs from "@/components/ui/Tabs";
 import { type Customer } from "@/lib/mock/customer";
 import { useCustomerRows } from "@/lib/domain/legacySelectors";
 import { HOSPITALS } from "@/lib/domain/options";
-import { DEMO_MOTHER_NAME, DEMO_PHONE } from "@/lib/demo/demoDefaults";
+import { DEMO_MOTHER_NAME } from "@/lib/demo/demoDefaults";
 import { caseActions, domainStore } from "@/lib/demo/domainStore";
 import DemoActionButton from "@/components/ui/DemoActionButton";
 import { buttonStyles } from "@/components/ui/buttonStyles";
@@ -87,7 +87,7 @@ function blankCustomer(id: number): Customer {
     name: DEMO_MOTHER_NAME,
     level: "一般客戶",
     parity: "第一胎",
-    phone: DEMO_PHONE,
+    phone: "",
     birthday: "",
     dueDate: "",
     referrer: "",

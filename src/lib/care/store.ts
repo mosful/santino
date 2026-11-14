@@ -9,6 +9,7 @@ import { todayTaipei } from "../dates";
 import { normalizeSheetValues } from "./sheetValues";
 import { applyDailyDefaults, applyIoDefaults, lastFeeding, latestMeasurement } from "./summary";
 import { careSubject } from "./subjects";
+import { guidanceActions, guidanceKeys } from "./guidance";
 import { canAuthorizeCare, canEditCare, canReviseCareEntry, canViewCare, documentKey, isBackfillBlocked, validateCareForm } from "./rules";
 import type { CareDocument, CareKind, CareSignatureRole, CareState, CareValues } from "./types";
 
@@ -50,6 +51,15 @@ export function defaultCareValues(formKey?: string, kind?: CareKind) {
   return { ...dates, date: todayTaipei(at), time: at.toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5) };
 }
 export const careActions = {
+  /** 移除院方自行新增的衛教項目：限主管，且已有紀錄的項目不可移除，免得舊紀錄印不出來（需求 G07）。 */
+  removeGuidanceItem(kind: CareKind, key: string) {
+    if (!canAuthorizeCare(getCurrentRole())) throw new Error("只有護理長或管理者可以移除衛教項目。");
+    const keys = Object.values(guidanceKeys(key));
+    const state = careStore.get();
+    const filled = (values: CareValues) => keys.some((field) => { const value = values[field]; return Array.isArray(value) ? value.length > 0 : !!value; });
+    if (state.entries.some((entry) => filled(entry.values)) || Object.values(state.documents).some((document) => filled(document.values))) throw new Error("此項目已有紀錄，不能移除。");
+    guidanceActions.remove(kind, key);
+  },
   open(subjectId: string, formKey: string) {
     const subject = careSubject(subjectId);
     if (!subject || !careForms(subject.kind).some((form) => form.key === formKey)) return;

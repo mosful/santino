@@ -1,6 +1,8 @@
 import type { CareDocument, CareEntry, CareForm, CareSubject, CareValues } from "./types";
 import { PAPER_SHIFTS, PAPER_TEMPLATES, paperShift, type PaperPage } from "./paperTemplates";
 
+const URI_SHORT: Record<string, string> = { 發燒: "發燒", 咳嗽: "咳", 有痰: "痰", 流鼻水: "鼻水", 喉嚨痛: "喉痛", 其他: "其他" };
+
 export type PaperRecord = { id: string; values: CareValues; author?: string; signature?: string; templateVersion?: string };
 export type PaperSheet = { template: PaperPage; record?: PaperRecord; columns?: (PaperRecord | undefined)[]; dates?: string[] };
 export type PaperRequest = { form: CareForm; document: CareDocument; subject: CareSubject; history: CareEntry[]; blank?: boolean; includeDraft?: boolean; start?: string; end?: string; choices?: Record<string, string>; paperSize?: "source" | "a4" };
@@ -85,7 +87,8 @@ export function paperValue(key: string, record: PaperRecord | undefined, subject
     case "$author": return (record?.author ?? "").split("（")[0];
     case "$columnDate": return columnDate ? columnDate.slice(5).replace("-", "/") : "";
     case "$vitals": return [["temperature", "T", "℃"], ["pulse", "P", ""], ["respiration", "R", ""], ["bloodPressure", "BP", ""]].filter(([field]) => paperText(values[field])).map(([field, prefix, unit]) => `${prefix}${paperText(values[field])}${unit}`).join(" ");
-    case "$uri": return [paperText(values.symptoms), paperText(values.symptomNote)].filter(Boolean).join(" ");
+    // URI 格只約 45pt 寬：只印上呼吸道症狀並用院內常用簡寫；頭痛、腹瀉等非 URI 症狀與說明留在系統（補充欄）。
+    case "$uri": return (Array.isArray(values.symptoms) ? values.symptoms : [paperText(values.symptoms)]).map((item) => URI_SHORT[item]).filter(Boolean).join("、");
     case "$redGrade": return /^([0-3])\s/.exec(paperText(values.redBottom))?.[1] ?? "";
     case "$activity": case "$sucking": return paperText(values[key === "$activity" ? "activity" : "sucking"]);
     default: return values[key] ?? "";

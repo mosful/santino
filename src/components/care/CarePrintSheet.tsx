@@ -93,7 +93,7 @@ export default function CarePrintSheet({ form, document, subject, history, subje
       { label: "體重 g", render: (v) => text(v.weight) },
       { label: "親餵 左／右 分", render: (v) => text(v.leftMinutes) || text(v.rightMinutes) ? (text(v.leftMinutes) || "0") + "／" + (text(v.rightMinutes) || "0") : "" },
       { label: "奶別", render: (v) => text(v.milkType) },
-      { label: "瓶餵 cc", render: (v) => text(v.bottleAmount) },
+      { label: "瓶餵 cc", render: (v) => text(v.bottleAmount) + (text(v.bottleBreastAmount) ? `（母乳 ${text(v.bottleBreastAmount)}）` : "") },
       { label: "餵食情形", render: (v) => [text(v.condition), text(v.sucking) && "吸吮" + text(v.sucking)].filter(Boolean).join(" ") },
       { label: "小便", render: (v) => text(v.urine) === "自解" ? [(text(v.urineTimes) || "1") + " 次", text(v.urineColor)].filter(Boolean).join(" ") : text(v.urine) },
       { label: "大便", render: (v) => text(v.stool) === "自解" ? [(text(v.stoolTimes) || "1") + " 次", text(v.stoolAmount), text(v.stoolForm)].filter(Boolean).join(" ") : text(v.stool) },
@@ -116,7 +116,9 @@ export default function CarePrintSheet({ form, document, subject, history, subje
   }
   if (form.layout === "growth") {
     const draft: CareEntry[] = document.signedAt || blank ? [] : [{ id: "draft", subjectId: document.subjectId, formKey: form.key, at: "", author: "", values: document.values, historical: false }];
-    const days = blank ? [] : growthDays([...draft, ...subjectEntries]).slice(0, 14);
+    // 住 21／30 天要全部印出：由舊到新，每頁 16 天往下分頁（原本只取最近 14 天）。
+    const days = blank ? [] : growthDays([...draft, ...subjectEntries]).reverse();
+    const pages = Array.from({ length: Math.max(1, Math.ceil(days.length / 16)) }, (_, index) => days.slice(index * 16, index * 16 + 16));
     const columns: { label: string; render: (day: GrowthDay) => string }[] = [
       { label: "日期", render: (day) => day.date },
       { label: "體重 g", render: (day) => day.weight ? String(day.weight) : "" },
@@ -131,15 +133,17 @@ export default function CarePrintSheet({ form, document, subject, history, subje
       { label: "滲便 次", render: (day) => String(day.stoolLeak) },
       { label: "其他便 次", render: (day) => String(day.stoolOther) },
     ];
-    return <div className={styles.printDocument}><section className={styles.printPage}>
+    return <div className={styles.printDocument}>{pages.map((pageDays, page) => <section key={page} className={styles.printPage}>
       {header()}
       <table className={styles.matrixPrint}><thead><tr>{columns.map((column) => <th key={column.label}>{column.label}</th>)}</tr></thead><tbody>
-        {days.map((day) => <tr key={day.date}>{columns.map((column) => <td key={column.label}>{column.render(day)}</td>)}</tr>)}
-        {Array.from({ length: Math.max(0, 10 - days.length) }, (_, index) => <tr key={"blank-" + index}>{columns.map((column) => <td key={column.label}>　</td>)}</tr>)}
+        {pageDays.map((day) => <tr key={day.date}>{columns.map((column) => <td key={column.label}>{column.render(day)}</td>)}</tr>)}
+        {Array.from({ length: Math.max(0, 10 - pageDays.length) }, (_, index) => <tr key={"blank-" + index}>{columns.map((column) => <td key={column.label}>　</td>)}</tr>)}
       </tbody></table>
-      <p className={styles.printNote}>身長與頭圍一週量一次，未量測日留白。本表供家屬帶回，院內每日照護另有完整評估。</p>
-      {!blank && text(document.values.note) && <p className={styles.printNote}>成長紀錄：{text(document.values.note)}</p>}
-    </section></div>;
+      {page === pages.length - 1 && <>
+        <p className={styles.printNote}>身長與頭圍一週量一次，未量測日留白。本表供家屬帶回，院內每日照護另有完整評估。</p>
+        {!blank && text(document.values.note) && <p className={styles.printNote}>成長紀錄：{text(document.values.note)}</p>}
+      </>}
+    </section>)}</div>;
   }
   if (form.layout === "guidance") {
     const sheets = guidanceGroups(subject.kind);
@@ -165,6 +169,19 @@ export default function CarePrintSheet({ form, document, subject, history, subje
     </section>)}
     {subject.kind === "baby" && <section className={styles.printPage}>{header("備註")}<p className={styles.printValue}>{blank ? "" : text(values.baby_note)}</p></section>}
   </div>;
+  }
+  // 媽媽護理紀錄列印歷次全部紀錄，每筆印各自的填寫者（需求 G02／M05），不是只印目前這一筆。
+  if (subject.kind === "mama" && form.key === "record") {
+    const items = printItems(history, document, blank);
+    const fields = form.sections.flatMap((section) => section.fields).filter((field) => ["executionNote", "continuousNote", "abnormal"].includes(field.key));
+    return <div className={styles.printDocument}><section className={styles.printPage}>
+      {header()}
+      <table className={styles.matrixPrint}><thead><tr><th>日期時間</th>{fields.map((field) => <th key={field.key}>{field.label}</th>)}<th>紀錄人</th></tr></thead><tbody>
+        {items.map((item) => <tr key={item.id}><td>{text(item.values.date)} {text(item.values.time)}</td>{fields.map((field) => <td key={field.key}>{text(item.values[field.key])}</td>)}<td>{item.author}</td></tr>)}
+        {Array.from({ length: Math.max(0, 8 - items.length) }, (_, index) => <tr key={"blank-" + index}><td>　</td>{fields.map((field) => <td key={field.key}>　</td>)}<td>　</td></tr>)}
+      </tbody></table>
+      {!blank && items.map((item) => <div key={item.id}>{legacy(item.values)}</div>)}
+    </section></div>;
   }
   const groups = form.printGroups ?? [form.sections.map((_, i) => i)];
   return <div className={styles.printDocument}>{groups.map((indexes, page) => <section className={styles.printPage} key={page}>

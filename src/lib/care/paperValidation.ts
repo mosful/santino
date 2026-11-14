@@ -43,6 +43,7 @@ export function validatePaperValues(form: CareForm, values: CareValues) {
       if(!aliases.some((option)=>allowed.has(option)) && !implicit[field.key]?.includes(item)) errors.push(`${field.label}的「${item}」未對應原紙本選項，請核對後再列印；不自動轉換舊值。`);
     }
   }
+  if(form.paperTemplate === "mama-daily" && values.uriStatus === "無" && (Array.isArray(values.symptoms)?values.symptoms:[paperText(values.symptoms)]).some((item)=>item && item !== "無")) errors.push("URI 勾「無」卻有症狀，請核對。");
   if(form.paperTemplate === "baby-daily") {
     if(values.redBottomPresent === "無" && paperText(values.redBottom) && !paperText(values.redBottom).startsWith("0 ")) errors.push("紅臀有無與分級不一致，請核對。");
     if(values.redBottomPresent === "有" && paperText(values.redBottom).startsWith("0 ")) errors.push("紅臀有無與分級不一致，請核對。");

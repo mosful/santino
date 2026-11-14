@@ -161,3 +161,23 @@ test("A4 嵌頁先完成中文字型與簽名資源，避免填值亂碼或遺�
   assert.ok(objects.some(object=>object instanceof PDFDict && object.has(PDFName.of("FontFile2"))),"A4 必須內嵌完整中文字型程式");
   assert.ok(objects.some(object=>"dict" in object && object.dict instanceof PDFDict && object.dict.get(PDFName.of("Subtype"))?.toString()==="/Image"),"A4 必須保留簽名圖片");
 });
+
+test("產婦每日 URI 勾兩個症狀仍能產出 PDF，非 URI 症狀不擠進 URI 格",async()=>{
+  const source=await PDFDocument.create();source.addPage([578.16,824.4]);
+  const bytes=await source.save();
+  const req=request([],{form:MAMA_FORMS[1],includeDraft:true});
+  req.document.formKey=req.form.key;
+  Object.assign(req.document.values,{uriStatus:"有",symptoms:["咳嗽","有痰","流鼻水","頭痛"],note:"示範紀錄"});
+  const pdf=await createPaperPdf(req,async(asset)=>asset.endsWith(".ttf")?new Uint8Array(await readFile(path.resolve("public",asset))):bytes);
+  assert.ok(pdf.byteLength>0);
+});
+
+test("矛盾選項互斥：未解與有排便、上肢正常與上肢水腫不能並存",async()=>{
+  const { conflicts } = await import("../src/lib/care/rules");
+  assert.ok(conflicts("未解","有，正常"));
+  assert.ok(conflicts("有，軟","未解"));
+  assert.ok(conflicts("有，正常","腹瀉"));
+  assert.ok(conflicts("上肢水腫","上肢正常"));
+  assert.ok(!conflicts("咳嗽","有痰"));
+  assert.ok(!conflicts("腹瀉","水便"));
+});

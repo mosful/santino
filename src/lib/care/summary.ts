@@ -29,8 +29,14 @@ export function growthDays(entries: CareEntry[]): GrowthDay[] {
     const row = day(date);
     if (entry.formKey === "io") {
       const amount = num(entry.values.bottleAmount);
-      if (text(entry.values.milkType) === "配方奶") row.formula += amount;
-      else if (text(entry.values.milkType)) row.breastMilk += amount;
+      const milkType = text(entry.values.milkType);
+      if (milkType === "配方奶") row.formula += amount;
+      else if (milkType === "母乳") row.breastMilk += amount;
+      // 混合奶依填寫的母乳量拆分；沒填拆分（舊資料）只計入總量，不灌進母乳。
+      else if (milkType === "母乳加配方奶" && text(entry.values.bottleBreastAmount)) {
+        const breast = Math.min(num(entry.values.bottleBreastAmount), amount);
+        row.breastMilk += breast; row.formula += amount - breast;
+      }
       row.totalMilk += amount;
       row.breastMinutes += num(entry.values.leftMinutes) + num(entry.values.rightMinutes);
       if (text(entry.values.urine) === "自解") row.urine += num(entry.values.urineTimes) || 1;
@@ -42,7 +48,14 @@ export function growthDays(entries: CareEntry[]): GrowthDay[] {
         else row.stoolOther += times;
       }
     }
-    // 每日照護與成長日記的量測同屬一筆；後填的覆蓋先填的，缺測欄位不覆寫成空白。
+  }
+  /* 量測：成長日記的值是由每日照護／I/O 帶入的複本，先套用，再讓來源紀錄覆蓋——
+     否則修正來源紀錄後，排在後面的舊複本會把更正值蓋回去。缺測欄位不覆寫成空白。 */
+  const ordered = [...entries].reverse();
+  for (const entry of [...ordered.filter((item) => item.formKey === "growth"), ...ordered.filter((item) => item.formKey !== "growth")]) {
+    const date = text(entry.values.date);
+    if (!date) continue;
+    const row = day(date);
     for (const key of ["weight", "height", "head"] as const) if (num(entry.values[key])) row[key] = num(entry.values[key]);
   }
   return [...days.values()].sort((a, b) => b.date.localeCompare(a.date));
@@ -61,7 +74,7 @@ export function latestMeasurement(entries: CareEntry[], date: string): CareValue
 /** I/O 的「帶入上一筆餵食」只複製奶別與奶量，時間與排泄仍要按本次實況填（需求 B08）。 */
 export function lastFeeding(entries: CareEntry[]): CareValues | undefined {
   const entry = entries.find((item) => item.formKey === "io" && (text(item.values.milkType) || num(item.values.bottleAmount)));
-  return entry && { milkType: text(entry.values.milkType), bottleAmount: text(entry.values.bottleAmount) };
+  return entry && { milkType: text(entry.values.milkType), bottleAmount: text(entry.values.bottleAmount), bottleBreastAmount: text(entry.values.bottleBreastAmount) };
 }
 
 /**

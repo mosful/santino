@@ -156,7 +156,7 @@ export const BABY_IO: CareForm = {
   sections: [headed(section("餵食與排泄", [
     row("量測", number("temperature", "體溫（℃）", 30, 45), number("weight", "體重（g）", 300, 15000)),
     row("親餵", number("leftMinutes", "左乳（分鐘）", 0, 120), number("rightMinutes", "右乳（分鐘）", 0, 120)),
-    row("瓶餵", choice("milkType", "奶別", ["母乳", "配方奶", "母乳加配方奶"]), number("bottleAmount", "瓶餵量（cc）", 0, 500)),
+    row("瓶餵", choice("milkType", "奶別", ["母乳", "配方奶", "母乳加配方奶"]), number("bottleAmount", "瓶餵量（cc）", 0, 500), number("bottleBreastAmount", "混合時其中母乳（cc）", 0, 500)),
     row("餵食情形", choice("condition", "餵食情形", ["可", "溢奶", "吐奶"]), choice("sucking", "吸吮力", ["佳", "可", "差"])),
     row("排尿", choice("urine", "排尿", ["未解", "自解"]), number("urineTimes", "次數", 0, 30), choice("urineColor", "顏色", ["淡黃", "深黃", "結晶尿", "其他"])),
     row("排便", choice("stool", "排便", ["未解", "自解"]), number("stoolTimes", "次數", 0, 30), choice("stoolAmount", "量", ["少量", "中量", "多量"]), multiple("stoolForm", "性狀", STOOL_FORMS)),

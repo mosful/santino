@@ -137,7 +137,7 @@ export function mamaDailySlots(column: number): PaperSlot[] {
   return [
     { ...t("date", x + 44, 145, 40), format: "month" }, { ...t("date", x + 115, 145, 40), format: "day" }, t("time", x + 14, 182, 170), t("$vitals", x + 8, 218, 182, 25, 8),
     ...mc("mood", ["平靜", "愉悅", "疲倦"], [7, 73, 139], 255), ...mc("mood", ["易哭", "冷漠", "焦慮"], [7, 73, 139], 284),
-    ...mc("uriStatus", ["無", "有"], [7, 55], 312), t("$uri", x + 148, 305, 45, 24, 8),
+    ...mc("uriStatus", ["無", "有"], [7, 55], 312), t("$uri", x + 148, 305, 45, 24, 5.5),
     ...mc("painSites", ["乳房", "宮縮", "傷口"], [7, 73, 139], 343), ...mc("painSites", ["痔瘡", "其他"], [7, 73], 371), t("painOther", x + 128, 367, 65, 22, 8), t("painScore", x + 88, 397, 103, 23, 8),
     c("fundusPosition", "U−", x + 7, 423), t("fundus", x + 48, 418, 45, 22, 8), c("fundusPosition", "pelvic", x + 126, 423),
     ...mc("contraction", ["硬", "鬆軟", "按摩後硬"], [7, 55, 115], 453),

@@ -3,7 +3,7 @@
 import { createPersistentStore } from "./persistentStore";
 import { DOMAIN_SEED, blankCase, inheritWindow } from "./domainSeed";
 import { CASE_STAGES, type CaseRecord, type DemoDomain, type ReservationInput } from "../domain/types";
-import { casePrice, caseTransitionErrors } from "../domain/rules";
+import { caseGiftDays, casePrice, caseTransitionErrors } from "../domain/rules";
 import { getCurrentRole } from "../roleStore";
 import { canUseCaseFlow, ROLE_PROFILE } from "../permissions";
 import { closeViewingHistory } from "../babycam/history";
@@ -27,6 +27,8 @@ function valid(value: unknown): value is DemoDomain {
   data.rooms ??= structuredClone(DOMAIN_SEED.rooms); data.printSettings ??= structuredClone(DOMAIN_SEED.printSettings); data.viewingHistory ??= [];
   data.tasks ??= structuredClone(DOMAIN_SEED.tasks); data.handledTasks ??= [];
   data.checkoutItems ??= structuredClone(DEFAULT_CHECKOUT_ITEMS);
+  // 需求 F09：母乳提袋改為贈送，舊瀏覽器資料裡的預設品項一併移除（後台另行新增的品項 id 不同，不受影響）。
+  data.checkoutItems = data.checkoutItems.filter((item) => item.id !== "milkbag");
   data.saleItems ??= structuredClone(DEFAULT_SALE_ITEMS);
   data.contractSettings ??= structuredClone(DOMAIN_SEED.contractSettings);
   data.demoScenarios ??= {}; data.detection ??= structuredClone(DOMAIN_SEED.detection);
@@ -127,6 +129,7 @@ export const caseActions = {
     const id = `case-${crypto.randomUUID()}`;
     domainStore.update((data) => {
       const record = blankCase(id);
+      record.days = 0; // 需求 F01：參觀時天數未定先留白，下訂時才確定
       record.legacyId = Math.max(0, ...data.cases.map((item) => item.legacyId)) + 1;
       Object.assign(record, { name: input.name.trim(), phone: input.phone.trim(), dueDate: input.dueDate, category: input.category, parity: input.parity, deliveryMethod: input.deliveryMethod, hospital: input.hospital, visitDate: input.visitDate, visitTime: input.visitTime, source: input.source, receptionist: input.receptionist, note: input.note.trim(), owner: input.receptionist });
       record.quotedAmount = casePrice(record);
@@ -392,7 +395,7 @@ export const caseActions = {
       record.signature = image; record.signed = true; record.contractVersion = 1;
       if (record.proxySigned && !record.proxyName?.trim()) throw new Error("代簽時請填寫代簽者姓名與關係。");
       record.contractStamp = currentActor();
-      record.contractSnapshot = JSON.stringify({ name: record.name, phone: record.phone, contractNo: record.contractNo, roomType: record.roomType, days: record.days, hospital: record.hospital, priceClass: record.priceClass, corporateCompany: record.corporateCompany, amount: record.overrideAmount ?? record.quotedAmount, signedDate: record.signedDate, reviewDays: data.contractSettings.reviewDays, milkChoice: record.milkChoice, customerDetails: record.customerDetails, template: data.contractSettings.templates.find((item) => item.active), proxySigned: record.proxySigned, proxyName: record.proxyName, staffStamp: record.contractStamp });
+      record.contractSnapshot = JSON.stringify({ name: record.name, phone: record.phone, contractNo: record.contractNo, roomType: record.roomType, days: record.days, giftDays: caseGiftDays(record), hospital: record.hospital, priceClass: record.priceClass, corporateCompany: record.corporateCompany, amount: record.overrideAmount ?? record.quotedAmount, signedDate: record.signedDate, reviewDays: data.contractSettings.reviewDays, milkChoice: record.milkChoice, customerDetails: record.customerDetails, template: data.contractSettings.templates.find((item) => item.active), proxySigned: record.proxySigned, proxyName: record.proxyName, staffStamp: record.contractStamp });
       caseLog(record, "合約 v1 完成簽署，保留簽署快照");
     });
   },

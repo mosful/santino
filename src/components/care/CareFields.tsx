@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { Toast, useToast } from "@/components/ui/Toast";
 import { readCarePhoto, saveCarePhoto } from "@/lib/care/media";
 import type { CareField, CareValues } from "@/lib/care/types";
+import { conflicts } from "@/lib/care/rules";
 import styles from "./CareWorkspace.module.css";
 import { usePhraseLibrary } from "@/hooks/usePhraseLibrary";
 import { buttonStyles } from "@/components/ui/buttonStyles";
+
 
 export const inputClass = "form-control w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm disabled:bg-stone-100";
 /** 照護模組沿用的按鈕樣式；實作在 components/ui/Button，這裡只是再匯出。 */
@@ -68,7 +70,7 @@ export default function CareFieldInput({ field, values, onChange, personal, addP
       : field.type === "multiple" ? <div className="flex flex-wrap gap-2" role="group" aria-label={field.label}>{field.options?.map((option) => {
         const selected = Array.isArray(value) ? value : value ? [value] : [];
         const exclusive = ["無", "正常", "無URI症狀"];
-        return <label key={option} data-selected={selected.includes(option)} className="care-option flex min-h-12 items-center gap-2 rounded-lg border border-stone-300 px-3 text-sm"><input type="checkbox" checked={selected.includes(option)} onChange={() => onChange({ [field.key]: selected.includes(option) ? selected.filter((item) => item !== option) : exclusive.includes(option) ? [option] : [...selected.filter((item) => !exclusive.includes(item)), option] })} />{option}</label>;
+        return <label key={option} data-selected={selected.includes(option)} className="care-option flex min-h-12 items-center gap-2 rounded-lg border border-stone-300 px-3 text-sm"><input type="checkbox" checked={selected.includes(option)} onChange={() => onChange({ [field.key]: selected.includes(option) ? selected.filter((item) => item !== option) : exclusive.includes(option) ? [option] : [...selected.filter((item) => !exclusive.includes(item) && !conflicts(option, item)), option] })} />{option}</label>;
       })}</div>
       : field.type === "radio" ? <div role="radiogroup" aria-label={field.label} className="flex flex-wrap gap-x-4 gap-y-1">{field.options?.map((option) => <label key={option} className="flex min-h-11 items-center gap-2 text-sm"><input type="radio" name={id} value={option} checked={value === option} onChange={() => onChange({ [field.key]: option })} />{option}</label>)}<button type="button" className="min-h-11 px-2 text-xs underline underline-offset-4" onClick={() => onChange({ [field.key]: "" })}>清除</button></div>
       : field.type === "select" ? <select id={id} value={valueText(value)} onChange={(event) => onChange({ [field.key]: event.target.value })} className={inputClass}><option value="">請選擇</option>{field.options?.map((option) => <option key={option}>{option}</option>)}</select>

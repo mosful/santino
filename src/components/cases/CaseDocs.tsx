@@ -100,7 +100,7 @@ export function CaseDocPanel({ record, doc, editable, onClose }: { record: CaseR
             儲存{doc.label}
           </button>
         )}
-        <button type="button" className={button} onClick={() => window.print()}>列印</button>
+        {!doc.noPrint && <button type="button" className={button} onClick={() => window.print()}>列印</button>}
         {editable && <button type="button" className={button} onClick={() => { setValues(docValues({ ...record, documents: {} }, doc)); toast.ok("已重新帶入案件資料。"); }}>重新帶入案件資料</button>}
         <Toast {...toastProps} />
       </div>

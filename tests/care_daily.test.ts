@@ -93,7 +93,8 @@ test("量測與上一筆餵食只帶該帶的欄位", () => {
   assert.deepEqual(latestMeasurement(entries, "2026-11-13"), { weight: "3200", head: "34" });
   assert.deepEqual(latestMeasurement(entries, "2026-11-12"), {});
   // 帶入只複製奶別與奶量，排尿與時間仍要按本次實況填。
-  assert.deepEqual(lastFeeding(entries), { milkType: "配方奶", bottleAmount: "60" });
+  // 拆分量也一起帶（上一筆沒拆分就清空），避免殘留與奶量不符的舊值。
+  assert.deepEqual(lastFeeding(entries), { milkType: "配方奶", bottleAmount: "60", bottleBreastAmount: "" });
   assert.equal(lastFeeding([entry("daily", { date: "2026-11-13", weight: "3200" })]), undefined);
 });
 
@@ -108,4 +109,21 @@ test("親子同室起訖都有才算時數，跨午夜不算成負數，缺一�
   assert.deepEqual(applyDailyDefaults({ roomingStart: "" }, { roomingStart: "09:00", roomingEnd: "17:00", roomingHours: "8" }), { roomingStart: "", roomingHours: "" });
   // 與親子同室無關的欄位原樣通過。
   assert.deepEqual(applyDailyDefaults({ temperature: "36.8" }, {}), { temperature: "36.8" });
+});
+
+test("成長日記的複本不會蓋掉來源紀錄修正後的量測", () => {
+  // entries 由新到舊：成長日記複本較晚簽出，但每日照護那筆事後把 3200 改成 3250。
+  const entries = [entry("growth", { date: "2026-11-13", weight: "3200" }), entry("daily", { date: "2026-11-13", weight: "3250" })];
+  assert.equal(growthDays(entries)[0].weight, 3250);
+  // 沒有來源紀錄時，成長日記自己的量測照樣算。
+  assert.equal(growthDays([entry("growth", { date: "2026-11-12", height: "51" })])[0].height, 51);
+});
+
+test("母乳加配方奶依填寫的母乳量拆分，沒拆分不灌進母乳", () => {
+  const [mixed] = growthDays([entry("io", { date: "2026-11-13", milkType: "母乳加配方奶", bottleAmount: "80", bottleBreastAmount: "30" })]);
+  assert.deepEqual([mixed.breastMilk, mixed.formula, mixed.totalMilk], [30, 50, 80]);
+  const [legacy] = growthDays([entry("io", { date: "2026-11-13", milkType: "母乳加配方奶", bottleAmount: "80" })]);
+  assert.deepEqual([legacy.breastMilk, legacy.formula, legacy.totalMilk], [0, 0, 80]);
+  assert.ok(validateCareForm(BABY_IO, { milkType: "母乳加配方奶", bottleAmount: "80" }).some((error) => error.includes("其中母乳量")));
+  assert.ok(validateCareForm(BABY_IO, { milkType: "母乳", bottleAmount: "30", bottleBreastAmount: "40" }).some((error) => error.includes("不可大於")));
 });

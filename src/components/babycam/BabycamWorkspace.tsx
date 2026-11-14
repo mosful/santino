@@ -49,6 +49,7 @@ import {
 import { StatusSummary } from "@/components/ui/Workspace";
 import { expectedReturnBaby, readIdentityCode } from "@/lib/babycam/scan";
 import IdentityScanner from "./IdentityScanner";
+import LeaveScan from "./LeaveScan";
 import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
 import { viewingSettingsOf } from "@/lib/babycam/viewingSettings";
 
@@ -98,10 +99,11 @@ const GROUPS: { id: GroupId; label: string; heading: string; description: string
     id: "02",
     label: "寶寶登錄",
     heading: "寶寶登錄",
-    description: "指派寶寶、車號與監視器，列印手圈與嬰兒車標籤；歸位時掃碼核對。",
+    description: "指派寶寶、車號與監視器，列印手圈與嬰兒車標籤；離開鏡頭與歸位時掃碼。",
     tabs: [
       { id: "assign", label: "寶寶登錄與標籤", access: "02" },
       // 掃碼歸位是護理端的動作；櫃台拿到 02 只是為了換鏡頭，不該出現在這裡。
+      { id: "leave", label: "離開掃碼", access: "02", roles: ROLES.filter((item) => item !== "櫃台") },
       { id: "scan", label: "掃碼歸位核對", access: "02", roles: ROLES.filter((item) => item !== "櫃台") },
     ],
   },
@@ -157,6 +159,7 @@ const LEGACY_SECTION: Record<string, { group: GroupId; tab: string }> = {
   // 掃標籤進來的落地分頁。缺了這一筆時 ScanEntry 會掉回 registration，
   // 護理人員掃完碼還得自己找到核對頁籤。
   scan: { group: "02", tab: "scan" },
+  leave: { group: "02", tab: "leave" },
   schedule: { group: "04", tab: "schedule" },
   backgrounds: { group: "04", tab: "states" },
   reports: { group: "01", tab: "report" },
@@ -795,6 +798,8 @@ export default function BabycamWorkspace({
           </div>
         )}
 
+        {active.id === "leave" && <LeaveScan data={data} run={run} />}
+
         {active.id === "scan" && (
           <div className="@container space-y-6 p-4 sm:p-6">
             <div>
@@ -872,7 +877,7 @@ export default function BabycamWorkspace({
             <SectionHeading
               no={1}
               title="顯示狀態與背景"
-              description="改成院內習慣的叫法即可，寶寶／監視器的狀態下拉會跟著換；卡片底圖就是家屬與院內在該狀態下看到的畫面。"
+              description="可新增、修改、刪除顯示狀態，寶寶／監視器的狀態下拉會跟著換；左側縮圖就是家屬與院內在該狀態下看到的畫面。"
             />
             <StateMaintenance data={data} />
           </div>

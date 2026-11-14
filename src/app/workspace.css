@@ -62,8 +62,8 @@
 .case-stage { scroll-margin-top: calc(var(--app-header-total, 80px) + 20px); }
 .case-stage { overflow: hidden; }
 .case-stage[data-state="current"] { border-color: var(--brand-300); box-shadow: 0 0 0 1px var(--brand-100), 0 8px 24px rgb(var(--shadow-color) / .06); }
-.case-stage[data-state="complete"] > button { background: color-mix(in srgb, #ecfdf5 72%, var(--surface-raised)); }
-.case-stage[data-state="future"] > button { color: var(--neutral-600); }
+.case-stage[data-state="complete"] > .case-stage-head { background: color-mix(in srgb, #ecfdf5 72%, var(--surface-raised)); }
+.case-stage[data-state="future"] > .case-stage-head { color: var(--neutral-600); }
 .case-stage-index { display: inline-flex; width: 26px; height: 26px; flex: 0 0 26px; align-items: center; justify-content: center; border: 1px solid var(--neutral-300); border-radius: 999px; color: var(--neutral-600); font-size: 12px; font-weight: 700; }
 .case-stage[data-state="current"] .case-stage-index { border-color: var(--brand-600); background: var(--brand-600); color: white; }
 .case-stage[data-state="complete"] .case-stage-index, .case-stage[data-state="closed"] .case-stage-index { border-color: #10b981; background: #10b981; color: white; }
@@ -109,3 +109,23 @@
 @media (min-width: 1280px) { .case-detail-area { grid-template-columns: minmax(0, 1fr) 320px; } .case-detail-area > .work-aside { grid-row: auto; } .case-change-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(280px, 1fr); } .case-change-grid > .result-card { grid-column: 3; grid-row: 1 / span 3; } }
 @media (max-width: 639px) { .form-section, .result-card, .query-panel, .status-summary { padding: 16px; } .status-summary-heading, .action-dock { align-items: stretch; flex-direction: column; } .status-summary-actions, .action-dock-actions { justify-content: flex-start; } .result-value { font-size: 26px; } .query-controls > input { flex: 1 1 100%; width: 100%; } .summary-row { gap: 12px; } }
 @media print { .work-area { display: block; } .work-surface, .query-panel { box-shadow: none; break-inside: avoid; } .work-aside { margin-top: 16px; } .query-controls { display: none; } }
+
+/* 案件階段流程列（頁首第 3 層）：階段可直接點選＋右側欄位模糊搜尋 */
+.case-stepper { display: flex; flex: 1 1 100%; flex-wrap: wrap; align-items: center; gap: 6px 12px; min-width: 0; }
+.case-stepper-steps { display: flex; flex: 1 1 auto; align-items: center; gap: 2px; min-width: 0; overflow-x: auto; scrollbar-width: thin; }
+.case-stepper-steps button { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 6px; min-height: 40px; padding: 4px 10px 4px 6px; border: 1px solid transparent; border-radius: 999px; color: var(--neutral-700); font-size: 14px; white-space: nowrap; }
+.case-stepper-steps button:hover { background: var(--brand-50); }
+.case-stepper-steps button[aria-current="step"] { border-color: var(--brand-300); background: white; color: var(--brand-700); font-weight: 700; box-shadow: 0 1px 2px rgb(var(--shadow-color) / .08); }
+.case-stepper-steps button[data-state="future"] { color: var(--neutral-500); }
+.case-stepper-steps button[data-state="current"] .case-stage-index { border-color: var(--brand-600); background: var(--brand-600); color: white; }
+.case-stepper-steps button:is([data-state="complete"], [data-state="closed"]) .case-stage-index { border-color: #10b981; background: #10b981; color: white; }
+.case-stepper-search { position: relative; flex: 0 1 18rem; min-width: 12rem; margin-left: auto; }
+.case-stepper-search input { width: 100%; min-height: 40px; padding: 6px 12px 6px 34px; border: 1px solid var(--border-subtle); border-radius: 10px; background: var(--surface-raised); font-size: 14px; }
+.case-stepper-results { position: absolute; right: 0; top: calc(100% + 4px); z-index: 40; width: max(100%, 18rem); max-height: 60vh; overflow-y: auto; padding: 4px; border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--surface-raised); box-shadow: 0 12px 32px rgb(var(--shadow-color) / .16); }
+.case-stepper-results li { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: 8px; cursor: pointer; }
+.case-stepper-results li[aria-selected="true"] { background: var(--brand-50); }
+.case-search-hit { outline: 3px solid var(--brand-400); outline-offset: 3px; border-radius: 6px; transition: outline-color .6s; }
+@media (max-width: 767px) {
+  .case-stepper-search { flex: 1 1 100%; margin-left: 0; }
+  .case-stepper-results { left: 0; width: 100%; }
+}

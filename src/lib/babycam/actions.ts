@@ -11,6 +11,7 @@ import { closeViewingHistory } from "./history";
 import { normalizePrintSettings } from "./wristband-print";
 import { canUseCaseFlow, getAccess, ROLES, type AccessLevel, type Role } from "../permissions";
 import { demoNow } from "./clock";
+import { findBabyByCode } from "./scan";
 import { initialDemoScenario, reduceDemoScenario, type DemoScenarioAction } from "./demo-scenario";
 
 /**
@@ -166,12 +167,25 @@ export const babycamActions = {
   },
   scan(code: string, expectedBabyId: string) {
     domainStore.update((data) => {
-      requireSection(data, "02"); const found = data.bindings.filter((binding) => !binding.ended).flatMap((binding) => binding.babies.map((baby) => ({ binding, baby }))).find((item) => item.baby.identityCode.toUpperCase().replace(/\W/g, "") === code.toUpperCase().replace(/\W/g, ""));
+      requireSection(data, "02"); const found = findBabyByCode(data, code);
       if (!found || found.baby.babyId !== expectedBabyId) throw new Error("識別不符或標籤已失效，請核對寶寶與車號，不可直接歸位。");
-      found.baby.careMode = false; found.baby.careSince = undefined; data.careEvents.filter((event) => event.babyId === expectedBabyId && !event.end).forEach((event) => { event.end = data.demoAt; }); audit(data, "掃碼歸位核對通過", expectedBabyId);
+      found.baby.careMode = false; found.baby.careSince = undefined; if (found.baby.stateBeforeLeave !== undefined) { found.baby.state = data.displayStates.some((item) => item.key === found.baby.stateBeforeLeave) ? found.baby.stateBeforeLeave : "normal"; found.baby.stateBeforeLeave = undefined; } data.careEvents.filter((event) => event.babyId === expectedBabyId && !event.end).forEach((event) => { event.end = data.demoAt; }); audit(data, "掃碼歸位核對通過", expectedBabyId);
       const scenario = data.demoScenarios[found.baby.cameraId];
       if (scenario && ["care", "departing"].includes(scenario.phase)) throw new Error("偵測仍顯示離車，請先模擬寶寶回到鏡頭再核對。");
       if (scenario) data.demoScenarios[found.baby.cameraId] = reduceDemoScenario(scenario, { type: "scan-return" });
+    });
+  },
+  /** 離開掃碼：護理師掃手圈後選顯示狀態，寶寶轉為照護中；歸位掃碼時還原原狀態。 */
+  leave(code: string, state: string) {
+    domainStore.update((data) => {
+      requireSection(data, "02");
+      const found = findBabyByCode(data, code);
+      if (!found) throw new Error("找不到這個識別碼，標籤可能已失效，請核對手圈。");
+      if (!data.displayStates.some((item) => item.key === state)) throw new Error("請選擇離開時要顯示的狀態。");
+      const { binding, baby } = found;
+      if (!baby.careMode) { baby.stateBeforeLeave = baby.state; baby.careMode = true; baby.careSince = data.demoAt; data.careEvents.push({ id: crypto.randomUUID(), bindingId: binding.id, babyId: baby.babyId, start: data.demoAt, end: null, actor: getCurrentRole() }); }
+      baby.state = state;
+      audit(data, `離開掃碼，顯示狀態 ${data.displayStates.find((item) => item.key === state)?.name}`, baby.babyId);
     });
   },
   reissue(id: string) { domainStore.update((data) => { requireSection(data, "01"); const binding = bindingOf(data, id); closeViewingHistory(data, id, "重發連結"); binding.viewingRevoked = false; binding.internalTicket = crypto.randomUUID(); binding.familyTicket = crypto.randomUUID(); binding.sessions = []; audit(data, "重發觀看連結，舊連結失效", id); }); },

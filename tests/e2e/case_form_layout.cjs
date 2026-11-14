@@ -100,8 +100,15 @@ async function check(page, name) {
             if (screenshots && stage === "appointment" && layout !== "平板窄幅") await page.screenshot({ path: path.join(output, `${prefix}-共通資料與預約.png`) });
             if (stage === "visit") {
               await page.getByRole("button", { name: "1. 預約", exact: true }).click();
-              assert.ok(await page.locator('#case-stage-0 input:disabled').count(), "已完成預約應保持唯讀");
-              await check(page, `${prefix}-已完成預約唯讀`);
+              // 客戶 2026-11-14：各階段完成後仍可修改，不再唯讀反灰；階段改由上方流程列切換。
+              await page.locator("#case-stage-0").waitFor();
+              assert.equal(await page.locator('#case-stage-0 input:disabled').count(), 0, "已完成預約應可修改");
+              assert.equal(await page.locator(".case-stage").count(), 1, "一次只顯示一個階段");
+              await check(page, `${prefix}-已完成預約可修改`);
+              await page.getByRole("combobox", { name: "搜尋階段欄位", exact: true }).fill("收字");
+              await page.getByRole("option", { name: /收字第○號/ }).click();
+              await page.locator("#case-stage-2").waitFor();
+              await check(page, `${prefix}-欄位搜尋跳轉`);
             }
             if (width >= 768) {
               await page.getByRole("button", { name: "收合選單", exact: true }).click();

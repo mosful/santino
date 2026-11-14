@@ -1,4 +1,4 @@
-import type { ViewingBinding } from "@/lib/domain/types";
+import type { DemoDomain, ViewingBinding } from "@/lib/domain/types";
 
 /** 選擇限於目前案件；單胞胎自動帶入，多胞胎保留標籤深連結或人工選擇。 */
 export function expectedReturnBaby(binding: ViewingBinding | undefined, selectedId: string, initialCode = "") {
@@ -22,4 +22,11 @@ export function readIdentityCode(value: string) {
   }
   if (!/^[a-z0-9-]+$/i.test(raw)) throw new Error("識別碼格式不正確，請重新掃描或輸入標籤上的識別碼。");
   return raw;
+}
+
+/** 依識別碼找出入住中的寶寶（忽略大小寫與符號）；離開與歸位掃碼共用同一套比對。 */
+export function findBabyByCode(data: Pick<DemoDomain, "bindings">, code: string) {
+  const normalize = (value: string) => value.toUpperCase().replace(/\W/g, "");
+  const target = normalize(code);
+  return data.bindings.filter((binding) => !binding.ended).flatMap((binding) => binding.babies.map((baby) => ({ binding, baby }))).find((item) => normalize(item.baby.identityCode) === target);
 }

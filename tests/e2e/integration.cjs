@@ -76,7 +76,7 @@ async function decodeQr(locator, label = false) {
   await page.getByRole("button", { name: /^入住前完成/ }).click();
   const caseRecord = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1")).cases.find((item) => item.name === "整合測試媽媽"));
   assert.equal(caseRecord.stage, 5);
-  await page.locator("#case-stage-3").getByRole("button", { name: /4\. 合約/ }).click();
+  await page.getByRole("navigation", { name: "案件階段" }).getByRole("button", { name: "4. 合約", exact: true }).click();
   await page.locator("#case-stage-3").getByRole("button", { name: "5. 產生合約", exact: true }).click();
   await page.getByText("檢視原簽署快照 v1", { exact: true }).click();
   await page.screenshot({ path: `${output}/case-desktop.png`, fullPage: true });

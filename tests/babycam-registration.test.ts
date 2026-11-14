@@ -73,3 +73,43 @@ test("刪除權限沿用入住管理角色，護理師不得透過 action 繞過
   babycamActions.removeRegistration(id);
   assert.equal(domainStore.get().bindings[0].ended, true);
 });
+
+test("離開掃碼：掃手圈選狀態後轉照護中，歸位掃碼還原原狀態", () => {
+  reset();
+  const binding = domainStore.get().bindings.find((item) => !item.ended && item.babies.length)!;
+  const baby = binding.babies[0];
+  const before = baby.state;
+  assert.throws(() => babycamActions.leave("NO-SUCH-CODE", "state-6"), /找不到這個識別碼/);
+  assert.throws(() => babycamActions.leave(baby.identityCode, "no-state"), /請選擇/);
+  babycamActions.leave(baby.identityCode.toLowerCase(), "state-6");
+  let left = domainStore.get().bindings.find((item) => item.id === binding.id)!.babies[0];
+  assert.equal(left.state, "state-6");
+  assert.equal(left.careMode, true);
+  assert.equal(left.stateBeforeLeave, before);
+  assert.equal(domainStore.get().careEvents.filter((event) => event.babyId === baby.babyId && !event.end).length, 1);
+  // 再掃一次改狀態不重複開照護紀錄，也不覆蓋原本要還原的狀態。
+  babycamActions.leave(baby.identityCode, "state-5");
+  left = domainStore.get().bindings.find((item) => item.id === binding.id)!.babies[0];
+  assert.equal(left.state, "state-5");
+  assert.equal(left.stateBeforeLeave, before);
+  assert.equal(domainStore.get().careEvents.filter((event) => event.babyId === baby.babyId && !event.end).length, 1);
+  babycamActions.scan(baby.identityCode, baby.babyId);
+  const back = domainStore.get().bindings.find((item) => item.id === binding.id)!.babies[0];
+  assert.equal(back.state, before);
+  assert.equal(back.careMode, false);
+  assert.equal(back.stateBeforeLeave, undefined);
+});
+
+test("狀態維護：新增一律遮蔽排最後，使用中與正常顯示不可刪除", () => {
+  reset();
+  const count = domainStore.get().displayStates.length;
+  babycamActions.displayMaster("", "照光", true, count);
+  const added = domainStore.get().displayStates.at(-1)!;
+  assert.equal(added.name, "照光");
+  assert.equal(added.masked, true);
+  babycamActions.display(added.key, "照光中");
+  assert.equal(domainStore.get().displayStates.at(-1)!.name, "照光中");
+  assert.throws(() => babycamActions.removeDisplay("normal"));
+  babycamActions.removeDisplay(added.key);
+  assert.equal(domainStore.get().displayStates.length, count);
+});

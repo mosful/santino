@@ -79,7 +79,7 @@ export type DisplayState = {
   /** 內建背景圖的靜態路徑（public/state-backgrounds/*.webp），隨程式一起出貨。 */
   defaultImage?: string;
 };
-export type BabyBinding = { babyId: string; cameraId: string; cartNo: string; identityCode: string; state: string; careMode: boolean; careSince?: string; birthOrder?: number };
+export type BabyBinding = { babyId: string; cameraId: string; cartNo: string; identityCode: string; state: string; careMode: boolean; careSince?: string; birthOrder?: number; /** 離開掃碼前的顯示狀態，歸位掃碼時還原。 */ stateBeforeLeave?: string };
 export type ViewingBinding = {
   id: string; caseId: string; room: string; motherName: string; phone: string;
   validFrom: string; validTo: string; familyEnabled: boolean; familyFrom: string; familyTo: string;

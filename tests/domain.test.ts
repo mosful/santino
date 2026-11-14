@@ -412,7 +412,7 @@ test("離車與掃碼復原只影響原鏡頭；RGB 依原佈線且跳過未知�
   assert.deepEqual(lightChannels("A16", "白"), []);
 });
 test("待辦跨角色檢視不等於處理權限，合約設定僅管理員", () => {
-  reset(); assert.deepEqual(roleTaskCategories("護理師 陳護理師"), ["醫師巡診", "回補期限", "托嬰"]);
+  reset(); assert.deepEqual(roleTaskCategories("護理師 陳護理師"), ["醫師巡診", "回補期限", "托嬰", "消毒"]);
   setCurrentRole("櫃台"); assert.throws(() => taskActions.complete("demo-round"), /僅可檢視/); assert.throws(() => contractSettingActions.reviewDays(7), /僅管理員/);
   setCurrentRole("管理者"); taskActions.complete("demo-round"); assert.ok(domainStore.get().handledTasks.includes("demo-round"));
 });

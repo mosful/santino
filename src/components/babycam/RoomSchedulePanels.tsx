@@ -5,6 +5,7 @@ import Button from "@/components/ui/Button";
 import { babycamActions } from "@/lib/babycam/actions";
 import type { DemoDomain } from "@/lib/domain/types";
 import { viewingSettingsOf } from "@/lib/babycam/viewingSettings";
+import Choice from "@/components/ui/Choice";
 
 /*
   04 後臺管理 ─ 開放時段與房間清單。
@@ -222,16 +223,7 @@ export function RoomListPanel({ data, run }: { data: DemoDomain; run: (action: (
               value={newTypeName}
               onChange={(event) => setNewTypeName(event.target.value)}
             />
-            <select
-              aria-label="新房型計價基準"
-              className={`${input} sm:w-36`}
-              value={newTypePrice}
-              onChange={(event) => setNewTypePrice(event.target.value as typeof newTypePrice)}
-            >
-              {["精緻", "VIP", "VILLA"].map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
+            <Choice label="新房型計價基準" value={newTypePrice} options={["精緻", "VIP", "VILLA"]} onChange={(next) => setNewTypePrice(next as typeof newTypePrice)} />
             <Button
               variant="primary"
               size="sm"

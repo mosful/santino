@@ -142,7 +142,7 @@ async function check(page, name) {
                   await page.screenshot({ path: path.join(output, `${prefix}-${doc}-畫面.png`) });
                 }
                 if (doc === "繳款通知單") {
-                  await panel.getByLabel("繳款方式", { exact: true }).selectOption({ index: 1 });
+                  await panel.getByRole("radiogroup", { name: "繳款方式", exact: true }).getByRole("radio", { name: "現金", exact: true }).check();
                   await panel.getByRole("button", { name: `儲存${doc}`, exact: true }).click();
                   await page.getByRole("status").filter({ hasText: "已儲存" }).waitFor();
                   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("santino_domain_v1")).cases.find((item) => item.id === "case-demo-preadmission").documents);

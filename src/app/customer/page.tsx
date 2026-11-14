@@ -19,6 +19,7 @@ import { buttonStyles } from "@/components/ui/buttonStyles";
 import { Toast, useToast } from "@/components/ui/Toast";
 import CollapsibleSection from "@/components/ui/CollapsibleSection";
 import { downloadFile, toBrowserXlsx } from "@/lib/babycam/exports";
+import { ParityInput } from "@/components/ui/Choice";
 
 const columns: Column<Customer>[] = [
   { key: "name", label: "媽媽姓名" },
@@ -86,7 +87,7 @@ function blankCustomer(id: number): Customer {
     id,
     name: DEMO_MOTHER_NAME,
     level: "一般客戶",
-    parity: "第一胎",
+    parity: "第 1 胎",
     phone: "",
     birthday: "",
     dueDate: "",
@@ -140,7 +141,7 @@ function DetailTabs({
             <div className="grid grid-cols-2 gap-3 text-sm">
               <EditField label="媽媽姓名" value={draft.name} onChange={(v) => onDraftChange({ name: v })} />
               <EditField label="等級" value={draft.level} onChange={(v) => onDraftChange({ level: v })} />
-              <EditField label="胎次" value={draft.parity} onChange={(v) => onDraftChange({ parity: v })} />
+              <div className="text-sm"><span className="mb-1 block text-stone-500">胎次</span><ParityInput value={draft.parity} onChange={(v) => onDraftChange({ parity: v })} /></div>
               <EditField label="手機" value={draft.phone} onChange={(v) => onDraftChange({ phone: v })} />
               <EditField label="生日" value={draft.birthday} onChange={(v) => onDraftChange({ birthday: v })} />
               <EditField label="預產期" value={draft.dueDate} onChange={(v) => onDraftChange({ dueDate: v })} />
@@ -298,7 +299,7 @@ export default function CustomerPage() {
     try {
       const id = isNew ? caseActions.create(draft.name, draft.phone) : customers.find((item) => item.id === draft.id)?.caseId;
       if (!id) throw new Error("找不到對應案件。");
-      caseActions.update(id, { name: draft.name, phone: draft.phone, dueDate: draft.dueDate, owner: draft.mainStaff, customerDetails: { level: draft.level, parity: draft.parity, birthday: draft.birthday, referrer: draft.referrer, mainNurse: draft.mainNurse, lineBound: draft.lineBound, family: draft.family } });
+      caseActions.update(id, { name: draft.name, phone: draft.phone, dueDate: draft.dueDate, owner: draft.mainStaff, parity: draft.parity, customerDetails: { level: draft.level, parity: draft.parity, birthday: draft.birthday, referrer: draft.referrer, mainNurse: draft.mainNurse, lineBound: draft.lineBound, family: draft.family } });
       const record = domainStore.get().cases.find((item) => item.id === id)!;
       setSelected({ ...draft, id: record.legacyId }); setEditing(false); setIsNew(false); toast.ok("客戶資料已與案件、照護及視訊同步。");
     } catch (error) { toast.fail(error instanceof Error ? error.message : "儲存失敗。"); }

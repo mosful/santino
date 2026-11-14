@@ -31,7 +31,8 @@ async function check(page, name) {
     return { fields: fields.length, defects };
   });
   results.push({ name, ...result });
-  assert.ok(result.fields >= 5, `${name} 須顯示入住案件、出生日期與寶寶欄位`);
+  // 性別 2026-11-14 改為 radio（3 個以下選項不用下拉），不再計入輸入框；單胞胎為案件、出生日期、姓名、車號 4 欄。
+  assert.ok(result.fields >= 4, `${name} 須顯示入住案件、出生日期與寶寶欄位`);
   assert.deepEqual(result.defects, [], `${name}：${result.defects.join("；")}`);
 }
 

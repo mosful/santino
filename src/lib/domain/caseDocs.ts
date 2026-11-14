@@ -173,6 +173,7 @@ export const CASE_DOCS: CaseDoc[] = [
       motherName: orDemo(record.name, DEMO_MOTHER_NAME),
       babyName: DEMO_BABY_NAME,
       hospitalDoctor: record.hospital,
+      birthOrder: record.parity,
       delivery: record.deliveryMethod === "剖腹產" ? "C/S" : "NSD",
       chinese: record.chineseConsent ? "是" : "否",
       stay: stayRange(record),
@@ -293,9 +294,13 @@ export const docsForStage = (stage: number) => CASE_DOCS.filter((doc) => doc.sta
 export const caseDoc = (key: string) => CASE_DOCS.find((doc) => doc.key === key);
 
 /** 表單目前的值：存過就用存的，沒存過用自動帶入值。 */
+const COMMON_KEYS = new Set(["motherName", "motherPhone", "dueDate", "hospital", "hospitalDoctor", "delivery", "parity", "birthOrder", "room", "stay", "days"]);
 export function docValues(record: CaseRecord, doc: CaseDoc): Record<string, string> {
   const dates = Object.fromEntries(doc.sections.flatMap((section) => section.fields)
     .filter((field) => field.type === "date" && ["filledAt", "staffDate", "askedAt", "noticeDate"].includes(field.key))
     .map((field) => [field.key, todayTaipei()]));
-  return { ...dates, ...doc.prefill(record), ...(record.documents?.[doc.key]?.values ?? {}) };
+  // 案件共同資料（胎次、預產期、生產方式…）若存檔時還空白，之後案件補填了要能帶入；
+  // 其他欄位的空白是人員刻意清掉的（例如取消全部坐月子用品），照存檔值不重新帶入。
+  const saved = Object.fromEntries(Object.entries(record.documents?.[doc.key]?.values ?? {}).filter(([key, value]) => value !== "" || !COMMON_KEYS.has(key)));
+  return { ...dates, ...doc.prefill(record), ...saved };
 }

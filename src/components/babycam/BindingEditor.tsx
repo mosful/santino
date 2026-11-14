@@ -8,6 +8,7 @@ import { CameraChipGrid, ZoneFilter } from "./BabycamUi";
 import { DEMO_BABY_NAME, orDemo } from "@/lib/demo/demoDefaults";
 import { babyDisplayName } from "@/lib/babycam/wristband";
 import { Toast, useToast } from "@/components/ui/Toast";
+import Choice from "@/components/ui/Choice";
 
 const input = "form-control min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
 // 按鈕樣式一律取自 components/ui/Button，不在此另開複本（見該檔開頭說明）。
@@ -213,7 +214,7 @@ export default function BindingEditor({ data, binding, onChange }: { data: DemoD
         <div className="baby-binding-fields">
           <label className="text-sm">寶寶姓名<input aria-label={`第 ${index + 1} 位寶寶姓名`} className={input} value={draft.name} onChange={(event) => patch(index, { name: event.target.value, renamed: true })} /></label>
           <label className="text-sm">車號<input aria-label={`第 ${index + 1} 位車號`} className={input} value={draft.cartNo} onChange={(event) => patch(index, { cartNo: event.target.value })} /></label>
-          <label className="text-sm">性別<select aria-label={`第 ${index + 1} 位性別`} className={input} value={draft.sex} onChange={(event) => patch(index, { sex: event.target.value as "男" | "女" })}><option>男</option><option>女</option></select></label>
+          <div className="text-sm">性別<Choice label={`第 ${index + 1} 位性別`} value={draft.sex} options={["男", "女"]} onChange={(sex) => patch(index, { sex: sex as "男" | "女" })} /></div>
           <p className="self-end text-xs text-stone-500">監視器：{data.cameras.find((camera) => camera.id === draft.cameraId)?.code ?? "尚未選擇"}</p>
         </div>
         {/* 監視器用晶片挑，不用下拉選單——33 支塞進 select 一次只看得到幾支，

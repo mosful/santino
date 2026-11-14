@@ -183,7 +183,9 @@ export const babycamActions = {
       if (!found) throw new Error("找不到這個識別碼，標籤可能已失效，請核對手圈。");
       if (!data.displayStates.some((item) => item.key === state)) throw new Error("請選擇離開時要顯示的狀態。");
       const { binding, baby } = found;
-      if (!baby.careMode) { baby.stateBeforeLeave = baby.state; baby.careMode = true; baby.careSince = data.demoAt; data.careEvents.push({ id: crypto.randomUUID(), bindingId: binding.id, babyId: baby.babyId, start: data.demoAt, end: null, actor: getCurrentRole() }); }
+      if (!baby.careMode) { baby.stateBeforeLeave = baby.state; baby.careMode = true; baby.careSince = data.demoAt; data.careEvents.push({ id: crypto.randomUUID(), bindingId: binding.id, babyId: baby.babyId, start: data.demoAt, end: null, actor: getCurrentRole(), state }); }
+      // 已在照護中再掃一次改狀態：更新進行中那筆的原因，不另開一筆。
+      else data.careEvents.filter((event) => event.babyId === baby.babyId && !event.end).forEach((event) => { event.state = state; });
       baby.state = state;
       audit(data, `離開掃碼，顯示狀態 ${data.displayStates.find((item) => item.key === state)?.name}`, baby.babyId);
     });

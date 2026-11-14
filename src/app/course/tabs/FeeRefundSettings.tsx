@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FormSection, SummaryRow, WorkArea } from "@/components/ui/Workspace";
 import Switch from "@/components/ui/Switch";
+import Choice from "@/components/ui/Choice";
 
 export default function FeeRefundSettings() {
   const [refundMode, setRefundMode] = useState<"full" | "partial" | "none">("partial");
@@ -24,10 +25,7 @@ export default function FeeRefundSettings() {
           </div>
           <div>
             <label className="mb-1 block text-stone-500">繳費方式</label>
-            <select aria-label="繳費方式" value={method} onChange={(event) => setMethod(event.target.value)} className="w-full rounded border border-stone-200 px-2 py-1.5">
-              <option>現場收費</option>
-              <option>併入合約金額</option>
-            </select>
+            <Choice label="繳費方式" value={method} options={["現場收費", "併入合約金額"]} onChange={setMethod} />
           </div>
         </div>
       </div>

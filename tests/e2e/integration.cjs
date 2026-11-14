@@ -30,7 +30,7 @@ async function decodeQr(locator, label = false) {
   await page.getByRole("button", { name: /^預約完成/ }).click();
 
 
-  await page.getByLabel("參觀出席", { exact: true }).selectOption("已出席");
+  await page.getByRole("radiogroup", { name: "參觀出席", exact: true }).getByRole("radio", { name: "已出席", exact: true }).check();
   await page.getByRole("button", { name: /^參觀完成/ }).click();
   await page.getByLabel("收字第○號（合約編號）", { exact: true }).fill("DEMO-INTEGRATION");
   await page.getByLabel("訂金", { exact: true }).fill("30000");

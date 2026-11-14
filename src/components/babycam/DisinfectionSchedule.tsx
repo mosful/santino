@@ -11,6 +11,7 @@ import type { DemoDomain } from "@/lib/domain/types";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { SectionHeading } from "./BabycamUi";
 import { taipeiTimestamp } from "@/lib/care/rules";
+import Choice from "@/components/ui/Choice";
 
 const input = "min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
 const button = buttonStyles();
@@ -95,7 +96,7 @@ export default function DisinfectionSchedule({ data, onChange }: { data: DemoDom
         <h3 className="font-semibold">{draft.id ? `編輯「${draft.label}」` : "新增消毒排程"}</h3>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <label className="text-sm">項目名稱<input aria-label="消毒項目名稱" className={input} value={draft.label} onChange={(event) => patch({ label: event.target.value })} /></label>
-          <label className="text-sm">消毒方式<select aria-label="消毒方式" className={input} value={draft.kind} onChange={(event) => patch({ kind: event.target.value as Disinfection["kind"] })}><option>紫外線</option><option>環境</option></select></label>
+          <div className="text-sm">消毒方式<Choice label="消毒方式" value={draft.kind} options={["紫外線", "環境"]} onChange={(kind) => patch({ kind: kind as Disinfection["kind"] })} /></div>
           <label className="text-sm">週期<select aria-label="消毒週期" className={input} value={draft.weekday === null ? "once" : String(draft.weekday)} onChange={(event) => patch(event.target.value === "once" ? { weekday: null } : { weekday: Number(event.target.value), date: "" })}>
             <option value="once">不定期（指定日期）</option>
             {WEEKDAYS.map((label, index) => <option key={label} value={index}>每{label}</option>)}

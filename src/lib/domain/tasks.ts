@@ -9,7 +9,7 @@ import { getCurrentRole } from "../roleStore";
 import { backfillDeadline } from "../care/rules";
 import { caseBalance } from "./rules";
 
-export const TASK_CATEGORIES = ["入住", "退房", "參觀", "合約／猶豫期", "待收款", "醫師巡診", "課程", "關懷／提醒", "回補期限", "托嬰"];
+export const TASK_CATEGORIES = ["入住", "退房", "參觀", "合約／猶豫期", "待收款", "醫師巡診", "課程", "關懷／提醒", "回補期限", "托嬰", "消毒"];
 export type Task = {
   id: string; date: string; category: string; title: string; href: string; handled: boolean;
   /** true＝手動新增的待辦，可直接編輯／刪除；其餘由案件與照護資料推導，要改請到來源頁面。 */
@@ -19,7 +19,7 @@ export function roleTaskCategories(role: Role) {
   if (["管理者", "護理長 婉真"].includes(role)) return TASK_CATEGORIES;
   if (role === "櫃台") return TASK_CATEGORIES.filter((item) => !["醫師巡診", "回補期限"].includes(item));
   if (role === "衛教師 琳雅") return ["關懷／提醒", "回補期限"];
-  if (role === "護理師 陳護理師") return ["醫師巡診", "回補期限", "托嬰"];
+  if (role === "護理師 陳護理師") return ["醫師巡診", "回補期限", "托嬰", "消毒"];
   return [];
 }
 const plusDays = (date: string, days: number) => new Date(Date.parse(date.length === 10 ? `${date}T00:00:00+08:00` : date) + days * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" });
@@ -37,6 +37,17 @@ export function taskEvents(data: DemoDomain, care: CareState): Task[] {
   for (const subject of data.subjects.filter((item) => item.historical && item.dischargedAt)) {
     const deadline = backfillDeadline(subject, care.backfillDays);
     if (deadline) events.push({ id: `${subject.id}:backfill`, date: plusDays(deadline, 0), category: "回補期限", title: `${subject.name}｜${subject.chartNo} 回補期限`, href: `/${subject.kind}/` });
+  }
+  // 寶寶視訊的消毒排程（客戶 2026-11-14）：單次排程放在指定日；每週排程展開展示日前後 2 個月。
+  const today = data.demoAt.slice(0, 10);
+  for (const item of (data.disinfections ?? []).filter((entry) => entry.enabled)) {
+    const title = `${item.label}（${item.kind}）${item.start}–${item.end}｜${item.rooms.length ? item.rooms.join("、") : "全院"}`;
+    const href = "/babycam/?section=disinfect";
+    if (item.weekday === null) { if (item.date) events.push({ id: `${item.id}:disinfect`, date: item.date, category: "消毒", title, href }); continue; }
+    for (let offset = -62; offset <= 62; offset++) {
+      const date = plusDays(today, offset);
+      if (new Date(`${date}T12:00:00+08:00`).getUTCDay() === item.weekday) events.push({ id: `${item.id}:${date}`, date, category: "消毒", title, href });
+    }
   }
   return events.map((event) => ({ ...event, handled: data.handledTasks.includes(event.id) })).sort((a, b) => a.date.localeCompare(b.date));
 }

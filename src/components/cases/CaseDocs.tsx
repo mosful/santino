@@ -9,6 +9,7 @@ import { docValues, type CaseDoc } from "@/lib/domain/caseDocs";
 import type { CaseRecord } from "@/lib/domain/types";
 import { buttonStyles } from "@/components/ui/buttonStyles";
 import { taipeiTimestamp } from "@/lib/care/rules";
+import Choice from "@/components/ui/Choice";
 
 const input = "form-control min-h-12 w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm";
 const button = buttonStyles();
@@ -68,20 +69,19 @@ export function CaseDocPanel({ record, doc, editable, onClose }: { record: CaseR
                   </fieldset>
                 );
               }
+              // 3 個以下選項為 radio 群組，不能包在 <label> 裡。
+              const Wrapper = field.type === "select" && options.length <= 3 ? "div" : "label";
               return (
-                <label key={field.key} className={`${span} block space-y-2 text-sm`}>
+                <Wrapper key={field.key} className={`${span} block space-y-2 text-sm`}>
                   <span>{field.label}</span>
                   {field.type === "select" ? (
-                    <select aria-label={field.label} disabled={!editable} className={input} value={value} onChange={(event) => set(field.key, event.target.value)}>
-                      <option value="">請選擇</option>
-                      {options.map((option) => <option key={option}>{option}</option>)}
-                    </select>
+                    <Choice label={field.label} disabled={!editable} className={input} value={value} options={options} placeholder="請選擇" onChange={(next) => set(field.key, next)} />
                   ) : field.type === "textarea" ? (
                     <textarea aria-label={field.label} disabled={!editable} className={input} value={value} onChange={(event) => set(field.key, event.target.value)} />
                   ) : (
                     <input aria-label={field.label} type={field.type === "number" ? "number" : field.type === "date" ? "date" : field.type === "time" ? "time" : "text"} disabled={!editable} className={input} value={value} onChange={(event) => set(field.key, event.target.value)} />
                   )}
-                </label>
+                </Wrapper>
               );
             })}
           </div>

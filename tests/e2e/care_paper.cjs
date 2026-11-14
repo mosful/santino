@@ -50,7 +50,7 @@ async function check(page,name,width,height) {
     await page.getByRole("button",{name:"回到填寫畫面",exact:true}).click();
     await generate(page);
     assert.equal((await download(page,`${engine}-mama-admission-filled.pdf`)).getPageCount(),2);
-    await page.getByRole("combobox",{name:/紙張/}).selectOption("a4");
+    await page.getByRole("radiogroup",{name:"紙張"}).getByRole("radio",{name:"A4 等比例置中"}).check();
     await generate(page);
     const a4=await download(page,`${engine}-mama-admission-a4.pdf`);
     assert.equal(a4.getPageCount(),2);

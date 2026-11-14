@@ -5,6 +5,7 @@ import { DEFAULT_CHECKOUT_ITEMS } from "../src/lib/domain/checkout";
 import { CASE_DOCS, docValues } from "../src/lib/domain/caseDocs";
 import { MODULES } from "../src/lib/modules";
 import type { CaseRecord } from "../src/lib/domain/types";
+import { blankCase } from "../src/lib/demo/domainSeed";
 
 const base = { roomType: "精緻" as const, hospital: "璟馨婦幼醫院", priceClass: "一般", addOns: [] };
 
@@ -58,4 +59,13 @@ test("一般導覽不再出現獨立套餐速算入口，案件清單仍在", ()
   assert.ok(visible.includes("cases"));
   // 路由保留，只是不列在選單；需求明確要求不得一併刪掉案件計價。
   assert.ok((counter.subItems ?? []).some((item) => item.key === "quote" && item.href === "/quote/"));
+});
+
+test("案件共同資料（胎次）晚於單據填寫時仍會帶入，刻意清空的其他欄位不被蓋回", () => {
+  const tcm = CASE_DOCS.find((doc) => doc.key === "tcm-survey")!;
+  const prenatal = CASE_DOCS.find((doc) => doc.key === "prenatal-care")!;
+  const record = { ...blankCase("parity-carry"), name: "示範", parity: "第 2 胎", documents: { "tcm-survey": { values: { parity: "", gyn: "" }, savedAt: "", actor: "" }, "prenatal-care": { values: { supplies: "" }, savedAt: "", actor: "" } } } as CaseRecord;
+  assert.equal(docValues(record, tcm).parity, "第 2 胎");
+  assert.equal(docValues(record, prenatal).supplies, "");
+  assert.equal(docValues(record, CASE_DOCS.find((doc) => doc.key === "baby-notice")!).birthOrder, "第 2 胎");
 });

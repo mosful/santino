@@ -50,11 +50,10 @@ function TerminationPanel({ record }: { record: CaseRecord }) {
           </div>
           <div>
             <label className="mb-1 block text-stone-500">作廢／退約原因</label>
-            <select name="reason" className="w-full rounded border border-stone-200 px-2 py-1.5">
-              <option>客戶取消</option>
-              <option>資料重複建立</option>
-              <option>其他</option>
-            </select>
+            {/* 3 個選項改 radio（客戶 2026-11-14）；仍以 name="reason" 送出，表單讀值方式不變。 */}
+            <div role="radiogroup" aria-label="作廢／退約原因" className="flex flex-wrap gap-x-4 gap-y-1">
+              {["客戶取消", "資料重複建立", "其他"].map((reason, index) => <label key={reason} className="flex min-h-11 items-center gap-2"><input type="radio" name="reason" value={reason} defaultChecked={index === 0} />{reason}</label>)}
+            </div>
           </div>
           <div className="col-span-2">
             <label className="mb-1 block text-stone-500">計算後退款金額</label>

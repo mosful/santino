@@ -26,7 +26,7 @@ export function useContractRows(): (Contract & { caseId: string })[] {
 }
 export function useCustomerRows(): (Customer & { caseId: string })[] {
   const { data } = useDomainStore();
-  return data.cases.map((record) => ({ id: record.legacyId, caseId: record.id, name: record.name, level: record.customerDetails?.level ?? "一般客戶", parity: record.customerDetails?.parity ?? "待確認", phone: record.phone, birthday: record.customerDetails?.birthday ?? "", dueDate: record.dueDate, contractNo: record.contractNo, signDate: record.signedDate, referrer: record.customerDetails?.referrer ?? record.source, mainStaff: record.owner, mainNurse: record.customerDetails?.mainNurse ?? "待指派", visitDate: record.visitDate, lineBound: record.customerDetails?.lineBound ?? false, family: record.customerDetails?.family ?? (record.childcareContact || "待確認") }));
+  return data.cases.map((record) => ({ id: record.legacyId, caseId: record.id, name: record.name, level: record.customerDetails?.level ?? "一般客戶", parity: record.parity || record.customerDetails?.parity || "待確認", phone: record.phone, birthday: record.customerDetails?.birthday ?? "", dueDate: record.dueDate, contractNo: record.contractNo, signDate: record.signedDate, referrer: record.customerDetails?.referrer ?? record.source, mainStaff: record.owner, mainNurse: record.customerDetails?.mainNurse ?? "待指派", visitDate: record.visitDate, lineBound: record.customerDetails?.lineBound ?? false, family: record.customerDetails?.family ?? (record.childcareContact || "待確認") }));
 }
 export function useJourneyMothers(): JourneyMother[] {
   const { data } = useDomainStore();

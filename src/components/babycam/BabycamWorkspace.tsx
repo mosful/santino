@@ -52,6 +52,7 @@ import IdentityScanner from "./IdentityScanner";
 import LeaveScan from "./LeaveScan";
 import SortableHeader, { useTableSort } from "@/components/ui/SortableHeader";
 import { viewingSettingsOf } from "@/lib/babycam/viewingSettings";
+import Choice from "@/components/ui/Choice";
 
 /*
   寶寶視訊管理工作區。
@@ -160,6 +161,7 @@ const LEGACY_SECTION: Record<string, { group: GroupId; tab: string }> = {
   // 護理人員掃完碼還得自己找到核對頁籤。
   scan: { group: "02", tab: "scan" },
   leave: { group: "02", tab: "leave" },
+  disinfect: { group: "04", tab: "disinfect" },
   schedule: { group: "04", tab: "schedule" },
   backgrounds: { group: "04", tab: "states" },
   reports: { group: "01", tab: "report" },
@@ -328,7 +330,7 @@ export default function BabycamWorkspace({
     report === "在鏡頭下"
       ? ["媽媽／房號", "寶寶", "監視器", "開始", "結束", "在鏡頭下秒數（推算）", "照護秒數"]
       : report === "照護"
-        ? ["媽媽／房號", "寶寶", "開始", "結束", "執行者"]
+        ? ["媽媽／房號", "寶寶", "照護原因", "開始（離開掃碼）", "結束（歸位核對）", "執行者"]
         : report === "觀看"
           ? ["媽媽／房號", "開始", "結束"]
           : ["時間", "操作者", "操作", "對象"];
@@ -341,6 +343,8 @@ export default function BabycamWorkspace({
             return [
               `${target?.motherName ?? ""}／${target?.room ?? "托嬰"}`,
               data.subjects.find((subject) => subject.id === event.babyId)?.name ?? "",
+              // 原因＝離開掃碼時選的顯示狀態；按「設為照護中」開始的沒有掃碼原因。
+              event.state ? data.displayStates.find((state) => state.key === event.state)?.name ?? "（狀態已刪除）" : "手動設為照護中",
               event.start,
               event.end ?? "進行中",
               event.actor,
@@ -354,7 +358,7 @@ export default function BabycamWorkspace({
           : data.audit.map((entry) => [entry.at, entry.actor, entry.action, entry.target]);
   const filteredRows = reportRows.filter((row) => {
     // 「操作」報表的時間欄叫「時間」，找不到「開始」就落回第一欄。
-    const raw = String(row[Math.max(0, reportHeaders.indexOf("開始"))]);
+    const raw = String(row[Math.max(0, reportHeaders.findIndex((header) => header.startsWith("開始")))]);
     const date = new Date(raw).toLocaleDateString("en-CA", { timeZone: "Asia/Taipei" });
     return row.join(" ").includes(keyword) && (!dateFrom || date >= dateFrom) && (!dateTo || date <= dateTo);
   });
@@ -1084,16 +1088,7 @@ export default function BabycamWorkspace({
                     <input type="checkbox" checked={camera.enabled} onChange={(event) => run(() => babycamActions.camera(camera.id, { enabled: event.target.checked }))} />
                     啟用監視器
                   </label>
-                  <select
-                    aria-label="監視器健康狀態"
-                    className={`${input} sm:w-40`}
-                    value={camera.health}
-                    onChange={(event) => run(() => babycamActions.camera(camera.id, { health: event.target.value as typeof camera.health }))}
-                  >
-                    {["正常", "等待", "異常"].map((item) => (
-                      <option key={item}>{item}</option>
-                    ))}
-                  </select>
+                  <Choice label="監視器健康狀態" value={camera.health} options={["正常", "等待", "異常"]} onChange={(health) => run(() => babycamActions.camera(camera.id, { health: health as typeof camera.health }))} />
                   <Button size="sm" onClick={() => run(() => babycamActions.camera(camera.id, { baseline: true }), "已儲存模擬正常停放基準；未啟動真實影像偵測。")}>
                     設為正常停放基準
                   </Button>

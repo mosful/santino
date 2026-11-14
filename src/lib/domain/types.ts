@@ -107,7 +107,7 @@ export type DemoDomain = {
   demoClockStartedAt?: string;
   lightColors: Record<string, string>; relayChannels: Record<string, boolean>;
   audit: { id: string; at: string; actor: string; action: string; target: string }[];
-  careEvents: { id: string; bindingId: string; babyId: string; start: string; end: string | null; actor: string }[];
+  careEvents: { id: string; bindingId: string; babyId: string; start: string; end: string | null; actor: string; /** 離開掃碼選的顯示狀態 key（照護原因）；手動設為照護中沒有。 */ state?: string }[];
   staff: { id: string; name: string; role: string; enabled: boolean }[];
   sectionPermissions: Record<string, string[]>;
   printSettings: PrintSettings;

@@ -10,6 +10,7 @@ import { PAPER_TEMPLATES } from "@/lib/care/paperTemplates";
 import { PAPER_VERSION, MOOD_QUESTIONS, SOCIAL_QUESTIONS } from "@/lib/care/paperForms";
 import { paperConflicts, paperRecords, paperText, type PaperRequest } from "@/lib/care/paperRecords";
 import styles from "./CarePaperOutput.module.css";
+import Choice from "@/components/ui/Choice";
 
 type Props = { form: CareForm; document: CareDocument; subject: CareSubject; history: CareEntry[]; blank: boolean; generateButtonRef: RefObject<HTMLButtonElement | null> };
 export default function CarePaperOutput({ form, document, subject, history, blank, generateButtonRef }: Props) {
@@ -54,7 +55,7 @@ export default function CarePaperOutput({ form, document, subject, history, blan
       <p>不指定日期時列印全部已簽紀錄。{form.paperTemplate === "mama-daily" ? "每頁四次紀錄。" : "每頁五個連續日曆日，缺日與缺班留白；N 班依紀錄日期歸屬。"}</p>
     </div>}
     <div className={styles.actions}>
-      <label>紙張<select value={paperSize} onChange={(event) => setPaperSize(event.target.value as "source" | "a4")}><option value="source">原紙本尺寸</option><option value="a4">A4 等比例置中</option></select></label>
+      <div>紙張<Choice label="紙張" value={paperSize} options={[{ value: "source", label: "原紙本尺寸" }, { value: "a4", label: "A4 等比例置中" }]} onChange={(next) => setPaperSize(next as "source" | "a4")} /></div>
       <Button ref={generateButtonRef} onClick={() => void generate()} disabled={busy}><FileText size={16} />{busy ? "正在產生 PDF…" : blank ? "產生空白紙本 PDF" : "產生填寫紙本 PDF"}</Button>
       {current && result && <ButtonLink href={result.url} download={`${form.printTitle ?? form.label}.pdf`}><Download size={16} />下載紙本 PDF</ButtonLink>}
       {current && result && <a href={result.url} target="_blank" rel="noopener noreferrer">開啟 PDF 列印</a>}

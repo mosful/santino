@@ -93,7 +93,11 @@ test("離開掃碼：掃手圈選狀態後轉照護中，歸位掃碼還原原�
   assert.equal(left.state, "state-5");
   assert.equal(left.stateBeforeLeave, before);
   assert.equal(domainStore.get().careEvents.filter((event) => event.babyId === baby.babyId && !event.end).length, 1);
+  // 照護報表的原因＝最後選的離開狀態，起訖＝離開掃碼到歸位核對。
+  const open = domainStore.get().careEvents.find((event) => event.babyId === baby.babyId && !event.end)!;
+  assert.equal(open.state, "state-5");
   babycamActions.scan(baby.identityCode, baby.babyId);
+  assert.ok(domainStore.get().careEvents.find((event) => event.id === open.id)!.end);
   const back = domainStore.get().bindings.find((item) => item.id === binding.id)!.babies[0];
   assert.equal(back.state, before);
   assert.equal(back.careMode, false);

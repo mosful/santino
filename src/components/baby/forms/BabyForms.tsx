@@ -5,6 +5,7 @@ import Tabs from "@/components/ui/Tabs";
 import PhrasePicker from "@/components/phrases/PhrasePicker";
 import SignatureBox from "@/components/ui/SignatureBox";
 import PrototypeFormActions, { usePrototypeClock } from "@/components/ui/PrototypeFormActions";
+import Choice from "@/components/ui/Choice";
 
 function PrevFillBadge() {
   return (
@@ -102,14 +103,7 @@ export function FeedingAssessment({ room }: { room: string }) {
       <div className="text-xs text-stone-400">{room}｜哺餵母乳評估</div>
       <div>
         <label className="mb-1 block text-xs text-stone-500">評估結果</label>
-        <select
-          value={result}
-          onChange={(e) => setResult(e.target.value as "pass" | "recheck")}
-          className="rounded border border-stone-200 px-2 py-1.5 text-sm"
-        >
-          <option value="pass">通過</option>
-          <option value="recheck">再評估</option>
-        </select>
+        <Choice label="評估結果" value={result} options={[{ value: "pass", label: "通過" }, { value: "recheck", label: "再評估" }]} onChange={(next) => setResult(next as "pass" | "recheck")} />
       </div>
       <textarea className="h-16 w-full rounded border border-stone-200 p-2 text-sm" placeholder="評估項目內容" />
       {result === "recheck" && (

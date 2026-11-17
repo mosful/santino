@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { MAMA_FORMS, BABY_FORMS, careForms } from "../src/lib/care/forms";
-import { backfillDeadline, canEditCare, isBackfillExpired, moodNeedsAttention, needsFeedingReassessment, validateCareForm } from "../src/lib/care/rules";
+import { backfillDeadline, canEditCare, isBackfillExpired, mamaAdmissionSignatureError, moodNeedsAttention, needsFeedingReassessment, validateCareForm } from "../src/lib/care/rules";
 import { CARE_SUBJECTS } from "../src/lib/care/subjects";
 import { careActions, careStore } from "../src/lib/care/store";
 import { setCurrentRole } from "../src/lib/roleStore";
@@ -41,6 +41,13 @@ test("疫情表填表人身分變更清除簽名，先生不能帶入媽媽簽�
   assert.ok(careStore.get().documents[key].signature);
   careActions.change(key,{respondentIdentity:"孕婦本人"});
   assert.equal(careStore.get().documents[key].signature,undefined);
+});
+
+test("產婦入住評估在簽名前先告知填表人必要資料", () => {
+  assert.match(mamaAdmissionSignatureError("mama", "admission", {}), /TOCC.*填表人身分/);
+  assert.match(mamaAdmissionSignatureError("mama", "admission", { respondentIdentity: "先生" }), /填寫姓名/);
+  assert.equal(mamaAdmissionSignatureError("mama", "admission", { respondentIdentity: "孕婦本人" }), "");
+  assert.equal(mamaAdmissionSignatureError("baby", "admission", {}), "");
 });
 
 test("非本人修改及刪除他人紀錄由 action 拒絕，主管可處理",()=>{

@@ -23,7 +23,15 @@
   「同案件媽媽／寶寶」和「最近操作歷程」兩小塊，釘住的價值遠小於那塊空白的突兀。
   真正需要常駐的東西（對象識別列、表單與房間分頁）都已經在頁首了。
 */
-.sidebar { position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: 20px; }
+.sidebar { position: static; display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.relatedPanel, .historyPanel { min-width: 0; }
+.historyPanel { align-self: start; border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--surface-raised); padding: 4px 16px 12px; }
+.historyPanel > summary::-webkit-details-marker { display: none; }
+.historyPanel > summary::before { content: "▸"; color: var(--text-muted); transition: transform .15s ease; }
+.historyPanel[open] > summary::before { transform: rotate(90deg); }
+@media (min-width: 48rem) {
+  .sidebar { grid-template-columns: minmax(0, 3fr) minmax(13rem, 1fr); }
+}
 .form { container-type: inline-size; }
 .fieldGrid { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 20px; row-gap: 24px; }
 .field { min-width: 0; }
@@ -121,7 +129,7 @@
 .paperLayout :global(.action-dock) { flex-wrap: wrap; }
 .paperLayout :global(.action-dock-copy) { flex: 1 1 auto; min-width: min(100%, 14rem); }
 .paperLayout :global(.action-dock-actions) { flex-wrap: wrap; }
-.paperLayout > aside { position: static; margin-top: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: 24px; }
+.paperLayout > aside { position: static; margin-top: 24px; gap: 24px; }
 .printPreview { display: block; margin-bottom: 24px; padding: 16px; border: 1px solid var(--border-subtle); overflow-x: auto; }
 @media print {
   .form:has(.printOutput) { padding: 0 !important; border: 0; box-shadow: none; }

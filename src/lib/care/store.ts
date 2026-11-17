@@ -10,7 +10,7 @@ import { normalizeSheetValues } from "./sheetValues";
 import { applyDailyDefaults, applyIoDefaults, lastFeeding, latestMeasurement } from "./summary";
 import { careSubject } from "./subjects";
 import { guidanceActions, guidanceKeys } from "./guidance";
-import { canAuthorizeCare, canEditCare, canReviseCareEntry, canViewCare, documentKey, isBackfillBlocked, validateCareForm } from "./rules";
+import { canAuthorizeCare, canEditCare, canReviseCareEntry, canViewCare, documentKey, isBackfillBlocked, mamaAdmissionSignatureError, validateCareForm } from "./rules";
 import type { CareDocument, CareKind, CareSignatureRole, CareState, CareValues } from "./types";
 
 const initial: CareState = { version: 1, documents: {}, open: [], active: { mama: null, baby: null }, unlockedCase: null, entries: [], events: [], authorizations: {}, personalPhrases: {}, backfillDays: 3 };
@@ -26,8 +26,8 @@ const now = () => new Date().toISOString();
 
 function confirmPaperRecipient(document:CareDocument) {
   const subject=careSubject(document.subjectId);
-  if(subject?.kind !== "mama" || document.formKey !== "admission") return;
-  if(!document.values.respondentIdentity || document.values.respondentIdentity !== "孕婦本人" && !String(document.values.respondent??"").trim()) throw new Error("請先選擇填表人身分，先生或親友另請填寫姓名，再確認簽名。");
+  const error = subject ? mamaAdmissionSignatureError(subject.kind, document.formKey, document.values) : "";
+  if(error) throw new Error(error);
 }
 
 function stamp(state: CareState, subjectId: string, action: string) {

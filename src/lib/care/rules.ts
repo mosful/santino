@@ -56,6 +56,20 @@ export function needsFeedingReassessment(values: CareValues) {
 export function moodNeedsAttention(values: CareValues) {
   return (values.score !== undefined && Number(values.score) >= 13) || (values.question10 !== undefined && Number(values.question10) >= 2);
 }
+
+/**
+ * 產婦入住評估的疫情表要依實際填表人簽名。
+ * 畫面與 store 共用同一條規則，避免使用者寫完簽名才發現前置資料尚未確認。
+ */
+export function mamaAdmissionSignatureError(kind: CareKind, formKey: string, values: CareValues) {
+  if (kind !== "mama" || formKey !== "admission") return "";
+  if (!values.respondentIdentity) return "請先在「TOCC」選擇填表人身分，再進行簽名。";
+  if (values.respondentIdentity !== "孕婦本人" && !String(values.respondent ?? "").trim()) {
+    return "填表人為先生或親友時，請先填寫姓名，再進行簽名。";
+  }
+  return "";
+}
+
 export function validateCareForm(form: CareForm, values: CareValues): string[] {
   const errors: string[] = [];
   for (const field of form.sections.flatMap((section) => section.fields)) {

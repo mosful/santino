@@ -18,7 +18,7 @@ import { careSubject } from "@/lib/care/subjects";
 import { useDomainStore } from "@/lib/demo/domainStore";
 import { careActions, careStore, useCareStore } from "@/lib/care/store";
 import { useAssessmentFields } from "@/lib/assessmentConfigStore";
-import { backfillDeadline, canAuthorizeCare, canEditCare, canReviseCareEntry, canViewCare, documentKey, isBackfillBlocked, isBackfillExpired, moodNeedsAttention, needsFeedingReassessment, taipeiTimestamp, validateCareForm } from "@/lib/care/rules";
+import { backfillDeadline, canAuthorizeCare, canEditCare, canReviseCareEntry, canViewCare, documentKey, isBackfillBlocked, isBackfillExpired, mamaAdmissionSignatureError, moodNeedsAttention, needsFeedingReassessment, taipeiTimestamp, validateCareForm } from "@/lib/care/rules";
 import type { CareKind, CareSignatureRole, CareSubject } from "@/lib/care/types";
 import CareFieldInput, { GrowthChart, buttonClass, inputClass, valueText } from "./CareFields";
 import CareSignature from "./CareSignature";
@@ -138,6 +138,8 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   const subjectEntries = data.entries.filter((entry) => entry.subjectId === subject?.id);
   const completionErrors = form && document ? validateCareForm(form, document.values) : [];
   if (form?.signature && document && !document.signature) completionErrors.push("尚未完成本筆簽名。");
+  const signatureRequirement = document ? mamaAdmissionSignatureError(kind, document.formKey, document.values) : "";
+  const respondentSectionIndex = form?.sections.findIndex((section) => section.fields.some((field) => field.key === "respondentIdentity")) ?? -1;
   // 衛教表簽出只需產婦簽名（store.signOut 的 form.signature 檢查），不再提示「三方簽名」。
   const searchedSubjects = domain.subjects.filter((item) => item.kind === kind).filter((item) => [item.name, item.motherName, item.room, item.carNo, item.chartNo].join(" ").toLowerCase().includes(query.toLowerCase()));
   const subjects = searchedSubjects.filter((item) => filter === "退房回補" ? item.historical : filter === "托嬰" ? !item.historical && item.status === "托嬰" : !item.historical);
@@ -157,6 +159,15 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   function open(id: string, key: string) {
     if (!run(() => careActions.open(id, key))) return;
     setListVisible(false); setSigning(false);
+  }
+  function goToRespondent() {
+    if (respondentSectionIndex < 0) return;
+    setSectionIndex(respondentSectionIndex);
+    window.setTimeout(() => {
+      const field = window.document.querySelector<HTMLElement>('[data-care-field="respondentIdentity"]');
+      field?.scrollIntoView({ block: "center", behavior: "smooth" });
+      field?.querySelector<HTMLElement>("input, select")?.focus();
+    }, 0);
   }
   useEffect(() => {
     careActions.syncRole();
@@ -277,7 +288,8 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
             </fieldset>
             {(form.signature || form.paperTemplate?.endsWith("admission")) && <div className="mt-6 space-y-3"><h3 className="font-medium">本筆簽名與員工署名</h3><p className="text-sm text-stone-600">對象：{identity(subject)}。{form.paperTemplate === "mama-admission" ? "請依疫情表填表人身分簽名。" : ""}簽出時記錄實際操作者；此為靜態原型簽名。</p>
 
-              <>{document.signature && <img src={document.signature} alt={`${subject.name}本筆簽名`} className={styles.signedImage} />}{editable && !signing && <button type="button" className={buttonClass} onClick={() => { setSigningRole("recipient"); setSigning(true); }}>確認對象並簽名</button>}</>
+              <>{document.signature && <img src={document.signature} alt={`${subject.name}本筆簽名`} className={styles.signedImage} />}{editable && !signing && <button type="button" disabled={!!signatureRequirement} className={buttonClass} onClick={() => { setSigningRole("recipient"); setSigning(true); }}>確認對象並簽名</button>}</>
+              {editable && !signing && signatureRequirement && <div role="status" className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"><p className="min-w-0 flex-1">{signatureRequirement}</p><button type="button" className={buttonStyles({ size: "sm" })} onClick={goToRespondent}>前往填表人欄位</button></div>}
               {editable && !signing && (form.paperTemplate !== "mama-admission" || document.values.respondentIdentity === "孕婦本人") && <button type="button" className={`${buttonClass} ml-2`} onClick={() => run(() => careActions.carryContractSignature(document.key), "已確認同一案件媽媽，帶入合約簽名。")}>
                 帶入本案合約媽媽簽名
               </button>}
@@ -305,8 +317,8 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
           <aside className={styles.sidebar} data-no-print>
             {/* ⚠️「此對象的其他表單」已移到頁首的分組列（作用中那一組會列出未開啟的表單）。
                 不要加回來：同一批東西出現兩次，而且右側欄在長表單捲到一半時看不到。 */}
-            <section><h3 className="mb-3 font-semibold">同案件媽媽／寶寶</h3><div className="space-y-3">{domain.subjects.filter((item) => item.caseId === subject.caseId && item.id !== subject.id && !item.historical).map((item) => <div key={item.id} className="rounded-lg border border-stone-200 p-3"><p className="text-sm font-medium">{item.kind === "mama" ? "媽媽" : "寶寶"}：{item.name}</p><div className="mt-2 flex flex-wrap gap-2">{careForms(item.kind, configured).filter((itemForm) => canViewCare(role, item.kind, itemForm.key)).map((itemForm) => item.kind === kind ? <button type="button" key={itemForm.key} className={buttonStyles({ size: "sm" })} onClick={() => open(item.id, itemForm.key)}>{itemForm.label}</button> : <Link key={itemForm.key} className={buttonStyles({ size: "sm" })} href={`/${item.kind}/?subject=${encodeURIComponent(item.id)}&form=${encodeURIComponent(itemForm.key)}`}>{itemForm.label}</Link>)}</div></div>)}</div></section>
-            <section><h3 className="mb-3 font-semibold">最近操作歷程</h3><ol className="space-y-3 text-sm">{data.events.filter((event) => event.subjectId === subject.id).slice(0, 6).map((event) => <li key={event.id}><p>{event.action}</p><p className="mt-1 text-xs text-stone-600">{taipeiTimestamp(event.at)}<br />{event.author}</p></li>)}</ol></section>
+            <section aria-label="同案件媽媽／寶寶" className={styles.relatedPanel}><h3 className="mb-3 font-semibold">同案件媽媽／寶寶</h3><div className="space-y-3">{domain.subjects.filter((item) => item.caseId === subject.caseId && item.id !== subject.id && !item.historical).map((item) => <div key={item.id} className="rounded-lg border border-stone-200 p-3"><p className="text-sm font-medium">{item.kind === "mama" ? "媽媽" : "寶寶"}：{item.name}</p><div className="mt-2 flex flex-wrap gap-2">{careForms(item.kind, configured).filter((itemForm) => canViewCare(role, item.kind, itemForm.key)).map((itemForm) => item.kind === kind ? <button type="button" key={itemForm.key} className={buttonStyles({ size: "sm" })} onClick={() => open(item.id, itemForm.key)}>{itemForm.label}</button> : <Link key={itemForm.key} className={buttonStyles({ size: "sm" })} href={`/${item.kind}/?subject=${encodeURIComponent(item.id)}&form=${encodeURIComponent(itemForm.key)}`}>{itemForm.label}</Link>)}</div></div>)}</div></section>
+            <details aria-label="最近操作歷程" className={styles.historyPanel}><summary className="flex min-h-12 cursor-pointer items-center gap-3 font-semibold"><span>最近操作歷程</span><span className="ml-auto text-xs font-normal text-stone-500">{data.events.filter((event) => event.subjectId === subject.id).length} 筆</span></summary><ol className="mt-3 space-y-3 border-t border-stone-200 pt-3 text-sm">{data.events.filter((event) => event.subjectId === subject.id).slice(0, 6).map((event) => <li key={event.id}><p>{event.action}</p><p className="mt-1 text-xs text-stone-600">{taipeiTimestamp(event.at)}<br />{event.author}</p></li>)}</ol></details>
           </aside>
         </div>
       </> : <>

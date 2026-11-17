@@ -50,6 +50,9 @@ export function defaultCareValues(formKey?: string, kind?: CareKind) {
     .map((field) => [field.key, todayTaipei(at)]));
   return { ...dates, date: todayTaipei(at), time: at.toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5) };
 }
+function keepsEnteredRecordTime(form: ReturnType<typeof careForms>[number]) {
+  return !!form.paperTemplate || form.templateVersion?.endsWith("-native");
+}
 export const careActions = {
   /** 移除院方自行新增的衛教項目：限主管，且已有紀錄的項目不可移除，免得舊紀錄印不出來（需求 G07）。 */
   removeGuidanceItem(kind: CareKind, key: string) {
@@ -77,7 +80,12 @@ export const careActions = {
         Object.assign(defaults, latestMeasurement(state.entries.filter((entry) => entry.subjectId === subjectId), String(defaults.date)));
       }
       state.documents[key] ??= { key, subjectId, formKey, values: defaults, dirty: false, templateVersion: careForms(subject.kind).find((form) => form.key === formKey)?.templateVersion };
-      state.documents[key].values = normalizeSheetValues(subject.kind, formKey, state.documents[key].values);
+      const normalized = normalizeSheetValues(subject.kind, formKey, state.documents[key].values);
+      // 舊版草稿可能沒有填寫日期；重開時補今日，但絕不覆蓋使用者已改過的日期。
+      for (const dateKey of ["date", "evaluationDate", "reviewDate"]) {
+        if (!normalized[dateKey] && defaults[dateKey]) normalized[dateKey] = defaults[dateKey];
+      }
+      state.documents[key].values = normalized;
       if (!state.open.includes(key)) state.open.push(key);
       state.active[subject.kind] = key;
       if (!state.unlockedCase) state.unlockedCase = subject.caseId;
@@ -124,7 +132,7 @@ export const careActions = {
       const subject = careSubject(document.subjectId)!;
       const form = careForms(subject.kind).find((item) => item.key === document.formKey)!;
       document.savedAt = now();
-      if (!form.paperTemplate) document.values.time = new Date(document.savedAt).toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5);
+      if (!keepsEnteredRecordTime(form)) document.values.time = new Date(document.savedAt).toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5);
       document.templateVersion = form.templateVersion;
       document.author = author(); document.dirty = false;
       stamp(state, document.subjectId, `暫存 ${document.formKey}`);
@@ -166,7 +174,7 @@ export const careActions = {
          要在缺項狀態下繼續 DEMO，用「暫存」留草稿，填齊再簽出。 */
       if (errors.length) throw new Error(errors.join("\n"));
       const at = now();
-      if (!form.paperTemplate) document.values.time = new Date(at).toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5);
+      if (!keepsEnteredRecordTime(form)) document.values.time = new Date(at).toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5);
       document.templateVersion = form.templateVersion;
       document.signedAt = at; document.savedAt = at; document.author = author(); document.dirty = false;
       document.staffStamp = { author: author(), at };

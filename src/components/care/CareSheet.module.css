@@ -120,8 +120,9 @@
   .scaleSocialMobileLabel { display: inline; flex: 1; }
 }
 .printDocument { color: #000; background: #fff; font-family: "Microsoft JhengHei", sans-serif; font-size: 9pt; line-height: 1.45; }
-.printPage { break-after: page; }
-.printPage:last-child { break-after: auto; }
+.printPage { break-after: page !important; page-break-after: always !important; }
+.printPage + .printPage { break-before: page !important; page-break-before: always !important; }
+.printPage:last-child { break-after: auto !important; page-break-after: auto !important; }
 .printTitle { margin: 0 0 4mm; font-size: 15pt; font-weight: 600; text-align: center; }
 .printSubtitle { margin: 0 0 4mm; font-size: 13pt; font-weight: 600; text-align: center; }
 .printIdentity { margin: 2mm 0; font-size: 9pt; }
@@ -199,3 +200,16 @@
 .scaleMoodPrint h4 { min-height: 10mm; margin: 0 0 1mm; font-weight: 400; line-height: 1.45; }
 .scaleMoodPrint p { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .8mm; margin: .6mm 0; align-items: baseline; }
 .scaleMoodPrint small { white-space: nowrap; }
+.nativePrintNote { margin: 1.5mm 0 2mm; color: #444; font-size: 7pt; text-align: right; }
+.mamaDailyPrint { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 6.4pt; line-height: 1.25; }
+.mamaDailyPrint thead { display: table-header-group; }
+.mamaDailyPrint th, .mamaDailyPrint td { border: 1px solid #333; padding: .8mm .65mm; vertical-align: top; overflow-wrap: anywhere; }
+.mamaDailyPrint th { font-weight: 500; text-align: left; }
+.mamaDailyPrint thead th { text-align: center; vertical-align: middle; }
+.mamaDailyPrint thead th:first-child, .mamaDailyPrint tbody > tr:not(.mamaDailySection) > th { width: 17%; }
+.mamaDailyPrint tr { break-inside: avoid; }
+.mamaDailyPrint .printField { display: block; margin-bottom: .35mm; }
+.mamaDailyPrint .printField + .printField::before { content: none; }
+.mamaDailyPrint .printLabel { display: block; font-weight: 500; }
+.mamaDailyPrint .printOption { margin-right: .7mm; }
+.mamaDailySection th { padding: .65mm 1mm; background: #eee; text-align: center; font-weight: 700; letter-spacing: .08em; }

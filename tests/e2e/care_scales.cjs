@@ -44,6 +44,11 @@ async function checkLayout(page, engine, form, width, height) {
     await openForm(page, "社會支持");
     assert.equal(await page.getByRole("region", { name: "依紙本列印" }).count(), 0);
     assert.equal(await page.locator('img[alt*="原紙本"], iframe[title="紙本 PDF 預覽"]').count(), 0);
+    const socialDate = page.getByLabel("填寫日期（必填）", { exact: true });
+    assert.match(await socialDate.inputValue(), /^\d{4}-\d{2}-\d{2}$/);
+    await page.getByLabel("生產日期", { exact: true }).waitFor();
+    await socialDate.fill("2026-11-01");
+    assert.equal(await socialDate.inputValue(), "2026-11-01", "填寫日期預設今日後仍可修改");
     await answerFirstOption(page);
     await page.getByText("14 分", { exact: true }).waitFor();
     for (const [width, height] of [[1440, 1000], [820, 1180], [390, 844]]) await checkLayout(page, engine, "social", width, height);
@@ -78,7 +83,7 @@ async function checkLayout(page, engine, form, width, height) {
       assert.equal((await PDFDocument.load(await fs.readFile(file))).getPageCount(), 1);
     }
     assert.deepEqual(errors, []);
-    results.push({ engine, socialScore: 14, moodScore: 21, layouts: [1440, 820, 390], scannedPreview: false });
+    results.push({ engine, socialScore: 14, moodScore: 21, editableDefaultDate: true, productionDateLabel: true, layouts: [1440, 820, 390], scannedPreview: false });
     await browser.close();
     activeBrowser = undefined;
   }

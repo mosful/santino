@@ -3,8 +3,9 @@ import { test } from "node:test";
 import { MAMA_FORMS, BABY_FORMS, careForms } from "../src/lib/care/forms";
 import { backfillDeadline, canEditCare, isBackfillExpired, mamaAdmissionSignatureError, moodNeedsAttention, needsFeedingReassessment, validateCareForm } from "../src/lib/care/rules";
 import { CARE_SUBJECTS } from "../src/lib/care/subjects";
-import { careActions, careStore } from "../src/lib/care/store";
+import { careActions, careStore, defaultCareValues } from "../src/lib/care/store";
 import { setCurrentRole } from "../src/lib/roleStore";
+import { todayTaipei } from "../src/lib/dates";
 
 const storage = new Map<string, string>();
 const events = new EventTarget();
@@ -25,9 +26,9 @@ test("紙本暫存及簽出保留評估時間並保存母版版本",()=>{
   careActions.complete(key);
   const entry=careStore.get().entries[0];
   assert.equal(entry.values.time,"03:45");
-  assert.equal(entry.templateVersion,"20261113");
+  assert.equal(entry.templateVersion,"20261117-native");
   careActions.editEntry(entry.id);
-  assert.equal(careStore.get().documents[key].templateVersion,"20261113");
+  assert.equal(careStore.get().documents[key].templateVersion,"20261117-native");
 });
 
 test("疫情表填表人身分變更清除簽名，先生不能帶入媽媽簽名",()=>{
@@ -66,6 +67,20 @@ test("非本人修改及刪除他人紀錄由 action 拒絕，主管可處理",(
 test("v24 媽媽六項與寶寶八項功能皆有獨立表單", () => {
   assert.equal(MAMA_FORMS.length, 6); assert.equal(BABY_FORMS.length, 8);
   assert.notDeepEqual(MAMA_FORMS.find((form) => form.key === "ongoing"), MAMA_FORMS.find((form) => form.key === "record"));
+});
+test("全部照護表單的填寫日期預設今日，已修改日期不會被覆蓋", () => {
+  const today = todayTaipei();
+  for (const kind of ["mama", "baby"] as const) {
+    for (const form of careForms(kind)) assert.equal(defaultCareValues(form.key, kind).date, today, `${kind}/${form.key}`);
+  }
+  reset(); careActions.open(first.id, "social");
+  const key = `${first.id}:social`;
+  assert.equal(careStore.get().documents[key].values.date, today);
+  careActions.change(key, { date: "2026-11-01" }); careActions.close(key); careActions.open(first.id, "social");
+  assert.equal(careStore.get().documents[key].values.date, "2026-11-01");
+  careStore.update((state) => { state.documents[key].values.date = ""; });
+  careActions.close(key); careActions.open(first.id, "social");
+  assert.equal(careStore.get().documents[key].values.date, today, "舊草稿缺日期時補今日");
 });
 test("哺餵再評估要求同頁媽媽護理紀錄，疼痛分數不得超界", () => {
   assert.equal(needsFeedingReassessment({ "feeding-0": "再評估" }), true);

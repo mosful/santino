@@ -10,6 +10,7 @@ test("量表改用原生表單與列印版面，不再指定掃描紙本母版",
     assert.equal(form?.layout, "scale");
     assert.equal(form?.paperTemplate, undefined);
     assert.ok(form?.sections.flatMap((section) => section.fields).every((field) => field.type !== "photo"));
+    assert.equal(form?.sections[0].fields.find((field) => field.key === "birthDate")?.label, "生產日期");
   }
 });
 

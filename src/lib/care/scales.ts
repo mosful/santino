@@ -81,7 +81,7 @@ export function scaleForm(kind: ScaleKind): CareForm {
     sections: [
       { label: "基本資料", fields: [
         { key: "date", label: "填寫日期", type: "date", required: true },
-        { key: "birthDate", label: "生日", type: "date" },
+        { key: "birthDate", label: "生產日期", type: "date" },
       ] },
       { label: "量表題目", fields: scaleQuestions(kind).map((question, index) => ({ key: question.key, label: `第 ${index + 1} 題：${question.text}`, type: "radio", options: question.options.map((option) => String(option.score)), required: true })) },
       { label: "評分與後續處理", fields: [

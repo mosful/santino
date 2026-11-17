@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { Fragment } from "react";
-import type { CareDocument, CareEntry, CareField, CareForm, CareSubject, CareValues } from "@/lib/care/types";
+import type { CareDocument, CareEntry, CareField, CareForm, CareRow, CareSection, CareSubject, CareValues } from "@/lib/care/types";
 import { FEEDING_GROUPS, RED_BOTTOM, SHIFTS, sectionRows } from "@/lib/care/sheetDefinitions";
 import { growthDays, type GrowthDay } from "@/lib/care/summary";
 import { GUIDANCE_WAYS, guidanceGroups, guidanceKeys } from "@/lib/care/guidance";
@@ -20,11 +20,26 @@ function PrintField({ field, values, blank }: { field: CareField; values: CareVa
 }
 
 type PrintItem = { id: string; values: CareValues; author: string };
+type AssessmentSegment = { section: CareSection; rows: CareRow[]; continued?: boolean };
 /** 歷次已簽出紀錄加上目前草稿，依日期時間排序；修改中的那一筆不重複列出。 */
 function printItems(history: CareEntry[], document: CareDocument, blank: boolean): PrintItem[] {
   const items: PrintItem[] = history.filter((entry) => entry.id !== document.editingEntryId).map((entry) => ({ id: entry.id, values: entry.values, author: entry.author }));
   if (!document.signedAt && !blank) items.push({ id: "draft", values: document.values, author: document.author ? `${document.author}（未簽出）` : "未簽出" });
   return items.sort((a, b) => `${text(a.values.date)} ${text(a.values.time)}`.localeCompare(`${text(b.values.date)} ${text(b.values.time)}`));
+}
+
+function AssessmentPrintSection({ segment, values, blank }: { segment: AssessmentSegment; values: CareValues; blank: boolean }) {
+  const { section, rows } = segment;
+  return <table className={styles.assessmentPrint}>
+    <tbody>{rows.map((row, index) => <tr key={`${section.label}-${row.label}`}>
+      {index === 0 && <th className={styles.printSection} rowSpan={rows.length}>{section.label}{segment.continued ? "（續）" : ""}</th>}
+      <th className={styles.printRowLabel}>{row.label}</th>
+      <td>{row.keys.map((key) => {
+        const field = section.fields.find((item) => item.key === key);
+        return field ? <PrintField key={key} field={field} values={values} blank={blank} /> : null;
+      })}</td>
+    </tr>)}</tbody>
+  </table>;
 }
 
 export default function CarePrintSheet({ form, document, subject, history, subjectEntries = [], blank = false }: { form: CareForm; document: CareDocument; subject: CareSubject; history: CareEntry[]; subjectEntries?: CareEntry[]; blank?: boolean }) {
@@ -42,7 +57,7 @@ export default function CarePrintSheet({ form, document, subject, history, subje
       <h3 className={styles.printSubtitle}>{form.printTitle}</h3>
       <div className={styles.scalePrintIdentity}>
         <span>房號：{subject.room || "　　　　"}</span><span>姓名：{subject.name || "　　　　　　"}</span>
-        <span>生日：{blank ? "　　　　　" : text(values.birthDate)}</span><span>日期：{blank ? "　　　　　" : text(values.date)}</span>
+        <span>生產日期：{blank ? "　　　　　" : text(values.birthDate)}</span><span>填寫日期：{blank ? "　　　　　" : text(values.date)}</span>
       </div>
       <p className={styles.scalePrintIntro}>{kind === "mood" ? "請依照您過去七天（不只是今天）的感受，選擇最接近的答案；每題只能選一個答案。" : "本量表共 6 題，每題 1 至 5 分；第 4、5 題採反向計分，總分越高代表家庭及社會支持程度越好。"}</p>
       {kind === "mood" ? <div className={styles.scaleMoodPrint}>
@@ -67,6 +82,62 @@ export default function CarePrintSheet({ form, document, subject, history, subje
       <p className={styles.scalePrintFollowUp}>後續處理：{blank ? "" : text(values.followUp)}</p>
       <p className={styles.scalePrintStaff}>護理人員：{blank ? "　　　　　　　　　" : document.staffStamp?.author ?? document.author ?? "　　　　　　　　　"}</p>
     </section></div>;
+  }
+  if (subject.kind === "mama" && form.key === "admission") {
+    const sections = form.sections.map((section) => ({ section, rows: sectionRows(section) }));
+    const body = sections[1];
+    const pages: AssessmentSegment[][] = [
+      [sections[0], body && { ...body, rows: body.rows.slice(0, 6) }].filter(Boolean) as AssessmentSegment[],
+      body ? [{ ...body, rows: body.rows.slice(6), continued: true }] : [],
+      [sections[2], sections[3]].filter(Boolean) as AssessmentSegment[],
+      ...sections.slice(4).map((segment) => [segment]),
+    ].filter((segments) => segments.some((segment) => segment.rows.length > 0));
+    return <div className={styles.printDocument} data-native-print="mama-admission">{pages.map((segments, page) => <section className={styles.printPage} key={page}>
+      {header()}
+      <p className={styles.nativePrintNote}>本表由系統依院方欄位排版，不使用掃描圖檔。</p>
+      {segments.map((segment) => <AssessmentPrintSection key={`${segment.section.label}-${segment.continued ? "continued" : "start"}`} segment={segment} values={values} blank={blank} />)}
+      {page === pages.length - 1 && <>
+        {legacy(values)}
+        <div className={styles.printSignatures}><span>產婦／填表人簽名：{!blank && document.signature ? <img src={document.signature} alt="本筆產婦或填表人簽名" /> : "　　　　　　　　　"}</span><span>護理人員：{blank ? "　　　　　　　　　" : document.staffStamp?.author ?? document.author ?? "　　　　　　　　　"}</span></div>
+      </>}
+    </section>)}</div>;
+  }
+  if (subject.kind === "mama" && form.key === "ongoing") {
+    const entries = printItems(history, document, blank);
+    const pages = Array.from({ length: Math.max(1, Math.ceil(entries.length / 4)) }, (_, index) => entries.slice(index * 4, index * 4 + 4));
+    const printableSections = form.sections.map((section) => ({
+      section,
+      rows: sectionRows(section).filter((row) => !row.keys.every((key) => key === "birthDate")),
+    })).filter((segment) => segment.rows.length > 0);
+    return <div className={styles.printDocument} data-native-print="mama-daily">{pages.flatMap((items, page) => {
+      const itemValues = items.map((item) => normalizeSheetValues("mama", form.key, item.values));
+      const productionDate = text(itemValues.find((item) => text(item.birthDate))?.birthDate) || text(values.birthDate);
+      const supplemental = printableSections.filter(({ section }) => section.label === "既有資料與補充評估");
+      const supplementalKeys = supplemental.flatMap(({ rows }) => rows.flatMap((row) => row.keys));
+      const showSupplemental = !blank && itemValues.some((item) => supplementalKeys.some((key) => text(item[key]).trim()));
+      const sheets = [
+        { key: "main", title: form.printTitle, sections: printableSections.filter(({ section }) => section.label !== "既有資料與補充評估") },
+        ...(showSupplemental ? [{ key: "supplemental", title: "產婦每日護理評估表－既有資料與補充評估", sections: supplemental }] : []),
+      ];
+      return sheets.map((sheet) => <section className={styles.printPage} key={`${page}-${sheet.key}`}>
+        <h2 className={styles.printTitle}>聖帝諾產後護理之家</h2>
+        <h3 className={styles.printSubtitle}>{sheet.title}</h3>
+        <p className={styles.printIdentity}>房號：{subject.room || "　　　　"}　姓名：{subject.name}　病歷號：{subject.chartNo}　生產日期：{blank ? "　　　　　" : productionDate}</p>
+        <p className={styles.nativePrintNote}>{sheet.key === "main" ? "每頁連續四筆評估；填寫內容以系統原生表格排版列印。" : "本頁僅在舊資料或補充評估有填寫內容時列印。"}</p>
+        <table className={styles.mamaDailyPrint}>
+          <thead><tr><th>評估項目</th>{Array.from({ length: 4 }, (_, index) => <th key={index}>{!blank && items[index] ? <>{text(items[index].values.date)}<br />{text(items[index].values.time)}</> : `第 ${page * 4 + index + 1} 次`}</th>)}</tr></thead>
+          <tbody>{sheet.sections.flatMap(({ section, rows }) => [
+            <tr className={styles.mamaDailySection} key={`${section.label}-section`}><th colSpan={5}>{section.label}</th></tr>,
+            ...rows.map((row) => <tr key={`${section.label}-${row.label}`}><th>{row.label}</th>{Array.from({ length: 4 }, (_, column) => <td key={column}>{row.keys.map((key) => {
+              const field = section.fields.find((item) => item.key === key);
+              return field ? <PrintField key={key} field={field} values={itemValues[column] ?? {}} blank={blank || !items[column]} /> : null;
+            })}</td>)}</tr>),
+          ])}
+          <tr><th>護理人員簽章</th>{Array.from({ length: 4 }, (_, index) => <td key={index}>{blank ? "" : items[index]?.author}</td>)}</tr>
+          </tbody>
+        </table>
+      </section>);
+    })}</div>;
   }
   if (form.layout === "feeding") {
     const entries = printItems(history, document, blank);

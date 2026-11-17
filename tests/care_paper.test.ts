@@ -39,11 +39,6 @@ test("一到十日與一到五筆的頁數及末頁留白符合原表容量",()=
     assert.equal(sheets.length,Math.ceil(count/5));
     assert.equal(sheets.flatMap(sheet=>sheet.columns??[]).filter(Boolean).length,count);
   }
-  for (const count of [1,4,5]) {
-    const form=MAMA_FORMS[1];
-    const history=Array.from({length:count},(_,i)=>({...entry(`m-${i}`,"2026-11-13",{time:`0${i+1}:00`}),formKey:form.key}));
-    assert.equal(buildPaperSheets(request(history,{form})).length,Math.ceil(count/4));
-  }
 });
 test("列印區間可包含完全無紀錄日，缺測不補正常",()=>{
   const sheets=buildPaperSheets(request([],{start:"2026-11-01",end:"2026-11-10"}));
@@ -72,14 +67,13 @@ test("同日同班多筆須明確選擇，不任取第一筆且不改動原歷�
   assert.equal(history.length,2);
   assert.equal(history[0].values.time,"08:00");
 });
-test("產婦每日按四次紀錄分頁，同日多次分別保留日期時間",()=>{
-  const form=MAMA_FORMS[1];
-  const history=Array.from({length:5},(_,i)=>({...entry(`m${i}`,"2026-11-13",{time:`0${i+1}:00`}),formKey:form.key}));
-  const sheets=buildPaperSheets(request(history,{form}));
-  assert.equal(sheets.length,2);
-  assert.deepEqual(sheets[0].columns?.map((item)=>item?.values.time),["01:00","02:00","03:00","04:00"]);
-  assert.equal(sheets[1].columns?.[0]?.id,"m4");
-  assert.equal(sheets[1].columns?.[1],undefined);
+test("產婦入住與每日護理評估改用原生列印，寶寶紙本維持 PDF 母版",()=>{
+  for (const form of MAMA_FORMS.filter((item)=>["admission","ongoing"].includes(item.key))) {
+    assert.equal(form.paperTemplate,undefined,form.key);
+    assert.match(form.templateVersion ?? "",/-native$/);
+  }
+  assert.equal(BABY_FORMS[0].paperTemplate,"baby-admission");
+  assert.equal(BABY_FORMS[2].paperTemplate,"baby-daily");
 });
 test("草稿與編輯舊筆不重複列印，也不混入其他對象或表單",()=>{
   const old=entry("a","2026-11-13");
@@ -111,7 +105,6 @@ test("每一新版主表欄位都有印位或明示補充位置",()=>{
 });
 test("舊選項不猜轉，數字及紅臀與親子同室矛盾須核對",()=>{
   const baby=BABY_FORMS[2];
-  assert.ok(validatePaperValues(MAMA_FORMS[1],{mood:["平穩"]}).some((message)=>message.includes("不自動轉換")));
   assert.ok(validatePaperValues(baby,{temperature:"NaN"}).some((message)=>message.includes("數值")));
   assert.ok(validatePaperValues(baby,{date:"2026-02-30",time:"25:00"}).some((message)=>message.includes("有效日期")));
   assert.ok(validatePaperValues(baby,{time:"25:00"}).some((message)=>message.includes("有效時間")));
@@ -129,47 +122,37 @@ test("已簽紀錄僅本人或主管可以修正",()=>{
   assert.equal(canReviseCareEntry("護理長 婉真",a),true);
   assert.equal(canReviseCareEntry("管理者",a),true);
 });
-test("PDF 原尺寸與 A4 等比例輸出，空白紙本保持原頁數",async()=>{
+test("PDF 原尺寸與 A4 等比例輸出，寶寶空白紙本保持原頁數",async()=>{
   const source=await PDFDocument.create(); source.addPage([578.16,824.4]); source.addPage([578.16,824.4]);
   const bytes=await source.save();
   for(const size of ["source","a4"] as const) {
-    const output=await createPaperPdf(request([],{form:MAMA_FORMS[1],blank:true,paperSize:size}),async(asset)=>{assert.ok(asset.endsWith(".pdf"));return bytes;});
+    const output=await createPaperPdf(request([],{form:BABY_FORMS[0],blank:true,paperSize:size}),async(asset)=>{assert.ok(asset.endsWith(".pdf"));return bytes;});
     const doc=await PDFDocument.load(output);
-    assert.equal(doc.getPageCount(),1);
+    assert.equal(doc.getPageCount(),2);
     assert.ok(Math.abs(doc.getPage(0).getWidth()-(size==="a4"?595.276:578.16))<.01);
   }
 });
 test("長文字超框時拒絕輸出，不刪除或截斷原值",async()=>{
-  const source=await PDFDocument.create();source.addPage([578.16,824.4]);
+  const source=await PDFDocument.create();source.addPage([578.16,824.4]);source.addPage([578.16,824.4]);
   const bytes=await source.save();
-  const req=request([],{form:MAMA_FORMS[1],includeDraft:true});
+  const req=request([],{form:BABY_FORMS[0],includeDraft:true});
   req.document.formKey=req.form.key;
-  req.document.values.note="完整護理紀錄".repeat(400);
-  const original=req.document.values.note;
-  await assert.rejects(()=>createPaperPdf(req,async(asset)=>asset.endsWith(".ttf")?new Uint8Array(await readFile(path.resolve("public",asset))):bytes),(error)=>error instanceof PaperPrintError && error.issues.some((issue)=>issue.field === "note" && issue.message.includes("超出")));
-  assert.equal(req.document.values.note,original);
+  req.document.values.motherComplaint="完整媽媽主訴".repeat(400);
+  const original=req.document.values.motherComplaint;
+  await assert.rejects(()=>createPaperPdf(req,async(asset)=>asset.endsWith(".ttf")?new Uint8Array(await readFile(path.resolve("public",asset))):bytes),(error)=>error instanceof PaperPrintError && error.issues.some((issue)=>issue.field === "motherComplaint" && issue.message.includes("超出")));
+  assert.equal(req.document.values.motherComplaint,original);
 });
 
 test("A4 嵌頁先完成中文字型與簽名資源，避免填值亂碼或遺失",async()=>{
   const source=await PDFDocument.create();source.addPage([578.16,824.4]);source.addPage([578.16,824.4]);
   const sourceBytes=await source.save();
-  const req=request([],{form:MAMA_FORMS[0],paperSize:"a4"});
+  const req=request([],{form:BABY_FORMS[0],paperSize:"a4"});
   req.document.signature="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j9t0AAAAASUVORK5CYII=";
   const bytes=await createPaperPdf(req,async(asset)=>asset.endsWith(".ttf")?new Uint8Array(await readFile(path.resolve("public",asset))):sourceBytes);
   const doc=await PDFDocument.load(bytes);
   const objects=doc.context.enumerateIndirectObjects().map(([,object])=>object);
   assert.ok(objects.some(object=>object instanceof PDFDict && object.has(PDFName.of("FontFile2"))),"A4 必須內嵌完整中文字型程式");
   assert.ok(objects.some(object=>"dict" in object && object.dict instanceof PDFDict && object.dict.get(PDFName.of("Subtype"))?.toString()==="/Image"),"A4 必須保留簽名圖片");
-});
-
-test("產婦每日 URI 勾兩個症狀仍能產出 PDF，非 URI 症狀不擠進 URI 格",async()=>{
-  const source=await PDFDocument.create();source.addPage([578.16,824.4]);
-  const bytes=await source.save();
-  const req=request([],{form:MAMA_FORMS[1],includeDraft:true});
-  req.document.formKey=req.form.key;
-  Object.assign(req.document.values,{uriStatus:"有",symptoms:["咳嗽","有痰","流鼻水","頭痛"],note:"示範紀錄"});
-  const pdf=await createPaperPdf(req,async(asset)=>asset.endsWith(".ttf")?new Uint8Array(await readFile(path.resolve("public",asset))):bytes);
-  assert.ok(pdf.byteLength>0);
 });
 
 test("矛盾選項互斥：未解與有排便、上肢正常與上肢水腫不能並存",async()=>{

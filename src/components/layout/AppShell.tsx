@@ -118,8 +118,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-full">
-      <a className="skip-link" href="#main-content">跳至主要內容</a>
+    <div data-app-shell className="flex min-h-full">
+      <a data-no-print className="skip-link" href="#main-content">跳至主要內容</a>
       {/*
         平板與桌機共用同一個側邊欄（2026-10-29 客戶回報）。
         原本平板另走一條 72px 的唯讀圖示軌，而 SidebarNav 在 collapsed 時會把第 2 層
@@ -170,7 +170,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+      <div data-app-main-column className="flex min-h-screen min-w-0 flex-1 flex-col">
         {/* 頁首與頁面注入的第二列同屬一個 sticky 容器，一起固定在畫面上方。 */}
         <div ref={headerRef} data-no-print className="safe-top sticky top-0 z-30 border-b border-brand-900/10 bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70">
           <header className="flex min-h-[var(--app-header-h)] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 sm:px-6 md:max-lg:gap-x-2 md:max-lg:px-4">

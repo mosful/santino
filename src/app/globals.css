@@ -714,3 +714,13 @@ input:is([type="date"], [type="time"], [type="datetime-local"], [type="month"], 
     display: none;
   }
 }
+
+/*
+  列印規則刻意放在檔案最後：Tailwind 的 md:flex 等響應式 utility 會在 A4 寬度命中，
+  若它排在隱藏規則之後，側欄與頁首會被一併印出。
+*/
+@media print {
+  [data-no-print] { display: none !important; }
+  [data-app-shell], [data-app-main-column] { display: block !important; min-height: 0 !important; }
+  #main-content { overflow: visible !important; }
+}

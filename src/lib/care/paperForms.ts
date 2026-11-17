@@ -1,6 +1,7 @@
 import type { CareField, CareForm, CareSection, PaperTemplateId } from "./types";
 
 export const PAPER_VERSION = "20261113";
+export const NATIVE_MAMA_PRINT_VERSION = "20261117-native";
 type RowSpec = [string, ...(string | CareField)[]];
 const text = (key: string, label: string): CareField => ({ key, label });
 const note = (key: string, label: string): CareField => ({ key, label, type: "textarea" });
@@ -144,4 +145,12 @@ export function alignPaperForms(mama: CareForm, baby: CareForm, mamaDaily: CareF
     ["量測與出入紀錄", [["每日量測", "height", "weight", "head"], ["本次親子同室出入", "roomingStart", "roomingEnd", "roomingHours"]]],
   ]);
   babyDaily.sections.at(-1)!.label = "既有資料與補充評估";
+
+  // 產婦兩張評估表保留紙本題目與欄位排列，但列印必須由系統原生排版，
+  // 不再把資料疊到掃描 PDF 母版上。實際分頁由 CarePrintSheet 的產婦專用版型處理。
+  for (const nativeForm of [mama, mamaDaily]) {
+    delete nativeForm.paperTemplate;
+    delete nativeForm.supplementalKeys;
+    nativeForm.templateVersion = NATIVE_MAMA_PRINT_VERSION;
+  }
 }

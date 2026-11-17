@@ -2,26 +2,17 @@ import type { CareField, CareForm, CareKind } from "./types";
 import { DEFAULT_ASSESSMENT_FIELDS, getAssessmentFields, type AssessmentField } from "../assessmentConfigStore";
 import { guidanceForm } from "./guidance";
 import { BABY_ADMISSION, BABY_DAILY, BABY_GROWTH, BABY_IO, FEEDING_FORM, MAMA_ADMISSION, MAMA_DAILY, MAMA_RECORD } from "./sheetDefinitions";
-import { paperScale } from "./paperForms";
+import { scaleForm } from "./scales";
 
 const note = (key: string, label: string, required = false): CareField => ({ key, label, type: "textarea", required });
-const number = (key: string, label: string, min = 0, max?: number): CareField => ({ key, label, type: "number", min, max });
 const multiple = (key: string, label: string, options: string[]): CareField => ({ key, label, type: "multiple", options });
 const date: CareField = { key: "date", label: "紀錄日期", type: "date", required: true };
 const time: CareField = { key: "time", label: "紀錄時間", type: "time", required: true };
-const paper = (mood: boolean): CareForm => paperScale({
-  key: mood ? "mood" : "social", label: mood ? "心情量表" : "社會支持",
-  sections: [{ label: "紙本量表與後續處理", fields: [date, number("score", "總分", 0, mood ? 30 : undefined),
-    ...(mood ? [number("question10", "第 10 題得分", 0, 3)] : []),
-    { key: "photo", label: "紙本照片（僅本機預覽）", type: "photo" }, note("followUp", "後續處理內容"),
-  ] }],
-}, mood);
-
 /*
   院方紙本已對齊的表單定義在 sheetDefinitions.ts，這裡只保留尚未對齊的幾張。
   表單代號（admission／ongoing／record…）刻意不變，草稿、房間分頁與已簽紀錄才能繼續沿用同一份狀態。
 */
-export const MAMA_FORMS: CareForm[] = [MAMA_ADMISSION, MAMA_DAILY, MAMA_RECORD, paper(false), paper(true), guidanceForm("mama")];
+export const MAMA_FORMS: CareForm[] = [MAMA_ADMISSION, MAMA_DAILY, MAMA_RECORD, scaleForm("social"), scaleForm("mood"), guidanceForm("mama")];
 
 export const BABY_FORMS: CareForm[] = [
   BABY_ADMISSION,

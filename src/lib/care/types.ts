@@ -83,4 +83,4 @@ export type CareField = {
 export type CareRow = { label: string; keys: string[]; note?: string };
 export type CareSection = { label: string; fields: CareField[]; rows?: CareRow[] };
 export type PaperTemplateId = "mama-admission" | "mama-daily" | "baby-admission" | "baby-daily" | "mood" | "social";
-export type CareForm = { key: string; label: string; sections: CareSection[]; signature?: boolean; layout?: "assessment" | "feeding" | "daily" | "io" | "growth" | "guidance"; printTitle?: string; printGroups?: number[][]; paperTemplate?: PaperTemplateId; templateVersion?: string; supplementalKeys?: string[] };
+export type CareForm = { key: string; label: string; sections: CareSection[]; signature?: boolean; layout?: "assessment" | "feeding" | "daily" | "io" | "growth" | "guidance" | "scale"; printTitle?: string; printGroups?: number[][]; paperTemplate?: PaperTemplateId; templateVersion?: string; supplementalKeys?: string[] };

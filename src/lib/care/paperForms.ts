@@ -145,12 +145,3 @@ export function alignPaperForms(mama: CareForm, baby: CareForm, mamaDaily: CareF
   ]);
   babyDaily.sections.at(-1)!.label = "既有資料與補充評估";
 }
-
-export const MOOD_QUESTIONS = [
-  "我能看到事物有趣的一面，並笑得開心", "我欣然期待未來的一切", "當事情出錯時，我會完全責備自己", "我無緣無故感到焦慮和擔心", "我無緣無故感到害怕和驚慌", "很多事情衝著我來，使我透不過氣", "我很不開心，以致失眠", "我感到難過和悲傷", "我不開心到哭泣", "我有想過要傷害自己",
-];
-export const SOCIAL_QUESTIONS = ["我有能支持我的好朋友。", "當我需要時，我的家人能提供協助。", "我的先生／伴侶可以幫助我許多事情。", "我與先生／伴侶之間有衝突。", "我有被先生／伴侶所控制，而失去自己的感覺。", "我能感受到先生／伴侶的愛。"];
-export function paperScale(form: CareForm, mood: boolean): CareForm {
-  form.sections[0].fields.splice(1, 0, date("birthDate", "生產日期"));
-  return { ...form, layout: "assessment", paperTemplate: mood ? "mood" : "social", templateVersion: PAPER_VERSION, printTitle: mood ? "產後心情量表" : "產婦家庭及社會支持量表", supplementalKeys: form.sections.flatMap((section) => section.fields.map((field) => field.key)).filter((key) => !["date", "birthDate"].includes(key)) };
-}

@@ -128,6 +128,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         要用第 2 層時按開關展開，選擇會記住。
       */}
       <aside
+        data-no-print
         className={
           "desktop-sidebar scroll-fade sticky top-0 hidden h-screen shrink-0 overflow-y-auto border-r border-brand-900/10 bg-white/80 backdrop-blur md:flex md:flex-col " +
           (collapsed ? "w-[76px]" : "w-60")
@@ -171,7 +172,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         {/* 頁首與頁面注入的第二列同屬一個 sticky 容器，一起固定在畫面上方。 */}
-        <div ref={headerRef} className="safe-top sticky top-0 z-30 border-b border-brand-900/10 bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70">
+        <div ref={headerRef} data-no-print className="safe-top sticky top-0 z-30 border-b border-brand-900/10 bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/70">
           <header className="flex min-h-[var(--app-header-h)] flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 sm:px-6 md:max-lg:gap-x-2 md:max-lg:px-4">
             <button
               onClick={() => setDrawerOpen(true)}

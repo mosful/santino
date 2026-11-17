@@ -5,6 +5,7 @@ import { FEEDING_GROUPS, RED_BOTTOM, SHIFTS, sectionRows } from "@/lib/care/shee
 import { growthDays, type GrowthDay } from "@/lib/care/summary";
 import { GUIDANCE_WAYS, guidanceGroups, guidanceKeys } from "@/lib/care/guidance";
 import { legacySheetFields, normalizeSheetValues } from "@/lib/care/sheetValues";
+import { scaleQuestions, scaleResult, type ScaleKind } from "@/lib/care/scales";
 import styles from "./CareSheet.module.css";
 
 function text(value: string | string[] | undefined) { return Array.isArray(value) ? value.join("、") : value ?? ""; }
@@ -31,6 +32,32 @@ export default function CarePrintSheet({ form, document, subject, history, subje
   function legacy(extra: CareValues) { const fields = legacySheetFields(form, extra); return !blank && fields.length > 0 ? <div className={styles.legacyPrint}>原有資料補充：{fields.map((field) => <PrintField key={field.key} field={field} values={extra} blank={false} />)}</div> : null; }
   function header(title = form.printTitle ?? form.label) {
     return <><h2 className={styles.printTitle}>聖帝諾產後護理之家</h2><h3 className={styles.printSubtitle}>{title}</h3><p className={styles.printIdentity}>房號／車號：{subject.room || subject.carNo}　姓名：{subject.name}　病歷號：{subject.chartNo}</p><p className={styles.printIdentity}>填寫日期：{blank ? "　　　　　" : text(document.values.date)}　時間：{blank ? "　　　" : text(document.values.time)}　{subject.motherName !== subject.name ? `媽媽：${subject.motherName}` : ""}</p></>;
+  }
+  if (form.layout === "scale") {
+    const kind = form.key as ScaleKind;
+    const questions = scaleQuestions(kind);
+    const result = scaleResult(kind, values);
+    return <div className={styles.printDocument}><section className={styles.printPage}>
+      <h2 className={styles.printTitle}>聖帝諾產後護理之家</h2>
+      <h3 className={styles.printSubtitle}>{form.printTitle}</h3>
+      <div className={styles.scalePrintIdentity}>
+        <span>房號：{subject.room || "　　　　"}</span><span>姓名：{subject.name || "　　　　　　"}</span>
+        <span>生日：{blank ? "　　　　　" : text(values.birthDate)}</span><span>日期：{blank ? "　　　　　" : text(values.date)}</span>
+      </div>
+      <p className={styles.scalePrintIntro}>{kind === "mood" ? "請依照您過去七天（不只是今天）的感受，選擇最接近的答案；每題只能選一個答案。" : "本量表共 6 題，每題 1 至 5 分；第 4、5 題採反向計分，總分越高代表家庭及社會支持程度越好。"}</p>
+      <table className={styles.scalePrint}><thead><tr><th>題目</th>{questions[0].options.map((option, index) => <th key={`${option.label}-${index}`}>{kind === "social" ? option.label : `選項 ${index + 1}`}</th>)}</tr></thead><tbody>
+        {questions.map((question, index) => <tr key={question.key}>
+          <th>{index + 1}. {question.text}</th>
+          {question.options.map((option) => {
+            const selected = !blank && values[question.key] === String(option.score);
+            return <td key={`${option.label}-${option.score}`}><span className={styles.scalePrintMark}>{selected ? "●" : "○"}</span>{kind === "mood" && <span>{option.label}</span>}<small>{option.score} 分</small></td>;
+          })}
+        </tr>)}
+      </tbody></table>
+      <div className={styles.scalePrintResult}><span>總分：{!blank && result.complete ? `${result.score} 分` : "　　　　"}</span>{kind === "mood" && <span>第 10 題：{!blank && text(values.question10) !== "" ? `${text(values.question10)} 分` : "　　　"}</span>}</div>
+      <p className={styles.scalePrintFollowUp}>後續處理：{blank ? "" : text(values.followUp)}</p>
+      <p className={styles.scalePrintStaff}>護理人員：{blank ? "　　　　　　　　　" : document.staffStamp?.author ?? document.author ?? "　　　　　　　　　"}</p>
+    </section></div>;
   }
   if (form.layout === "feeding") {
     const entries = printItems(history, document, blank);

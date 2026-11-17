@@ -129,11 +129,11 @@ test("已簽紀錄僅本人或主管可以修正",()=>{
   assert.equal(canReviseCareEntry("護理長 婉真",a),true);
   assert.equal(canReviseCareEntry("管理者",a),true);
 });
-test("PDF 原尺寸與 A4 等比例輸出，空白量表保持一頁且不載入字型",async()=>{
+test("PDF 原尺寸與 A4 等比例輸出，空白紙本保持原頁數",async()=>{
   const source=await PDFDocument.create(); source.addPage([578.16,824.4]); source.addPage([578.16,824.4]);
   const bytes=await source.save();
   for(const size of ["source","a4"] as const) {
-    const output=await createPaperPdf(request([],{form:MAMA_FORMS.find((form)=>form.key==="social")!,blank:true,paperSize:size}),async(asset)=>{assert.ok(asset.endsWith(".pdf"));return bytes;});
+    const output=await createPaperPdf(request([],{form:MAMA_FORMS[1],blank:true,paperSize:size}),async(asset)=>{assert.ok(asset.endsWith(".pdf"));return bytes;});
     const doc=await PDFDocument.load(output);
     assert.equal(doc.getPageCount(),1);
     assert.ok(Math.abs(doc.getPage(0).getWidth()-(size==="a4"?595.276:578.16))<.01);

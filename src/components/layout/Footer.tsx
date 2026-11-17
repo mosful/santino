@@ -14,7 +14,7 @@ export default function Footer() {
   const scrollable = usePageScrollable();
 
   return (
-    <footer className="border-t border-brand-900/10 px-4 py-4 text-center text-xs text-stone-400">
+    <footer data-no-print className="border-t border-brand-900/10 px-4 py-4 text-center text-xs text-stone-400">
       {scrollable && (
         <Button size="sm" className="mb-3 !rounded-full print:hidden" onClick={scrollToTop}>
           <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />

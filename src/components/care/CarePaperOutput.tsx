@@ -7,7 +7,7 @@ import Button, { ButtonLink } from "@/components/ui/Button";
 import { BASE_PATH } from "@/lib/basePath";
 import type { CareDocument, CareEntry, CareForm, CareSubject } from "@/lib/care/types";
 import { PAPER_TEMPLATES } from "@/lib/care/paperTemplates";
-import { PAPER_VERSION, MOOD_QUESTIONS, SOCIAL_QUESTIONS } from "@/lib/care/paperForms";
+import { PAPER_VERSION } from "@/lib/care/paperForms";
 import { paperConflicts, paperRecords, paperText, type PaperRequest } from "@/lib/care/paperRecords";
 import styles from "./CarePaperOutput.module.css";
 import Choice from "@/components/ui/Choice";
@@ -22,7 +22,6 @@ export default function CarePaperOutput({ form, document, subject, history, blan
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<{ url: string; fingerprint: string }>();
-  const isScale = ["mood", "social"].includes(form.paperTemplate!);
   const isDaily = form.paperTemplate!.endsWith("daily");
   const request: PaperRequest = { form, document, subject, history, blank, start, end, includeDraft, paperSize, choices };
   const fingerprint = JSON.stringify({ v: document.values, signed: document.signature, history, blank, start, end, includeDraft, paperSize, choices, subject });
@@ -47,7 +46,7 @@ export default function CarePaperOutput({ form, document, subject, history, blan
   }
   return <section id="care-paper-output" className={styles.output} aria-label="依紙本列印" data-no-print>
     <div className={styles.heading}><h3>依紙本列印</h3><span>母版 {PAPER_VERSION}・{blank ? "空白表格" : "填寫內容"}</span></div>
-    <p className={styles.description}>{isScale ? "維持紙本填答，題目與選項依院方原表。分數、照片及後續處理記錄在下方。" : "保留紙本格線、選項與原分頁。請先產生 PDF，再由 PDF 的列印功能輸出。"}</p>
+    <p className={styles.description}>保留紙本格線、選項與原分頁。請先產生 PDF，再由 PDF 的列印功能輸出。</p>
     {!blank && isDaily && <div className={styles.controls}>
       <label>列印起日<input type="date" value={start} onChange={(event) => setStart(event.target.value)} /></label>
       <label>列印迄日<input type="date" value={end} onChange={(event) => setEnd(event.target.value)} /></label>
@@ -67,6 +66,6 @@ export default function CarePaperOutput({ form, document, subject, history, blan
     {error && <p role="alert" className={styles.error}>{error}</p>}
     {result && !current && <p role="status" className={styles.note}>內容或列印條件已變更，請重新產生 PDF。</p>}
     {current && result && <div className={styles.result}><p role="status">紙本 PDF 已產生。列印時請關閉額外頁首頁尾並核對縮放；iPad 可使用「開啟 PDF 列印」。</p><details><summary>在頁面內預覽 PDF</summary><p>若瀏覽器未顯示預覽，請使用上方「開啟 PDF 列印」。</p><iframe title="紙本 PDF 預覽" src={result.url} loading="lazy" /></details></div>}
-    {(blank || isScale) && <details open={blank} className={styles.reference}><summary>檢視院方原紙本{isScale ? "與題目" : ""}</summary><div className={styles.pages}>{PAPER_TEMPLATES[form.paperTemplate!].map((page) => <a key={page.page} href={`${BASE_PATH}/care-paper/templates/${page.source}-${page.page + 1}.png`} target="_blank" rel="noopener noreferrer"><img src={`${BASE_PATH}/care-paper/templates/${page.source}-${page.page + 1}.png`} width={954} height={1361} alt={`${page.title}原紙本第 ${page.page + 1} 頁，保留原題目、選項、格線及簽名位置`} /></a>)}</div>{isScale && <ol>{(form.paperTemplate === "mood" ? MOOD_QUESTIONS : SOCIAL_QUESTIONS).map((question) => <li key={question}>{question}</li>)}</ol>}{isScale && <p>{form.paperTemplate === "mood" ? "請依原表各題選項順序填答，評估過去七天感受。本頁不新增自動計分或處置門檻。" : "依原表五選項填答，第 4、5 題為反向配分。此頁保留紙本作答與人工結果登錄，不自動設定風險分界。"}</p>}</details>}
+    {blank && <details open className={styles.reference}><summary>檢視院方原紙本</summary><div className={styles.pages}>{PAPER_TEMPLATES[form.paperTemplate!].map((page) => <a key={page.page} href={`${BASE_PATH}/care-paper/templates/${page.source}-${page.page + 1}.png`} target="_blank" rel="noopener noreferrer"><img src={`${BASE_PATH}/care-paper/templates/${page.source}-${page.page + 1}.png`} width={954} height={1361} alt={`${page.title}原紙本第 ${page.page + 1} 頁，保留原題目、選項、格線及簽名位置`} /></a>)}</div></details>}
   </section>;
 }

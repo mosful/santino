@@ -45,15 +45,24 @@ export default function CarePrintSheet({ form, document, subject, history, subje
         <span>生日：{blank ? "　　　　　" : text(values.birthDate)}</span><span>日期：{blank ? "　　　　　" : text(values.date)}</span>
       </div>
       <p className={styles.scalePrintIntro}>{kind === "mood" ? "請依照您過去七天（不只是今天）的感受，選擇最接近的答案；每題只能選一個答案。" : "本量表共 6 題，每題 1 至 5 分；第 4、5 題採反向計分，總分越高代表家庭及社會支持程度越好。"}</p>
-      <table className={styles.scalePrint}><thead><tr><th>題目</th>{questions[0].options.map((option, index) => <th key={`${option.label}-${index}`}>{kind === "social" ? option.label : `選項 ${index + 1}`}</th>)}</tr></thead><tbody>
+      {kind === "mood" ? <div className={styles.scaleMoodPrint}>
+        {questions.map((question, index) => <section key={question.key}>
+          <h4>{index + 1}. {question.text}</h4>
+          {question.options.map((option, optionIndex) => {
+            const selected = !blank && values[question.key] === String(option.score);
+            return <p key={`${option.label}-${option.score}`}><span className={styles.scalePrintMark}>{selected ? "●" : "○"}</span>{String.fromCharCode(97 + optionIndex)}. {option.label}<small>{option.score} 分</small></p>;
+          })}
+        </section>)}
+        <section aria-hidden="true" /><section aria-hidden="true" />
+      </div> : <table className={styles.scalePrint}><thead><tr><th>題目</th>{questions[0].options.map((option) => <th key={option.label}>{option.label}</th>)}</tr></thead><tbody>
         {questions.map((question, index) => <tr key={question.key}>
           <th>{index + 1}. {question.text}</th>
           {question.options.map((option) => {
             const selected = !blank && values[question.key] === String(option.score);
-            return <td key={`${option.label}-${option.score}`}><span className={styles.scalePrintMark}>{selected ? "●" : "○"}</span>{kind === "mood" && <span>{option.label}</span>}<small>{option.score} 分</small></td>;
+            return <td key={`${option.label}-${option.score}`}><span className={styles.scalePrintMark}>{selected ? "●" : "○"}</span><small>{option.score} 分</small></td>;
           })}
         </tr>)}
-      </tbody></table>
+      </tbody></table>}
       <div className={styles.scalePrintResult}><span>總分：{!blank && result.complete ? `${result.score} 分` : "　　　　"}</span>{kind === "mood" && <span>第 10 題：{!blank && text(values.question10) !== "" ? `${text(values.question10)} 分` : "　　　"}</span>}</div>
       <p className={styles.scalePrintFollowUp}>後續處理：{blank ? "" : text(values.followUp)}</p>
       <p className={styles.scalePrintStaff}>護理人員：{blank ? "　　　　　　　　　" : document.staffStamp?.author ?? document.author ?? "　　　　　　　　　"}</p>

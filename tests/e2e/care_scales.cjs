@@ -6,6 +6,7 @@ const { PDFDocument } = require("pdf-lib");
 
 const base = process.env.SANTINO_PREVIEW_BASE_URL || "http://localhost:4310";
 const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-results"), "care_scales");
+let activeBrowser;
 
 async function openForm(page, name) {
   await page.getByRole("button", { name, exact: true }).first().click();
@@ -29,6 +30,7 @@ async function checkLayout(page, engine, form, width, height) {
   const results = [];
   for (const [engine, launcher] of [["chromium", chromium], ["webkit", webkit]]) {
     const browser = await launcher.launch({ headless: true });
+    activeBrowser = browser;
     const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
     await context.addInitScript(() => {
       localStorage.setItem("santino_auth_v1", "1");
@@ -64,7 +66,7 @@ async function checkLayout(page, engine, form, width, height) {
     await page.getByText("21 分", { exact: true }).waitFor();
     for (const [width, height] of [[1440, 1000], [820, 1180], [390, 844]]) await checkLayout(page, engine, "mood", width, height);
     await page.getByRole("button", { name: "列印空白表格", exact: true }).click();
-    const moodPrint = page.locator("table").filter({ hasText: "我能看到事物有趣的一面" });
+    const moodPrint = page.locator('[class*="scaleMoodPrint"]').filter({ hasText: "我能看到事物有趣的一面" });
     await moodPrint.waitFor();
     assert.equal(await moodPrint.locator("img, iframe").count(), 0);
     if (engine === "chromium") {
@@ -78,7 +80,8 @@ async function checkLayout(page, engine, form, width, height) {
     assert.deepEqual(errors, []);
     results.push({ engine, socialScore: 14, moodScore: 21, layouts: [1440, 820, 390], scannedPreview: false });
     await browser.close();
+    activeBrowser = undefined;
   }
   await fs.writeFile(path.join(output, "result.json"), JSON.stringify(results, null, 2));
   console.log("媽媽量表：Chromium／WebKit 原生填答、計分、空白列印及桌機／iPad／手機版面檢查通過。");
-})().catch((error) => { console.error(error); process.exitCode = 1; });
+})().catch(async (error) => { console.error(error); await activeBrowser?.close(); process.exitCode = 1; });

@@ -24,20 +24,32 @@ export default function CareScaleSheet({ form, values, onChange, personal, addPh
         <p>本量表共 6 題，每題 1 至 5 分；第 4、5 題採反向計分，總分越高代表支持程度越好。</p>
       </>}
     </div>
-    <ol className={styles.scaleQuestions}>
+    {kind === "social" ? <div className={styles.scaleSocialTable} role="table" aria-label="產婦家庭及社會支持量表題目">
+      <div className={styles.scaleSocialHead} role="row"><span role="columnheader">題目</span>{questions[0].options.map((option) => <span role="columnheader" key={option.label}>{option.label}</span>)}</div>
+      {questions.map((question, index) => <div key={question.key} className={styles.scaleSocialRow} role="radiogroup" aria-label={`第 ${index + 1} 題：${question.text}`}>
+        <div className={styles.scaleSocialQuestion}><span>{index + 1}. {question.text}</span><button type="button" onClick={() => onChange(scaleAnswerPatch(kind, values, question.key, ""))}>清除</button></div>
+        {question.options.map((option) => {
+          const selected = values[question.key] === String(option.score);
+          return <label key={`${option.label}-${option.score}`} data-selected={selected} className={styles.scaleSocialOption}>
+            <input type="radio" name={`${form.key}-${question.key}`} checked={selected} onChange={() => onChange(scaleAnswerPatch(kind, values, question.key, String(option.score)))} />
+            <span className={styles.scaleSocialMobileLabel}>{option.label}</span><strong>{option.score}</strong>
+          </label>;
+        })}
+      </div>)}
+    </div> : <ol className={styles.scaleQuestions} data-kind="mood">
       {questions.map((question, index) => <li key={question.key} className={styles.scaleQuestion}>
         <div className={styles.scaleQuestionHead}><span>{index + 1}. {question.text}</span><button type="button" onClick={() => onChange(scaleAnswerPatch(kind, values, question.key, ""))}>清除本題</button></div>
         <div className={styles.scaleOptions} role="radiogroup" aria-label={`第 ${index + 1} 題：${question.text}`}>
-          {question.options.map((option) => {
+          {question.options.map((option, optionIndex) => {
             const selected = values[question.key] === String(option.score);
             return <label key={`${option.label}-${option.score}`} data-selected={selected} className={styles.scaleOption}>
               <input type="radio" name={`${form.key}-${question.key}`} checked={selected} onChange={() => onChange(scaleAnswerPatch(kind, values, question.key, String(option.score)))} />
-              <span>{option.label}</span><small>{option.score} 分</small>
+              <span>{String.fromCharCode(97 + optionIndex)}. {option.label}</span><small>{option.score} 分</small>
             </label>;
           })}
         </div>
       </li>)}
-    </ol>
+    </ol>}
     <section className={styles.scaleResult} aria-live="polite">
       <div><span>作答進度</span><strong>{result.answered}／{result.totalQuestions} 題</strong></div>
       <div><span>量表總分</span><strong>{result.complete ? `${result.score} 分` : "完成全部題目後計算"}</strong></div>

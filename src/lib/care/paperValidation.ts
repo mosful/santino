@@ -32,7 +32,7 @@ export function validatePaperValues(form: CareForm, values: CareValues) {
     if (!paperText(value)) continue;
     if (field.type === "date" && !validPaperDate(paperText(value))) errors.push(`${field.label}不是有效日期，請核對原紀錄。`);
     if (field.type === "time" && !/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(paperText(value))) errors.push(`${field.label}不是有效時間，請核對原紀錄。`);
-    if (field.type === "number" && (!Number.isFinite(Number(value)) || field.min !== undefined && Number(value)<field.min || field.max !== undefined && Number(value)>field.max)) errors.push(`${field.label}超出有效數值範圍，請核對原紀錄。`);
+    if (field.type === "number" && !field.range && (!Number.isFinite(Number(value)) || field.min !== undefined && Number(value)<field.min || field.max !== undefined && Number(value)>field.max)) errors.push(`${field.label}超出有效數值範圍，請核對原紀錄。`);
     if(form.supplementalKeys?.includes(field.key)) continue;
     if(!mapped.has(field.key)) { errors.push(`${field.label}尚未對應原紙本位置，完整資料仍保留。`); continue; }
     const allowed=options.get(field.key);

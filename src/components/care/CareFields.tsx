@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Toast, useToast } from "@/components/ui/Toast";
 import { readCarePhoto, saveCarePhoto } from "@/lib/care/media";
 import type { CareField, CareValues } from "@/lib/care/types";
-import { conflicts } from "@/lib/care/rules";
+import { bloodPressureLooksWrong, conflicts, normalizeCareRange, rowClearPatch } from "@/lib/care/rules";
 import styles from "./CareWorkspace.module.css";
 import { usePhraseLibrary } from "@/hooks/usePhraseLibrary";
 import { buttonStyles } from "@/components/ui/buttonStyles";
@@ -43,7 +43,8 @@ function PhotoField({ id, label, onChange }: { id: string; label: string; onChan
   </div>;
 }
 
-export default function CareFieldInput({ field, values, onChange, personal, addPhrase }: { field: CareField; values: CareValues; onChange: (patch: CareValues) => void; personal: string[]; addPhrase: (value: string) => void }) {
+/** rowClear：所在的列已有整列清除鈕（表單版面），欄位本身不再放清除。 */
+export default function CareFieldInput({ field, values, onChange, personal, addPhrase, rowClear = false }: { field: CareField; values: CareValues; onChange: (patch: CareValues) => void; personal: string[]; addPhrase: (value: string) => void; rowClear?: boolean }) {
   const { phrases: library } = usePhraseLibrary();
   const [phraseOpen, setPhraseOpen] = useState(false);
   const [phraseTab, setPhraseTab] = useState("system");
@@ -53,7 +54,12 @@ export default function CareFieldInput({ field, values, onChange, personal, addP
   const phrases = (phraseTab === "system" ? library.filter((item) => [item.text, item.category, ...item.tags].join(" ").includes(query)).map((item) => item.text) : personal.filter((item) => item.includes(query)));
   const wide = field.type === "textarea" || field.type === "photo" || field.type === "multiple";
   const selectedValues = Array.isArray(value) ? value : value ? [value] : [];
-  const oldOptions = field.options ? selectedValues.filter((item) => !field.options!.includes(item)) : [];
+  const oldOptions = field.options && !field.readOnlyHint ? selectedValues.filter((item) => !field.options!.includes(item)) : [];
+  // 沒有分列的表單：清除本欄連同後面的數字與文字（需求 G10）。
+  const clearPatch = () => rowClearPatch([field], values);
+  const clearButton = !rowClear && <button type="button" className="min-h-11 px-2 text-xs underline underline-offset-4" aria-label={`清除${field.label}`} onClick={() => onChange(clearPatch())}>清除</button>;
+  // 選項後面的數字欄（腹瀉 __ 次／天、韌帶後的疼痛分數），需求 M08、M10。
+  const inlineInput = (item: NonNullable<CareField["inline"]>[number]) => <span key={item.key} className="flex items-center gap-1 text-sm">{item.prefix && <span className="whitespace-nowrap">{item.prefix}</span>}<input id={`care-field-${item.key}`} aria-label={`${field.label} ${item.after} ${item.suffix ?? ""}`.trim()} type="text" inputMode="decimal" placeholder="2 或 2-3" value={valueText(values[item.key])} onChange={(event) => onChange({ [item.key]: normalizeCareRange(event.target.value) })} className={`${inputClass} care-input-count`} /><span className="whitespace-nowrap">{item.suffix}</span></span>;
   return <div data-care-field={field.key} className={`${styles.field} ${wide ? styles.wideField : styles.singleField}`}>
     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
       <label htmlFor={["multiple", "radio", "photo"].includes(field.type ?? "") ? undefined : id} className="text-sm font-medium">{field.label}{field.required && <span className="ml-1 text-rose-700">（必填）</span>}</label>
@@ -66,16 +72,19 @@ export default function CareFieldInput({ field, values, onChange, personal, addP
       {!phrases.length && <p className="text-sm text-stone-600">尚無符合片語，可將目前欄位內容加入常用語。</p>}
       <button type="button" className={buttonClass} onClick={() => addPhrase(valueText(value))}>將目前內容加入我的常用語</button>
     </div>}
-    {field.type === "textarea" ? <textarea id={id} value={valueText(value)} onChange={(event) => onChange({ [field.key]: event.target.value })} className={inputClass} />
+    {field.readOnlyHint ? <p className="text-sm">{valueText(value) || "入住評估尚未填寫"}<span className="ml-2 text-xs text-stone-500">（{field.readOnlyHint}）</span></p>
+      : field.type === "textarea" ? <textarea id={id} value={valueText(value)} onChange={(event) => onChange({ [field.key]: event.target.value })} className={inputClass} />
       : field.type === "multiple" ? <div className="flex flex-wrap gap-2" role="group" aria-label={field.label}>{field.options?.map((option) => {
         const selected = Array.isArray(value) ? value : value ? [value] : [];
         const exclusive = ["無", "正常", "無URI症狀"];
-        return <label key={option} data-selected={selected.includes(option)} className="care-option flex min-h-12 items-center gap-2 rounded-lg border border-stone-300 px-3 text-sm"><input type="checkbox" checked={selected.includes(option)} onChange={() => onChange({ [field.key]: selected.includes(option) ? selected.filter((item) => item !== option) : exclusive.includes(option) ? [option] : [...selected.filter((item) => !exclusive.includes(item) && !conflicts(option, item)), option] })} />{option}</label>;
-      })}</div>
-      : field.type === "radio" || (field.type === "select" && (field.options?.length ?? 0) <= 3) ? <div role="radiogroup" aria-label={field.label} className="flex flex-wrap gap-x-4 gap-y-1">{field.options?.map((option) => <label key={option} className="flex min-h-11 items-center gap-2 text-sm"><input type="radio" name={id} value={option} checked={value === option} onChange={() => onChange({ [field.key]: option })} />{option}</label>)}<button type="button" className="min-h-11 px-2 text-xs underline underline-offset-4" onClick={() => onChange({ [field.key]: "" })}>清除</button></div>
+        return <label key={option} data-selected={selected.includes(option)} className="care-option flex min-h-12 items-center gap-2 rounded-lg border border-stone-300 px-3 text-sm"><input type="checkbox" checked={selected.includes(option)} onChange={() => onChange({ [field.key]: selected.includes(option) ? selected.filter((item) => item !== option) : exclusive.includes(option) ? [option] : [...selected.filter((item) => !exclusive.includes(item) && !conflicts(option, item)), option] })} />{field.optionLabels?.[option] ?? option}</label>;
+      }).flatMap((label, index) => { const item = field.inline?.find((inline) => inline.after === field.options![index]); return item ? [<span key={`${item.key}-group`} className="flex flex-wrap items-center gap-2 [&>label]:shrink-0">{label}{inlineInput(item)}</span>] : [label]; })}{field.clearWith && clearButton}</div>
+      : field.type === "radio" || (field.type === "select" && !field.dropdown && (field.options?.length ?? 0) <= 3) ? <div role="radiogroup" aria-label={field.label} className="flex flex-wrap gap-x-4 gap-y-1">{field.options?.map((option) => <label key={option} className="flex min-h-11 items-center gap-2 text-sm"><input type="radio" name={id} value={option} checked={value === option} onChange={() => onChange({ [field.key]: option })} />{option}</label>)}{/* 兩選一可直接切換，不放清除（2026-11-20 會議） */}{field.options?.length !== 2 && clearButton}</div>
       : field.type === "select" ? <select id={id} value={valueText(value)} onChange={(event) => onChange({ [field.key]: event.target.value })} className={inputClass}><option value="">請選擇</option>{field.options?.map((option) => <option key={option}>{option}</option>)}</select>
       : field.type === "photo" ? <PhotoField key={valueText(value)} id={valueText(value)} label={field.label} onChange={(next) => onChange({ [field.key]: next })} />
-      : <input id={id} type={field.type ?? "text"} min={field.min} max={field.max} step={field.type === "number" ? "any" : undefined} value={valueText(value)} onChange={(event) => onChange({ [field.key]: event.target.value })} className={inputClass} />}
+      : field.range ? <input id={id} type="text" inputMode="decimal" placeholder="2 或 2-3" value={valueText(value)} onChange={(event) => onChange({ [field.key]: normalizeCareRange(event.target.value) })} className={`${inputClass} care-input-compact`} />
+      : <input id={id} type={field.type ?? "text"} min={field.min} max={field.max} step={field.type === "number" ? "any" : undefined} value={valueText(value)} onChange={(event) => onChange({ [field.key]: event.target.value })} className={`${inputClass} ${field.type === "number" ? "care-input-compact" : field.key === "bloodPressure" ? "care-input-bp" : ""}`} />}
+    {field.key === "bloodPressure" && bloodPressureLooksWrong(valueText(value)) && <p className="mt-2 text-sm text-amber-900">血壓請以「收縮壓/舒張壓」填寫，例如 130/80。（僅提醒，不影響儲存）</p>}
     {oldOptions.length > 0 && <p className="mt-2 text-sm text-amber-900">原有內容：{oldOptions.join("、")}。選擇新選項時請核對。</p>}
   </div>;
 }

@@ -29,10 +29,12 @@ test("媽媽每日照護改名並讓可並存的狀況複選、宮底改選單",
   assert.equal(MAMA_DAILY.key, "ongoing");
   assert.equal(MAMA_DAILY.label, "每日照護");
   const fields = MAMA_DAILY.sections.flatMap((section) => section.fields);
-  for (const key of ["symptoms", "sleep", "mood", "painSites"]) assert.equal(fields.find((field) => field.key === key)!.type, "multiple", `${key} 應可複選`);
+  // 睡眠屬原系統補充欄，2026-11-20 起每日照護只保留紙本欄位（G12），舊值仍保留在紀錄。
+  for (const key of ["symptoms", "mood", "painSites"]) assert.equal(fields.find((field) => field.key === key)!.type, "multiple", `${key} 應可複選`);
   const fundus = fields.find((field) => field.key === "fundus")!;
   assert.equal(fundus.type, "select");
-  assert.deepEqual(fundus.options, ["一", "二", "三", "四", "五", "摸不到", "其他"]);
+  assert.deepEqual(fundus.options, ["一", "二", "三"]); // 2026-11-20 使用者指示只留一～三，仍為下拉選單
+  assert.equal(fundus.dropdown, true);
   // 互斥題不因「都複選」一句一起改掉。
   assert.equal(fields.find((field) => field.key === "contraction")!.type, "radio");
 });

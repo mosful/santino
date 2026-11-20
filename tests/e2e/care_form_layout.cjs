@@ -56,7 +56,8 @@ async function check(panel, name) {
       const a = fields[i].getBoundingClientRect(), b = fields[j].getBoundingClientRect();
       if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1) defects.push(`${fields[i].id} 與 ${fields[j].id} 重疊`);
       const left = fields[i].closest("[data-care-field]"), right = fields[j].closest("[data-care-field]");
-      if (left.parentElement === right.parentElement) {
+      // 同一個欄位內的接續數字框（如腹瀉次數、未解天數）本來就分行，只比對不同欄位。
+      if (left !== right && left.parentElement === right.parentElement) {
         const x = left.getBoundingClientRect(), y = right.getBoundingClientRect();
         if (Math.min(x.bottom, y.bottom) - Math.max(x.top, y.top) > 1 && Math.abs(a.top - b.top) > 1) defects.push(`${fields[i].id} 與 ${fields[j].id} 同列未對齊`);
       }

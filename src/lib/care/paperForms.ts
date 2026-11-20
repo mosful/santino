@@ -11,6 +11,12 @@ const multi = (key: string, label: string, options: string[]): CareField => ({ k
 const yn = (key: string, label: string) => choice(key, label, ["無", "有"]);
 const date = (key: string, label: string): CareField => ({ key, label, type: "date" });
 
+/** 宮底位置：原「U−」改為「摸不到」（2026-11-20 使用者指示）；選了橫指數就代表 U−，列印時勾紙本的 U−。紙本沒有「摸不到」格，列印時寫在橫指數格。 */
+const FUNDUS_POSITIONS = ["摸不到", "pelvic"];
+function setFields(form: CareForm, patches: Record<string, Partial<CareField>>) {
+  for (const field of form.sections.flatMap((section) => section.fields)) if (patches[field.key]) Object.assign(field, patches[field.key]);
+}
+
 /** 依新紙本重排；原來額外的欄位留下，不移除舊草稿或歷史資料。 */
 function align(form: CareForm, template: PaperTemplateId, title: string, groups: [string, RowSpec[]][]) {
   const old = new Map(form.sections.flatMap((section) => section.fields).map((field) => [field.key, field]));
@@ -62,7 +68,7 @@ export function alignPaperForms(mama: CareForm, baby: CareForm, mamaDaily: CareF
       ["6 活動能力及四肢", "mobility", "limbs"],
       ["7 乳房及乳頭", "breast", "nippleLeft", "nippleRight"],
       ["8 泌乳情形", choice("lactationAmount", "泌乳程度", ["多", "中", "少", "無"]), "milkAmount", "milkInterval", "lactation"],
-      ["9 子宮情形", "fundus", choice("fundusPosition", "宮底位置", ["U−", "pelvic"]), "fundusNote", "contraction", "lochiaAmount", "lochiaColor"],
+      ["9 子宮情形", "fundus", choice("fundusPosition", "宮底位置", FUNDUS_POSITIONS), "contraction", "lochiaAmount", "lochiaColor"],
       ["10 傷口", "perinealWound", "perinealMedicine", "abdominalWound", "woundDrainage", "dressing"],
       ["11 排尿", "urinary"],
       ["12 排便及痔瘡", multi("bowel", "排便", ["未解", "有，軟", "有，硬", "水便", "血便", "已服軟便劑"]), "noStoolDays", choice("hemorrhoid", "痔瘡", ["無", "有，無不適"]), yn("hemorrhoidMedication", "使用痔瘡藥膏"), "hemorrhoidMedicine", "sitzBath"],
@@ -78,7 +84,10 @@ export function alignPaperForms(mama: CareForm, baby: CareForm, mamaDaily: CareF
   ]);
   // 原入住護理紀錄仍為必要內容，與紙本主表分開保存。
   const mamaExtras = mama.sections.at(-1)!;
-  mamaExtras.fields = [...mamaExtras.fields.filter((field) => !["birthDate", "hospital"].includes(field.key)), date("birthDate", "生產日期"), text("hospital", "生產醫院")];
+  // 宮底補充 2026-11-20 會議要求移除（M07）；舊值仍保留在紀錄，由「原有資料補充」列出。
+  mamaExtras.fields = [...mamaExtras.fields.filter((field) => !["birthDate", "hospital", "fundusNote"].includes(field.key)), date("birthDate", "生產日期"), text("hospital", "生產醫院")];
+  mama.supplementalKeys = mama.supplementalKeys!.filter((key) => key !== "fundusNote");
+  setFields(mama, { painScore: { range: true }, sitzBath: { range: true } });
 
   align(baby, "baby-admission", "新生兒入住評估單", [
     ["基本資料", [
@@ -116,21 +125,24 @@ export function alignPaperForms(mama: CareForm, baby: CareForm, mamaDaily: CareF
   ]);
   align(mamaDaily, "mama-daily", "產婦每日護理評估表", [
     ["每日評估", [
-      ["生產方式及生命徵象", choice("delivery", "生產方式", ["NSD", "C/S"]), "temperature", "pulse", "respiration", "bloodPressure"],
+      ["生產方式及生命徵象", { ...choice("delivery", "生產方式", ["NSD", "C/S"]), readOnlyHint: "由入住評估帶入，請於入住評估修改" }, "temperature", "pulse", "respiration", "bloodPressure"],
       ["精神", multi("mood", "精神狀態", ["平靜", "愉悅", "疲倦", "易哭", "冷漠", "焦慮"])],
       ["URI 症狀", yn("uriStatus", "URI 症狀"), "symptoms", "symptomNote"],
-      ["疼痛", multi("painSites", "疼痛部位", ["乳房", "宮縮", "傷口", "痔瘡", "其他"]), text("painOther", "其他疼痛"), "painScore"],
-      ["宮底及宮縮", "fundus", choice("fundusPosition", "宮底位置", ["U−", "pelvic"]), "fundusNote", choice("contraction", "宮縮", ["硬", "鬆軟", "按摩後硬"])],
+      ["疼痛", { ...multi("painSites", "疼痛部位", ["乳房", "宮縮", "傷口", "痔瘡", "韌帶", "其他"]), inline: [{ after: "韌帶", key: "painScore", prefix: "疼痛分數", suffix: "分（0–10）" }], clearWith: ["painScore", "painOther"] }, "painScore", text("painOther", "其他疼痛")],
+      ["宮底及宮縮", "fundus", choice("fundusPosition", "宮底位置", FUNDUS_POSITIONS), choice("contraction", "宮縮", ["硬", "鬆軟", "按摩後硬"])],
       ["產婦排出物", multi("lochiaAmount", "產婦排出物量", ["微量", "少", "中", "大量", "無", "血塊"]), multi("lochiaColor", "產婦排出物色", ["鮮紅", "暗紅", "褐", "淡紅", "淡黃", "無"])],
       ["乳房及泌乳", multi("breast", "乳房", ["軟", "充盈", "發紅", "局部硬塊", "退奶"]), "lactation", "pumping"],
-      ["傷口", multi("woundSite", "傷口部位", ["會陰", "腹部"]), multi("woundStatus", "傷口狀況", ["乾淨平整", "紅腫", "發紅", "分泌物"]), multi("dressingTypes", "覆蓋物", ["美容膠", "防水敷", "人工皮", "矽膠貼", "凝膠", "其它"]), text("dressingOther", "其它覆蓋物")],
+      ["傷口", multi("woundSite", "傷口部位", ["會陰", "腹部"]), multi("woundStatus", "傷口狀況", ["乾淨平整", "紅腫", "發紅", "分泌物"]), { ...multi("dressingTypes", "覆蓋物", ["美容膠", "防水敷", "人工皮", "矽膠貼", "凝膠"]), clearWith: ["dressingOther"] }, text("dressingOther", "其它覆蓋物")],
       ["小便", multi("urinary", "小便", ["正常", "需加壓", "失禁", "頻尿", "Foley", "小便灼熱、刺痛"])],
-      ["大便", multi("bowel", "大便", ["有，正常", "腹瀉", "未解"]), num("diarrheaTimes", "腹瀉次數／天"), num("noStoolDays", "未解天數")],
+      ["大便", { ...multi("bowel", "大便", ["有，正常", "腹瀉", "未解"]), optionLabels: { 腹瀉: "腹瀉次數／天", 未解: "未解天數" }, inline: [{ after: "腹瀉", key: "diarrheaTimes" }, { after: "未解", key: "noStoolDays" }], clearWith: ["diarrheaTimes", "noStoolDays"] }, num("diarrheaTimes", "腹瀉次數／天"), num("noStoolDays", "未解天數")],
       ["活動", choice("mobility", "活動", ["自如", "需協助"])],
     ]],
     ["護理指導紀錄", [["護理指導紀錄", { key: "note", label: "敘述性護理紀錄", type: "textarea", required: true }]]],
   ]);
-  if (mamaDaily.sections.at(-1)?.label === "入住護理紀錄") mamaDaily.sections.at(-1)!.label = "既有資料與補充評估";
+  // 2026-11-20 會議：補充資料欄不要（G12），只保留紙本欄位；舊值仍保留在紀錄，由「原有資料補充」列出。
+  mamaDaily.sections = mamaDaily.sections.filter((section) => section.label !== "入住護理紀錄");
+  mamaDaily.printGroups = [mamaDaily.sections.map((_, i) => i)];
+  setFields(mamaDaily, { painScore: { range: true }, pumping: { range: true }, diarrheaTimes: { range: true }, noStoolDays: { range: true } });
   align(babyDaily, "baby-daily", "新生兒每日評估照護單", [
     ["每日評估照護", [
       ["入住日數與班別", "stayDay", "shift", choice("delivery", "生產方式", ["NSD", "C/S"]), multi("feedingType", "哺餵方式", ["母奶", "配方奶"]), text("feedingOther", "哺餵方式補充")],

@@ -63,7 +63,7 @@ Next.js 16 與訓練資料中的版本有破壞性差異 —— **寫任何程�
 ```powershell
 npm run lint      # Next.js ESLint 規則
 npm run build     # 型別檢查並靜態輸出至 out/
-npm test          # node:test 單元測試（2026-11-14 為 120 項）
+npm test          # node:test 單元測試（2026-11-20 為 128 項）
 npm run test:e2e  # Playwright 走 out/，scripts/verify-static.cjs 列出的全部場景
 ```
 

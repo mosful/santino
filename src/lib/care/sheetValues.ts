@@ -3,6 +3,8 @@ import type { CareForm, CareKind, CareValues } from "./types";
 /** 只轉換能確定對應的舊值；原欄位保留，未知內容交由使用者核對。 */
 export function normalizeSheetValues(kind: CareKind, formKey: string, original: CareValues): CareValues {
   const values = structuredClone(original);
+  // 宮底位置已無「U−」選項（有橫指數即代表 U−），舊值清掉以免顯示成「原有內容」。
+  if (kind === "mama" && values.fundusPosition === "U−") values.fundusPosition = "";
   if (formKey !== "admission") return values;
   if (kind === "mama") {
     const parity = typeof values.parity === "string" ? /^G(\d+)P(\d+)(?:A(\d+))?$/.exec(values.parity) : null;

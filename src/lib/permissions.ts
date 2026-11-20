@@ -15,12 +15,13 @@ export const ROLES: Role[] = [
 ];
 
 /** 示範登入者姓名／工號，人名取自 v24 規格 §1 的角色表（非真實帳號資料） */
-export const ROLE_PROFILE: Record<Role, { name: string; empNo: string }> = {
-  櫃台: { name: "林小姐", empNo: "F1001" },
-  "衛教師 琳雅": { name: "琳雅", empNo: "E3005" },
-  "護理師 陳護理師": { name: "陳護理師", empNo: "N1002" },
-  "護理長 婉真": { name: "婉真", empNo: "N1001" },
-  管理者: { name: "邱家駿", empNo: "SYS001" },
+/** fullName：護理表單、員工印章與列印用的全名（需求 G13）；DEMO 角色沒有真實姓氏，以「示範」標示，正式版由人員主檔提供。 */
+export const ROLE_PROFILE: Record<Role, { name: string; fullName: string; empNo: string }> = {
+  櫃台: { name: "林小姐", fullName: "示範 林小姐", empNo: "F1001" },
+  "衛教師 琳雅": { name: "琳雅", fullName: "示範 琳雅", empNo: "E3005" },
+  "護理師 陳護理師": { name: "陳護理師", fullName: "示範 陳護理師", empNo: "N1002" },
+  "護理長 婉真": { name: "婉真", fullName: "示範 婉真", empNo: "N1001" },
+  管理者: { name: "邱家駿", fullName: "邱家駿", empNo: "SYS001" },
 };
 
 /** 舊版角色名稱 → 現行角色，讓瀏覽器裡存的舊值不會被當成無效值丟掉。 */

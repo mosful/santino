@@ -10,7 +10,7 @@ import { normalizeSheetValues } from "./sheetValues";
 import { applyDailyDefaults, applyIoDefaults, lastFeeding, latestMeasurement } from "./summary";
 import { careSubject } from "./subjects";
 import { guidanceActions, guidanceKeys } from "./guidance";
-import { canAuthorizeCare, canEditCare, canReviseCareEntry, canViewCare, documentKey, isBackfillBlocked, mamaAdmissionSignatureError, validateCareForm } from "./rules";
+import { canAuthorizeCare, canEditCare, canReviseCareEntry, canViewCare, documentKey, isBackfillBlocked, linkCarePatch, mamaAdmissionSignatureError, validateCareForm } from "./rules";
 import type { CareDocument, CareKind, CareSignatureRole, CareState, CareValues } from "./types";
 
 const initial: CareState = { version: 1, documents: {}, open: [], active: { mama: null, baby: null }, unlockedCase: null, entries: [], events: [], authorizations: {}, personalPhrases: {}, backfillDays: 3 };
@@ -21,7 +21,8 @@ function valid(value: unknown): value is CareState {
 }
 export const careStore = createPersistentStore("santino_care_workspace_v1", initial, valid);
 export const useCareStore = careStore.useStore;
-const author = () => `${ROLE_PROFILE[getCurrentRole()].name}（${getCurrentRole()}）`;
+// 護理表單與列印一律印員工全名（需求 G13）。
+const author = () => `${ROLE_PROFILE[getCurrentRole()].fullName}（${getCurrentRole()}）`;
 const now = () => new Date().toISOString();
 
 function confirmPaperRecipient(document:CareDocument) {
@@ -49,6 +50,12 @@ export function defaultCareValues(formKey?: string, kind?: CareKind) {
     .filter((field) => field.type === "date" && ["date", "evaluationDate", "reviewDate"].includes(field.key))
     .map((field) => [field.key, todayTaipei(at)]));
   return { ...dates, date: todayTaipei(at), time: at.toLocaleTimeString("en-GB", { timeZone: "Asia/Taipei", hour12: false }).slice(0, 5) };
+}
+/** 每日照護的生產方式取自入住評估（需求 M12）：已簽出的最新一筆優先，沒有才看草稿。 */
+function admissionDelivery(state: CareState, subjectId: string) {
+  const entry = state.entries.find((item) => item.subjectId === subjectId && item.formKey === "admission" && item.values.delivery);
+  const value = entry?.values.delivery ?? state.documents[documentKey(subjectId, "admission")]?.values.delivery;
+  return typeof value === "string" ? value.split(" ")[0] : "";
 }
 function keepsEnteredRecordTime(form: ReturnType<typeof careForms>[number]) {
   return !!form.paperTemplate || form.templateVersion?.endsWith("-native");
@@ -86,6 +93,7 @@ export const careActions = {
         if (!normalized[dateKey] && defaults[dateKey]) normalized[dateKey] = defaults[dateKey];
       }
       state.documents[key].values = normalized;
+      if (subject.kind === "mama" && formKey === "ongoing" && !state.documents[key].signedAt) state.documents[key].values.delivery = admissionDelivery(state, subjectId) || state.documents[key].values.delivery || "";
       if (!state.open.includes(key)) state.open.push(key);
       state.active[subject.kind] = key;
       if (!state.unlockedCase) state.unlockedCase = subject.caseId;
@@ -99,7 +107,8 @@ export const careActions = {
       const document = writable(state, key);
       const subject = careSubject(document.subjectId);
       Object.assign(document.values, document.formKey === "io" ? applyIoDefaults(patch, document.values)
-        : document.formKey === "daily" && subject?.kind === "baby" ? applyDailyDefaults(patch, document.values) : patch);
+        : document.formKey === "daily" && subject?.kind === "baby" ? applyDailyDefaults(patch, document.values)
+        : subject?.kind === "mama" ? linkCarePatch(document.values, patch) : patch);
       if (subject?.kind === "mama" && document.formKey === "admission" && ["respondentIdentity", "respondent", "respondentRelation"].some((key) => key in patch)) {
         delete document.signature; delete document.signatures;
       }
@@ -254,6 +263,7 @@ export const careActions = {
       const last = state.entries.find((entry) => entry.subjectId === document.subjectId && entry.formKey === document.formKey);
       if (!last) throw new Error("此個案目前沒有上一筆紀錄。");
       document.values = { ...structuredClone(last.values), ...defaultCareValues(document.formKey, careSubject(document.subjectId)?.kind) }; document.dirty = true;
+      if (careSubject(document.subjectId)?.kind === "mama" && document.formKey === "ongoing") document.values.delivery = admissionDelivery(state, document.subjectId) || document.values.delivery || "";
     });
   },
   close(key: string, discard = false) {

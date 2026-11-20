@@ -390,6 +390,12 @@ html { --app-header-h: 3.5rem; }
   line-height: 1.5;
 }
 
+/* 照護表單的數字欄依實際字數縮小（2026-11-20 會議 G14：輸入格太大會佔滿版面）。
+   要寫在這裡：上方 .form-control 的 max-width 不在 Tailwind 圖層，工具類蓋不過。 */
+.form-control.care-input-count { max-width: 7rem; }
+.form-control.care-input-compact { max-width: 9rem; }
+.form-control.care-input-bp { max-width: 11rem; }
+
 input.form-control,
 select.form-control:not([multiple]):not([size]) {
   height: 3rem;

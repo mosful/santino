@@ -79,6 +79,18 @@ export type CareField = {
   required?: boolean;
   min?: number;
   max?: number;
+  /** 可填單一數字或範圍（如 2-3），需求 G11。 */
+  range?: boolean;
+  /** 按「清除」時一併清空的同列欄位（如腹瀉後面的次數），需求 G10。 */
+  clearWith?: string[];
+  /** 緊接在某個選項後面顯示的數字欄（如「腹瀉 __ 次／天」），該欄不再另外成格。 */
+  inline?: { after: string; key: string; prefix?: string; suffix?: string }[];
+  /** 選項只有三個以內仍用下拉選單（預設會改成單選圓鈕），如宮底橫指數（2026-11-20 使用者指示）。 */
+  dropdown?: boolean;
+  /** 選項的顯示文字（存值不變），如大便「腹瀉」顯示為「腹瀉次數／天」，紙本與舊資料照舊對應。 */
+  optionLabels?: Record<string, string>;
+  /** 由其他表單帶入、這裡不能改（如每日照護的生產方式取自入住評估），需求 M12。 */
+  readOnlyHint?: string;
 };
 export type CareRow = { label: string; keys: string[]; note?: string };
 export type CareSection = { label: string; fields: CareField[]; rows?: CareRow[] };

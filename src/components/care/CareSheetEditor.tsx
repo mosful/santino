@@ -2,25 +2,35 @@ import type { CareEntry, CareForm, CareKind, CareValues } from "@/lib/care/types
 import { growthDays } from "@/lib/care/summary";
 import { FEEDING_GROUPS, sectionRows } from "@/lib/care/sheetDefinitions";
 import { legacySheetFields } from "@/lib/care/sheetValues";
+import { rowClearPatch, rowHasClear } from "@/lib/care/rules";
 import CareGuidanceSheet from "./CareGuidanceSheet";
 import CareScaleSheet from "./CareScaleSheet";
 import { CareBabyAdmissionSheet, CareBabyDailySheet } from "./CareBabyPaperSheet";
 import CareFieldInput from "./CareFields";
 import styles from "./CareSheet.module.css";
 
-type Props = { form: CareForm; sectionIndex: number; values: CareValues; onChange: (patch: CareValues) => void; personal: string[]; addPhrase: (value: string) => void; subjectEntries?: CareEntry[]; onCarryFeeding?: () => void; kind: CareKind; signature?: string; currentUser: string; notify: (action: () => void, message?: string) => void };
+type Props = { form: CareForm; sectionIndex: number; values: CareValues; onChange: (patch: CareValues) => void; personal: string[]; addPhrase: (value: string) => void; subjectEntries?: CareEntry[]; onCarryFeeding?: () => void; kind: CareKind; currentUser: string; notify: (action: () => void, message?: string) => void };
 
 export default function CareSheetEditor(props: Props) {
-  const { form, values, onChange, sectionIndex, personal, addPhrase, subjectEntries = [], onCarryFeeding, kind, signature, currentUser, notify } = props;
-  if (form.layout === "guidance") return <CareGuidanceSheet kind={kind} values={values} onChange={onChange} signature={signature} currentUser={currentUser} notify={notify} />;
+  const { form, values, onChange, sectionIndex, personal, addPhrase, subjectEntries = [], onCarryFeeding, kind, currentUser, notify } = props;
+  if (form.layout === "guidance") return <CareGuidanceSheet kind={kind} values={values} onChange={onChange} currentUser={currentUser} notify={notify} />;
   if (form.layout === "scale") return <CareScaleSheet form={form} values={values} onChange={onChange} personal={personal} addPhrase={addPhrase} />;
   if (form.paperTemplate === "baby-daily") return <CareBabyDailySheet form={form} sectionIndex={sectionIndex} values={values} onChange={onChange} personal={personal} addPhrase={addPhrase} subjectEntries={subjectEntries} />;
   if (form.paperTemplate === "baby-admission") return <CareBabyAdmissionSheet form={form} sectionIndex={sectionIndex} values={values} onChange={onChange} personal={personal} addPhrase={addPhrase} />;
   const summary = form.layout === "growth" ? growthDays(subjectEntries) : [];
   const fields = form.sections.flatMap((section) => section.fields);
+  // 已接在選項後面顯示的數字欄（如腹瀉次數）不再另外成格。
+  const inlineKeys = new Set(fields.flatMap((field) => field.inline?.map((item) => item.key) ?? []));
   const input = (key: string) => {
+    if (inlineKeys.has(key)) return null;
     const field = fields.find((item) => item.key === key);
-    return field && <CareFieldInput key={field.key} field={field} values={values} onChange={onChange} personal={personal} addPhrase={addPhrase} />;
+    return field && <CareFieldInput key={field.key} field={field} values={values} onChange={onChange} personal={personal} addPhrase={addPhrase} rowClear />;
+  };
+  // 清除＝該列所有選項與文字框一起清空（2026-11-20 使用者指示，全站一致）。
+  const rowClearButton = (label: string, keys: string[]) => {
+    const rowFields = keys.map((key) => fields.find((item) => item.key === key)).filter((field): field is NonNullable<typeof field> => !!field);
+    if (!rowHasClear(rowFields)) return null;
+    return <button type="button" className="mt-1 block min-h-11 text-sm font-normal underline underline-offset-4" data-no-print aria-label={`清除${label}`} onClick={() => onChange(rowClearPatch(rowFields, values))}>清除</button>;
   };
   return <div className={styles.sheet} data-care-sheet={form.layout}>
     <h3 className={styles.title}>{form.printTitle}</h3>
@@ -35,7 +45,7 @@ export default function CareSheetEditor(props: Props) {
             <span className={styles.itemNo}>{index + 1}</span>
             <label><input type="radio" name={`sheet-${key}`} checked={values[key] === "順利"} onChange={() => onChange({ [key]: "順利" })} />{positive}</label>
             <label><input type="radio" name={`sheet-${key}`} checked={values[key] === "困難"} onChange={() => onChange({ [key]: "困難" })} />{negative}</label>
-            <button type="button" className={styles.clear} aria-label={`清除${group.label} ${index + 1}`} onClick={() => onChange({ [key]: "" })}>清除</button>
+            {/* 順利／困難兩選一可直接切換，不放清除（2026-11-20 會議 G10） */}
           </div>;
         })}
       </section>)}
@@ -44,7 +54,8 @@ export default function CareSheetEditor(props: Props) {
     </> : form.sections.map((section, index) => <section key={section.label} hidden={index !== Math.min(sectionIndex, form.sections.length - 1)} aria-label={section.label}>
       <h4 className={styles.groupTitle}>{section.label}</h4>
       {sectionRows(section).map((row) => <div key={row.label} className={styles.row}>
-        <div className={styles.rowLabel}>{row.label}</div>
+        {/* 清除放在列標題下方：整列共用一顆，不在每個欄位各放一顆。 */}
+        <div className={styles.rowLabel}>{row.label}{rowClearButton(row.label, row.keys)}</div>
         <div className={styles.rowFields}>{row.keys.map(input)}</div>
       </div>)}
     </section>)}

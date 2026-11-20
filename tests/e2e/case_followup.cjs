@@ -87,7 +87,10 @@ const assert = require("node:assert/strict"); const fs = require("node:fs/promis
   await page.evaluate(() => localStorage.setItem("santino_current_role_v1", "櫃台"));
   await page.reload({ waitUntil: "domcontentloaded" });
   const allRows = Number((await page.getByText(/符合 \d+ \/ \d+ 筆/).innerText()).match(/\/ (\d+) 筆/)[1]);
+  const beforeFilter = await page.getByText(/符合 \d+ \/ \d+ 筆/).innerText();
   await page.getByLabel("合約狀態", { exact: true }).selectOption("已簽約");
+  // 篩選後畫面重繪需要一點時間；立刻讀會拿到篩選前的筆數（2026-11-20 機器忙時連續重現）。
+  await page.waitForFunction((before) => { const node = [...document.querySelectorAll("*")].find((item) => item.childElementCount === 0 && /符合 \d+ \/ \d+ 筆/.test(item.textContent ?? "")); return node && node.textContent !== before; }, beforeFilter, { timeout: 10000 });
   const signedRows = Number((await page.getByText(/符合 \d+ \/ \d+ 筆/).innerText()).match(/符合 (\d+)/)[1]);
   assert.ok(signedRows > 0 && signedRows < allRows, `已簽約應該是全部的子集，實際 ${signedRows}/${allRows}`);
   const customerDownload = page.waitForEvent("download");

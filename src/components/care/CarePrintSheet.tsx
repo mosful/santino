@@ -15,7 +15,7 @@ function PrintField({ field, values, blank }: { field: CareField; values: CareVa
   const options = field.options;
   return <span className={styles.printField}>
     <span className={styles.printLabel}>{field.label}：</span>
-    {options ? <>{options.map((option) => <span className={styles.printOption} key={option}>{selected.includes(option) ? "●" : "○"}{option}</span>)}{selected.filter((item) => !options.includes(item)).map((item) => <span key={item}>（已存：{item}）</span>)}</> : <span className={styles.printValue}>{text(value) || "　　　　　　　"}</span>}
+    {options ? <>{options.map((option) => <span className={styles.printOption} key={option}>{selected.includes(option) ? "●" : "○"}{field.optionLabels?.[option] ?? option}</span>)}{selected.filter((item) => !options.includes(item)).map((item) => <span key={item}>（已存：{item}）</span>)}</> : <span className={styles.printValue}>{text(value) || "　　　　　　　"}</span>}
   </span>;
 }
 
@@ -254,18 +254,16 @@ export default function CarePrintSheet({ form, document, subject, history, subje
   }
   if (form.layout === "guidance") {
     const sheets = guidanceGroups(subject.kind);
-    return <div className={styles.printDocument}>{sheets.map((group) => <section className={styles.printPage} key={group.label}>
+    return <div className={styles.printDocument}>{sheets.map((group, page) => <section className={styles.printPage} key={group.label}>
       {header(group.label)}
-      <table className={styles.guidancePrint}><thead><tr><th>衛教指導內容</th><th>指導方式</th><th>執行日期／執行者</th><th>產婦簽名</th><th>評值日期／評值者</th><th>結果評值</th><th>瞭解日期</th></tr></thead><tbody>
+      <table className={styles.guidancePrint}><thead><tr><th>衛教指導內容</th><th>指導方式</th><th>執行日期／執行者</th><th>評值日期／評值者</th><th>結果評值</th><th>瞭解日期</th></tr></thead><tbody>
         {group.items.map((entry, index) => {
           const keys = guidanceKeys(entry.key);
           const ways = blank ? [] : (Array.isArray(values[keys.ways]) ? values[keys.ways] as string[] : []);
-          const signed = !blank && (Array.isArray(values[keys.signed]) ? values[keys.signed] as string[] : []).includes("已簽名");
           return <tr key={entry.key}>
             <th>{index + 1}. {entry.label}</th>
             <td>{GUIDANCE_WAYS[subject.kind].map((way) => <span className={styles.printOption} key={way}>{ways.includes(way) ? "●" : "○"}{way}</span>)}</td>
             <td>{blank ? "" : <>{text(values[keys.date])}<br />{text(values[keys.executor])}</>}</td>
-            <td>{signed && document.signature ? <img src={document.signature} alt={entry.label + " 產婦簽名"} /> : ""}</td>
             <td>{blank ? "" : <>{text(values[keys.evalDate])}<br />{text(values[keys.evaluator])}</>}</td>
             <td>{blank ? "" : text(values[keys.result])}</td>
             <td>{blank ? "" : text(values[keys.understandDate])}</td>
@@ -273,6 +271,8 @@ export default function CarePrintSheet({ form, document, subject, history, subje
         })}
       </tbody></table>
       <p className={styles.printNote}>執行日期：{blank ? "　　　　　" : text(values.date)}　執行者：{blank ? "　　　　" : text(values.executor) || document.author}</p>
+      {/* 產婦簽名只簽一次，印在最後一頁表尾（2026-11-20 G07 修訂）。 */}
+      {page === sheets.length - 1 && <div className={styles.printSignatures}><span>產婦簽名：{!blank && document.signature ? <img src={document.signature} alt="產婦簽名" /> : "　　　　　　　　　"}</span></div>}
     </section>)}
     {subject.kind === "baby" && <section className={styles.printPage}>{header("備註")}<p className={styles.printValue}>{blank ? "" : text(values.baby_note)}</p></section>}
   </div>;

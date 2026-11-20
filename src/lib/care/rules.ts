@@ -1,11 +1,12 @@
 import { ROLE_PROFILE, type Role } from "../permissions";
-import type { CareEntry, CareForm, CareKind, CareSubject, CareValues } from "./types";
+import type { CareEntry, CareField, CareForm, CareKind, CareSubject, CareValues } from "./types";
 
 export function documentKey(subjectId: string, formKey: string) { return `${subjectId}:${formKey}`; }
 export function canAuthorizeCare(role: Role) { return role === "管理者" || role === "護理長 婉真"; }
 /** 依會議 G06，已簽紀錄由本人或主管修正；模組權限仍須另外通過。 */
 export function canReviseCareEntry(role: Role, entry: CareEntry) {
-  return canAuthorizeCare(role) || [role, ROLE_PROFILE[role].name, `${ROLE_PROFILE[role].name}（${role}）`].includes(entry.author);
+  const { name, fullName } = ROLE_PROFILE[role];
+  return canAuthorizeCare(role) || [role, name, fullName, `${name}（${role}）`, `${fullName}（${role}）`].includes(entry.author);
 }
 export function canEditCare(role: Role, kind: CareKind, formKey: string) {
   if (canAuthorizeCare(role)) return true;
@@ -76,7 +77,13 @@ export function validateCareForm(form: CareForm, values: CareValues): string[] {
     const value = values[field.key];
     if (field.required && (!value || (Array.isArray(value) ? !value.length : !value.trim()))) errors.push(`請填寫${field.label}。`);
     if (field.type === "date" && typeof value === "string" && value && (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(Date.parse(`${value}T00:00:00+08:00`)))) errors.push(`${field.label}格式不正確。`);
-    if (field.type === "number" && typeof value === "string" && value !== "") {
+    if (field.range && typeof value === "string" && value !== "") {
+      const range = parseCareRange(value);
+      const outside = (n: number) => (field.min !== undefined && n < field.min) || (field.max !== undefined && n > field.max);
+      if (!range) errors.push(`${field.label}請填寫數字或範圍（如 2-3）。`);
+      else if (range[1] < range[0]) errors.push(`${field.label}範圍前面的數字不可大於後面。`);
+      else if (outside(range[0]) || outside(range[1])) errors.push(`${field.label}請填寫${field.min ?? "有效"}至${field.max ?? "合理範圍"}的數字。`);
+    } else if (field.type === "number" && typeof value === "string" && value !== "") {
       const number = Number(value);
       if (!Number.isFinite(number) || (field.min !== undefined && number < field.min) || (field.max !== undefined && number > field.max)) {
         errors.push(`${field.label}請填寫${field.min ?? "有效"}至${field.max ?? "合理範圍"}的數字。`);
@@ -89,6 +96,53 @@ export function validateCareForm(form: CareForm, values: CareValues): string[] {
   // 護理紀錄分三類後不再逐欄必填，但整筆不能全空（原本的單一必填紀錄不降低門檻）。
   if (form.key === "record" && !["executionNote", "continuousNote", "abnormal", "note"].some((key) => String(values[key] ?? "").trim())) errors.push("請至少填寫一類護理紀錄。");
   return errors;
+}
+
+/** 全形與其他連接號一律視為「-」，iPad 中文輸入常打出全形。 */
+export const normalizeCareRange = (value: string) => value.replace(/[－～~—–]/g, "-").replace(/[０-９]/g, (digit) => String.fromCharCode(digit.charCodeAt(0) - 0xfee0)).trim();
+/** 「2」回傳 [2, 2]、「2-3」回傳 [2, 3]，格式不符回傳 null（需求 G11）。 */
+export function parseCareRange(value: string): [number, number] | null {
+  const match = /^(\d+(?:\.\d+)?)(?:\s*-\s*(\d+(?:\.\d+)?))?$/.exec(normalizeCareRange(value));
+  return match ? [Number(match[1]), Number(match[2] ?? match[1])] : null;
+}
+/** 血壓只提醒不擋簽出（客戶 2026-10-30「檢查只提醒不要擋」）。 */
+export const bloodPressureLooksWrong = (value: string) => !!value.trim() && !/^\d{2,3}\s*\/\s*\d{2,3}$/.test(value.trim());
+
+/* 整列清除（2026-11-20 使用者指示：全站清除一律清掉該列所有選項與文字框）。
+   日期、時間、照片不是選項或文字框，不在清除範圍；由其他表單帶入的欄位（如生產方式）也不清。 */
+const CLEARABLE = new Set(["radio", "multiple", "select", "text", "textarea", "number", undefined]);
+const isChoice = (field: CareField) => field.type === "multiple" || field.type === "radio" || field.type === "select";
+/** 該列是否放清除鈕：要有選項欄位，且不能只有「兩選一」單選（可直接切換，不放清除）。 */
+export function rowHasClear(fields: CareField[]) {
+  return fields.some((field) => !field.readOnlyHint && isChoice(field) && !((field.type === "radio" || field.type === "select") && field.options?.length === 2));
+}
+export function rowClearPatch(fields: CareField[], values: CareValues): CareValues {
+  const keys = fields.filter((field) => !field.readOnlyHint && CLEARABLE.has(field.type)).flatMap((field) => [field.key, ...(field.clearWith ?? [])]);
+  return Object.fromEntries([...new Set(keys)].map((key) => [key, Array.isArray(values[key]) ? [] : ""]));
+}
+
+/**
+ * 同一筆輸入連動的欄位（需求 M07、M10）：
+ * - 選了宮底橫指數就是 U−（位置清空）；改選 pelvic 或摸不到時橫指數清空。
+ * - 填腹瀉次數／未解天數就自動勾選該項；取消勾選時一併清掉數字。
+ */
+export function linkCarePatch(values: CareValues, patch: CareValues): CareValues {
+  const next = { ...patch };
+  // 宮底位置只剩「摸不到／pelvic」（2026-11-20）；選了橫指數就是 U−，位置清空，列印時再勾 U−。
+  if (typeof next.fundus === "string" && next.fundus) next.fundusPosition = "";
+  if (next.fundusPosition === "pelvic" || next.fundusPosition === "摸不到") next.fundus = "";
+  const counts: [string, string][] = [["diarrheaTimes", "腹瀉"], ["noStoolDays", "未解"]];
+  for (const [key, option] of counts) {
+    if (typeof next[key] !== "string" || "bowel" in next) continue;
+    const current = values.bowel;
+    const selected = Array.isArray(current) ? current : current ? [current] : [];
+    if (next[key] && !selected.includes(option)) next.bowel = [...selected.filter((item) => !conflicts(option, item)), option];
+    if (!next[key] && selected.includes(option)) next.bowel = selected.filter((item) => item !== option);
+  }
+  if (Array.isArray(next.bowel)) {
+    for (const [key, option] of counts) if (!next.bowel.includes(option) && values[key]) next[key] = "";
+  }
+  return next;
 }
 
 export function taipeiTimestamp(value: string) {

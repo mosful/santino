@@ -206,7 +206,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           */}
           <div id={HEADER_SLOT_ID} />
         </div>
-        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
+        {/* overflow-x 用 clip 不用 hidden：hidden 會讓 main 變成捲動容器，頁面內的 sticky（如照護表單操作列）
+            就黏在不會捲動的 main 上而失效；clip 一樣裁掉橫向溢出，但不建立捲動容器（2026-11-20）。 */}
+        <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 overflow-x-clip">{children}</main>
       </div>
     </div>
   );

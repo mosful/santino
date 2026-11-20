@@ -12,8 +12,8 @@ import { paperConflicts, paperRecords, paperText, type PaperRequest } from "@/li
 import styles from "./CarePaperOutput.module.css";
 import Choice from "@/components/ui/Choice";
 
-type Props = { form: CareForm; document: CareDocument; subject: CareSubject; history: CareEntry[]; blank: boolean; generateButtonRef: RefObject<HTMLButtonElement | null> };
-export default function CarePaperOutput({ form, document, subject, history, blank, generateButtonRef }: Props) {
+type Props = { form: CareForm; document: CareDocument; subject: CareSubject; history: CareEntry[]; blank: boolean; generateButtonRef: RefObject<HTMLButtonElement | null>; onStatus?: (status: { busy: boolean; url?: string; error?: string }) => void };
+export default function CarePaperOutput({ form, document, subject, history, blank, generateButtonRef, onStatus }: Props) {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [includeDraft, setIncludeDraft] = useState(!!document.dirty || !!document.savedAt && !document.signedAt);
@@ -27,6 +27,8 @@ export default function CarePaperOutput({ form, document, subject, history, blan
   const fingerprint = JSON.stringify({ v: document.values, signed: document.signature, history, blank, start, end, includeDraft, paperSize, choices, subject });
   const current = result?.fingerprint === fingerprint;
   useEffect(() => () => { if (result?.url) URL.revokeObjectURL(result.url); }, [result]);
+  // 讓頁首的表單操作列也能顯示產生進度與下載連結，按「列印本頁」時不必捲到這一區。內容變更後連結失效就收起來。
+  useEffect(() => { onStatus?.({ busy, url: current ? result?.url : undefined, error: error || undefined }); }, [onStatus, busy, current, result, error]);
   const conflicts = paperConflicts(request);
   const olderRecords = (isDaily ? paperRecords(request).filter(record=>(!start || paperText(record.values.date)>=start) && (!end || paperText(record.values.date)<=end)) : [document]).filter(record=>record.templateVersion !== PAPER_VERSION);
   const supplemental = form.sections.flatMap((section) => section.fields).filter((field) => form.supplementalKeys?.includes(field.key) && paperText(document.values[field.key]));

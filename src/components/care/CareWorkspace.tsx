@@ -30,7 +30,6 @@ import { growthDays } from "@/lib/care/summary";
 import styles from "./CareWorkspace.module.css";
 import LocalMedia from "../babycam/LocalMedia";
 import { buttonStyles } from "@/components/ui/buttonStyles";
-import { ActionDock } from "@/components/ui/Workspace";
 import { Toast, useToast } from "@/components/ui/Toast";
 
 
@@ -91,6 +90,17 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
   const hydrated = useSyncExternalStore(hydrationSubscribe, () => true, () => false);
   const confirmation = useRef<HTMLElement>(null);
   const paperGenerate = useRef<HTMLButtonElement>(null);
+  const [paperStatus, setPaperStatus] = useState<{ busy: boolean; url?: string; error?: string }>({ busy: false });
+  /* 紙本 PDF 產生後，表單上方的「依紙本列印」區塊會長高，把正在看的內容往下推。
+     按列印時記住畫面中央的元素，結果出來後把它捲回原位置。 */
+  const printAnchor = useRef<{ node: Element; top: number } | null>(null);
+  useEffect(() => {
+    const anchor = printAnchor.current;
+    if (!anchor || paperStatus.busy) return;
+    printAnchor.current = null;
+    const shift = anchor.node.getBoundingClientRect().top - anchor.top;
+    if (shift) window.scrollBy({ top: shift, behavior: "instant" });
+  }, [paperStatus]);
   const configured = useAssessmentFields();
   const forms = careForms(kind, configured).filter((form) => role !== "衛教師 琳雅" || canEditCare(role, kind, form.key));
   const activeKey = data.active[kind];
@@ -199,12 +209,8 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
     window.addEventListener("wheel", userScroll, { passive: true }); window.addEventListener("touchstart", userScroll, { passive: true }); window.addEventListener("keydown", userScroll);
     return () => { disposed = true; cancelAnimationFrame(frame); clearTimeout(timer); window.removeEventListener("scroll", onScroll); window.removeEventListener("wheel", userScroll); window.removeEventListener("touchstart", userScroll); window.removeEventListener("keydown", userScroll); window.history.scrollRestoration = previousRestoration; if (!restoring) save(); };
   }, [activeKey, hasActive]);
-  // 確認框在頁首：開啟時捲過去，確認或取消後捲回原操作位置（需求 G03，不跳回頁首）。
-  const returnScroll = useRef<number | null>(null);
-  useEffect(() => {
-    if (pending) { returnScroll.current ??= window.scrollY; confirmation.current?.scrollIntoView({ block: "center", behavior: "smooth" }); }
-    else if (returnScroll.current !== null) { window.scrollTo({ top: returnScroll.current, behavior: "instant" }); returnScroll.current = null; }
-  }, [pending]);
+  // 確認框在表單操作列裡、隨時看得到，只移焦點不捲動（2026-11-20：避免畫面跳動）。
+  useEffect(() => { if (pending) confirmation.current?.querySelector<HTMLElement>("button")?.focus({ preventScroll: true }); }, [pending]);
   useEffect(() => {
     const listener = () => { careActions.switchRole(); setSigning(false); setPending(null); setListVisible(false); toast.ok("已切換角色，開啟中的表單及編輯鎖已釋放；草稿仍保留。"); };
     window.addEventListener("santino-role-changed", listener);
@@ -239,7 +245,48 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
         呈現方式」，2026-10-21 移除清單，保留房卡——顏色與房號是現場既有語彙。
       */}
       {hasActive ? <>
-        {pending && <section ref={confirmation} className="mb-6 space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4" aria-label="頁內操作確認" data-no-print>
+        <div className={`${styles.layout} ${form.paperTemplate ? styles.paperLayout : ""}`}>
+          <article aria-label={`${form.label}表單`} className={`${styles.form} work-surface min-w-0 p-4 sm:p-6`}>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-xl font-semibold">{form.label}</h2>
+              <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => setBlankSheet((value) => !value)}>{blankSheet ? "回到填寫畫面" : "列印空白表格"}</button>
+            </div>
+            {form.paperTemplate && <CarePaperOutput key={document.key} form={form} document={document} subject={subject} history={history} blank={blankSheet} generateButtonRef={paperGenerate} onStatus={setPaperStatus} />}
+            {form.layout && !form.paperTemplate && <div className={`${styles.printOutput} ${blankSheet ? styles.printPreview : ""}`}><CarePrintSheet form={form} document={document} subject={subject} history={history} subjectEntries={subjectEntries} blank={blankSheet} /></div>}
+            {blankSheet && form.layout && !form.paperTemplate && <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => window.print()}>列印空白表格</button>}
+            {blankSheet && !form.layout && <section className="mb-6 space-y-4 rounded-xl border border-stone-300 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-semibold">{form.label}（空白表格）</h3>
+                <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => window.print()}>列印</button>
+              </div>
+              <p className="text-sm text-stone-600">房號／姓名／病歷號：____________________　日期：__________</p>
+              {form.sections.map((section) => <div key={section.label} className="space-y-2">
+                <h4 className="font-medium">{section.label}</h4>
+                <dl className="grid gap-3 sm:grid-cols-2">{section.fields.map((field) => <div key={field.key} className="flex items-end gap-2 text-sm"><dt className="shrink-0 text-stone-600">{field.label}</dt><dd className="min-w-16 flex-1 border-b border-dotted border-stone-400">&nbsp;</dd></div>)}</dl>
+              </div>)}
+              <p className="text-sm text-stone-600">護理人員簽章：____________________</p>
+            </section>}
+            {/*
+              表單操作列（2026-11-20 客戶回報「按了按鈕畫面跳來跳去」）：
+              原本暫存／完成簽出／列印在頁尾，確認框卻在頁面最上方，按完簽出會捲到頂端再捲回來；
+              紙本列印也會捲到頁首的 PDF 區塊。現在所有操作與確認框都在這一列，
+              黏在頁首下方，不論捲到哪裡都看得到，按下去畫面完全不移動。
+              ⚠️ 不要再加一組頁尾按鈕或把確認框放回頁面上方。
+            */}
+            <div className={styles.formActions} data-no-print>
+              <div className={styles.formActionsRow}>
+                <p className={styles.formActionsStatus} aria-live="polite">{document.signedAt ? `本筆已簽出｜${taipeiTimestamp(document.signedAt)}` : document.savedAt ? `${document.dirty ? "有未暫存的修改｜" : ""}已暫存 ${taipeiTimestamp(document.savedAt)}｜${document.author}` : "尚未暫存；變更先保留在本機草稿"}{!document.signedAt && completionErrors[0] ? `｜${completionErrors[0]}` : ""}</p>
+                <div role="toolbar" aria-label="表單操作" className={styles.formActionsButtons}>
+                  <button type="button" disabled={!editable} onClick={() => run(() => careActions.carryLast(document.key), "已帶入同個案上一筆；日期時間已更新，簽名不帶入。")} className={buttonStyles({ size: "sm" })}>帶入上一筆</button>
+                  <button type="button" disabled={!editable} onClick={() => run(() => careActions.save(document.key), "已暫存，可關閉後從草稿重新開啟。")} className={buttonStyles({ size: "sm" })}><Save size={16} />暫存</button>
+                  <button type="button" disabled={!editable} onClick={() => setPending("complete")} className={buttonStyles({ size: "sm", selected: true })}><Check size={16} />完成簽出</button>
+                  {permitted && document.signedAt && <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { setSigning(false); run(() => careActions.newEntry(document.key), "已新增空白紀錄，歷史簽出仍保留。"); }}>新增一筆</button>}
+                  {/* 「開立工單」2026-11-20 依客戶指示隱藏；careActions.workOrder 與確認文字保留，要恢復把按鈕加回這裡。 */}
+                  <button type="button" className={buttonStyles({ size: "sm" })} disabled={paperStatus.busy} onClick={() => { if (form.paperTemplate) { const node = window.document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2); if (node) printAnchor.current = { node, top: node.getBoundingClientRect().top }; paperGenerate.current?.click(); } else window.print(); }}><Printer size={16} />{paperStatus.busy ? "正在產生 PDF…" : "列印本頁"}</button>
+                </div>
+              </div>
+              {form.paperTemplate && (paperStatus.url || paperStatus.error) && <p role="status" className={styles.formActionsPaper}>{paperStatus.error ? paperStatus.error : <>紙本 PDF 已產生：<a href={paperStatus.url} download={`${form.printTitle ?? form.label}.pdf`}>下載</a>｜<a href={paperStatus.url} target="_blank" rel="noopener noreferrer">開啟 PDF 列印</a></>}</p>}
+              {pending && <section ref={confirmation} className={styles.confirmPanel} aria-label="頁內操作確認" data-no-print>
           <h3 className="font-semibold">{closeTarget ? `關閉 ${closingLabel}的所有表單` : deleteTarget ? "刪除已簽出紀錄" : ({ complete: "確認完成簽出", all: "保留草稿並關閉全部表單", unlock: "切換編輯對象", authorize: "逾期回補授權", workorder: "建立示範工單" })[pending as "complete" | "all" | "unlock" | "authorize" | "workorder"]}</h3>
           <p className="text-sm">{pending === "complete" ? (document.editingEntryId ? `請確認 ${identity(subject)} 的修改內容。儲存後會覆蓋原紀錄，並在該筆留下修改者與時間。` : `請確認 ${identity(subject)} 的資料無誤。簽出後保留本筆紀錄，後續請新增一筆。`) : pending === "unlock" ? "切換後其他對象改為唯讀，原有草稿會保留。" : closeTarget ? "可保留草稿後關閉這一間，或捨棄這間尚未簽出的草稿。" : deleteTarget ? `將刪除 ${deletingEntry ? taipeiTimestamp(deletingEntry.at) : "這一筆"} 的紀錄，刪除原因會寫入操作歷程。` : "這項操作會保留目前操作者與時間。"}</p>
           {(deleteTarget || (typeof pending === "string" && ["authorize", "workorder"].includes(pending))) && <label className="block text-sm">{pending === "authorize" ? "授權原因（必填）" : deleteTarget ? "刪除原因（必填）" : "工單內容（必填）"}<textarea className={`${inputClass} mt-2`} value={reason} onChange={(event) => setReason(event.target.value)} /></label>}
@@ -256,31 +303,8 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
             }, "操作完成，資料與歷程已更新。")}>{closeTarget ? "保留草稿並關閉" : deleteTarget ? "確認刪除" : "確認"}</button>
           </div>
         </section>}
-        <div className={`${styles.layout} ${form.paperTemplate ? styles.paperLayout : ""}`}>
-          <article aria-label={`${form.label}表單`} className={`${styles.form} work-surface min-w-0 p-4 sm:p-6`}>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-xl font-semibold">{form.label}</h2>
-              <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => setBlankSheet((value) => !value)}>{blankSheet ? "回到填寫畫面" : "列印空白表格"}</button>
             </div>
-            {form.paperTemplate && <CarePaperOutput key={document.key} form={form} document={document} subject={subject} history={history} blank={blankSheet} generateButtonRef={paperGenerate} />}
-            {form.layout && !form.paperTemplate && <div className={`${styles.printOutput} ${blankSheet ? styles.printPreview : ""}`}><CarePrintSheet form={form} document={document} subject={subject} history={history} subjectEntries={subjectEntries} blank={blankSheet} /></div>}
-            {blankSheet && form.layout && !form.paperTemplate && <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => window.print()}>列印空白表格</button>}
-            {blankSheet && !form.layout && <section className="mb-6 space-y-4 rounded-xl border border-stone-300 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="font-semibold">{form.label}（空白表格）</h3>
-                <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => window.print()}>列印</button>
-              </div>
-              <p className="text-sm text-stone-600">房號／姓名／病歷號：____________________　日期：__________</p>
-              {form.sections.map((section) => <div key={section.label} className="space-y-2">
-                <h4 className="font-medium">{section.label}</h4>
-                <dl className="grid gap-3 sm:grid-cols-2">{section.fields.map((field) => <div key={field.key} className="flex items-end gap-2 text-sm"><dt className="shrink-0 text-stone-600">{field.label}</dt><dd className="min-w-16 flex-1 border-b border-dotted border-stone-400">&nbsp;</dd></div>)}</dl>
-              </div>)}
-              <p className="text-sm text-stone-600">護理人員簽章：____________________</p>
-            </section>}
-            <p className="mb-4 text-sm text-stone-600">{document.savedAt ? `${document.dirty ? "有未完成暫存的修改｜" : ""}儲存 ${taipeiTimestamp(document.savedAt)}｜${document.author}` : "尚未暫存；欄位變更會保留於本機草稿。"}</p>
             {document.editingEntryId && <p role="status" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">正在修改一筆已簽出的紀錄：完成後請重新簽名並簽出，系統會覆蓋原紀錄並記下修改者與時間。想保留原紀錄請改用「新增一筆」。</p>}
-            {/* 2026-11-20 會議 G09：帶入上一筆放在表單最上方，平板不用捲到底才按得到。 */}
-            <div className="mb-4 flex flex-wrap items-center gap-2" data-no-print><button type="button" disabled={!editable} onClick={() => run(() => careActions.carryLast(document.key), "已帶入同個案上一筆；日期時間已更新，簽名不帶入。")} className={buttonClass}>帶入上一筆</button><span className="text-xs text-stone-600">帶入此個案最後一筆，再修改有變動的項目。</span></div>
             {form.sections.length > 1 && <nav aria-label="表單區段" className={styles.sectionNav} data-no-print>{form.sections.map((section, index) => <button type="button" key={section.label} aria-label={section.label} aria-pressed={index === sectionIndex} className={buttonStyles({ selected: index === sectionIndex })} onClick={() => setSectionIndex(index)}><span className={styles.sectionNo} aria-hidden="true">{index + 1}</span>{section.label}</button>)}</nav>}
             {form.key === "growth" && <div className="mb-6" data-no-print><h3 className="mb-3 font-medium">體重趨勢</h3><GrowthChart points={growthDays(subjectEntries).filter((day) => day.weight).slice(0, 8).reverse().map((day) => ({ date: day.date, weight: day.weight! }))} /></div>}
             {form.key === "mood" && moodNeedsAttention(document.values) && <p role="status" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">達 v24 示範關注門檻，請記錄後續處理。此為護理長提醒情境，未發送通知。</p>}
@@ -307,13 +331,6 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
                 onCancel={() => setSigning(false)} onConfirm={(image) => { if (run(() => form.key === "guidance" ? careActions.signRole(document.key, signingRole, image) : careActions.sign(document.key, image), "已保存此個案本筆簽名。")) setSigning(false); }} />}
             </div>}
             {document.staffStamp && <p className="mt-4 text-sm">員工印章：{document.staffStamp.author}｜{taipeiTimestamp(document.staffStamp.at)}</p>}
-            <ActionDock title={document.signedAt ? "本筆紀錄已簽出" : "完成本筆照護紀錄"} description={document.signedAt ? `簽出 ${taipeiTimestamp(document.signedAt)}` : completionErrors[0] ?? "必要欄位已完成，可確認簽出。"}>
-              <button type="button" disabled={!editable} onClick={() => run(() => careActions.save(document.key), "已暫存，可關閉後從草稿重新開啟。")} className={buttonClass}><Save size={16} />暫存</button>
-              <button type="button" disabled={!editable} onClick={() => setPending("complete")} className={buttonStyles({ selected: true })}><Check size={16} />完成簽出</button>
-              {permitted && document.signedAt && <button type="button" className={buttonClass} onClick={() => { setSigning(false); run(() => careActions.newEntry(document.key), "已新增空白紀錄，歷史簽出仍保留。"); }}>新增一筆</button>}
-              {kind === "mama" && form.key === "ongoing" && <button type="button" disabled={!editable} className={buttonClass} onClick={() => setPending("workorder")}>開立工單</button>}
-              <button type="button" className={buttonClass} onClick={() => { if (form.paperTemplate) { paperGenerate.current?.click(); window.document.getElementById("care-paper-output")?.scrollIntoView({ behavior: "smooth" }); } else window.print(); }}><Printer size={16} />列印本頁</button>
-            </ActionDock>
             <section className="mt-8 border-t border-stone-200 pt-5"><h3 className="mb-3 font-semibold">已簽出紀錄（{history.length}）</h3>{permitted && !!history.length && <p className="mb-3 text-xs text-stone-600">每一筆都可以再次修改或刪除；修改後需重新簽名簽出，系統會記下修改者與時間。</p>}{!history.length && <div className="rounded-lg border border-dashed border-stone-300 bg-stone-50 p-4"><p className="text-sm font-medium">匿名示範歷程</p><p className="mt-1 text-xs text-stone-500">正式簽出後會改列實際操作者、日期、內容與簽名。</p><div className="mt-3 overflow-x-auto"><table className="w-full min-w-[440px] text-left text-sm"><thead><tr><th className="p-2">日期</th><th className="p-2">狀態</th><th className="p-2">摘要</th><th className="p-2">記錄人</th></tr></thead><tbody><tr className="border-t border-stone-200"><td className="p-2">2026-10-16</td><td className="p-2">已完成</td><td className="p-2">例行紀錄正常</td><td className="p-2">示範護理師</td></tr><tr className="border-t border-stone-200"><td className="p-2">2026-10-15</td><td className="p-2">已完成</td><td className="p-2">持續觀察，無異常</td><td className="p-2">示範護理師</td></tr></tbody></table></div></div>}{history.map((entry) => <details key={entry.id} className="border-b border-stone-200 py-3"><summary className="min-h-12 cursor-pointer text-sm">{taipeiTimestamp(entry.at)}｜{entry.author}{entry.historical ? "｜退房回補" : ""}</summary><dl className="mt-3 grid gap-3 sm:grid-cols-2">{Object.entries(entry.values).filter(([key, value]) => key !== "photo" && valueText(value)).map(([key, value]) => <div key={key}><dt className="text-xs text-stone-500">{form.sections.flatMap((section) => section.fields).find((field) => field.key === key)?.label ?? (key === "reassessmentNote" ? "媽媽護理紀錄（再評估）" : key)}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-sm">{valueText(value)}</dd></div>)}</dl>{valueText(entry.values.photo) && <LocalMedia key={valueText(entry.values.photo)} id={valueText(entry.values.photo)} alt="此筆歷史紀錄的本機照片" className="mt-3 max-h-64 max-w-full object-contain" />}{entry.signatures && Object.entries(entry.signatures).map(([roleKey, image]) => <div key={roleKey} className="mt-3"><p className="text-xs text-stone-500">{signatureRoles.find((item) => item.key === roleKey)?.label}</p><img src={image} alt={signatureRoles.find((item) => item.key === roleKey)?.label ?? "此筆簽名"} className={styles.signedImage} /></div>)}{entry.signature && !entry.signatures?.recipient && <img src={entry.signature} alt="此筆歷史媽媽簽名" className={styles.signedImage} />}{entry.staffStamp && <p className="mt-3 text-sm">員工印章：{entry.staffStamp.author}｜{taipeiTimestamp(entry.staffStamp.at)}</p>}{entry.revisions?.map((revision, index) => <p key={`${entry.id}-rev-${index}`} className="mt-2 text-xs text-amber-800">修改紀錄：{taipeiTimestamp(revision.at)}｜{revision.author}｜{revision.note}</p>)}{permitted && canReviseCareEntry(role, entry) && <div className="mt-3 flex flex-wrap gap-2" data-no-print><button type="button" className={buttonStyles({ size: "sm" })} onClick={() => run(() => careActions.editEntry(entry.id), "已載入這筆紀錄，修改後請重新簽名並簽出。")}>修改這筆</button><button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { setReason(""); setPending({ kind: "delete-entry", entryId: entry.id }); }}>刪除這筆</button></div>}</details>)}</section>
           </article>
           <aside className={styles.sidebar} data-no-print>

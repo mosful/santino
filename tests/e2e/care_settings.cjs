@@ -34,8 +34,12 @@ const fs = require("node:fs/promises");
   await page.getByRole("button", { name: "回列表", exact: true }).click();
   await page.getByRole("button", { name: "每日照護", exact: true }).first().click();
   await page.getByRole("button", { name: "暫存", exact: true }).click();
-  await page.evaluate(() => scrollTo(0, 650)); await page.waitForTimeout(350);
-  const before = await page.evaluate(() => scrollY); await page.reload(); await page.waitForTimeout(350);
+  await page.evaluate(() => scrollTo(0, 650));
+  const before = await page.evaluate(() => scrollY);
+  // 位置在停止捲動 250ms 後才寫入；電腦忙時固定等 350ms 不夠，改等實際存進去、重整後實際捲回來（門檻不變）。
+  await page.waitForFunction((y) => { const care = JSON.parse(localStorage.getItem("santino_care_workspace_v1")); return Object.values(care.documents).some((item) => Math.abs((item.viewport?.scrollY ?? -1) - y) < 40); }, before, { timeout: 5000 });
+  await page.reload();
+  await page.waitForFunction((y) => Math.abs(scrollY - y) < 40, before, { timeout: 5000 }).catch(() => {});
   const after = await page.evaluate(() => scrollY); assert.ok(Math.abs(before - after) < 40, `捲動位置 ${before} → ${after}`);
   await page.getByTitle("切換模擬角色，選單會依該角色權限立即隱藏或顯示", { exact: true }).click();
   await page.getByRole("button", { name: /^櫃台/ }).click();

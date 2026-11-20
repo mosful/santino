@@ -158,3 +158,22 @@
 .roomChip[data-active="true"] .roomChipLock[data-state="closed"] {
   color: #78716c;
 }
+
+/*
+  表單操作列：黏在頁首（含開啟中表單兩列）下方，暫存／簽出／列印與確認框都在這裡，
+  按下去畫面不會捲動（2026-11-20）。--app-header-total 由 AppShell 依頁首實際高度設定。
+*/
+.formActions { grid-template-columns: minmax(0, 1fr); min-width: 0; position: sticky; top: calc(var(--app-header-total, var(--app-header-h)) + 8px); z-index: 20; display: grid; gap: 10px; margin-bottom: 16px; border: 1px solid var(--border-subtle); border-radius: 14px; background: rgb(255 255 255 / .96); padding: 8px 12px; box-shadow: 0 8px 20px -14px rgb(0 0 0 / .35); }
+.formActionsRow { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+.formActionsStatus { min-width: 0; flex: 1 1 14rem; font-size: 13px; color: var(--text-muted); }
+.formActionsButtons { min-width: 0; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.formActionsPaper { font-size: 13px; }
+.formActionsPaper a { text-decoration: underline; text-underline-offset: 3px; }
+.confirmPanel { display: grid; gap: 10px; border: 1px solid var(--color-amber-300, #fcd34d); border-radius: 12px; background: var(--color-amber-50, #fffbeb); padding: 12px; }
+/* 手機：狀態文字一行省略，按鈕橫向捲動，避免操作列變成三四行吃掉畫面。 */
+@media (max-width: 639px) {
+  .formActions { padding: 6px 8px; }
+  .formActionsStatus { flex-basis: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; }
+  .formActionsButtons { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: none; }
+  .formActionsButtons > * { flex: 0 0 auto; }
+}

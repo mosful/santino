@@ -245,48 +245,29 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
         呈現方式」，2026-10-21 移除清單，保留房卡——顏色與房號是現場既有語彙。
       */}
       {hasActive ? <>
-        <div className={`${styles.layout} ${form.paperTemplate ? styles.paperLayout : ""}`}>
-          <article aria-label={`${form.label}表單`} className={`${styles.form} work-surface min-w-0 p-4 sm:p-6`}>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-xl font-semibold">{form.label}</h2>
-              <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => setBlankSheet((value) => !value)}>{blankSheet ? "回到填寫畫面" : "列印空白表格"}</button>
-            </div>
-            {form.paperTemplate && <CarePaperOutput key={document.key} form={form} document={document} subject={subject} history={history} blank={blankSheet} generateButtonRef={paperGenerate} onStatus={setPaperStatus} />}
-            {form.layout && !form.paperTemplate && <div className={`${styles.printOutput} ${blankSheet ? styles.printPreview : ""}`}><CarePrintSheet form={form} document={document} subject={subject} history={history} subjectEntries={subjectEntries} blank={blankSheet} /></div>}
-            {blankSheet && form.layout && !form.paperTemplate && <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => window.print()}>列印空白表格</button>}
-            {blankSheet && !form.layout && <section className="mb-6 space-y-4 rounded-xl border border-stone-300 p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="font-semibold">{form.label}（空白表格）</h3>
-                <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => window.print()}>列印</button>
+        {/*
+          頁首第 2 列右側＝表單操作（2026-11-20 客戶選方案 A）：使用者點進來最先按「帶入上一筆」，
+          由左而右依序是帶入→填寫→暫存→完成簽出，不必捲到底。列印、空白表格收進「⋯」。
+          確認框與紙本 PDF 結果也在頁首展開，按下去畫面不捲動。
+          ⚠️ 不要再在頁面內或頁尾另放一組按鈕，也不要把確認框放回頁面上方再 scrollIntoView。
+        */}
+        <HeaderSlot>
+          <div role="toolbar" aria-label="表單操作" className={styles.headerActions} data-no-print>
+            <button type="button" disabled={!editable} onClick={() => run(() => careActions.carryLast(document.key), "已帶入同個案上一筆；日期時間已更新，簽名不帶入。")} className={buttonStyles({ size: "sm" })}>帶入上一筆</button>
+            <button type="button" disabled={!editable} onClick={() => run(() => careActions.save(document.key), "已暫存，可關閉後從草稿重新開啟。")} className={buttonStyles({ size: "sm" })}><Save size={16} />暫存</button>
+            <button type="button" disabled={!editable} onClick={() => setPending("complete")} className={buttonStyles({ size: "sm", selected: true })}><Check size={16} />完成簽出</button>
+            {/* 「開立工單」2026-11-20 依客戶指示隱藏；careActions.workOrder 與確認文字保留，要恢復把按鈕加回這裡。 */}
+            {permitted && document.signedAt && <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { setSigning(false); run(() => careActions.newEntry(document.key), "已新增空白紀錄，歷史簽出仍保留。"); }}>新增一筆</button>}
+            <details className={styles.moreMenu}>
+              <summary className={buttonStyles({ size: "sm" })} aria-label="更多操作" title="更多操作">⋯</summary>
+              <div className={styles.menuPanel}>
+                <button type="button" className={styles.menuItem} disabled={paperStatus.busy} onClick={(event) => { (event.currentTarget.closest("details") as HTMLDetailsElement).open = false;  if (form.paperTemplate) { const node = window.document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2); if (node) printAnchor.current = { node, top: node.getBoundingClientRect().top }; paperGenerate.current?.click(); } else window.print(); }}><Printer size={16} />{paperStatus.busy ? "正在產生 PDF…" : "列印本頁"}</button>
+                <button type="button" className={styles.menuItem} onClick={(event) => { (event.currentTarget.closest("details") as HTMLDetailsElement).open = false; setBlankSheet((value) => !value); }}>{blankSheet ? "回到填寫畫面" : "列印空白表格"}</button>
               </div>
-              <p className="text-sm text-stone-600">房號／姓名／病歷號：____________________　日期：__________</p>
-              {form.sections.map((section) => <div key={section.label} className="space-y-2">
-                <h4 className="font-medium">{section.label}</h4>
-                <dl className="grid gap-3 sm:grid-cols-2">{section.fields.map((field) => <div key={field.key} className="flex items-end gap-2 text-sm"><dt className="shrink-0 text-stone-600">{field.label}</dt><dd className="min-w-16 flex-1 border-b border-dotted border-stone-400">&nbsp;</dd></div>)}</dl>
-              </div>)}
-              <p className="text-sm text-stone-600">護理人員簽章：____________________</p>
-            </section>}
-            {/*
-              表單操作列（2026-11-20 客戶回報「按了按鈕畫面跳來跳去」）：
-              原本暫存／完成簽出／列印在頁尾，確認框卻在頁面最上方，按完簽出會捲到頂端再捲回來；
-              紙本列印也會捲到頁首的 PDF 區塊。現在所有操作與確認框都在這一列，
-              黏在頁首下方，不論捲到哪裡都看得到，按下去畫面完全不移動。
-              ⚠️ 不要再加一組頁尾按鈕或把確認框放回頁面上方。
-            */}
-            <div className={styles.formActions} data-no-print>
-              <div className={styles.formActionsRow}>
-                <p className={styles.formActionsStatus} aria-live="polite">{document.signedAt ? `本筆已簽出｜${taipeiTimestamp(document.signedAt)}` : document.savedAt ? `${document.dirty ? "有未暫存的修改｜" : ""}已暫存 ${taipeiTimestamp(document.savedAt)}｜${document.author}` : "尚未暫存；變更先保留在本機草稿"}{!document.signedAt && completionErrors[0] ? `｜${completionErrors[0]}` : ""}</p>
-                <div role="toolbar" aria-label="表單操作" className={styles.formActionsButtons}>
-                  <button type="button" disabled={!editable} onClick={() => run(() => careActions.carryLast(document.key), "已帶入同個案上一筆；日期時間已更新，簽名不帶入。")} className={buttonStyles({ size: "sm" })}>帶入上一筆</button>
-                  <button type="button" disabled={!editable} onClick={() => run(() => careActions.save(document.key), "已暫存，可關閉後從草稿重新開啟。")} className={buttonStyles({ size: "sm" })}><Save size={16} />暫存</button>
-                  <button type="button" disabled={!editable} onClick={() => setPending("complete")} className={buttonStyles({ size: "sm", selected: true })}><Check size={16} />完成簽出</button>
-                  {permitted && document.signedAt && <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => { setSigning(false); run(() => careActions.newEntry(document.key), "已新增空白紀錄，歷史簽出仍保留。"); }}>新增一筆</button>}
-                  {/* 「開立工單」2026-11-20 依客戶指示隱藏；careActions.workOrder 與確認文字保留，要恢復把按鈕加回這裡。 */}
-                  <button type="button" className={buttonStyles({ size: "sm" })} disabled={paperStatus.busy} onClick={() => { if (form.paperTemplate) { const node = window.document.elementFromPoint(window.innerWidth / 2, window.innerHeight / 2); if (node) printAnchor.current = { node, top: node.getBoundingClientRect().top }; paperGenerate.current?.click(); } else window.print(); }}><Printer size={16} />{paperStatus.busy ? "正在產生 PDF…" : "列印本頁"}</button>
-                </div>
-              </div>
-              {form.paperTemplate && (paperStatus.url || paperStatus.error) && <p role="status" className={styles.formActionsPaper}>{paperStatus.error ? paperStatus.error : <>紙本 PDF 已產生：<a href={paperStatus.url} download={`${form.printTitle ?? form.label}.pdf`}>下載</a>｜<a href={paperStatus.url} target="_blank" rel="noopener noreferrer">開啟 PDF 列印</a></>}</p>}
-              {pending && <section ref={confirmation} className={styles.confirmPanel} aria-label="頁內操作確認" data-no-print>
+            </details>
+          </div>
+          {form.paperTemplate && (paperStatus.url || paperStatus.error) && <div className={styles.headerPanel}><p role="status">{paperStatus.error ? paperStatus.error : <>紙本 PDF 已產生：<a href={paperStatus.url} download={`${form.printTitle ?? form.label}.pdf`}>下載</a>｜<a href={paperStatus.url} target="_blank" rel="noopener noreferrer">開啟 PDF 列印</a></>}</p></div>}
+          {pending && <section ref={confirmation} className={`${styles.confirmPanel} ${styles.headerPanel}`} aria-label="頁內操作確認" data-no-print>
           <h3 className="font-semibold">{closeTarget ? `關閉 ${closingLabel}的所有表單` : deleteTarget ? "刪除已簽出紀錄" : ({ complete: "確認完成簽出", all: "保留草稿並關閉全部表單", unlock: "切換編輯對象", authorize: "逾期回補授權", workorder: "建立示範工單" })[pending as "complete" | "all" | "unlock" | "authorize" | "workorder"]}</h3>
           <p className="text-sm">{pending === "complete" ? (document.editingEntryId ? `請確認 ${identity(subject)} 的修改內容。儲存後會覆蓋原紀錄，並在該筆留下修改者與時間。` : `請確認 ${identity(subject)} 的資料無誤。簽出後保留本筆紀錄，後續請新增一筆。`) : pending === "unlock" ? "切換後其他對象改為唯讀，原有草稿會保留。" : closeTarget ? "可保留草稿後關閉這一間，或捨棄這間尚未簽出的草稿。" : deleteTarget ? `將刪除 ${deletingEntry ? taipeiTimestamp(deletingEntry.at) : "這一筆"} 的紀錄，刪除原因會寫入操作歷程。` : "這項操作會保留目前操作者與時間。"}</p>
           {(deleteTarget || (typeof pending === "string" && ["authorize", "workorder"].includes(pending))) && <label className="block text-sm">{pending === "authorize" ? "授權原因（必填）" : deleteTarget ? "刪除原因（必填）" : "工單內容（必填）"}<textarea className={`${inputClass} mt-2`} value={reason} onChange={(event) => setReason(event.target.value)} /></label>}
@@ -303,9 +284,30 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
             }, "操作完成，資料與歷程已更新。")}>{closeTarget ? "保留草稿並關閉" : deleteTarget ? "確認刪除" : "確認"}</button>
           </div>
         </section>}
+        </HeaderSlot>
+        <div className={`${styles.layout} ${form.paperTemplate ? styles.paperLayout : ""}`}>
+          <article aria-label={`${form.label}表單`} className={`${styles.form} work-surface min-w-0 p-4 sm:p-6`}>
+            <div className={styles.titleRow}>
+              <div className="min-w-0 flex-1 basis-56"><h2 className="text-xl font-semibold">{form.label}</h2><p className={styles.formStatus} aria-live="polite">{document.signedAt ? `本筆已簽出｜${taipeiTimestamp(document.signedAt)}` : document.savedAt ? `${document.dirty ? "有未暫存的修改｜" : ""}已暫存 ${taipeiTimestamp(document.savedAt)}｜${document.author}` : "尚未暫存；變更先保留在本機草稿"}{!document.signedAt && completionErrors[0] ? `｜${completionErrors[0]}` : ""}</p></div>
+              {form.sections.length > 1 && <nav aria-label="表單區段" className={styles.sectionNav} data-no-print>{form.sections.map((section, index) => <button type="button" key={section.label} aria-label={section.label} aria-pressed={index === sectionIndex} className={buttonStyles({ size: "sm", selected: index === sectionIndex })} onClick={() => setSectionIndex(index)}><span className={styles.sectionNo} aria-hidden="true">{index + 1}</span>{section.label}</button>)}</nav>}
+              {blankSheet && <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => setBlankSheet(false)}>回到填寫畫面</button>}
             </div>
+            {form.paperTemplate && <CarePaperOutput key={document.key} form={form} document={document} subject={subject} history={history} blank={blankSheet} generateButtonRef={paperGenerate} onStatus={setPaperStatus} />}
+            {form.layout && !form.paperTemplate && <div className={`${styles.printOutput} ${blankSheet ? styles.printPreview : ""}`}><CarePrintSheet form={form} document={document} subject={subject} history={history} subjectEntries={subjectEntries} blank={blankSheet} /></div>}
+            {blankSheet && form.layout && !form.paperTemplate && <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => window.print()}>列印空白表格</button>}
+            {blankSheet && !form.layout && <section className="mb-6 space-y-4 rounded-xl border border-stone-300 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-semibold">{form.label}（空白表格）</h3>
+                <button type="button" className={buttonStyles({ size: "sm" })} data-no-print onClick={() => window.print()}>列印</button>
+              </div>
+              <p className="text-sm text-stone-600">房號／姓名／病歷號：____________________　日期：__________</p>
+              {form.sections.map((section) => <div key={section.label} className="space-y-2">
+                <h4 className="font-medium">{section.label}</h4>
+                <dl className="grid gap-3 sm:grid-cols-2">{section.fields.map((field) => <div key={field.key} className="flex items-end gap-2 text-sm"><dt className="shrink-0 text-stone-600">{field.label}</dt><dd className="min-w-16 flex-1 border-b border-dotted border-stone-400">&nbsp;</dd></div>)}</dl>
+              </div>)}
+              <p className="text-sm text-stone-600">護理人員簽章：____________________</p>
+            </section>}
             {document.editingEntryId && <p role="status" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">正在修改一筆已簽出的紀錄：完成後請重新簽名並簽出，系統會覆蓋原紀錄並記下修改者與時間。想保留原紀錄請改用「新增一筆」。</p>}
-            {form.sections.length > 1 && <nav aria-label="表單區段" className={styles.sectionNav} data-no-print>{form.sections.map((section, index) => <button type="button" key={section.label} aria-label={section.label} aria-pressed={index === sectionIndex} className={buttonStyles({ selected: index === sectionIndex })} onClick={() => setSectionIndex(index)}><span className={styles.sectionNo} aria-hidden="true">{index + 1}</span>{section.label}</button>)}</nav>}
             {form.key === "growth" && <div className="mb-6" data-no-print><h3 className="mb-3 font-medium">體重趨勢</h3><GrowthChart points={growthDays(subjectEntries).filter((day) => day.weight).slice(0, 8).reverse().map((day) => ({ date: day.date, weight: day.weight! }))} /></div>}
             {form.key === "mood" && moodNeedsAttention(document.values) && <p role="status" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">達 v24 示範關注門檻，請記錄後續處理。此為護理長提醒情境，未發送通知。</p>}
             <fieldset disabled={!editable} className="space-y-5">
@@ -381,7 +383,7 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
                     type="button"
                     aria-pressed={key === activeKey && !listVisible}
                     title={`${identity(subject)}｜${item.label}`}
-                    className={buttonStyles({ size: "sm", selected: key === activeKey && !listVisible })}
+                    className={styles.formTab}
                     onClick={() => { setSigning(false); setLastFormBySubject((current) => ({ ...current, [subject.id]: key })); if (opened) run(() => careActions.activate(key)); else open(subject.id, item.key); }}
                   >
                     {item.label}{state}
@@ -389,55 +391,6 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
                 );
               })}
             </div>
-          </nav>
-        </HeaderSlot>
-      )}
-      {openDocuments.length > 0 && (
-        <HeaderSlot>
-          <nav aria-label="開啟中的照護對象" className={styles.roomBar} data-no-print>
-            <span className={styles.roomBarLabel}>開啟中 {trayGroups.length}</span>
-            <div className={styles.trayScroll}>
-              {trayGroups.map(({ target, items }) => {
-                const place = target.room || target.carNo || target.name;
-                const current = items.some((item) => item.key === activeKey) && !listVisible;
-                const draft = items.some((item) => item.dirty && !item.signedAt);
-                // 鎖頭在房號左邊（v24 的作法）：一眼看出同時開著的幾間裡，哪一間是可以編輯的。
-                const unlocked = data.unlockedCase === target.caseId;
-                return (
-                  <span key={target.id} data-active={current} className={styles.roomChip}>
-                    <button
-                      type="button"
-                      aria-pressed={current}
-                      title={`切換到 ${place} ${target.name}（開啟 ${items.length} 張，${unlocked ? "編輯中" : "唯讀"}）`}
-                      className={styles.roomChipMain}
-                      onClick={() => {
-                        setSigning(false);
-                        setListVisible(false);
-                        // 回到這間房上次看的那張表單；沒記錄就用最近開的那張。
-                        const back = items.find((item) => item.key === lastFormBySubject[target.id]) ?? items[items.length - 1];
-                        run(() => careActions.activate(back.key));
-                      }}
-                    >
-                      {unlocked
-                        ? <UnlockKeyhole className={styles.roomChipLock} data-state="open" size={14} strokeWidth={2.5} aria-label="編輯中" />
-                        : <LockKeyhole className={styles.roomChipLock} data-state="closed" size={14} strokeWidth={2.5} aria-label="唯讀" />}
-                      {place}｜{target.name}
-                      {draft && <em className={styles.roomChipDraft} title="有未簽出的草稿" aria-label="有未簽出的草稿" />}
-                    </button>
-                    <button
-                      type="button"
-                      title={`關閉 ${place} ${target.name} 的所有表單`}
-                      aria-label={`關閉 ${place} ${target.name}`}
-                      className={styles.roomChipClose}
-                      onClick={() => setPending({ kind: "close-subject", subjectId: target.id })}
-                    >
-                      <X size={13} />
-                    </button>
-                  </span>
-                );
-              })}
-            </div>
-            <button type="button" className={buttonStyles({ size: "sm" })} title="保留草稿並關閉全部" onClick={() => { if (hasActive) setPending("all"); else run(() => careActions.closeAll(kind), "已保留草稿並關閉全部表單。"); }}>全部關閉</button>
           </nav>
         </HeaderSlot>
       )}
@@ -452,9 +405,61 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
         一次 motherName——對媽媽而言跟第一行的姓名完全重複。寶寶才需要另外標出
         媽媽是誰，所以只有名字不同時才補「媽媽 ○○○」。
       */}
-      {hasActive && subject && document && (
+      {/* 開啟中的房間收成頁首第 1 列的下拉（2026-11-20 客戶選方案 A，取代原本獨佔一列的房間列）。 */}
+      {(openDocuments.length > 0 || (hasActive && subject && document)) && (
         <HeaderSlot slot="inline">
           <div className={styles.subjectBar}>
+            {openDocuments.length > 0 && <details className={styles.roomMenu}>
+              <summary title="切換或關閉開啟中的房間">開啟中 {trayGroups.length} 間</summary>
+              <div className={styles.roomMenuPanel}>
+              <nav aria-label="開啟中的照護對象" className={styles.roomList}>
+                <div className={styles.roomListItems}>
+                  {trayGroups.map(({ target, items }) => {
+                    const place = target.room || target.carNo || target.name;
+                    const current = items.some((item) => item.key === activeKey) && !listVisible;
+                    const draft = items.some((item) => item.dirty && !item.signedAt);
+                    // 鎖頭在房號左邊（v24 的作法）：一眼看出同時開著的幾間裡，哪一間是可以編輯的。
+                    const unlocked = data.unlockedCase === target.caseId;
+                    return (
+                      <span key={target.id} data-active={current} className={styles.roomChip}>
+                        <button
+                          type="button"
+                          aria-pressed={current}
+                          title={`切換到 ${place} ${target.name}（開啟 ${items.length} 張，${unlocked ? "編輯中" : "唯讀"}）`}
+                          className={styles.roomChipMain}
+                          onClick={(event) => {
+                            (event.currentTarget.closest("details") as HTMLDetailsElement).open = false;
+                            setSigning(false);
+                            setListVisible(false);
+                            // 回到這間房上次看的那張表單；沒記錄就用最近開的那張。
+                            const back = items.find((item) => item.key === lastFormBySubject[target.id]) ?? items[items.length - 1];
+                            run(() => careActions.activate(back.key));
+                          }}
+                        >
+                          {unlocked
+                            ? <UnlockKeyhole className={styles.roomChipLock} data-state="open" size={14} strokeWidth={2.5} aria-label="編輯中" />
+                            : <LockKeyhole className={styles.roomChipLock} data-state="closed" size={14} strokeWidth={2.5} aria-label="唯讀" />}
+                          {place}｜{target.name}
+                          {draft && <em className={styles.roomChipDraft} title="有未簽出的草稿" aria-label="有未簽出的草稿" />}
+                        </button>
+                        <button
+                          type="button"
+                          title={`關閉 ${place} ${target.name} 的所有表單`}
+                          aria-label={`關閉 ${place} ${target.name}`}
+                          className={styles.roomChipClose}
+                          onClick={() => setPending({ kind: "close-subject", subjectId: target.id })}
+                        >
+                          <X size={13} />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+                <button type="button" className={buttonStyles({ size: "sm" })} title="保留草稿並關閉全部" onClick={() => { if (hasActive) setPending("all"); else run(() => careActions.closeAll(kind), "已保留草稿並關閉全部表單。"); }}>全部關閉</button>
+              </nav>
+              </div>
+            </details>}
+            {hasActive && subject && document && <>
             <p className={styles.subjectBarText}>
               <strong className="font-semibold text-stone-800">{identity(subject)}</strong>
               <span>｜{subjectSummary(subject)}</span>
@@ -465,6 +470,7 @@ export default function CareWorkspace({ kind }: { kind: CareKind }) {
               {permitted && !document.signedAt && data.unlockedCase !== subject.caseId && <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => setPending("unlock")}>解鎖此對象</button>}
               {expired && canAuthorizeCare(role) && !data.authorizations[subject.id] && <button type="button" className={buttonStyles({ size: "sm" })} onClick={() => setPending("authorize")}>授權回補</button>}
             </div>
+            </>}
           </div>
         </HeaderSlot>
       )}

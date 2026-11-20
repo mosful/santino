@@ -52,7 +52,7 @@ async function checkLayout(page, engine, form, width, height) {
     await answerFirstOption(page);
     await page.getByText("14 分", { exact: true }).waitFor();
     for (const [width, height] of [[1440, 1000], [820, 1180], [390, 844]]) await checkLayout(page, engine, "social", width, height);
-    await page.getByRole("button", { name: "列印空白表格", exact: true }).click();
+    await page.getByLabel("更多操作").click(); await page.getByRole("button", { name: "列印空白表格", exact: true }).click();
     const socialPrint = page.locator("table").filter({ hasText: "我有能支持我的好朋友" });
     await socialPrint.waitFor();
     assert.equal(await socialPrint.locator("img, iframe").count(), 0);
@@ -70,7 +70,7 @@ async function checkLayout(page, engine, form, width, height) {
     await answerFirstOption(page);
     await page.getByText("21 分", { exact: true }).waitFor();
     for (const [width, height] of [[1440, 1000], [820, 1180], [390, 844]]) await checkLayout(page, engine, "mood", width, height);
-    await page.getByRole("button", { name: "列印空白表格", exact: true }).click();
+    await page.getByLabel("更多操作").click(); await page.getByRole("button", { name: "列印空白表格", exact: true }).click();
     const moodPrint = page.locator('[class*="scaleMoodPrint"]').filter({ hasText: "我能看到事物有趣的一面" });
     await moodPrint.waitFor();
     assert.equal(await moodPrint.locator("img, iframe").count(), 0);

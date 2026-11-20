@@ -54,7 +54,7 @@
   不再 sticky 於頁尾，也不在 .workspace 容器內——所以不要在這裡依賴 .workspace
   的任何樣式，底色與邊框也交給頁首容器，這裡只畫分隔線。
 */
-.tray { order: 1; display: flex; max-width: 100%; flex: 1 1 100%; align-items: center; gap: 12px; }
+.tray { order: 1; display: flex; max-width: 100%; flex: 1 1 0; min-width: 16rem; align-items: center; gap: 12px; }
 .trayScroll { display: flex; min-width: 0; flex: 1 1 auto; align-items: center; gap: 8px; overflow-x: auto; overscroll-behavior-inline: contain; padding-block: 4px; scrollbar-color: var(--brand-300) var(--surface-muted); scrollbar-width: thin; }
 .trayScroll > * { flex: 0 0 auto; }
 .trayScroll button { max-width: min(260px, 55vw); }
@@ -63,12 +63,12 @@
 .trayGroup { display: flex; align-items: center; gap: 4px; border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--surface-muted); padding: 3px 5px; }
 .trayGroup[data-active="true"] { border-color: var(--brand-300); background: var(--brand-50); }
 /* 目前對象識別列：住在頁首列裡，所以不能再帶自己的外框與內距，文字過長就截斷。 */
-.subjectBar { display: flex; min-width: 0; flex: 1; align-items: center; justify-content: space-between; gap: 12px; }
+.subjectBar { display: flex; min-width: 0; flex: 1; align-items: center; justify-content: flex-start; gap: 12px; }
 /* 字級比一般內文小一階、但比原本的 13px 大一點：和頁首標題同列時才不會像註腳。
    房號／姓名／病歷號那段再大一號，狀態與天數是次要資訊維持小一級。 */
 .subjectBarText { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14px; color: var(--text-muted); }
 .subjectBarText strong { font-size: 15px; }
-.subjectBarActions { display: flex; flex-shrink: 0; align-items: center; gap: 8px; }
+.subjectBarActions { display: flex; flex-shrink: 0; align-items: center; gap: 8px; margin-left: auto; }
 /* 窄螢幕時插槽整塊掉到頁首第二行，補一條分隔線免得和標題黏在一起。 */
 @media (max-width: 1023px) {
   .subjectBar { border-top: 1px solid var(--border-subtle); padding-top: 5px; }
@@ -77,8 +77,6 @@
   第二行：開啟中的房間（參考 santinov1 的工作列）。
   一間房一個晶片，左半切換、右半關閉整間；目前這間上色。
 */
-.roomBar { order: 2; display: flex; max-width: 100%; flex: 1 1 100%; align-items: center; gap: 8px; border-top: 1px solid var(--border-subtle); padding-top: 6px; }
-.roomBarLabel { flex: 0 0 auto; font-size: 11px; font-weight: 700; color: var(--text-muted); }
 .roomChip { display: inline-flex; flex: 0 0 auto; align-items: stretch; overflow: hidden; border: 1px solid var(--border-subtle); border-radius: 10px; background: var(--surface-raised); }
 .roomChip[data-active="true"] { border-color: var(--brand-400); background: var(--brand-50); }
 .roomChipMain { display: inline-flex; min-height: 32px; align-items: center; gap: 5px; padding: 0 10px; font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
@@ -159,21 +157,40 @@
   color: #78716c;
 }
 
+
 /*
-  表單操作列：黏在頁首（含開啟中表單兩列）下方，暫存／簽出／列印與確認框都在這裡，
-  按下去畫面不會捲動（2026-11-20）。--app-header-total 由 AppShell 依頁首實際高度設定。
+  頁首兩列（2026-11-20 客戶選方案 A）：
+  第 1 列＝模組名＋「開啟中 N 間」房間下拉＋目前對象＋編輯狀態；
+  第 2 列＝表單頁籤（底線式，過長就橫向捲）＋右側表單操作（帶入上一筆／暫存／完成簽出／⋯）。
+  寬度不夠時操作會整組換到下一行，頁籤仍保留整列可捲。
 */
-.formActions { grid-template-columns: minmax(0, 1fr); min-width: 0; position: sticky; top: calc(var(--app-header-total, var(--app-header-h)) + 8px); z-index: 20; display: grid; gap: 10px; margin-bottom: 16px; border: 1px solid var(--border-subtle); border-radius: 14px; background: rgb(255 255 255 / .96); padding: 8px 12px; box-shadow: 0 8px 20px -14px rgb(0 0 0 / .35); }
-.formActionsRow { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
-.formActionsStatus { min-width: 0; flex: 1 1 14rem; font-size: 13px; color: var(--text-muted); }
-.formActionsButtons { min-width: 0; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
-.formActionsPaper { font-size: 13px; }
-.formActionsPaper a { text-decoration: underline; text-underline-offset: 3px; }
-.confirmPanel { display: grid; gap: 10px; border: 1px solid var(--color-amber-300, #fcd34d); border-radius: 12px; background: var(--color-amber-50, #fffbeb); padding: 12px; }
-/* 手機：狀態文字一行省略，按鈕橫向捲動，避免操作列變成三四行吃掉畫面。 */
-@media (max-width: 639px) {
-  .formActions { padding: 6px 8px; }
-  .formActionsStatus { flex-basis: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; }
-  .formActionsButtons { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overscroll-behavior-inline: contain; scrollbar-width: none; }
-  .formActionsButtons > * { flex: 0 0 auto; }
+.formTab { display: inline-flex; min-height: 40px; align-items: center; padding: 0 12px; border-bottom: 3px solid transparent; color: var(--text-muted); font-size: 14px; white-space: nowrap; }
+.formTab:hover { color: var(--brand-700); }
+.formTab[aria-pressed="true"] { border-bottom-color: var(--brand-600); color: var(--brand-700); font-weight: 700; }
+.headerActions { order: 2; display: flex; flex: 0 0 auto; align-items: center; gap: 8px; margin-left: auto; }
+/* 暫存狀態與缺項放在表單標題下方，不佔頁首寬度（頁籤才不會被擠掉）。 */
+.formStatus { margin-top: 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; color: var(--text-muted); }
+.headerPanel { order: 3; flex: 1 1 100%; }
+.headerPanel a { text-decoration: underline; text-underline-offset: 3px; }
+.confirmPanel { display: grid; gap: 10px; border: 1px solid #fcd34d; border-radius: 12px; background: #fffbeb; padding: 12px; }
+.moreMenu, .roomMenu { position: relative; flex: 0 0 auto; }
+.moreMenu > summary, .roomMenu > summary { list-style: none; cursor: pointer; }
+.moreMenu > summary::-webkit-details-marker, .roomMenu > summary::-webkit-details-marker { display: none; }
+.menuPanel { position: absolute; right: 0; top: calc(100% + 6px); z-index: 50; display: grid; min-width: 12rem; border: 1px solid var(--border-subtle); border-radius: 12px; background: #fff; padding: 6px; box-shadow: 0 16px 32px -16px rgb(0 0 0 / .35); }
+.menuItem { display: flex; min-height: 44px; align-items: center; justify-content: flex-start; gap: 8px; border-radius: 8px; padding: 0 12px; text-align: left; font-size: 14px; white-space: nowrap; }
+.menuItem:hover { background: var(--brand-50); }
+.menuItem:disabled { opacity: .5; }
+.roomMenu > summary { display: inline-flex; min-height: 34px; align-items: center; gap: 6px; border: 1px solid var(--brand-200, #cfe0e4); border-radius: 999px; background: var(--brand-50); padding: 0 12px; color: var(--brand-700); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.roomMenu > summary::after { content: "▾"; font-size: 11px; }
+.roomMenuPanel { position: absolute; left: 0; top: calc(100% + 6px); z-index: 50; min-width: 18rem; max-width: min(28rem, 90vw); border: 1px solid var(--border-subtle); border-radius: 12px; background: #fff; padding: 10px; box-shadow: 0 16px 32px -16px rgb(0 0 0 / .35); }
+.roomList { display: grid; gap: 10px; }
+.roomListItems { display: grid; gap: 6px; }
+.roomListItems .roomChip { justify-content: space-between; }
+.roomListItems .roomChipMain { flex: 1; min-height: 40px; justify-content: flex-start; }
+.titleRow { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-bottom: 16px; }
+/* 靠右用 margin-left:auto，不用 justify-content:flex-end：後者在溢出時會把前面的步驟推到左側看不見也捲不到。 */
+.titleRow .sectionNav { margin: 0 0 0 auto; flex: 0 1 auto; min-width: 0; max-width: 100%; }
+@media (max-width: 767px) {
+  .headerActions { flex: 1 1 100%; flex-wrap: wrap; }
+  .titleRow .sectionNav { margin-left: 0; }
 }

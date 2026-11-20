@@ -55,7 +55,7 @@ async function nativePdf(page,name,minimumPages) {
     assert.equal(state.documents[state.active.mama].values.time,"07:21");
     assert.equal(await page.getByRole("region",{name:"依紙本列印"}).count(),0);
     assert.equal(await page.locator('iframe[title="紙本 PDF 預覽"]').count(),0);
-    await page.getByRole("button",{name:"列印空白表格",exact:true}).click();
+    await page.getByLabel("更多操作").click(); await page.getByRole("button",{name:"列印空白表格",exact:true}).click();
     const nativeAdmission=page.locator('[data-native-print="mama-admission"]');
     await nativeAdmission.waitFor();
     assert.match(await nativeAdmission.textContent(),/產婦入住護理評估表/);
@@ -67,7 +67,7 @@ async function nativePdf(page,name,minimumPages) {
     for(const [name,w,h] of [["desktop",1440,1000],["ipad-portrait",820,1180],["ipad-landscape",1180,820],["mobile",390,844]]) await check(page,`${engine}-mama-${name}`,w,h);
     await page.getByRole("button",{name:"每日照護",exact:true}).first().click();
     assert.match(await page.getByLabel("紀錄日期（必填）",{exact:true}).inputValue(),/^\d{4}-\d{2}-\d{2}$/);
-    await page.getByRole("button",{name:"列印空白表格",exact:true}).click();
+    await page.getByLabel("更多操作").click(); await page.getByRole("button",{name:"列印空白表格",exact:true}).click();
     const nativeDaily=page.locator('[data-native-print="mama-daily"]');
     await nativeDaily.waitFor();
     assert.match(await nativeDaily.textContent(),/產婦每日護理評估表/);

@@ -69,7 +69,7 @@ npm run test:e2e  # Playwright 走 out/，scripts/verify-static.cjs 列出的全
 
 再人工檢查受影響路由、角色權限、**桌面與 iPad／手機版面**（雙平台為開發總則之一）。
 
-`test:e2e` 驗的是 `out/`，所以**改完要先 `npm run build`**，否則跑的是舊版；`SANTINO_E2E_SCENARIOS=<名稱>`（逗號分隔）可只跑其中幾支。這套腳本曾有 5 支長期失效，2026-10-21 全部修好——改 UI 文字或結構時請一併更新，不要讓它再長草。
+`test:e2e` 驗的是 `out/`，所以**改完要先 `npm run build`**，否則跑的是舊版；`SANTINO_E2E_SCENARIOS=<名稱>`（逗號分隔）可只跑其中幾支。三支版面驗收會依「瀏覽器 × 尺寸」拆片平行跑（預設同時 4 項，`SANTINO_E2E_JOBS` 可調，設 1 為逐一執行）；新增版面驗收腳本時沿用 `SANTINO_E2E_ENGINE`／`SANTINO_E2E_LAYOUT` 篩選，並加進 `scripts/verify-static.cjs` 的 `SHARDED`。這套腳本曾有 5 支長期失效，2026-10-21 全部修好——改 UI 文字或結構時請一併更新，不要讓它再長草。
 
 ## 部署
 

@@ -85,20 +85,26 @@ const assert = require("node:assert/strict"); const fs = require("node:fs/promis
   // 上一段把角色切成護理師了，而客戶資料（模組 5）護理師沒有權限——先切回櫃台。
   await page.goto(base + "/customer/");
   await page.evaluate(() => localStorage.setItem("santino_current_role_v1", "櫃台"));
-  await page.reload({ waitUntil: "domcontentloaded" });
-  const allRows = Number((await page.getByText(/符合 \d+ \/ \d+ 筆/).innerText()).match(/\/ (\d+) 筆/)[1]);
-  const beforeFilter = await page.getByText(/符合 \d+ \/ \d+ 筆/).innerText();
-  await page.getByLabel("合約狀態", { exact: true }).selectOption("已簽約");
-  // 篩選後畫面重繪需要一點時間；立刻讀會拿到篩選前的筆數（2026-11-20 機器忙時連續重現）。
-  await page.waitForFunction((before) => { const node = [...document.querySelectorAll("*")].find((item) => item.childElementCount === 0 && /符合 \d+ \/ \d+ 筆/.test(item.textContent ?? "")); return node && node.textContent !== before; }, beforeFilter, { timeout: 10000 });
+  // 要等前端程式載入完成（hydration）才操作篩選；只等 HTML 載入就選，電腦忙時選項會在 hydration 時被重設回「全部」。
+  await page.reload({ waitUntil: "networkidle" });
+  const countText = () => page.getByText(/符合 \d+ \/ \d+ 筆/).innerText();
+  const allRows = Number((await countText()).match(/\/ (\d+) 筆/)[1]);
+  const beforeFilter = await countText();
+  // 選完等筆數更新；仍未更新（選項被重設）就再選一次，檢查門檻不變。
+  for (let attempt = 0; attempt < 5 && (await countText()) === beforeFilter; attempt++) {
+    await page.getByLabel("合約狀態", { exact: true }).selectOption("已簽約");
+    await page.waitForTimeout(500 * (attempt + 1));
+  }
   const signedRows = Number((await page.getByText(/符合 \d+ \/ \d+ 筆/).innerText()).match(/符合 (\d+)/)[1]);
   assert.ok(signedRows > 0 && signedRows < allRows, `已簽約應該是全部的子集，實際 ${signedRows}/${allRows}`);
   const customerDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: /匯出 Excel/ }).click();
+  // 成功提示 5 秒後自動關閉；存檔較慢時再等就看不到了，所以點下去就開始等。
+  const exportedToast = page.getByRole("status").filter({ hasText: `已匯出 ${signedRows} 筆` }).waitFor();
   const customerXlsx = `${output}/customers.xlsx`; await (await customerDownload).saveAs(customerXlsx);
   const customerBytes = await fs.readFile(customerXlsx);
   assert.equal(customerBytes.subarray(0, 2).toString("latin1"), "PK");
-  await page.getByRole("status").filter({ hasText: `已匯出 ${signedRows} 筆` }).waitFor();
+  await exportedToast;
   await page.getByRole("button", { name: "清除條件", exact: true }).click();
   assert.match(await page.getByText(/符合 \d+ \/ \d+ 筆/).innerText(), new RegExp(`符合 ${allRows} `));
 

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "tsx scripts/verify-care-paper-assets.ts && next build && node scripts/fix-static-segments.cjs",
     "start": "node scripts/preview-static.cjs",
-    "lint": "eslint",
+    "lint": "eslint --cache --cache-strategy content --cache-location node_modules/.cache/eslint/",
     "test": "tsx --test tests/*.test.ts",
     "test:e2e": "node scripts/verify-static.cjs",
     "audit:ipad": "node scripts/audit-ipad.cjs",

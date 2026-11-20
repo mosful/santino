@@ -13,6 +13,7 @@ const layouts = [
   ["平板窄幅", 768, 1024, true],
   ["手機", 390, 844, true],
 ];
+// 可由 SANTINO_E2E_ENGINE（chromium／webkit）與 SANTINO_E2E_LAYOUT（尺寸名稱）只跑其中一格；scripts/verify-static.cjs 據此平行分片。
 const results = [];
 
 // 量所有可見單行欄位，包含空值、有值、disabled 與通知單內的欄位。
@@ -67,10 +68,10 @@ async function check(page, name) {
 
 (async () => {
   await fs.mkdir(output, { recursive: true });
-  for (const [engine, launcher] of Object.entries({ chromium, webkit })) {
+  for (const [engine, launcher] of Object.entries({ chromium, webkit }).filter(([engine]) => !process.env.SANTINO_E2E_ENGINE || engine === process.env.SANTINO_E2E_ENGINE)) {
     const browser = await launcher.launch();
     try {
-      for (const [layout, width, height, touch] of layouts) {
+      for (const [layout, width, height, touch] of layouts.filter(([size]) => !process.env.SANTINO_E2E_LAYOUT || size === process.env.SANTINO_E2E_LAYOUT)) {
         const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, locale: "zh-TW" });
         await context.addInitScript(() => {
           localStorage.setItem("santino_auth_v1", "1");
@@ -160,5 +161,5 @@ async function check(page, name) {
   }
   console.log(`案件表單版面驗收通過：${results.length} 次檢查，Chromium／WebKit × 桌機／iPad 橫直向／窄平板／手機。`);
 })().catch((error) => { console.error(error); process.exitCode = 1; }).finally(async () => {
-  await fs.writeFile(path.join(output, "results.json"), JSON.stringify(results, null, 2));
+  await fs.writeFile(path.join(output, `results${process.env.SANTINO_E2E_SHARD ? `-${process.env.SANTINO_E2E_SHARD}` : ""}.json`), JSON.stringify(results, null, 2));
 });

@@ -6,6 +6,7 @@ const base = process.env.SANTINO_PREVIEW_BASE_URL || "http://localhost:4310";
 const output = path.join(process.env.SANTINO_QA_OUTPUT || path.resolve("test-results"), "babycam-form-layout");
 const screenshots = process.env.SANTINO_LAYOUT_SCREENSHOTS === "1";
 const layouts = [["桌機", 1440, 1000, false], ["iPad橫向", 1180, 820, true], ["iPad直向", 820, 1180, true], ["平板窄幅", 768, 1024, true], ["手機", 390, 844, true]];
+// 可由 SANTINO_E2E_ENGINE（chromium／webkit）與 SANTINO_E2E_LAYOUT（尺寸名稱）只跑其中一格；scripts/verify-static.cjs 據此平行分片。
 const results = [];
 
 async function check(page, name) {
@@ -38,10 +39,10 @@ async function check(page, name) {
 
 (async () => {
   await fs.mkdir(output, { recursive: true });
-  for (const [engine, launcher] of Object.entries({ chromium, webkit })) {
+  for (const [engine, launcher] of Object.entries({ chromium, webkit }).filter(([engine]) => !process.env.SANTINO_E2E_ENGINE || engine === process.env.SANTINO_E2E_ENGINE)) {
     const browser = await launcher.launch();
     try {
-      for (const role of ["護理師 陳護理師", "管理者"]) for (const [layout, width, height, touch] of layouts) {
+      for (const role of ["護理師 陳護理師", "管理者"]) for (const [layout, width, height, touch] of layouts.filter(([size]) => !process.env.SANTINO_E2E_LAYOUT || size === process.env.SANTINO_E2E_LAYOUT)) {
         const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, locale: "zh-TW" });
         await context.addInitScript((role) => {
           localStorage.setItem("santino_auth_v1", "1");
@@ -110,5 +111,5 @@ async function check(page, name) {
   }
   console.log(`寶寶登錄版面驗收通過：${results.length} 次，Chromium／WebKit × 護理師／管理者 × 5 種尺寸，含單胞／雙胞／3–6 胞胎、日期、分區與儲存。`);
 })().catch((error) => { console.error(error); process.exitCode = 1; }).finally(async () => {
-  await fs.writeFile(path.join(output, "results.json"), JSON.stringify(results, null, 2));
+  await fs.writeFile(path.join(output, `results${process.env.SANTINO_E2E_SHARD ? `-${process.env.SANTINO_E2E_SHARD}` : ""}.json`), JSON.stringify(results, null, 2));
 });

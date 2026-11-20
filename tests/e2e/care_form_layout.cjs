@@ -10,6 +10,7 @@ const forms = {
   mama: ["入住評估", "每日照護", "媽媽護理紀錄", "社會支持", "心情量表", "護理指導單"],
   baby: ["入住評估", "寶寶護理紀錄", "每日照護", "哺餵母乳評估", "成長日記", "寶寶身體照片", "I/O", "護理指導單"],
 };
+// 可由 SANTINO_E2E_ENGINE（chromium／webkit）與 SANTINO_E2E_LAYOUT（尺寸名稱）只跑其中一格；scripts/verify-static.cjs 據此平行分片。
 const results = [];
 const formButton = (page, label) => page.getByRole("navigation", { name: "此對象的照護表單", exact: true }).getByRole("button", { name: new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?: · 草稿| ✓)?$`) });
 
@@ -75,10 +76,10 @@ async function check(panel, name) {
 
 (async () => {
   await fs.mkdir(output, { recursive: true });
-  for (const [engine, launcher] of Object.entries({ chromium, webkit })) {
+  for (const [engine, launcher] of Object.entries({ chromium, webkit }).filter(([engine]) => !process.env.SANTINO_E2E_ENGINE || engine === process.env.SANTINO_E2E_ENGINE)) {
     const browser = await launcher.launch();
     try {
-      for (const [layout, width, height, touch] of layouts) {
+      for (const [layout, width, height, touch] of layouts.filter(([size]) => !process.env.SANTINO_E2E_LAYOUT || size === process.env.SANTINO_E2E_LAYOUT)) {
         const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch, locale: "zh-TW" });
         await context.addInitScript(() => {
           localStorage.setItem("santino_auth_v1", "1");
@@ -175,8 +176,12 @@ async function check(panel, name) {
           await page.getByRole("button", { name: "回列表", exact: true }).click();
           /* 只點房卡清單裡的「入住評估」：頁首的開啟中表單頁籤同名，
              在回列表狀態下仍在畫面上，用全頁 nth(1) 會點到第一間房自己的頁籤。 */
-          await page.locator("main").getByRole("button", { name: "入住評估", exact: true }).nth(1).click();
-          await roomNav.locator('button[title^="切換到"]').nth(1).waitFor();
+          // WebKit 偶爾吃掉這一下點擊（尚未 hydrate 完）；沒開出第二間房就再點，最多三次，檢查內容不變。
+          for (let attempt = 1; ; attempt++) {
+            await page.locator("main").getByRole("button", { name: "入住評估", exact: true }).nth(1).click();
+            try { await roomNav.locator('button[title^="切換到"]').nth(1).waitFor({ timeout: 10000 }); break; }
+            catch (error) { if (attempt >= 3) throw error; }
+          }
           const unlock = page.getByRole("button", { name: "解鎖此對象", exact: true });
           if (await unlock.count()) {
             await unlock.click();
@@ -207,5 +212,5 @@ async function check(panel, name) {
   }
   console.log(`照護表單版面驗收通過：${results.length} 次檢查，媽媽 6 張／寶寶 8 張及各區段，Chromium／WebKit × 5 種尺寸。`);
 })().catch((error) => { console.error(error); process.exitCode = 1; }).finally(async () => {
-  await fs.writeFile(path.join(output, "results.json"), JSON.stringify(results, null, 2));
+  await fs.writeFile(path.join(output, `results${process.env.SANTINO_E2E_SHARD ? `-${process.env.SANTINO_E2E_SHARD}` : ""}.json`), JSON.stringify(results, null, 2));
 });

@@ -16,7 +16,6 @@ export default function CareScaleSheet({ form, values, onChange, personal, addPh
     return item && <CareFieldInput key={key} field={item} values={values} onChange={onChange} personal={personal} addPhrase={addPhrase} />;
   };
   return <div className={styles.sheet} data-care-sheet="scale">
-    <h3 className={styles.title}>{form.printTitle}</h3>
     <div className={styles.scaleMeta}>{renderField("date")}{renderField("birthDate")}</div>
     <div className={styles.scaleIntro}>
       {kind === "mood" ? <p>請依照您過去七天（不只是今天）的感受，選擇最接近的答案。每題只能選一個答案。</p> : <>

@@ -10,7 +10,7 @@ let activeBrowser;
 
 async function openForm(page, name) {
   await page.getByRole("button", { name, exact: true }).first().click();
-  await page.getByRole("heading", { name: name === "社會支持" ? "產婦家庭及社會支持量表" : "產後心情量表", exact: true }).waitFor();
+  await page.getByRole("heading", { name: name === "社會支持" ? "社會支持 - 產婦家庭及社會支持量表" : "心情量表 - 產後心情量表", exact: true }).waitFor();
 }
 
 async function answerFirstOption(page) {

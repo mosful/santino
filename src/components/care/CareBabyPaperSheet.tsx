@@ -115,7 +115,6 @@ export function CareBabyDailySheet(props: Props) {
     </div>;
   }
   return <div className={styles.paperEditor} data-care-sheet="baby-daily">
-    <h3 className={styles.paperEditorTitle}>新生兒每日評估照護單</h3>
     <p className={styles.paperEditorHint}>依原紙本列序填寫目前日期與班別；完成簽出後，列印會彙整成五日 × N／D／E 三班格式。</p>
     <div className={styles.paperEditorHeader}>
       {input("date")}{input("shift")}{input("birthDate")}{input("delivery")}{input("feedingType")}{input("feedingOther")}
@@ -149,7 +148,7 @@ export function CareBabyAdmissionSheet(props: Props) {
   const supplement = section.label === "入住護理紀錄" || selectedIndex > 5;
   const title = bodyPage ? "新生兒入住身體狀況評估單" : supplement ? "新生兒入住評估－系統補充資料" : "新生兒入住評估單";
   return <div className={styles.paperEditor} data-care-sheet="baby-admission" data-paper-page={bodyPage ? "2" : supplement ? "supplement" : "1"}>
-    <h3 className={styles.paperEditorTitle}>{title}</h3>
+    {title !== form.printTitle && <h3 className={styles.paperEditorTitle}>{title}</h3>}
     {!supplement && <p className={styles.paperEditorHint}>欄位名稱、題序及選項依院方原紙本；列印時會將本頁資料套入同一張原紙本。</p>}
     {!bodyPage && !supplement && selectedIndex === 0 && <div className={styles.paperEditorHeader}>{input("date")}{input("time")}</div>}
     {bodyPage && <div className={styles.paperEditorHeader}>{input("bodyDate")}{input("bodyTime")}{input("temperatureSite")}{input("temperature")}{input("pulse")}{input("respiration")}{input("oxygen")}</div>}

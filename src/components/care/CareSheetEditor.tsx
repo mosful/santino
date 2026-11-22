@@ -33,7 +33,6 @@ export default function CareSheetEditor(props: Props) {
     return <button type="button" className="mt-1 block min-h-11 text-sm font-normal underline underline-offset-4" data-no-print aria-label={`清除${label}`} onClick={() => onChange(rowClearPatch(rowFields, values))}>清除</button>;
   };
   return <div className={styles.sheet} data-care-sheet={form.layout}>
-    <h3 className={styles.title}>{form.printTitle}</h3>
     <div className={styles.meta}>{input("date")}{input("time")}</div>
     {form.layout === "feeding" ? <>
       <div className={styles.feedingHead}><span>觀察項目</span><span>哺餵順利之表現</span><span>哺餵困難之表現</span></div>

@@ -36,14 +36,14 @@ async function capture(page, engine, form, layout, width, height) {
 
     await page.getByRole("button", { name: "每日照護", exact: true }).first().click();
     const daily = page.locator('[data-care-sheet="baby-daily"]');
-    await daily.getByRole("heading", { name: "新生兒每日評估照護單", exact: true }).waitFor();
+    await daily.waitFor(); await page.getByRole("heading", { name: "每日照護 - 新生兒每日評估照護單", exact: true }).waitFor();
     assert.equal(await daily.locator("table thead tr").nth(1).locator("th").count(), 15, "每日照護應保留五日乘 N／D／E 三班矩陣");
     for (const text of ["日期", "入住日數", "班別／時間", "活動力", "吸吮力", "皮膚（有左列狀況打勾）", "臍帶", "紅臀", "親子同室持續時間", "照護問題（措施評值及護理紀錄）", "照護人員簽章"]) assert.ok(await daily.getByText(text, { exact: true }).count() >= 1, text);
     for (const [layout, width, height] of layouts) await capture(page, engine, "baby-daily", layout, width, height);
 
     await page.getByRole("button", { name: "入住評估", exact: true }).first().click();
     const admission = page.locator('[data-care-sheet="baby-admission"]');
-    await admission.getByRole("heading", { name: "新生兒入住評估單", exact: true }).waitFor();
+    await admission.waitFor(); await page.getByRole("heading", { name: "入住評估 - 新生兒入住評估單", exact: true }).waitFor();
     assert.equal(await admission.getAttribute("data-paper-page"), "1");
     for (const [layout, width, height] of layouts) await capture(page, engine, "baby-admission-page1", layout, width, height);
 

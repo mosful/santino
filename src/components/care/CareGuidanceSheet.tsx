@@ -51,7 +51,6 @@ export default function CareGuidanceSheet({ kind, values, onChange, currentUser,
   }
 
   return <div className={styles.sheet} data-care-sheet="guidance">
-    <h3 className={styles.title}>護理指導記錄單</h3>
     <div className={styles.guidanceBar} data-no-print>
       <label className={styles.guidanceField}>執行日期<input type="date" value={text(values.date)} onChange={(event) => onChange({ date: event.target.value })} /></label>
       <label className={styles.guidanceField}>執行者<input type="text" list="care-staff-names" value={text(values.executor) || currentUser} onChange={(event) => onChange({ executor: event.target.value })} /></label><datalist id="care-staff-names">{STAFF_NAMES.map((name) => <option key={name} value={name} />)}</datalist>
